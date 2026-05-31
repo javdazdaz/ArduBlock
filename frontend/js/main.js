@@ -22,7 +22,6 @@ import { WorkspaceSearch }     from '@blockly/plugin-workspace-search';
 import { Backpack }            from '@blockly/workspace-backpack';
 import { shadowBlockConversionChangeListener } from '@blockly/shadow-block-converter';
 import '@blockly/toolbox-search';
-import { TypedVariableModal }  from '@blockly/plugin-typed-variable-modal';
 import { CrossTabCopyPaste }   from '@blockly/plugin-cross-tab-copy-paste';
 import { ScrollOptions, ScrollBlockDragger, ScrollMetricsManager }
   from '@blockly/plugin-scroll-options';
@@ -34,17 +33,18 @@ import { initSerial }        from './serial.js';
 import { initUpload }         from './upload.js';
 import { initExamples }       from './examples.js';
 import { initResize }         from './resize.js';
+import { t, applyDOMLanguage } from './i18n.js';
 
 // ═══ Toolbox ══════════════════════════════════
 const toolbox = {
   'kind': 'categoryToolbox',
   'contents': [
-    { 'kind': 'category', 'name': 'Arduino', 'colour': '230',
+    { 'kind': 'category', 'name': '%{BKY_CAT_ARDUINO}', 'colour': '230',
       'contents': [
         { 'kind': 'block', 'type': 'arduino_setup' },
         { 'kind': 'block', 'type': 'arduino_loop' }
       ]},
-    { 'kind': 'category', 'name': 'Pines', 'colour': '190',
+    { 'kind': 'category', 'name': '%{BKY_CAT_PINES}', 'colour': '190',
       'contents': [
         { 'kind': 'block', 'type': 'pin_mode' },
         { 'kind': 'block', 'type': 'digital_write' },
@@ -54,15 +54,15 @@ const toolbox = {
         { 'kind': 'block', 'type': 'pulse_in' },
         { 'kind': 'block', 'type': 'attach_interrupt' }
       ]},
-    { 'kind': 'category', 'name': 'Tiempo', 'colour': '290',
+    { 'kind': 'category', 'name': '%{BKY_CAT_TIEMPO}', 'colour': '290',
       'contents': [{ 'kind': 'block', 'type': 'delay_ms' }]},
-    { 'kind': 'category', 'name': 'Sonido', 'colour': '260',
+    { 'kind': 'category', 'name': '%{BKY_CAT_SONIDO}', 'colour': '260',
       'contents': [
         { 'kind': 'block', 'type': 'tone_output' },
         { 'kind': 'block', 'type': 'tone_duration' },
         { 'kind': 'block', 'type': 'no_tone_output' }
       ]},
-    { 'kind': 'category', 'name': 'Pantalla LCD', 'colour': '180',
+    { 'kind': 'category', 'name': '%{BKY_CAT_LCD}', 'colour': '180',
       'contents': [
         { 'kind': 'block', 'type': 'lcd_create' },
         { 'kind': 'block', 'type': 'lcd_i2c_create' },
@@ -70,7 +70,7 @@ const toolbox = {
         { 'kind': 'block', 'type': 'lcd_set_cursor' },
         { 'kind': 'block', 'type': 'lcd_clear' }
       ]},
-    { 'kind': 'category', 'name': 'Sensores', 'colour': '100',
+    { 'kind': 'category', 'name': '%{BKY_CAT_SENSORES}', 'colour': '100',
       'contents': [
         { 'kind': 'block', 'type': 'dht_create' },
         { 'kind': 'block', 'type': 'dht_temp' },
@@ -78,26 +78,26 @@ const toolbox = {
         { 'kind': 'block', 'type': 'ultrasonic_create' },
         { 'kind': 'block', 'type': 'ultrasonic_read' }
       ]},
-    { 'kind': 'category', 'name': 'Motor', 'colour': '310',
+    { 'kind': 'category', 'name': '%{BKY_CAT_MOTOR}', 'colour': '310',
       'contents': [
         { 'kind': 'block', 'type': 'stepper_create' },
         { 'kind': 'block', 'type': 'stepper_speed' },
         { 'kind': 'block', 'type': 'stepper_step' }
       ]},
-    { 'kind': 'category', 'name': 'Servo', 'colour': '40',
+    { 'kind': 'category', 'name': '%{BKY_CAT_SERVO}', 'colour': '40',
       'contents': [
         { 'kind': 'block', 'type': 'servo_create' },
         { 'kind': 'block', 'type': 'servo_write' },
         { 'kind': 'block', 'type': 'servo_write_us' }
       ]},
-    { 'kind': 'category', 'name': 'Serial', 'colour': '120',
+    { 'kind': 'category', 'name': '%{BKY_CAT_SERIAL}', 'colour': '120',
       'contents': [
         { 'kind': 'block', 'type': 'serial_begin' },
         { 'kind': 'block', 'type': 'serial_print' },
         { 'kind': 'block', 'type': 'serial_println' }
       ]},
     { 'kind': 'sep' },
-    { 'kind': 'category', 'name': 'Lógica', 'colour': '210',
+    { 'kind': 'category', 'name': '%{BKY_CAT_LOGICA}', 'colour': '210',
       'contents': [
         { 'kind': 'block', 'type': 'controls_if' },
         { 'kind': 'block', 'type': 'logic_compare' },
@@ -105,12 +105,12 @@ const toolbox = {
         { 'kind': 'block', 'type': 'logic_negate' },
         { 'kind': 'block', 'type': 'logic_boolean' }
       ]},
-    { 'kind': 'category', 'name': 'Bucles', 'colour': '120',
+    { 'kind': 'category', 'name': '%{BKY_CAT_BUCLES}', 'colour': '120',
       'contents': [
         { 'kind': 'block', 'type': 'controls_repeat_ext' },
         { 'kind': 'block', 'type': 'controls_whileUntil' }
       ]},
-    { 'kind': 'category', 'name': 'Matemáticas', 'colour': '230',
+    { 'kind': 'category', 'name': '%{BKY_CAT_MATEMATICAS}', 'colour': '230',
       'contents': [
         { 'kind': 'block', 'type': 'math_number' },
         { 'kind': 'block', 'type': 'math_arithmetic' },
@@ -121,15 +121,20 @@ const toolbox = {
         { 'kind': 'block', 'type': 'map_value' },
         { 'kind': 'block', 'type': 'math_number_property' }
       ]},
-    { 'kind': 'category', 'name': 'Variables', 'colour': '330', 'custom': 'VARIABLE' },
-    { 'kind': 'category', 'name': 'Texto', 'colour': '160',
+    { 'kind': 'category', 'name': '%{BKY_CAT_VARIABLES}', 'colour': '330',
+      'contents': [
+        { 'kind': 'block', 'type': 'variable_declare' },
+        { 'kind': 'block', 'type': 'variable_set' },
+        { 'kind': 'block', 'type': 'variable_get' }
+      ]},
+    { 'kind': 'category', 'name': '%{BKY_CAT_TEXTO}', 'colour': '160',
       'contents': [
         { 'kind': 'block', 'type': 'text' },
         { 'kind': 'block', 'type': 'text_join' },
         { 'kind': 'block', 'type': 'text_print' },
         { 'kind': 'block', 'type': 'text_length' }
       ]},
-    { 'kind': 'search', 'name': 'Buscar', 'contents': [] }
+    { 'kind': 'search', 'name': '%{BKY_CAT_BUSCAR}', 'contents': [] }
   ]
 };
 
@@ -150,11 +155,6 @@ new Backpack(workspace).init();
 workspace.addChangeListener(shadowBlockConversionChangeListener);
 new ScrollOptions(workspace).init({ enableBlockDragging: true, enableScroll: true });
 
-const typedVarModal = new TypedVariableModal(workspace, 'createTypedVariable', [
-  ['INT', 'int'], ['FLOAT', 'float'], ['STRING', 'String'], ['BOOL', 'bool']
-]);
-typedVarModal.init();
-
 new CrossTabCopyPaste().init({ contextMenu: true, shortcut: true });
 
 // ═══ UI: Código ══════════════════════════════
@@ -166,7 +166,7 @@ export function updateCode() {
     let code = generateArduinoCode(workspace);
     if (window._exampleComment) code = window._exampleComment + '\n' + code;
     codeOutput.textContent = code;
-    lineCount.textContent = code.split('\n').length + ' líneas';
+    lineCount.textContent = code.split('\n').length + ' ' + t('panel_lines');
   } catch (e) {
     codeOutput.textContent = '// Error: ' + e.message;
     lineCount.textContent = 'error';
@@ -176,12 +176,12 @@ workspace.addChangeListener(updateCode);
 updateCode();
 
 document.getElementById('btn-copy').addEventListener('click', async () => {
-  try { await navigator.clipboard.writeText(codeOutput.textContent); showToast('¡Copiado!'); }
+  try { await navigator.clipboard.writeText(codeOutput.textContent); showToast(t('toast_copied')); }
   catch {
     const ta = document.createElement('textarea');
     ta.value = codeOutput.textContent; ta.style.cssText = 'position:fixed;opacity:0';
     document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
-    showToast('¡Copiado!');
+    showToast(t('toast_copied'));
   }
 });
 
@@ -325,3 +325,6 @@ initResize({
 
 // ═══ Validación pedagógica ═══════════════════
 initValidator(workspace);
+
+// ═══ Aplicar idioma al DOM ═══════════════════
+applyDOMLanguage();

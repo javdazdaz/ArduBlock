@@ -7,6 +7,12 @@
 
 import * as Blockly from 'blockly';
 import { registerFieldAngle } from '@blockly/field-angle';
+import { initLanguage } from './i18n.js';
+
+// Inicializar idioma antes de definir bloques — Blockly.Msg debe estar poblado
+// o message0/tooltip con Blockly.Msg.KEY quedan undefined y Blockly lanza
+// "args0 must have a corresponding message (message0)"
+initLanguage();
 
 // Registrar field_angle antes de definir bloques que lo usan
 registerFieldAngle();
@@ -51,33 +57,33 @@ Blockly.common.defineBlocksWithJsonArray([
   // ═══ setup () ═══════════════════════════════
   {
     "type": "arduino_setup",
-    "message0": "al iniciar %1 %2",
+    "message0": Blockly.Msg.MSG_ARDUINO_SETUP,
     "args0": [
       { "type": "input_dummy" },
       { "type": "input_statement", "name": "BODY" }
     ],
     "colour": 230,   // amarillo/naranja
-    "tooltip": "Código que se ejecuta una sola vez al iniciar el Arduino",
+    "tooltip": Blockly.Msg.TOOLTIP_ARDUINO_SETUP,
     "helpUrl": ""
   },
 
   // ═══ loop () ════════════════════════════════
   {
     "type": "arduino_loop",
-    "message0": "repetir siempre %1 %2",
+    "message0": Blockly.Msg.MSG_ARDUINO_LOOP,
     "args0": [
       { "type": "input_dummy" },
       { "type": "input_statement", "name": "BODY" }
     ],
     "colour": 230,
-    "tooltip": "Código que se ejecuta en bucle infinito",
+    "tooltip": Blockly.Msg.TOOLTIP_ARDUINO_LOOP,
     "helpUrl": ""
   },
 
   // ═══ pinMode ═══════════════════════════════
   {
     "type": "pin_mode",
-    "message0": "configurar pin %1 como %2",
+    "message0": Blockly.Msg.MSG_PIN_MODE,
     "args0": [
       { "type": "field_number", "name": "PIN", "value": 13, "min": 0, "max": 54 },
       { "type": "field_dropdown", "name": "MODE",
@@ -91,14 +97,14 @@ Blockly.common.defineBlocksWithJsonArray([
     "previousStatement": null,
     "nextStatement": null,
     "colour": 190,
-    "tooltip": "Configura el modo de un pin (ENTRADA, SALIDA, ENTRADA_PULLUP)",
+    "tooltip": Blockly.Msg.TOOLTIP_PIN_MODE,
     "helpUrl": ""
   },
 
   // ═══ digitalWrite ═══════════════════════════
   {
     "type": "digital_write",
-    "message0": "escribir digital pin %1 → %2",
+    "message0": Blockly.Msg.MSG_DIGITAL_WRITE,
     "args0": [
       { "type": "field_number", "name": "PIN", "value": 13, "min": 0, "max": 54 },
       { "type": "field_dropdown", "name": "VALUE",
@@ -111,27 +117,27 @@ Blockly.common.defineBlocksWithJsonArray([
     "previousStatement": null,
     "nextStatement": null,
     "colour": 190,
-    "tooltip": "Escribe HIGH o LOW en un pin digital",
+    "tooltip": Blockly.Msg.TOOLTIP_DIGITAL_WRITE,
     "helpUrl": ""
   },
 
   // ═══ digitalRead ════════════════════════════
   {
     "type": "digital_read",
-    "message0": "leer pin digital %1",
+    "message0": Blockly.Msg.MSG_DIGITAL_READ,
     "args0": [
       { "type": "field_number", "name": "PIN", "value": 2, "min": 0, "max": 54 }
     ],
     "output": "Number",
     "colour": 190,
-    "tooltip": "Lee el valor de un pin digital (HIGH o LOW)",
+    "tooltip": Blockly.Msg.TOOLTIP_DIGITAL_READ,
     "helpUrl": ""
   },
 
   // ═══ analogWrite ════════════════════════════
   {
     "type": "analog_write",
-    "message0": "escribir analógico pin %1 ~ %2",
+    "message0": Blockly.Msg.MSG_ANALOG_WRITE,
     "args0": [
       { "type": "field_number", "name": "PIN", "value": 9, "min": 0, "max": 54 },
       { "type": "field_number", "name": "VALUE", "value": 128, "min": 0, "max": 255 }
@@ -139,41 +145,41 @@ Blockly.common.defineBlocksWithJsonArray([
     "previousStatement": null,
     "nextStatement": null,
     "colour": 160,
-    "tooltip": "Escribe un valor PWM (0-255) en un pin analógico (~)",
+    "tooltip": Blockly.Msg.TOOLTIP_ANALOG_WRITE,
     "helpUrl": ""
   },
 
   // ═══ analogRead ═════════════════════════════
   {
     "type": "analog_read",
-    "message0": "leer pin analógico A%1",
+    "message0": Blockly.Msg.MSG_ANALOG_READ,
     "args0": [
       { "type": "field_number", "name": "PIN", "value": 0, "min": 0, "max": 15 }
     ],
     "output": "Number",
     "colour": 160,
-    "tooltip": "Lee el valor analógico (0-1023) del pin A0-A15",
+    "tooltip": Blockly.Msg.TOOLTIP_ANALOG_READ,
     "helpUrl": ""
   },
 
   // ═══ delay ══════════════════════════════════
   {
     "type": "delay_ms",
-    "message0": "esperar %1 ms",
+    "message0": Blockly.Msg.MSG_DELAY_MS,
     "args0": [
       { "type": "field_number", "name": "MS", "value": 1000, "min": 0 }
     ],
     "previousStatement": null,
     "nextStatement": null,
     "colour": 290,
-    "tooltip": "Espera una cantidad de milisegundos",
+    "tooltip": Blockly.Msg.TOOLTIP_DELAY_MS,
     "helpUrl": ""
   },
 
   // ═══ Serial.begin ════════════════════════════
   {
     "type": "serial_begin",
-    "message0": "iniciar comunicación Serial a %1 baudios",
+    "message0": Blockly.Msg.MSG_SERIAL_BEGIN,
     "args0": [
       { "type": "field_dropdown", "name": "BAUD",
         "options": [
@@ -188,42 +194,42 @@ Blockly.common.defineBlocksWithJsonArray([
     "previousStatement": null,
     "nextStatement": null,
     "colour": 120,
-    "tooltip": "Inicia la comunicación serial a la velocidad especificada. Se usa dentro de setup().",
+    "tooltip": Blockly.Msg.TOOLTIP_SERIAL_BEGIN,
     "helpUrl": ""
   },
 
   // ═══ Serial.print ════════════════════════════
   {
     "type": "serial_print",
-    "message0": "enviar por Serial %1",
+    "message0": Blockly.Msg.MSG_SERIAL_PRINT,
     "args0": [
       { "type": "input_value", "name": "TEXT", "check": ["String", "Number"] }
     ],
     "previousStatement": null,
     "nextStatement": null,
     "colour": 120,
-    "tooltip": "Envía texto o número por el puerto Serial",
+    "tooltip": Blockly.Msg.TOOLTIP_SERIAL_PRINT,
     "helpUrl": ""
   },
 
   // ═══ Serial.println ══════════════════════════
   {
     "type": "serial_println",
-    "message0": "enviar por Serial (con salto) %1",
+    "message0": Blockly.Msg.MSG_SERIAL_PRINTLN,
     "args0": [
       { "type": "input_value", "name": "TEXT", "check": ["String", "Number"] }
     ],
     "previousStatement": null,
     "nextStatement": null,
     "colour": 120,
-    "tooltip": "Envía texto o número por el puerto Serial y añade un salto de línea",
+    "tooltip": Blockly.Msg.TOOLTIP_SERIAL_PRINTLN,
     "helpUrl": ""
   },
 
   // ═══ Servo: crear (declara + attach) ════════
   {
     "type": "servo_create",
-    "message0": "crear servo %1 en pin %2",
+    "message0": Blockly.Msg.MSG_SERVO_CREATE,
     "args0": [
       { "type": "field_input", "name": "NAME", "text": "servo" },
       { "type": "field_number", "name": "PIN", "value": 9, "min": 0, "max": 54 }
@@ -231,14 +237,14 @@ Blockly.common.defineBlocksWithJsonArray([
     "previousStatement": null,
     "nextStatement": null,
     "colour": 40,
-    "tooltip": "Declara un servo con el nombre indicado y lo conecta al pin. El nombre debe ser único para cada servo.",
+    "tooltip": Blockly.Msg.TOOLTIP_SERVO_CREATE,
     "helpUrl": ""
   },
 
   // ═══ Servo: write (usa nombre, field-angle) ══
   {
     "type": "servo_write",
-    "message0": "mover servo %1 a %2",
+    "message0": Blockly.Msg.MSG_SERVO_WRITE,
     "args0": [
       { "type": "field_input", "name": "NAME", "text": "servo" },
       { "type": "field_angle", "name": "ANGLE", "value": 90 }
@@ -246,14 +252,14 @@ Blockly.common.defineBlocksWithJsonArray([
     "previousStatement": null,
     "nextStatement": null,
     "colour": 40,
-    "tooltip": "Gira el servo indicado al ángulo elegido (0-180°). Usá el mismo nombre que al crear el servo.",
+    "tooltip": Blockly.Msg.TOOLTIP_SERVO_WRITE,
     "helpUrl": ""
   },
 
   // ═══ Servo: write microseconds (avanzado) ════
   {
     "type": "servo_write_us",
-    "message0": "mover servo %1 a %2 μs",
+    "message0": Blockly.Msg.MSG_SERVO_WRITE_US,
     "args0": [
       { "type": "field_input", "name": "NAME", "text": "servo" },
       { "type": "field_number", "name": "US", "value": 1500, "min": 500, "max": 2500 }
@@ -261,14 +267,14 @@ Blockly.common.defineBlocksWithJsonArray([
     "previousStatement": null,
     "nextStatement": null,
     "colour": 40,
-    "tooltip": "Gira el servo usando microsegundos (500-2500). Para ajustes finos de posición.",
+    "tooltip": Blockly.Msg.TOOLTIP_SERVO_WRITE_US,
     "helpUrl": ""
   },
 
   // ═══ Sonido: tone(pin, freq) ═════════════════
   {
     "type": "tone_output",
-    "message0": "generar tono pin %1 frecuencia %2 Hz",
+    "message0": Blockly.Msg.MSG_TONE_OUTPUT,
     "args0": [
       { "type": "field_number", "name": "PIN", "value": 8, "min": 0, "max": 54 },
       { "type": "field_number", "name": "FREQ", "value": 440, "min": 31, "max": 65535 }
@@ -276,14 +282,14 @@ Blockly.common.defineBlocksWithJsonArray([
     "previousStatement": null,
     "nextStatement": null,
     "colour": 260,
-    "tooltip": "Genera un tono de la frecuencia indicada en el pin. Usá un buzzer o speaker piezoeléctrico.",
+    "tooltip": Blockly.Msg.TOOLTIP_TONE_OUTPUT,
     "helpUrl": ""
   },
 
   // ═══ Sonido: tone(pin, freq, duration) ═══════
   {
     "type": "tone_duration",
-    "message0": "generar tono pin %1 frecuencia %2 Hz durante %3 ms",
+    "message0": Blockly.Msg.MSG_TONE_DURATION,
     "args0": [
       { "type": "field_number", "name": "PIN", "value": 8, "min": 0, "max": 54 },
       { "type": "field_number", "name": "FREQ", "value": 440, "min": 31, "max": 65535 },
@@ -292,28 +298,28 @@ Blockly.common.defineBlocksWithJsonArray([
     "previousStatement": null,
     "nextStatement": null,
     "colour": 260,
-    "tooltip": "Genera un tono durante el tiempo indicado y se apaga solo. No necesitás llamar a noTone().",
+    "tooltip": Blockly.Msg.TOOLTIP_TONE_DURATION,
     "helpUrl": ""
   },
 
   // ═══ Sonido: noTone(pin) ═════════════════════
   {
     "type": "no_tone_output",
-    "message0": "detener tono en pin %1",
+    "message0": Blockly.Msg.MSG_NO_TONE_OUTPUT,
     "args0": [
       { "type": "field_number", "name": "PIN", "value": 8, "min": 0, "max": 54 }
     ],
     "previousStatement": null,
     "nextStatement": null,
     "colour": 260,
-    "tooltip": "Detiene el tono que se está generando en el pin indicado.",
+    "tooltip": Blockly.Msg.TOOLTIP_NO_TONE_OUTPUT,
     "helpUrl": ""
   },
 
   // ═══ Matemáticas: map() ═══════════════════════
   {
     "type": "map_value",
-    "message0": "mapear %1 de [ %2 … %3 ] a [ %4 … %5 ]",
+    "message0": Blockly.Msg.MSG_MAP_VALUE,
     "args0": [
       { "type": "input_value", "name": "VALUE", "check": "Number" },
       { "type": "field_number", "name": "FROM_LOW", "value": 0 },
@@ -323,14 +329,14 @@ Blockly.common.defineBlocksWithJsonArray([
     ],
     "output": "Number",
     "colour": 230,
-    "tooltip": "Re-mapea un número de un rango a otro. Ej: valor de sensor (0-1023) → PWM (0-255).",
+    "tooltip": Blockly.Msg.TOOLTIP_MAP_VALUE,
     "helpUrl": ""
   },
 
   // ═══ Pines: pulseIn() ═════════════════════════
   {
     "type": "pulse_in",
-    "message0": "medir pulso en pin %1 nivel %2 timeout %3 μs",
+    "message0": Blockly.Msg.MSG_PULSE_IN,
     "args0": [
       { "type": "field_number", "name": "PIN", "value": 7, "min": 0, "max": 54 },
       { "type": "field_dropdown", "name": "VALUE", "options": [["HIGH", "HIGH"], ["LOW", "LOW"]] },
@@ -338,14 +344,14 @@ Blockly.common.defineBlocksWithJsonArray([
     ],
     "output": "Number",
     "colour": 190,
-    "tooltip": "Mide la duración de un pulso en el pin (en microsegundos). Útil para sensores ultrasónicos.",
+    "tooltip": Blockly.Msg.TOOLTIP_PULSE_IN,
     "helpUrl": ""
   },
 
   // ═══ Pines: attachInterrupt() ═════════════════
   {
     "type": "attach_interrupt",
-    "message0": "interrupción en pin %1 modo %2 ejecutar %3 %4",
+    "message0": Blockly.Msg.MSG_ATTACH_INTERRUPT,
     "args0": [
       { "type": "field_number", "name": "PIN", "value": 2, "min": 0, "max": 54 },
       { "type": "field_dropdown", "name": "MODE", "options": [
@@ -357,14 +363,14 @@ Blockly.common.defineBlocksWithJsonArray([
     "previousStatement": null,
     "nextStatement": null,
     "colour": 190,
-    "tooltip": "Ejecuta los bloques internos cuando ocurre un cambio en el pin. La ISR debe ser rápida (sin delays ni Serial).",
+    "tooltip": Blockly.Msg.TOOLTIP_ATTACH_INTERRUPT,
     "helpUrl": ""
   },
 
   // ═══ LCD: LiquidCrystal ═══════════════════════
   {
     "type": "lcd_create",
-    "message0": "crear LCD %1 RS %2 EN %3 D4 %4 D5 %5 D6 %6 D7 %7 %8 cols %9 filas %10",
+    "message0": Blockly.Msg.MSG_LCD_CREATE,
     "args0": [
       { "type": "field_input", "name": "NAME", "text": "lcd" },
       { "type": "field_number", "name": "RS", "value": 12, "min": 0, "max": 54 },
@@ -380,12 +386,12 @@ Blockly.common.defineBlocksWithJsonArray([
     "previousStatement": null,
     "nextStatement": null,
     "colour": 180,
-    "tooltip": "Crea un LCD con pines RS, EN, D4-D7. Debe ir dentro de setup().",
+    "tooltip": Blockly.Msg.TOOLTIP_LCD_CREATE,
     "helpUrl": ""
   },
   {
     "type": "lcd_print",
-    "message0": "LCD %1 imprimir %2",
+    "message0": Blockly.Msg.MSG_LCD_PRINT,
     "args0": [
       { "type": "field_input", "name": "NAME", "text": "lcd" },
       { "type": "input_value", "name": "TEXT", "check": ["String", "Number"] }
@@ -393,12 +399,12 @@ Blockly.common.defineBlocksWithJsonArray([
     "previousStatement": null,
     "nextStatement": null,
     "colour": 180,
-    "tooltip": "Imprime texto o número en la posición actual del cursor.",
+    "tooltip": Blockly.Msg.TOOLTIP_LCD_PRINT,
     "helpUrl": ""
   },
   {
     "type": "lcd_set_cursor",
-    "message0": "LCD %1 cursor col %2 fila %3",
+    "message0": Blockly.Msg.MSG_LCD_SET_CURSOR,
     "args0": [
       { "type": "field_input", "name": "NAME", "text": "lcd" },
       { "type": "field_number", "name": "COL", "value": 0, "min": 0 },
@@ -407,26 +413,26 @@ Blockly.common.defineBlocksWithJsonArray([
     "previousStatement": null,
     "nextStatement": null,
     "colour": 180,
-    "tooltip": "Posiciona el cursor en la columna y fila indicadas (empiezan en 0).",
+    "tooltip": Blockly.Msg.TOOLTIP_LCD_SET_CURSOR,
     "helpUrl": ""
   },
   {
     "type": "lcd_clear",
-    "message0": "LCD %1 limpiar pantalla",
+    "message0": Blockly.Msg.MSG_LCD_CLEAR,
     "args0": [
       { "type": "field_input", "name": "NAME", "text": "lcd" }
     ],
     "previousStatement": null,
     "nextStatement": null,
     "colour": 180,
-    "tooltip": "Borra todo el contenido del LCD.",
+    "tooltip": Blockly.Msg.TOOLTIP_LCD_CLEAR,
     "helpUrl": ""
   },
 
   // ═══ LCD I2C ══════════════════════════════════
   {
     "type": "lcd_i2c_create",
-    "message0": "crear LCD I2C %1 dirección %2 cols %3 filas %4",
+    "message0": Blockly.Msg.MSG_LCD_I2C_CREATE,
     "args0": [
       { "type": "field_input", "name": "NAME", "text": "lcd" },
       { "type": "field_dropdown", "name": "ADDR", "options": [["0x27", "0x27"], ["0x3F", "0x3F"]] },
@@ -436,14 +442,14 @@ Blockly.common.defineBlocksWithJsonArray([
     "previousStatement": null,
     "nextStatement": null,
     "colour": 180,
-    "tooltip": "Crea un LCD con interfaz I2C (solo 2 pines: SDA/A4 y SCL/A5). Debe ir dentro de setup().",
+    "tooltip": Blockly.Msg.TOOLTIP_LCD_I2C_CREATE,
     "helpUrl": ""
   },
 
   // ═══ DHT: Sensor temperatura/humedad ═════════
   {
     "type": "dht_create",
-    "message0": "crear sensor DHT %1 pin %2 tipo %3",
+    "message0": Blockly.Msg.MSG_DHT_CREATE,
     "args0": [
       { "type": "field_input", "name": "NAME", "text": "dht" },
       { "type": "field_number", "name": "PIN", "value": 7, "min": 0, "max": 54 },
@@ -452,36 +458,36 @@ Blockly.common.defineBlocksWithJsonArray([
     "previousStatement": null,
     "nextStatement": null,
     "colour": 100,
-    "tooltip": "Crea un sensor DHT11 o DHT22. Debe ir dentro de setup(). Requiere librería DHT de Adafruit.",
+    "tooltip": Blockly.Msg.TOOLTIP_DHT_CREATE,
     "helpUrl": ""
   },
   {
     "type": "dht_temp",
-    "message0": "temperatura de %1",
+    "message0": Blockly.Msg.MSG_DHT_TEMP,
     "args0": [
       { "type": "field_input", "name": "NAME", "text": "dht" }
     ],
     "output": "Number",
     "colour": 100,
-    "tooltip": "Lee la temperatura en °C del sensor DHT.",
+    "tooltip": Blockly.Msg.TOOLTIP_DHT_TEMP,
     "helpUrl": ""
   },
   {
     "type": "dht_humidity",
-    "message0": "humedad de %1",
+    "message0": Blockly.Msg.MSG_DHT_HUMIDITY,
     "args0": [
       { "type": "field_input", "name": "NAME", "text": "dht" }
     ],
     "output": "Number",
     "colour": 100,
-    "tooltip": "Lee la humedad relativa (0-100%) del sensor DHT.",
+    "tooltip": Blockly.Msg.TOOLTIP_DHT_HUMIDITY,
     "helpUrl": ""
   },
 
   // ═══ Ultrasonic: Sensor distancia HC-SR04 ════
   {
     "type": "ultrasonic_create",
-    "message0": "crear ultrasónico %1 trig %2 echo %3",
+    "message0": Blockly.Msg.MSG_ULTRASONIC_CREATE,
     "args0": [
       { "type": "field_input", "name": "NAME", "text": "us" },
       { "type": "field_number", "name": "TRIG", "value": 9, "min": 0, "max": 54 },
@@ -490,25 +496,25 @@ Blockly.common.defineBlocksWithJsonArray([
     "previousStatement": null,
     "nextStatement": null,
     "colour": 80,
-    "tooltip": "Crea un sensor ultrasónico HC-SR04. Debe ir dentro de setup(). No requiere librería.",
+    "tooltip": Blockly.Msg.TOOLTIP_ULTRASONIC_CREATE,
     "helpUrl": ""
   },
   {
     "type": "ultrasonic_read",
-    "message0": "distancia de %1 (cm)",
+    "message0": Blockly.Msg.MSG_ULTRASONIC_READ,
     "args0": [
       { "type": "field_input", "name": "NAME", "text": "us" }
     ],
     "output": "Number",
     "colour": 80,
-    "tooltip": "Mide la distancia en centímetros usando el sensor ultrasónico.",
+    "tooltip": Blockly.Msg.TOOLTIP_ULTRASONIC_READ,
     "helpUrl": ""
   },
 
   // ═══ Stepper: Motor paso a paso ══════════════
   {
     "type": "stepper_create",
-    "message0": "crear motor paso a paso %1 pasos/vuelta %2 IN1 %3 IN2 %4 IN3 %5 IN4 %6",
+    "message0": Blockly.Msg.MSG_STEPPER_CREATE,
     "args0": [
       { "type": "field_input", "name": "NAME", "text": "motor" },
       { "type": "field_number", "name": "STEPS", "value": 2048, "min": 1 },
@@ -520,12 +526,12 @@ Blockly.common.defineBlocksWithJsonArray([
     "previousStatement": null,
     "nextStatement": null,
     "colour": 310,
-    "tooltip": "Crea un motor paso a paso. Puede ir en scope global (fuera de setup/loop).",
+    "tooltip": Blockly.Msg.TOOLTIP_STEPPER_CREATE,
     "helpUrl": ""
   },
   {
     "type": "stepper_speed",
-    "message0": "motor %1 velocidad %2 RPM",
+    "message0": Blockly.Msg.MSG_STEPPER_SPEED,
     "args0": [
       { "type": "field_input", "name": "NAME", "text": "motor" },
       { "type": "field_number", "name": "RPM", "value": 10, "min": 1 }
@@ -533,12 +539,12 @@ Blockly.common.defineBlocksWithJsonArray([
     "previousStatement": null,
     "nextStatement": null,
     "colour": 310,
-    "tooltip": "Configura la velocidad del motor en revoluciones por minuto. Debe ir dentro de setup().",
+    "tooltip": Blockly.Msg.TOOLTIP_STEPPER_SPEED,
     "helpUrl": ""
   },
   {
     "type": "stepper_step",
-    "message0": "motor %1 girar %2 pasos",
+    "message0": Blockly.Msg.MSG_STEPPER_STEP,
     "args0": [
       { "type": "field_input", "name": "NAME", "text": "motor" },
       { "type": "field_number", "name": "COUNT", "value": 100, "min": -32768 }
@@ -546,7 +552,58 @@ Blockly.common.defineBlocksWithJsonArray([
     "previousStatement": null,
     "nextStatement": null,
     "colour": 310,
-    "tooltip": "Gira el motor la cantidad de pasos indicada. Negativo = sentido contrario.",
+    "tooltip": Blockly.Msg.TOOLTIP_STEPPER_STEP,
+    "helpUrl": ""
+  },,
+  {
+    "type": "variable_declare",
+    "message0": Blockly.Msg.MSG_VARIABLE_DECLARE,
+    "args0": [
+      { "type": "field_input", "name": "NAME", "text": "a" },
+      { "type": "field_dropdown", "name": "TYPE",
+        "options": [
+          ["int", "int"],
+          ["float", "float"],
+          ["char", "char"],
+          ["String", "String"],
+          ["bool", "bool"],
+          ["byte", "byte"],
+          ["long", "long"],
+          ["unsigned int", "unsigned int"],
+          ["unsigned long", "unsigned long"],
+          ["double", "double"]
+        ]
+      },
+      { "type": "input_value", "name": "VALUE", "check": ["Number", "String", "Boolean"] }
+    ],
+    "previousStatement": null,
+    "nextStatement": null,
+    "colour": 330,
+    "tooltip": Blockly.Msg.TOOLTIP_VARIABLE_DECLARE,
+    "helpUrl": ""
+  },
+  {
+    "type": "variable_set",
+    "message0": Blockly.Msg.MSG_VARIABLE_SET,
+    "args0": [
+      { "type": "field_input", "name": "NAME", "text": "a" },
+      { "type": "input_value", "name": "VALUE", "check": ["Number", "String", "Boolean"] }
+    ],
+    "previousStatement": null,
+    "nextStatement": null,
+    "colour": 330,
+    "tooltip": Blockly.Msg.TOOLTIP_VARIABLE_SET,
+    "helpUrl": ""
+  },
+  {
+    "type": "variable_get",
+    "message0": Blockly.Msg.MSG_VARIABLE_GET,
+    "args0": [
+      { "type": "field_input", "name": "NAME", "text": "a" }
+    ],
+    "output": null,
+    "colour": 330,
+    "tooltip": Blockly.Msg.TOOLTIP_VARIABLE_GET,
     "helpUrl": ""
   }
 

@@ -11,6 +11,7 @@ import { Backpack } from '@blockly/workspace-backpack';
 import { shadowBlockConversionChangeListener } from '@blockly/shadow-block-converter';
 import { ScrollOptions } from '@blockly/plugin-scroll-options';
 import { CrossTabCopyPaste } from '@blockly/plugin-cross-tab-copy-paste';
+import { setLanguage, getLanguage } from './i18n.js';
 
 export const SETTINGS_KEY = 'ardublock:settings';
 export const defaultSettings = {
@@ -22,11 +23,11 @@ export const defaultSettings = {
 let workspace, toolbox, updateCodeFn, initValidatorFn, serialBaud;
 
 export function initSettings(deps) {
-  workspace      = deps.workspace;
-  toolbox        = deps.toolbox;
-  updateCodeFn   = deps.updateCode;
-  initValidatorFn = deps.initValidator;
-  serialBaud     = deps.serialBaud;
+  workspace       = deps.workspace;
+  toolbox         = deps.toolbox;
+  updateCodeFn    = deps.updateCode;
+  initValidatorFn  = deps.initValidator;
+  serialBaud      = deps.serialBaud;
 
   // Settings modal
   const settingsModal = document.getElementById('settings-modal');
@@ -36,6 +37,7 @@ export function initSettings(deps) {
     document.getElementById('setting-baud').value = s.baud;
     document.getElementById('setting-theme').value = s.theme;
     document.getElementById('setting-renderer').value = s.renderer;
+    document.getElementById('setting-language').value = getLanguage();
     document.getElementById('setting-font-ui').value = s.fontUi;
     document.getElementById('setting-font-code').value = s.fontCode;
     document.getElementById('setting-font-serial').value = s.fontSerial;
@@ -55,6 +57,9 @@ export function initSettings(deps) {
   document.getElementById('setting-theme').addEventListener('change', function() { onSettingChange('theme', this.value, applyTheme); });
   document.getElementById('setting-renderer').addEventListener('change', function() {
     onSettingChange('renderer', this.value, r => { if (r !== workspace.options.renderer) applyRenderer(r); });
+  });
+  document.getElementById('setting-language').addEventListener('change', function() {
+    setLanguage(this.value);
   });
 
   ['ui','code','serial','blocks','toolbox'].forEach(k => {

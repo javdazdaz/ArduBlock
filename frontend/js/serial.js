@@ -6,6 +6,7 @@
 
 import { escapeHtml } from './project-manager.js';
 import { getSetting } from './settings.js';
+import { t } from './i18n.js';
 
 let arduinoConsole, consoleOutput, btnConnect, btnConsoleToggle, serialBaud;
 let serialPollTimer = null;
@@ -39,12 +40,12 @@ export function toggleConsole() {
   if (arduinoConsole.classList.contains('hidden')) {
     arduinoConsole.classList.remove('hidden');
     btnConsoleToggle.classList.add('active');
-    btnConsoleToggle.textContent = '🔌 Consola';
+    btnConsoleToggle.textContent = t('btn_console');
   } else {
     if (serialConnected) disconnectSerial();
     arduinoConsole.classList.add('hidden');
     btnConsoleToggle.classList.remove('active');
-    btnConsoleToggle.textContent = '🔌 Consola';
+    btnConsoleToggle.textContent = t('btn_console');
   }
 }
 
@@ -70,7 +71,7 @@ export async function connectSerial() {
 
     serialConnected = true;
     btnConnect.disabled = false;
-    btnConnect.textContent = '🔌 Desconectar';
+    btnConnect.textContent = t('serial_disconnect');
     btnConnect.className = 'console-btn connected';
     consoleLog(`✓ Conectado a ${data.port || '?'} @ ${data.baud || '?'} baud`, 'success');
 
@@ -98,7 +99,7 @@ export async function disconnectSerial() {
   if (serialPollTimer) { clearInterval(serialPollTimer); serialPollTimer = null; }
   try { await fetch('/api/serial/close', { method: 'POST' }); } catch(e) {}
   btnConnect.disabled = false;
-  btnConnect.textContent = '🔌 Conectar';
+  btnConnect.textContent = t('serial_connect');
   btnConnect.className = 'console-btn connect';
   consoleLog('Desconectado', 'info');
 }

@@ -8,6 +8,7 @@
  */
 
 import * as Blockly from 'blockly';
+import { t } from './i18n.js';
 
 // ── Estado de validación ────────────────────────
 let lastWarnings = [];
@@ -64,16 +65,15 @@ function validateWorkspace(workspace) {
     warnings.push({
       type: 'missing_setup',
       severity: 'warning',
-      message: 'Falta el bloque "al iniciar (setup)". El sketch no tendrá setup().',
+      message: t('val_missing_setup'),
       blocks: []
     });
   } else if (setupBlocks.length > 1) {
-    // Deshabilitar TODOS los setup para que el estudiante decida cuál borrar
     warnings.push({
       type: 'duplicate_setup',
       severity: 'error',
-      message: `¡Hay ${setupBlocks.length} bloques "al iniciar (setup)"! Solo puede haber uno. Elimina los que sobran.`,
-      blocks: setupBlocks,  // todos, no solo los duplicados
+      message: t('val_duplicate_setup'),
+      blocks: setupBlocks,
       disable: true
     });
   }
@@ -84,14 +84,14 @@ function validateWorkspace(workspace) {
     warnings.push({
       type: 'missing_loop',
       severity: 'warning',
-      message: 'Falta el bloque "repetir siempre (loop)". El sketch no tendrá loop().',
+      message: t('val_missing_loop'),
       blocks: []
     });
   } else if (loopBlocks.length > 1) {
     warnings.push({
       type: 'duplicate_loop',
       severity: 'error',
-      message: `¡Hay ${loopBlocks.length} bloques "repetir siempre (loop)"! Solo puede haber uno. Elimina los que sobran.`,
+      message: t('val_duplicate_loop'),
       blocks: loopBlocks,
       disable: true
     });
@@ -118,8 +118,6 @@ function validateWorkspace(workspace) {
   const topBlocks = workspace.getTopBlocks(true);
   for (const block of topBlocks) {
     if (block.type === 'arduino_setup' || block.type === 'arduino_loop') continue;
-    // Los bloques sueltos no son necesariamente error, pero pueden ser declaraciones globales
-    // Solo advertimos si son bloques de acción (statements) que normalmente irían dentro
     const statementTypes = [
       'pin_mode', 'digital_write', 'analog_write',
       'delay_ms', 'serial_print', 'serial_println',
@@ -133,7 +131,7 @@ function validateWorkspace(workspace) {
       warnings.push({
         type: 'orphan_statement',
         severity: 'info',
-        message: `Bloque "${getBlockLabel(block)}" está fuera de setup() o loop(). No se ejecutará.`,
+        message: `Bloque "${getBlockLabel(block)}" ` + t('val_orphan_suffix'),
         blocks: [block]
       });
     }
@@ -145,8 +143,6 @@ function validateWorkspace(workspace) {
     const context = getArduinoContext(workspace, block);
     if (context === 'loop') {
       const varName = block.getField('VAR')?.getText() || '';
-      // Advertir suavemente que la variable debería declararse global
-      // Solo la primera vez por nombre de variable
       const alreadyWarned = warnings.some(w =>
         w.type === 'var_in_loop' && w.variable === varName);
       if (!alreadyWarned) {
@@ -176,7 +172,7 @@ function validateWorkspace(workspace) {
         type: 'servo_attach_position',
         severity: 'error',
         disable: false,
-        message: `Servo "${name || '?'}" está ${where}. Debe ir dentro de setup() para que servo.attach() funcione.`,
+        message: `Servo "${name || '?'}" está ${where}. ` + t('val_servo_attach_suffix'),
         blocks: [block]
       });
     }
@@ -192,7 +188,7 @@ function validateWorkspace(workspace) {
       warnings.push({
         type: 'servo_not_declared',
         severity: 'error',
-        message: `El servo "${name}" no está declarado. Creá un bloque "crear servo ${name} en pin N" primero.`,
+        message: t('val_servo_undeclared_prefix') + ` "${name}". ` + t('val_servo_undeclared_suffix'),
         blocks: [block]
       });
     }
@@ -217,7 +213,7 @@ function validateWorkspace(workspace) {
         warnings.push({
           type: 'lib_not_in_setup',
           severity: 'error',
-          message: `${cfg.label} "${name}" está ${where}. Debe ir dentro de setup().`,
+          message: `${cfg.label} "${name}" está ${where}. ` + t('val_create_in_setup'),
           blocks: [block]
         });
       }
@@ -225,8 +221,7 @@ function validateWorkspace(workspace) {
   }
 
   // ═══ R7: Validación de pines ═══════════════════
-  // Recolectar pinMode() declarados dentro de setup()
-  const pinModes = {};  // pin → { mode, block }
+  const pinModes = {};
   const pinModeBlocks = findAllBlocksOfType(workspace, 'pin_mode');
   for (const block of pinModeBlocks) {
     if (isInsideBlockType(workspace, block, 'arduino_setup')) {
@@ -236,7 +231,6 @@ function validateWorkspace(workspace) {
     }
   }
 
-  // Mapa de consumidores de pines
   const pinConsumers = {
     'digital_write':  { pinField: 'PIN', mode: 'OUTPUT', label: 'digitalWrite' },
     'analog_write':   { pinField: 'PIN', mode: 'OUTPUT', label: 'analogWrite' },
@@ -249,7 +243,6 @@ function validateWorkspace(workspace) {
     'attach_interrupt': { pinField: 'PIN', mode: 'INPUT', label: 'attachInterrupt' }
   };
 
-  // Modos compatibles con cada dirección esperada
   const compatibleModes = {
     'OUTPUT': ['OUTPUT'],
     'INPUT':  ['INPUT', 'INPUT_PULLUP']
@@ -264,20 +257,20 @@ function validateWorkspace(workspace) {
       const declared = pinModes[pin];
 
       if (!declared) {
-        // Pin no declarado en setup
+        const dir = cfg.mode === 'OUTPUT' ? t('val_pin_dir_out') : t('val_pin_dir_in');
         warnings.push({
           type: 'pin_not_configured',
           severity: 'warning',
-          message: `Pin ${pin}: ${cfg.label}() lo usa como ${cfg.mode === 'OUTPUT' ? 'salida' : 'entrada'}, pero no está configurado con pinMode() en setup().`,
+          message: `Pin ${pin}: ${cfg.label}() ` + t('val_pin_not_conf_suffix') + ` ${dir}.`,
           blocks: [block]
         });
       } else if (!compatibleModes[cfg.mode].includes(declared.mode)) {
-        // Pin declarado con modo incompatible
         const modeLabels = { 'OUTPUT': 'SALIDA', 'INPUT': 'ENTRADA', 'INPUT_PULLUP': 'ENTRADA_PULLUP' };
+        const expected = cfg.mode === 'OUTPUT' ? 'SALIDA' : 'ENTRADA';
         warnings.push({
           type: 'pin_mode_mismatch',
           severity: 'warning',
-          message: `Pin ${pin}: configurado como ${modeLabels[declared.mode] || declared.mode} en setup(), pero ${cfg.label}() espera ${cfg.mode === 'OUTPUT' ? 'SALIDA' : 'ENTRADA'}.`,
+          message: `Pin ${pin}: configurado como ${modeLabels[declared.mode] || declared.mode} en setup(), pero ${cfg.label}() espera ${expected}.`,
           blocks: [block]
         });
       }
@@ -325,31 +318,27 @@ function getBlockLabel(block) {
     'stepper_speed': 'velocidad motor',
     'stepper_step': 'girar motor',
     'text_print': 'imprimir texto',
-    'variables_set': 'asignar variable',
-    'variables_get': 'leer variable'
+    'variable_declare': 'iniciar variable',
+    'variable_set': 'asignar variable',
+    'variable_get': 'leer variable'
   };
   return labels[block.type] || block.type;
 }
 
 // ── Aplicar warnings al workspace (UI) ──────────
 
-// ID fijo para nuestra razón de deshabilitado por duplicados
 const DISABLE_REASON = 'ardublock_duplicate';
 
 function applyWarnings(workspace, warnings) {
-  // 1. Re-habilitar TODOS los bloques y limpiar warnings previos
   const allBlocks = workspace.getAllBlocks(false);
   for (const block of allBlocks) {
     block.setWarningText(null);
-    // Quitar nuestra razón de deshabilitado
     try { block.setDisabledReason(false, DISABLE_REASON); } catch(e) {}
   }
 
-  // 2. Aplicar nuevos warnings
   const errors = warnings.filter(w => w.severity === 'error');
   const warns = warnings.filter(w => w.severity === 'warning');
 
-  // Errores con disable:true → deshabilitar bloques (grises) + warning
   for (const w of errors) {
     for (const block of w.blocks) {
       if (w.disable) {
@@ -359,16 +348,13 @@ function applyWarnings(workspace, warnings) {
     }
   }
 
-  // Warnings: solo ícono de advertencia, sin deshabilitar
   for (const w of warns) {
     for (const block of w.blocks) {
       block.setWarningText(w.message);
     }
   }
 
-  // 3. Actualizar panel de estado
   updateStatusPanel(warnings);
-
   lastWarnings = warnings;
 }
 
@@ -377,7 +363,6 @@ function applyWarnings(workspace, warnings) {
 function updateStatusPanel(warnings) {
   let statusEl = document.getElementById('status-panel');
   if (!statusEl) {
-    // Crear panel de estado si no existe
     const header = document.querySelector('header');
     statusEl = document.createElement('div');
     statusEl.id = 'status-panel';
@@ -420,12 +405,7 @@ function updateStatusPanel(warnings) {
 //  INTEGRACIÓN CON EL WORKSPACE
 // ═══════════════════════════════════════════════
 
-/**
- * Hook principal: ejecuta validación después de cada cambio.
- * Se llama desde main.js después de inicializar el workspace.
- */
 export function initValidator(workspace) {
-  // Debounce: no validar en cada micro-cambio
   let timeout = null;
 
   workspace.addChangeListener(() => {
@@ -433,10 +413,9 @@ export function initValidator(workspace) {
     timeout = setTimeout(() => {
       const warnings = validateWorkspace(workspace);
       applyWarnings(workspace, warnings);
-    }, 300); // 300ms debounce
+    }, 300);
   });
 
-  // Validación inicial
   setTimeout(() => {
     const warnings = validateWorkspace(workspace);
     applyWarnings(workspace, warnings);

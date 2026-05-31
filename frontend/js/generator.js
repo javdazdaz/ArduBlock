@@ -545,6 +545,30 @@ cppGenerator.forBlock['stepper_step'] = function(block) {
   const count = block.getFieldValue('COUNT');
   return name + '.step(' + count + ');\n';
 };
+
+// ── variable_declare ───────────────────────────
+cppGenerator.forBlock['variable_declare'] = function(block) {
+  const name  = block.getFieldValue('NAME') || 'a';
+  const type  = block.getFieldValue('TYPE') || 'int';
+  const value = cppGenerator.valueToCode(block, 'VALUE', cppGenerator.ORDER_NONE);
+  if (value) {
+    return type + ' ' + name + ' = ' + value + ';\n';
+  }
+  return type + ' ' + name + ' {};\n';
+};
+
+// ── variable_set ───────────────────────────────
+cppGenerator.forBlock['variable_set'] = function(block) {
+  const name  = block.getFieldValue('NAME') || 'a';
+  const value = cppGenerator.valueToCode(block, 'VALUE', cppGenerator.ORDER_NONE);
+  return name + ' = ' + (value || '0') + ';\n';
+};
+
+// ── variable_get ───────────────────────────────
+cppGenerator.forBlock['variable_get'] = function(block) {
+  const name = block.getFieldValue('NAME') || 'a';
+  return [name, cppGenerator.ORDER_ATOMIC];
+};
 // ═══════════════════════════════════════════════
 //  MÉTODO PRINCIPAL: workspaceToCode
 //  Junta setup() + loop() → sketch completo
