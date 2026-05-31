@@ -46,6 +46,22 @@ pip install -r backend/requirements.txt
 
 Abrir http://localhost:5000 en el navegador.
 
+## Validación en tiempo real
+
+ArduBlock analiza tu sketch mientras trabajás y te avisa de errores antes de compilar. **Nunca borra tus bloques**: si hay un error, los bloques se ponen grises para que veas el problema y lo corrijas vos.
+
+| # | Regla | Severidad |
+|---|-------|-----------|
+| R1 | Solo un `al iniciar (setup)` | 🔴 Error — bloques grises |
+| R2 | Solo un `repetir siempre (loop)` | 🔴 Error — bloques grises |
+| R3 | `iniciar Serial` dentro de setup() | 🟡 Warning |
+| R6a | Servo debe declararse antes de usarse | 🔴 Error |
+| R6b | `crear servo` dentro de setup() | 🔴 Error |
+| R6c | LCD, DHT, ultrasónico dentro de setup() | 🔴 Error |
+| R7 | Todo pin con `configurar pin` en setup() | 🟡 Warning |
+
+Guía completa en `docs/PUBLICO.md`.
+
 ## Licencia
 
 ISC
