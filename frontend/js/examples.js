@@ -14,6 +14,7 @@ import { controlExamples }  from './examples-control.js';
 import { remainingExamples } from './examples-remaining.js';
 import { missingExamples }   from './examples-missing.js';
 import { escapeHtml }       from './project-manager.js';
+import * as Blockly from 'blockly';
 
 // ── Consolidar todos los ejemplos ─────────────────
 const allExamples = [
@@ -115,7 +116,6 @@ function loadPresetExample(name) {
   if (!ex) return;
 
   workspace.clear();
-  const Blockly = globalThis.Blockly;
   Blockly.serialization.workspaces.load(ex.state, workspace);
   window._exampleComment = ex.comment;
   updateCodeFn();
