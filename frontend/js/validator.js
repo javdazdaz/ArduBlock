@@ -421,3 +421,6 @@ export function initValidator(workspace) {
     applyWarnings(workspace, warnings);
   }, 500);
 }
+
+// ── Funciones exportadas para testing ───────────
+export { validateWorkspace, getTopLevelBlocks, findAllBlocksOfType, isInsideBlockType, getArduinoContext, getBlockLabel, applyWarnings };

@@ -136,3 +136,122 @@ describe('generateArduinoCode — integración', () => {
     expect(code2).not.toContain('#include <Servo.h>');
   });
 });
+
+// ── Tests de bloques de variables ────────────────
+describe('generateArduinoCode — bloques de variables', () => {
+  let generateArduinoCode, cppGenerator;
+
+  beforeAll(async () => {
+    const mod = await import('../frontend/js/generator.js');
+    generateArduinoCode = mod.generateArduinoCode;
+    cppGenerator = mod.cppGenerator;
+  });
+
+  it('variable_declare int con valor inicial', () => {
+    const orig = cppGenerator.valueToCode;
+    cppGenerator.valueToCode = (_b, _n, _o) => '5';
+    try {
+      const block = b('variable_declare', { NAME: 'x', TYPE: 'int' });
+      const code = cppGenerator.forBlock['variable_declare'](block);
+      expect(code).toBe('int x = 5;\n');
+    } finally {
+      cppGenerator.valueToCode = orig;
+    }
+  });
+
+  it('variable_declare sin valor → zero-initialization', () => {
+    const orig = cppGenerator.valueToCode;
+    cppGenerator.valueToCode = (_b, _n, _o) => '';
+    try {
+      const block = b('variable_declare', { NAME: 'contador', TYPE: 'int' });
+      const code = cppGenerator.forBlock['variable_declare'](block);
+      expect(code).toBe('int contador {};\n');
+    } finally {
+      cppGenerator.valueToCode = orig;
+    }
+  });
+
+  it('variable_declare float con valor', () => {
+    const orig = cppGenerator.valueToCode;
+    cppGenerator.valueToCode = (_b, _n, _o) => '3.14';
+    try {
+      const block = b('variable_declare', { NAME: 'pi', TYPE: 'float' });
+      const code = cppGenerator.forBlock['variable_declare'](block);
+      expect(code).toBe('float pi = 3.14;\n');
+    } finally {
+      cppGenerator.valueToCode = orig;
+    }
+  });
+
+  it('variable_declare String con valor', () => {
+    const orig = cppGenerator.valueToCode;
+    cppGenerator.valueToCode = (_b, _n, _o) => '"hola"';
+    try {
+      const block = b('variable_declare', { NAME: 'mensaje', TYPE: 'String' });
+      const code = cppGenerator.forBlock['variable_declare'](block);
+      expect(code).toBe('String mensaje = "hola";\n');
+    } finally {
+      cppGenerator.valueToCode = orig;
+    }
+  });
+
+  it('variable_set asigna valor', () => {
+    const orig = cppGenerator.valueToCode;
+    cppGenerator.valueToCode = (_b, _n, _o) => '42';
+    try {
+      const block = b('variable_set', { NAME: 'x' });
+      const code = cppGenerator.forBlock['variable_set'](block);
+      expect(code).toBe('x = 42;\n');
+    } finally {
+      cppGenerator.valueToCode = orig;
+    }
+  });
+
+  it('variable_set sin valor → asigna 0', () => {
+    const orig = cppGenerator.valueToCode;
+    cppGenerator.valueToCode = (_b, _n, _o) => '';
+    try {
+      const block = b('variable_set', { NAME: 'x' });
+      const code = cppGenerator.forBlock['variable_set'](block);
+      expect(code).toBe('x = 0;\n');
+    } finally {
+      cppGenerator.valueToCode = orig;
+    }
+  });
+
+  it('variable_get retorna [nombre, ORDER_ATOMIC]', () => {
+    const block = b('variable_get', { NAME: 'sensor' });
+    const result = cppGenerator.forBlock['variable_get'](block);
+    expect(result).toEqual(['sensor', 0]);  // ORDER_ATOMIC = 0
+  });
+
+  it('variable_get con nombre vacío → fallback "a"', () => {
+    const block = b('variable_get', { NAME: '' });
+    const result = cppGenerator.forBlock['variable_get'](block);
+    expect(result[0]).toBe('a');
+  });
+
+  it('variable_declare con nombre vacío → fallback "a"', () => {
+    const orig = cppGenerator.valueToCode;
+    cppGenerator.valueToCode = (_b, _n, _o) => '5';
+    try {
+      const block = b('variable_declare', { NAME: '', TYPE: 'int' });
+      const code = cppGenerator.forBlock['variable_declare'](block);
+      expect(code).toBe('int a = 5;\n');
+    } finally {
+      cppGenerator.valueToCode = orig;
+    }
+  });
+
+  it('variable_declare con tipo vacío → fallback "int"', () => {
+    const orig = cppGenerator.valueToCode;
+    cppGenerator.valueToCode = (_b, _n, _o) => '';
+    try {
+      const block = b('variable_declare', { NAME: 'x', TYPE: '' });
+      const code = cppGenerator.forBlock['variable_declare'](block);
+      expect(code).toBe('int x {};\n');
+    } finally {
+      cppGenerator.valueToCode = orig;
+    }
+  });
+});
