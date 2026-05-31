@@ -7,5 +7,8 @@ export default defineConfig({
     proxy: {
       '/api': 'http://localhost:5001'
     }
+  },
+  optimizeDeps: {
+    include: ['@blockly/block-shareable-procedures']
   }
 });

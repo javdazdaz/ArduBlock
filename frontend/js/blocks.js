@@ -8,6 +8,8 @@
 import * as Blockly from 'blockly';
 import { registerFieldAngle } from '@blockly/field-angle';
 import { initLanguage } from './i18n.js';
+import { blocks as procBlocks, unregisterProcedureBlocks, registerProcedureSerializer }
+  from '@blockly/block-shareable-procedures';
 
 // Inicializar idioma antes de definir bloques — Blockly.Msg debe estar poblado
 // o message0/tooltip con Blockly.Msg.KEY quedan undefined y Blockly lanza
@@ -16,6 +18,11 @@ initLanguage();
 
 // Registrar field_angle antes de definir bloques que lo usan
 registerFieldAngle();
+
+// Reemplazar bloques de procedimientos built-in por los shareables
+unregisterProcedureBlocks();
+Blockly.common.defineBlocks(procBlocks);
+registerProcedureSerializer();
 
 // ═══ Nombres de categorías + Registro de bloques ═══
 

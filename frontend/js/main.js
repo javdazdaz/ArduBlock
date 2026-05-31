@@ -26,6 +26,58 @@ import { CrossTabCopyPaste }   from '@blockly/plugin-cross-tab-copy-paste';
 import { ScrollOptions, ScrollBlockDragger, ScrollMetricsManager }
   from '@blockly/plugin-scroll-options';
 
+// ═══ Plugins compuestos ═════════════════════════
+// fixed-edges + scroll-options compiten por plugins.metricsManager.
+// Clase compuesta: hereda el caching de ScrollMetricsManager + bordes fijos.
+class FixedEdgesScrollMetricsManager extends ScrollMetricsManager {
+  constructor(workspace) {
+    super(workspace);
+  }
+
+  static _fixedEdges = {};
+
+  static setFixedEdges(edges) {
+    FixedEdgesScrollMetricsManager._fixedEdges = {
+      top: !!edges.top, bottom: !!edges.bottom,
+      left: !!edges.left, right: !!edges.right,
+    };
+  }
+
+  hasFixedEdges() { return true; }
+
+  getComputedFixedEdges_(cachedViewMetrics) {
+    const v = cachedViewMetrics || this.getViewMetrics(false);
+    const fe = FixedEdgesScrollMetricsManager._fixedEdges;
+    const hScroll = this.workspace_.isMovableHorizontally();
+    const vScroll = this.workspace_.isMovableVertically();
+
+    const edges = {
+      top: fe.top ? 0 : undefined,
+      bottom: fe.bottom ? 0 : undefined,
+      left: fe.left ? 0 : undefined,
+      right: fe.right ? 0 : undefined,
+    };
+    if (fe.top && fe.bottom) edges.bottom = v.height;
+    if (fe.left && fe.right) edges.right = v.width;
+
+    if (!vScroll) {
+      if (edges.top !== undefined) edges.bottom = edges.top + v.height;
+      else if (edges.bottom !== undefined) edges.top = edges.bottom - v.height;
+      else { edges.top = v.top; edges.bottom = v.top + v.height; }
+    }
+    if (!hScroll) {
+      if (edges.left !== undefined) edges.right = edges.left + v.width;
+      else if (edges.right !== undefined) edges.left = edges.right - v.width;
+      else { edges.left = v.left; edges.right = v.left + v.width; }
+    }
+    return edges;
+  }
+}
+
+// Configurar bordes fijos: evitar que el workspace se expanda
+// infinitamente al arrastrar bloques hacia arriba o izquierda.
+FixedEdgesScrollMetricsManager.setFixedEdges({ top: true, left: true });
+
 // Módulos de la aplicación
 import { initProjectManager, lsKey } from './project-manager.js';
 import { initSettings }      from './settings.js';
@@ -127,6 +179,7 @@ const toolbox = {
         { 'kind': 'block', 'type': 'variable_set' },
         { 'kind': 'block', 'type': 'variable_get' }
       ]},
+    { 'kind': 'category', 'name': '%{BKY_CAT_FUNCTIONS}', 'colour': '290', 'custom': 'PROCEDURE' },
     { 'kind': 'category', 'name': '%{BKY_CAT_TEXTO}', 'colour': '160',
       'contents': [
         { 'kind': 'block', 'type': 'text' },
@@ -146,7 +199,7 @@ const workspace = Blockly.inject('blocklyDiv', {
   scrollbars: true, trashcan: true,
   zoom: { controls: true, wheel: true, startScale: 1.0, maxScale: 2.5, minScale: 0.3, scaleSpeed: 1.2, pinch: true },
   move: { scrollbars: true, drag: true, wheel: true },
-  plugins: { blockDragger: ScrollBlockDragger, metricsManager: ScrollMetricsManager }
+  plugins: { blockDragger: ScrollBlockDragger, metricsManager: FixedEdgesScrollMetricsManager }
 });
 
 // ═══ Plugins ═════════════════════════════════

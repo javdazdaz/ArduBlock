@@ -30,6 +30,7 @@ const messages = {
     CAT_BUCLES: 'Bucles',
     CAT_MATEMATICAS: 'Matemáticas',
     CAT_VARIABLES: 'Variables',
+    CAT_FUNCTIONS: 'Funciones',
     CAT_TEXTO: 'Texto',
     CAT_BUSCAR: 'Buscar',
     // ── Etiquetas de bloques (Blockly.Msg) ──
@@ -220,6 +221,7 @@ const messages = {
     CAT_BUCLES: 'Loops',
     CAT_MATEMATICAS: 'Math',
     CAT_VARIABLES: 'Variables',
+    CAT_FUNCTIONS: 'Functions',
     CAT_TEXTO: 'Text',
     CAT_BUSCAR: 'Search',
     // ── Block labels ──

@@ -569,6 +569,97 @@ cppGenerator.forBlock['variable_get'] = function(block) {
   const name = block.getFieldValue('NAME') || 'a';
   return [name, cppGenerator.ORDER_ATOMIC];
 };
+
+// ── Funciones (procedures) ─────────────────────
+// Las definiciones se acumulan para emitirlas al
+// principio del sketch (scope global, antes de setup).
+
+cppGenerator.forBlock['procedures_defnoreturn'] = function(block) {
+  const name = block.getFieldValue('NAME') || 'miFuncion';
+  const body = cppGenerator.statementToCode(block, 'STACK') || '  //\n';
+
+  let params = [];
+  try {
+    const model = block.getProcedureModel?.();
+    if (model) {
+      const procParams = model.getParameters?.() || [];
+      params = procParams.map(p => {
+        const pName = p.getName?.() || 'p';
+        const types = p.getTypes?.() || [];
+        const t = (types[0] || '').toLowerCase();
+        const cppType = t === 'string' ? 'String' : t === 'boolean' ? 'bool' : 'int';
+        return cppType + ' ' + pName;
+      });
+    }
+  } catch (_) { /* sin modelo, sin params */ }
+
+  cppGenerator._procedureDefs = cppGenerator._procedureDefs || [];
+  cppGenerator._procedureDefs.push({
+    name, params: params.join(', '), body, returnType: 'void'
+  });
+  return '';
+};
+
+cppGenerator.forBlock['procedures_defreturn'] = function(block) {
+  const name = block.getFieldValue('NAME') || 'miFuncion';
+  const body = cppGenerator.statementToCode(block, 'STACK') || '  //\n';
+  const retVal = cppGenerator.valueToCode(block, 'RETURN', cppGenerator.ORDER_NONE) || '0';
+
+  let params = [];
+  try {
+    const model = block.getProcedureModel?.();
+    if (model) {
+      const procParams = model.getParameters?.() || [];
+      params = procParams.map(p => {
+        const pName = p.getName?.() || 'p';
+        const types = p.getTypes?.() || [];
+        const t = (types[0] || '').toLowerCase();
+        const cppType = t === 'string' ? 'String' : t === 'boolean' ? 'bool' : 'int';
+        return cppType + ' ' + pName;
+      });
+    }
+  } catch (_) { /* sin modelo, sin params */ }
+
+  cppGenerator._procedureDefs = cppGenerator._procedureDefs || [];
+  cppGenerator._procedureDefs.push({
+    name,
+    params: params.join(', '),
+    body: body + '  return ' + retVal + ';\n',
+    returnType: 'int'
+  });
+  return '';
+};
+
+cppGenerator.forBlock['procedures_callnoreturn'] = function(block) {
+  const name = block.getFieldValue('NAME') || 'miFuncion';
+  let args = [];
+  try {
+    const model = block.getProcedureModel?.();
+    if (model) {
+      const procParams = model.getParameters?.() || [];
+      args = procParams.map((_, i) => {
+        return cppGenerator.valueToCode(block, 'ARG' + i, cppGenerator.ORDER_NONE) || '0';
+      });
+    }
+  } catch (_) { /* sin modelo, sin args */ }
+  return name + '(' + args.join(', ') + ');\n';
+};
+
+cppGenerator.forBlock['procedures_callreturn'] = function(block) {
+  const name = block.getFieldValue('NAME') || 'miFuncion';
+  let args = [];
+  try {
+    const model = block.getProcedureModel?.();
+    if (model) {
+      const procParams = model.getParameters?.() || [];
+      args = procParams.map((_, i) => {
+        return cppGenerator.valueToCode(block, 'ARG' + i, cppGenerator.ORDER_NONE) || '0';
+      });
+    }
+  } catch (_) { /* sin modelo, sin args */ }
+  return [name + '(' + args.join(', ') + ')', cppGenerator.ORDER_ATOMIC];
+};
+
 // ═══════════════════════════════════════════════
 //  MÉTODO PRINCIPAL: workspaceToCode
 //  Junta setup() + loop() → sketch completo
@@ -586,6 +677,7 @@ export function generateArduinoCode(workspace) {
 
   // Resetear estado de ISR + librerías (se llenan durante blockToCode)
   cppGenerator._isrBodies = [];
+  cppGenerator._procedureDefs = [];
   cppGenerator._lcdInstances = [];
   cppGenerator._lcdI2cInstances = [];
   cppGenerator._dhtInstances = [];
@@ -722,6 +814,20 @@ export function generateArduinoCode(workspace) {
       seen.add(isr.name);
       sketch += 'void ' + isr.name + '() {\n';
       sketch += isr.body;
+      sketch += '}\n\n';
+    }
+  }
+
+  // Emitir definiciones de funciones (procedures)
+  if (cppGenerator._procedureDefs.length > 0) {
+    const seen = new Set();
+    for (const fn of cppGenerator._procedureDefs) {
+      if (seen.has(fn.name)) continue;
+      seen.add(fn.name);
+      sketch += fn.returnType + ' ' + fn.name
+             + (fn.params ? '(' + fn.params + ')' : '()')
+             + ' {\n';
+      sketch += fn.body;
       sketch += '}\n\n';
     }
   }
