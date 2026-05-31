@@ -12,7 +12,7 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "GPL-3.0-or-later",
   "dependencies": {
     "@blockly/block-shareable-procedures": "^6.0.12",
     "@blockly/continuous-toolbox": "^7.0.9",

@@ -1,38 +1,47 @@
 # ArduBlock
 
-Programación visual para Arduino mediante bloques. Genera código C++ listo para compilar y subir a la placa.
+Implementación de [Blockly](https://developers.google.com/blockly) para clases de
+programación escolar con Arduino. Los estudiantes construyen sketches arrastrando
+bloques, ven el código C++ generado en tiempo real, y lo suben a la placa sin salir
+del navegador.
 
 ## Contexto
 
-Proyecto de uso educativo para las clases del diferenciado de programación. Los estudiantes construyen sketches de Arduino arrastrando bloques sin necesidad de escribir código textual, familiarizándose con la lógica de programación embebida (setup/loop, pines, sensores, actuadores).
+Proyecto educativo para el diferenciado de programación. La herramienta elimina la
+barrera de la sintaxis de C++ y deja que el estudiante se concentre en la lógica:
+estructura de un sketch (setup/loop), pines, sensores, actuadores, variables y
+control de flujo.
 
 ## Stack
 
-| Capa | Tecnología |
-|------|-----------|
-| Bloques | Blockly v12.5.1 |
-| Frontend | Vite + ES Modules |
-| Backend | Flask (Python 3.12) |
-| Toolchain | arduino-cli |
-| Serial | pyserial |
-
-## Requisitos
-
-- Node.js ≥ 20
-- Python ≥ 3.10
-- arduino-cli (en PATH)
-- Permisos de puerto serial (`gpasswd -a $USER uucp` en Gentoo)
+Blockly v12 · Vite · Flask · arduino-cli · pyserial
 
 ## Instalación
 
-```bash
-# Frontend
-npm install
+Funciona en **Windows, Mac y Linux**. Solo necesitás Node.js y Python.
 
-# Backend
+### Frontend
+
+```bash
+npm install
+```
+
+### Backend
+
+```bash
 python -m venv backend/.venv
-source backend/.venv/bin/activate
+source backend/.venv/bin/activate   # en Windows: backend\.venv\Scripts\activate
 pip install -r backend/requirements.txt
+```
+
+### Arduino CLI
+
+Instalá [arduino-cli](https://arduino.github.io/arduino-cli/) y asegurate de que
+esté en el PATH. En Linux, agregá tu usuario al grupo `uucp` para acceder al
+puerto serial:
+
+```bash
+sudo gpasswd -a $USER uucp
 ```
 
 ## Uso
@@ -40,28 +49,53 @@ pip install -r backend/requirements.txt
 ```bash
 ./ardublock.sh start     # Inicia Vite (:5000) + Flask (:5001)
 ./ardublock.sh stop      # Detiene ambos servicios
-./ardublock.sh status    # Estado, health check, uptime
-./ardublock.sh logs      # Últimas 50 líneas de log
+./ardublock.sh status    # Estado y health check
+./ardublock.sh logs      # Últimas líneas de log
 ```
 
-Abrir http://localhost:5000 en el navegador.
+Abrí http://localhost:5000 en el navegador. Los estudiantes no necesitan instalar
+nada más — todo corre en local.
 
-## Validación en tiempo real
+## Qué puede hacer
 
-ArduBlock analiza tu sketch mientras trabajás y te avisa de errores antes de compilar. **Nunca borra tus bloques**: si hay un error, los bloques se ponen grises para que veas el problema y lo corrijas vos.
+**Validación en tiempo real.** Mientras el estudiante arma el sketch, ArduBlock
+analiza los bloques y avisa de errores antes de compilar. Los bloques con error se
+ponen grises — **nunca se borran** solos. El estudiante ve el problema, entiende
+por qué está mal, y lo corrige.
 
-| # | Regla | Severidad |
-|---|-------|-----------|
-| R1 | Solo un `al iniciar (setup)` | 🔴 Error — bloques grises |
-| R2 | Solo un `repetir siempre (loop)` | 🔴 Error — bloques grises |
-| R3 | `iniciar Serial` dentro de setup() | 🟡 Warning |
-| R6a | Servo debe declararse antes de usarse | 🔴 Error |
-| R6b | `crear servo` dentro de setup() | 🔴 Error |
-| R6c | LCD, DHT, ultrasónico dentro de setup() | 🔴 Error |
-| R7 | Todo pin con `configurar pin` en setup() | 🟡 Warning |
+**Generación automática de C++.** Cada cambio en los bloques genera el código
+equivalente al instante. El estudiante ve la traducción directa entre bloque y
+código, reforzando el aprendizaje de la sintaxis.
 
-Guía completa en `docs/PUBLICO.md`.
+**Persistencia en el navegador.** Los proyectos se guardan automáticamente en
+localStorage cada 2 segundos. Al volver a abrir la página, se recupera el último
+proyecto. Sin backend, sin login, sin que un estudiante pueda borrar el trabajo
+de otro.
+
+**Monitor Serial integrado.** La consola muestra la salida de la placa en tiempo
+real. Conectar, desconectar y elegir baud rate desde la interfaz.
+
+**Compilar y subir a la placa.** Un solo botón: detecta la placa conectada,
+compila el sketch con arduino-cli y lo sube. Todo el flujo pasa en el panel de
+código, sin abrir el Arduino IDE.
+
+## Retroalimentación al estudiante
+
+Las reglas de validación están pensadas como ayuda pedagógica, no como
+restricciones técnicas. Cada aviso le dice al estudiante **qué pasa y por qué**.
+
+| Regla | Qué detecta | Qué ve el estudiante |
+|-------|------------|---------------------|
+| R1 | Dos bloques `al iniciar` | "Solo puede haber un setup(). El de más queda gris." |
+| R2 | Dos bloques `repetir siempre` | "Solo puede haber un loop(). El de más queda gris." |
+| R3 | `iniciar Serial` fuera de setup() | "Serial.begin() va dentro de setup(), no acá." |
+| R4 | Bloque suelto (fuera de setup/loop) | "Este bloque no está conectado a nada." |
+| R5 | `iniciar variable` dentro de loop() | "Esta variable se reinicia en cada vuelta del loop." |
+| R6a | Usar un servo sin declararlo | "El servo 'nombre' no está creado. Usá 'crear servo' primero." |
+| R6b | `crear servo` fuera de setup() | "El servo debe crearse dentro de setup()." |
+| R6c | `crear LCD/DHT/ultrasónico` fuera de setup() | "Este bloque va dentro de setup()." |
+| R7 | Usar un pin sin `configurar pin` | "El pin 13 no está configurado. Agregá 'configurar pin' en setup()." |
 
 ## Licencia
 
-ISC
+GPL-3.0-or-later
