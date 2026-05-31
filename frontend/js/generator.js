@@ -586,8 +586,7 @@ cppGenerator.forBlock['procedures_defnoreturn'] = function(block) {
       params = procParams.map(p => {
         const pName = p.getName?.() || 'p';
         const types = p.getTypes?.() || [];
-        const t = (types[0] || '').toLowerCase();
-        const cppType = t === 'string' ? 'String' : t === 'boolean' ? 'bool' : 'int';
+        const cppType = (types[0]) || 'int';
         return cppType + ' ' + pName;
       });
     }
@@ -613,8 +612,7 @@ cppGenerator.forBlock['procedures_defreturn'] = function(block) {
       params = procParams.map(p => {
         const pName = p.getName?.() || 'p';
         const types = p.getTypes?.() || [];
-        const t = (types[0] || '').toLowerCase();
-        const cppType = t === 'string' ? 'String' : t === 'boolean' ? 'bool' : 'int';
+        const cppType = (types[0]) || 'int';
         return cppType + ' ' + pName;
       });
     }

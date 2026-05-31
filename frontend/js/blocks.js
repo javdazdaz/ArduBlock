@@ -8,7 +8,8 @@
 import * as Blockly from 'blockly';
 import { registerFieldAngle } from '@blockly/field-angle';
 import { initLanguage } from './i18n.js';
-import { blocks as procBlocks, unregisterProcedureBlocks, registerProcedureSerializer }
+import { blocks as procBlocks, unregisterProcedureBlocks, registerProcedureSerializer,
+         ObservableParameterModel, ObservableProcedureModel }
   from '@blockly/block-shareable-procedures';
 
 // Inicializar idioma antes de definir bloques — Blockly.Msg debe estar poblado
@@ -23,6 +24,254 @@ registerFieldAngle();
 unregisterProcedureBlocks();
 Blockly.common.defineBlocks(procBlocks);
 registerProcedureSerializer();
+
+// ═══ Tipado de parámetros en procedimientos ═══
+// ObservableParameterModel no soporta tipos: getTypes() → [],
+// setTypes() lanza error. Implementamos TypedParameterModel
+// con dropdown de tipo igual que variable_declare.
+
+const ARDUINO_TYPES = [
+  ['int', 'int'], ['float', 'float'], ['char', 'char'],
+  ['String', 'String'], ['bool', 'bool'], ['byte', 'byte'],
+  ['long', 'long'], ['unsigned int', 'unsigned int'],
+  ['unsigned long', 'unsigned long'], ['double', 'double']
+];
+
+class TypedParameterModel extends ObservableParameterModel {
+  constructor(workspace, name, id, varId, paramType) {
+    super(workspace, name, id, varId);
+    this.paramType_ = paramType || 'int';
+  }
+  getTypes() { return [this.paramType_]; }
+  setTypes(types) {
+    this.paramType_ = (types && types[0]) || 'int';
+    return this;
+  }
+  saveState() {
+    const state = super.saveState();
+    state.types = [this.paramType_];
+    return state;
+  }
+  static loadState(state, workspace) {
+    return new TypedParameterModel(
+      workspace, state.name, state.id, undefined,
+      (state.types && state.types[0]) || 'int'
+    );
+  }
+}
+
+// Redefinir procedures_mutatorarg con dropdown de tipo
+delete Blockly.Blocks['procedures_mutatorarg'];
+Blockly.common.defineBlocksWithJsonArray([{
+  type: 'procedures_mutatorarg',
+  message0: '%1 : %2',
+  args0: [
+    { type: 'field_input', name: 'NAME', text: 'x' },
+    { type: 'field_dropdown', name: 'TYPE', options: ARDUINO_TYPES }
+  ],
+  previousStatement: null,
+  nextStatement: null,
+  style: 'procedure_blocks',
+  tooltip: 'Parámetro de la función'
+}]);
+
+// Reemplazar el serializer para que use TypedParameterModel
+Blockly.serialization.registry.unregister('procedures');
+Blockly.serialization.registry.register(
+  'procedures',
+  new Blockly.serialization.procedures.ProcedureSerializer(
+    ObservableProcedureModel,
+    TypedParameterModel
+  )
+);
+
+// Sobrescribir el mutator de definiciones para manejar tipos
+Blockly.Extensions.unregister('procedure_def_mutator');
+Blockly.Extensions.registerMutator('procedure_def_mutator', {
+  hasStatements_: true,
+
+  mutationToDom: function() {
+    const container = Blockly.utils.xml.createElement('mutation');
+    const params = this.getProcedureModel().getParameters();
+    for (let i = 0; i < params.length; i++) {
+      const parameter = Blockly.utils.xml.createElement('arg');
+      const varModel = params[i].getVariableModel();
+      parameter.setAttribute('name', varModel.name);
+      parameter.setAttribute('varid', varModel.getId());
+      const types = params[i].getTypes();
+      if (types && types[0]) parameter.setAttribute('type', types[0]);
+      container.appendChild(parameter);
+    }
+    if (!this.hasStatements_) {
+      container.setAttribute('statements', 'false');
+    }
+    return container;
+  },
+
+  domToMutation: function(xmlElement) {
+    for (let i = 0; i < xmlElement.childNodes.length; i++) {
+      const node = xmlElement.childNodes[i];
+      if (node.nodeName.toLowerCase() !== 'arg') continue;
+      const varId = node.getAttribute('varid');
+      const paramType = node.getAttribute('type') || 'int';
+      this.getProcedureModel().insertParameter(
+        new TypedParameterModel(
+          this.workspace,
+          node.getAttribute('name'),
+          undefined,
+          varId,
+          paramType
+        ),
+        i
+      );
+    }
+    this.setStatements_(xmlElement.getAttribute('statements') !== 'false');
+  },
+
+  saveExtraState: function(doFullSerialization) {
+    const state = Object.create(null);
+    state['procedureId'] = this.getProcedureModel().getId();
+    if (doFullSerialization) {
+      state['fullSerialization'] = true;
+      const params = this.getProcedureModel().getParameters();
+      if (params.length) {
+        state['params'] = params.map(p => {
+          const types = p.getTypes();
+          return {
+            name: p.getName(),
+            id: p.getVariableModel().getId(),
+            paramId: p.getId(),
+            type: (types && types[0]) || 'int'
+          };
+        });
+      }
+    }
+    if (!this.hasStatements_) {
+      state['hasStatements'] = false;
+    }
+    return state;
+  },
+
+  loadExtraState: function(state) {
+    const map = this.workspace.getProcedureMap();
+    const procedureId = state['procedureId'];
+    if (map.has(procedureId) && !state['fullSerialization']) {
+      if (map.has(this.model_.getId())) {
+        map.delete(this.model_.getId());
+      }
+      this.model_ = map.get(procedureId);
+    }
+    const model = this.getProcedureModel();
+    const newParams = state['params'] ?? [];
+    const newIds = new Set(newParams.map(p => p.id));
+    const currParams = model.getParameters();
+    if (state['fullSerialization']) {
+      for (let i = currParams.length - 1; i >= 0; i--) {
+        if (!newIds.has(currParams[i].getId())) {
+          model.deleteParameter(i);
+        }
+      }
+    }
+    for (let i = 0; i < newParams.length; i++) {
+      const {name, id, paramId, type} = state['params'][i];
+      this.getProcedureModel().insertParameter(
+        new TypedParameterModel(this.workspace, name, paramId, id, type || 'int'),
+        i
+      );
+    }
+    this.doProcedureUpdate();
+    this.setStatements_(state['hasStatements'] === false ? false : true);
+  },
+
+  decompose: function(workspace) {
+    const containerBlockDef = {
+      type: 'procedures_mutatorcontainer',
+      inputs: { STACK: {} }
+    };
+    let connDef = containerBlockDef['inputs']['STACK'];
+    for (const param of this.getProcedureModel().getParameters()) {
+      const types = param.getTypes();
+      connDef['block'] = {
+        type: 'procedures_mutatorarg',
+        id: param.getId(),
+        fields: {
+          NAME: param.getName(),
+          TYPE: (types && types[0]) || 'int'
+        },
+        next: {}
+      };
+      connDef = connDef['block']['next'];
+    }
+    const containerBlock = Blockly.serialization.blocks.append(
+      containerBlockDef, workspace, {recordUndo: false}
+    );
+    if (this.type === 'procedures_defreturn') {
+      containerBlock.setFieldValue(this.hasStatements_, 'STATEMENTS');
+    } else {
+      containerBlock.removeInput('STATEMENT_INPUT');
+    }
+    return containerBlock;
+  },
+
+  compose: function(containerBlock) {
+    this.deleteParamsFromModel_(containerBlock);
+    this.renameParamsInModel_(containerBlock);
+    this.addParamsToModel_(containerBlock);
+    const hasStatements = containerBlock.getFieldValue('STATEMENTS');
+    if (hasStatements !== null) {
+      this.setStatements_(hasStatements === 'TRUE');
+    }
+  },
+
+  deleteParamsFromModel_: function(containerBlock) {
+    const ids = new Set(containerBlock.getDescendants().map(b => b.id));
+    const model = this.getProcedureModel();
+    const count = model.getParameters().length;
+    for (let i = count - 1; i >= 0; i--) {
+      if (!ids.has(model.getParameter(i).getId())) {
+        model.deleteParameter(i);
+      }
+    }
+  },
+
+  renameParamsInModel_: function(containerBlock) {
+    const model = this.getProcedureModel();
+    let i = 0;
+    let paramBlock = containerBlock.getInputTargetBlock('STACK');
+    while (paramBlock && !paramBlock.isInsertionMarker()) {
+      const param = model.getParameter(i);
+      if (param && param.getId() === paramBlock.id &&
+          param.getName() !== paramBlock.getFieldValue('NAME')) {
+        param.setName(paramBlock.getFieldValue('NAME'));
+      }
+      paramBlock = paramBlock.nextConnection && paramBlock.nextConnection.targetBlock();
+      i++;
+    }
+  },
+
+  addParamsToModel_: function(containerBlock) {
+    const model = this.getProcedureModel();
+    let i = 0;
+    let paramBlock = containerBlock.getInputTargetBlock('STACK');
+    while (paramBlock && !paramBlock.isInsertionMarker()) {
+      if (!model.getParameter(i) || model.getParameter(i).getId() !== paramBlock.id) {
+        const pType = paramBlock.getFieldValue('TYPE') || 'int';
+        model.insertParameter(
+          new TypedParameterModel(
+            this.workspace,
+            paramBlock.getFieldValue('NAME'),
+            paramBlock.id,
+            undefined,
+            pType
+          ),
+          i
+        );
+      }
+      paramBlock = paramBlock.nextConnection && paramBlock.nextConnection.targetBlock();
+      i++;
+    }
+  }
+}, undefined, ['procedures_mutatorarg']);
 
 // ═══ Nombres de categorías + Registro de bloques ═══
 
