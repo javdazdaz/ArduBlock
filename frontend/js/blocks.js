@@ -12,7 +12,6 @@ import { registerFieldAngle } from '@blockly/field-angle';
 registerFieldAngle();
 
 // ═══ Nombres de categorías + Registro de bloques ═══
-console.log('[ArduBlock] Registrando bloques Arduino...');
 
 // ── Nombres de categorías en español ──────────
 Blockly.Msg.CAT_ARDUINO = "Arduino";

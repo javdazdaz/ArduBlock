@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "vite frontend",
     "build": "vite build frontend",
-    "preview": "vite preview frontend"
+    "preview": "vite preview frontend",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "keywords": [],
   "author": "",
@@ -16,7 +18,7 @@
     "@blockly/continuous-toolbox": "^7.0.9",
     "@blockly/disable-top-blocks": "^0.6.9",
     "@blockly/field-angle": "^6.0.9",
-    "@blockly/fixed-edges": "^7.0.9",
+    "@blockly/fixed-edges": "^6.0.9",
     "@blockly/plugin-cross-tab-copy-paste": "^8.0.8",
     "@blockly/plugin-scroll-options": "^7.0.9",
     "@blockly/plugin-typed-variable-modal": "^9.0.9",
@@ -30,6 +32,8 @@
     "blockly": "^12.5.1"
   },
   "devDependencies": {
-    "vite": "^8.0.14"
+    "jsdom": "^29.1.1",
+    "vite": "^8.0.14",
+    "vitest": "^4.1.7"
   }
 }

@@ -11,6 +11,8 @@ import * as Blockly from 'blockly';
 // ── Generador C++ ─────────────────────────────
 const cppGenerator = new Blockly.Generator('CPP');
 
+export { cppGenerator };
+
 // Inicializar nameDB para variables (no se auto-crea en v12)
 cppGenerator.nameDB_ = new Blockly.Names('_');
 

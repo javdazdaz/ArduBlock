@@ -8,8 +8,11 @@ Sirve el frontend estático y expone endpoints para:
 
 from flask import Flask, send_from_directory, request, jsonify
 from flask_cors import CORS
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 import json
 import os
+import re
 import signal
 import sys
 import subprocess
@@ -19,7 +22,15 @@ import threading
 from pathlib import Path
 
 app = Flask(__name__, static_folder=None)
-CORS(app)
+CORS(app, origins=['http://localhost:5000', 'http://127.0.0.1:5000'])
+
+# ── Rate Limiting ────────────────────────────────
+limiter = Limiter(
+    get_remote_address,
+    app=app,
+    default_limits=["200 per day", "50 per hour"],
+    storage_uri="memory://",
+)
 
 # ── Serial Monitor State ────────────────────────
 serial_port = None
@@ -37,10 +48,23 @@ PROJECTS_DIR.mkdir(exist_ok=True)
 HOST = os.environ.get('ARDUBLOCK_HOST', '0.0.0.0')
 PORT = int(os.environ.get('ARDUBLOCK_PORT', '5001'))
 
+# ── Validación de project_id ────────────────────
+_PROJECT_ID_RE = re.compile(r'^[a-zA-Z0-9_-]{1,64}$')
+
+def _validate_project_id(project_id):
+    """Valida que el ID del proyecto sea seguro (sin path traversal)."""
+    if not _PROJECT_ID_RE.match(project_id):
+        return False
+    # Prevenir path traversal con ../
+    if '..' in project_id or '/' in project_id or '\\' in project_id:
+        return False
+    return True
+
 # ── Graceful shutdown ───────────────────────────
 _shutdown = False
 
 def handle_sigterm(signum, frame):
+    """Maneja señales SIGTERM/SIGINT para apagado graceful del servidor."""
     global _shutdown
     print("\n⏳ Recibida señal de parada. Cerrando servidor...", file=sys.stderr)
     _shutdown = True
@@ -79,6 +103,8 @@ def list_projects():
 @app.route('/api/projects/<project_id>', methods=['GET'])
 def load_project(project_id):
     """Carga un proyecto"""
+    if not _validate_project_id(project_id):
+        return jsonify({'error': 'ID de proyecto inválido'}), 400
     path = PROJECTS_DIR / f"{project_id}.json"
     if not path.exists():
         return jsonify({'error': 'Proyecto no encontrado'}), 404
@@ -89,6 +115,8 @@ def load_project(project_id):
 @app.route('/api/projects/<project_id>', methods=['PUT'])
 def save_project(project_id):
     """Guarda un proyecto (estado del workspace Blockly)"""
+    if not _validate_project_id(project_id):
+        return jsonify({'error': 'ID de proyecto inválido'}), 400
     data = request.get_json()
     if not data:
         return jsonify({'error': 'Datos inválidos'}), 400
@@ -102,6 +130,8 @@ def save_project(project_id):
 @app.route('/api/projects/<project_id>', methods=['DELETE'])
 def delete_project(project_id):
     """Elimina un proyecto"""
+    if not _validate_project_id(project_id):
+        return jsonify({'error': 'ID de proyecto inválido'}), 400
     path = PROJECTS_DIR / f"{project_id}.json"
     if not path.exists():
         return jsonify({'error': 'Proyecto no encontrado'}), 404
@@ -114,6 +144,7 @@ def list_examples():
     examples = []
 
     def scan_dir(base, rel_path=''):
+        """Escanea recursivamente directorios en busca de archivos .ino."""
         p = base / rel_path
         if not p.is_dir():
             return
@@ -137,7 +168,7 @@ def list_examples():
                                     break
                             elif line and not line.startswith('#'):
                                 break
-                except:
+                except Exception:
                     pass
                 examples.append({
                     'path': rel,
@@ -285,7 +316,10 @@ def serial_open():
                 ['arduino-cli', 'board', 'list', '--format', 'json'],
                 capture_output=True, text=True, timeout=10
             )
-            boards = json.loads(result.stdout)
+            try:
+                boards = json.loads(result.stdout)
+            except json.JSONDecodeError:
+                return jsonify({'error': 'No se pudo interpretar la salida de arduino-cli. ¿Está instalado?'}), 500
             ports = boards.get('detected_ports', [])
             if ports:
                 port = ports[0]['port']['address']
@@ -302,6 +336,7 @@ def serial_open():
         serial_buffer = []
 
         def read_loop():
+            """Lee continuamente del puerto serial en un hilo daemon."""
             while serial_running:
                 try:
                     line = serial_port.readline()
@@ -339,7 +374,7 @@ def serial_close():
     if serial_port:
         try:
             serial_port.close()
-        except:
+        except Exception:
             pass
         serial_port = None
     serial_buffer = []
