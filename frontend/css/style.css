@@ -477,6 +477,15 @@ main {
 .example-item:hover { background: rgba(233,69,96,0.1); }
 .example-item .example-desc { font-size: 0.7rem; color: var(--text-dim); max-width: 60%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
+.example-item-disabled {
+  opacity: 0.45; cursor: not-allowed;
+}
+.example-item-disabled:hover { background: transparent; }
+.example-category-sub {
+  padding: 0.2rem 1.4rem; color: var(--text-dim);
+  font-size: 0.7rem; font-style: italic;
+}
+
 .example-code-panel {
   border-top: 2px solid var(--accent); max-height: 40vh;
   overflow-y: auto; padding: 1rem; background: var(--bg-code);

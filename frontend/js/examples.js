@@ -1,9 +1,36 @@
 /**
  * ArduBlock — Sistema de Ejemplos de Arduino.
+ * Carga ejemplos convertidos a bloques (Tier 1) y explora
+ * sketches originales + no convertibles via API (Tier 2).
  */
 
-import { basicsExamples } from './examples-data.js';
-import { escapeHtml } from './project-manager.js';
+import { basicsExamples }   from './examples-data.js';
+import { digitalSimple }    from './examples-digital-simple.js';
+import { analogControlExamples } from './examples-analog-control.js';
+import { analog2 }          from './examples-analog2.js';
+import { analog3 }          from './examples-analog3.js';
+import { communicationExamples } from './examples-communication.js';
+import { controlExamples }  from './examples-control.js';
+import { remainingExamples } from './examples-remaining.js';
+import { escapeHtml }       from './project-manager.js';
+
+// ── Consolidar todos los ejemplos ─────────────────
+const allExamples = [
+  ...basicsExamples,
+  ...digitalSimple,
+  ...analogControlExamples,
+  ...analog2,
+  ...analog3,
+  ...communicationExamples,
+  ...controlExamples,
+  ...remainingExamples,
+];
+
+// Solo los convertidos (con state, no reason)
+const convertibleExamples = allExamples.filter(e => !e.reason || e.reason !== 'NOT_CONVERTIBLE');
+
+// Los no convertibles (con reason)
+const notConvertibleExamples = allExamples.filter(e => e.reason === 'NOT_CONVERTIBLE');
 
 let workspace, examplesModal, examplesList, showToast, updateCodeFn, projectInput;
 
@@ -23,16 +50,21 @@ export function initExamples(deps) {
 async function openExamples() {
   examplesModal.classList.remove('hidden');
 
+  // Agrupar convertidos por categoría
   const cats = {};
-  for (const ex of basicsExamples) {
-    if (!cats[ex.category]) cats[ex.category] = [];
-    cats[ex.category].push(ex);
+  for (const ex of convertibleExamples) {
+    const cat = ex.category || 'Sin categoría';
+    if (!cats[cat]) cats[cat] = [];
+    cats[cat].push(ex);
   }
 
+  // Ordenar categorías
+  const sortedCats = Object.keys(cats).sort();
+
   let html = '';
-  for (const [cat, items] of Object.entries(cats)) {
+  for (const cat of sortedCats) {
     html += `<div class="example-category">${cat}</div>`;
-    for (const ex of items) {
+    for (const ex of cats[cat]) {
       html += `<div class="example-item" data-name="${ex.name.replace(/"/g, '&quot;')}">
         <span>${escapeHtml(ex.name)}</span>
         <span class="example-desc">${escapeHtml(ex.description || '')}</span>
@@ -40,15 +72,35 @@ async function openExamples() {
     }
   }
 
+  // No convertibles (solo referencia, no cargables)
+  if (notConvertibleExamples.length > 0) {
+    const notByCat = {};
+    for (const ex of notConvertibleExamples) {
+      const cat = ex.category || 'Sin categoría';
+      if (!notByCat[cat]) notByCat[cat] = [];
+      notByCat[cat].push(ex);
+    }
+    html += `<div class="example-category" style="opacity:0.6">No disponibles como bloques</div>`;
+    for (const [cat, items] of Object.entries(notByCat).sort()) {
+      html += `<div class="example-category-sub">${cat} (${items.length})</div>`;
+      for (const ex of items) {
+        html += `<div class="example-item example-item-disabled" title="${escapeHtml(ex.note || '')}">
+          <span>${escapeHtml(ex.name)}</span>
+          <span class="example-desc" style="font-size:0.7rem;opacity:0.6">${escapeHtml(ex.note || 'No convertible')}</span>
+        </div>`;
+      }
+    }
+  }
+
   html += `<div class="example-category">Más ejemplos (código)</div>
     <div class="example-item" data-name="__browse__">
-      <span>📂 Explorar todos los ejemplos...</span>
-      <span class="example-desc">81 sketches de Arduino</span>
+      <span>📂 Explorar todos los sketches...</span>
+      <span class="example-desc">81 sketches originales de Arduino</span>
     </div>`;
 
   examplesList.innerHTML = html;
 
-  examplesList.querySelectorAll('.example-item').forEach(el => {
+  examplesList.querySelectorAll('.example-item:not(.example-item-disabled)').forEach(el => {
     el.addEventListener('click', () => {
       if (el.dataset.name === '__browse__') loadBrowseExamples();
       else loadPresetExample(el.dataset.name);
@@ -57,7 +109,7 @@ async function openExamples() {
 }
 
 function loadPresetExample(name) {
-  const ex = basicsExamples.find(e => e.name === name);
+  const ex = convertibleExamples.find(e => e.name === name);
   if (!ex) return;
 
   workspace.clear();
