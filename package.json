@@ -1,0 +1,35 @@
+{
+  "name": "ardublock",
+  "version": "1.0.0",
+  "description": "Programación visual para Arduino. Interfaz de bloques que genera código C++ listo para Arduino IDE.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite frontend",
+    "build": "vite build frontend",
+    "preview": "vite preview frontend"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@blockly/block-shareable-procedures": "^6.0.12",
+    "@blockly/continuous-toolbox": "^7.0.9",
+    "@blockly/disable-top-blocks": "^0.6.9",
+    "@blockly/field-angle": "^6.0.9",
+    "@blockly/fixed-edges": "^7.0.9",
+    "@blockly/plugin-cross-tab-copy-paste": "^8.0.8",
+    "@blockly/plugin-scroll-options": "^7.0.9",
+    "@blockly/plugin-typed-variable-modal": "^9.0.9",
+    "@blockly/plugin-workspace-search": "^10.1.8",
+    "@blockly/shadow-block-converter": "^7.0.10",
+    "@blockly/theme-dark": "^8.0.4",
+    "@blockly/toolbox-search": "^3.1.9",
+    "@blockly/workspace-backpack": "^7.0.11",
+    "@blockly/workspace-content-highlight": "^6.0.9",
+    "@blockly/zoom-to-fit": "^7.0.9",
+    "blockly": "^12.5.1"
+  },
+  "devDependencies": {
+    "vite": "^8.0.14"
+  }
+}

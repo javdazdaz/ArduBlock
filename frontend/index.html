@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ArduBlock — Programación Visual para Arduino</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header>
+    <h1>⚡ ArduBlock</h1>
+    <span class="subtitle">Programación visual para Arduino — C++</span>
+    <div class="toolbar">
+      <div class="project-bar">
+        <input type="text" id="project-name" placeholder="nombre-proyecto" maxlength="30" spellcheck="false">
+        <button id="btn-save" class="btn-save" title="Guardar proyecto">💾 Guardar</button>
+        <button id="btn-load" class="btn-secondary" title="Cargar proyecto">📂 Cargar</button>
+        <button id="btn-delete" class="btn-danger" title="Eliminar proyecto">🗑 Eliminar</button>
+        <div id="project-list" class="project-dropdown hidden"></div>
+      </div>
+      <button id="btn-copy" class="btn-secondary">📋 Copiar</button>
+      <button id="btn-new" class="btn-primary">📄 Nuevo</button>
+      <button id="btn-examples" class="btn-secondary">📚 Ejemplos</button>
+      <button id="btn-settings" class="btn-secondary">⚙</button>
+    </div>
+  </header>
+
+  <main>
+    <section id="editor-panel">
+      <div id="blocklyDiv"></div>
+    </section>
+    <div id="panel-resizer"></div>
+    <section id="code-panel">
+      <div class="panel-header">
+        <h2>Código Arduino (C++)</h2>
+        <div class="panel-header-actions">
+          <button id="btn-collapse-code" class="panel-action-btn" title="Colapsar/expandir panel">◀</button>
+          <span id="line-count">0 líneas</span>
+        </div>
+      </div>
+      <div class="arduino-toolbar">
+        <button id="btn-console-toggle" class="arduino-btn console" title="Abrir/cerrar monitor serial">🔌 Consola</button>
+        <button id="btn-upload" class="arduino-btn upload" title="Compilar y subir al Arduino">⚡ Subir</button>
+      </div>
+      <pre><code id="code-output">// Arrastrá bloques y el código C++ aparece aquí.</code></pre>
+    </section>
+  </main>
+
+  <!-- Arduino Console -->
+  <div id="arduino-console" class="arduino-console hidden">
+    <div class="console-header">
+      <span>⚡ Consola Arduino</span>
+      <div class="console-tools">
+        <select id="serial-baud" class="console-select">
+          <option value="9600">9600</option>
+          <option value="19200">19200</option>
+          <option value="38400">38400</option>
+          <option value="57600">57600</option>
+          <option value="115200">115200</option>
+        </select>
+        <button id="serial-connect" class="console-btn connect">🔌 Conectar</button>
+        <button id="serial-clear" class="console-btn">🗑 Limpiar</button>
+        <button id="console-close" class="console-close">&times;</button>
+      </div>
+    </div>
+    <pre id="console-output"></pre>
+  </div>
+
+  <script type="module" src="js/main.js"></script>
+
+  <!-- Float expand button -->
+  <button id="float-expand-code" title="Expandir panel de código">▶</button>
+
+  <!-- Settings Modal -->
+  <div id="settings-modal" class="modal hidden">
+    <div class="modal-content" style="width:480px">
+      <div class="modal-header">
+        <h2>⚙ Configuración</h2>
+        <button id="settings-close" class="modal-close">&times;</button>
+      </div>
+      <div class="modal-body" style="padding:1rem">
+        <div class="setting-section">Hardware</div>
+        <div class="setting-row">
+          <label>Placa</label>
+          <select id="setting-board">
+            <option value="arduino:avr:uno">Arduino Uno</option>
+            <option value="arduino:avr:nano">Arduino Nano</option>
+            <option value="arduino:avr:mega">Arduino Mega</option>
+            <option value="arduino:avr:leonardo">Arduino Leonardo</option>
+          </select>
+        </div>
+        <div class="setting-row">
+          <label>Baud rate default</label>
+          <select id="setting-baud">
+            <option value="9600">9600</option>
+            <option value="19200">19200</option>
+            <option value="38400">38400</option>
+            <option value="57600">57600</option>
+            <option value="115200">115200</option>
+          </select>
+        </div>
+        <div class="setting-section">Blockly</div>
+        <div class="setting-row">
+          <label>Tema</label>
+          <select id="setting-theme">
+            <option value="dark">Oscuro</option>
+            <option value="light">Claro</option>
+          </select>
+        </div>
+        <div class="setting-row">
+          <label>Renderer</label>
+          <select id="setting-renderer">
+            <option value="geras">Geras</option>
+            <option value="zelos">Zelos</option>
+          </select>
+        </div>
+        <div class="setting-section">Tamaño de fuente</div>
+        <div class="setting-row">
+          <label>Interfaz</label>
+          <input type="range" id="setting-font-ui" min="10" max="30" value="14" step="1">
+          <span id="setting-font-ui-val">14px</span>
+        </div>
+        <div class="setting-row">
+          <label>Código</label>
+          <input type="range" id="setting-font-code" min="8" max="30" value="13" step="1">
+          <span id="setting-font-code-val">13px</span>
+        </div>
+        <div class="setting-row">
+          <label>Serial</label>
+          <input type="range" id="setting-font-serial" min="8" max="30" value="12" step="1">
+          <span id="setting-font-serial-val">12px</span>
+        </div>
+        <div class="setting-row">
+          <label>Bloques</label>
+          <input type="range" id="setting-font-blocks" min="10" max="30" value="16" step="1">
+          <span id="setting-font-blocks-val">16px</span>
+        </div>
+        <div class="setting-row">
+          <label>Toolbox</label>
+          <input type="range" id="setting-font-toolbox" min="10" max="30" value="13" step="1">
+          <span id="setting-font-toolbox-val">13px</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Examples Modal -->
+  <div id="examples-modal" class="modal hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>📚 Ejemplos de Arduino</h2>
+        <button id="examples-close" class="modal-close">&times;</button>
+      </div>
+      <div id="examples-list" class="modal-body">Cargando...</div>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,44 @@
+# ── Node ─────────────────────────────────────────
+node_modules/
+npm-debug.log*
+
+# ── Python / Backend ─────────────────────────────
+backend/.venv/
+backend/__pycache__/
+backend/**/__pycache__/
+*.pyc
+*.pyo
+
+# ── Build output ─────────────────────────────────
+dist/
+.vite/
+
+# ── Runtime state ────────────────────────────────
+.ardublock-*.pid
+.ardublock.log
+
+# ── OS junk ──────────────────────────────────────
+.DS_Store
+Thumbs.db
+*~
+
+# ── IDE ──────────────────────────────────────────
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# ── Environment ──────────────────────────────────
+.env
+.env.local
+.env.*.local
+
+# ── Backend data (no committear proyectos de prueba) ──
+backend/projects/
+
+# ── Documentación interna ────────────────────────
+docs/
+
+# ── Misc ─────────────────────────────────────────
+*.bak
+start.sh
