@@ -432,6 +432,16 @@ Blockly.common.defineBlocksWithJsonArray([
     "helpUrl": ""
   },
 
+  // ═══ millis ═════════════════════════════════
+  {
+    "type": "millis",
+    "message0": Blockly.Msg.MSG_MILLIS,
+    "output": "Number",
+    "colour": 290,
+    "tooltip": Blockly.Msg.TOOLTIP_MILLIS,
+    "helpUrl": ""
+  },
+
   // ═══ Serial.begin ════════════════════════════
   {
     "type": "serial_begin",

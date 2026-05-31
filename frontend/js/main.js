@@ -107,7 +107,10 @@ const toolbox = {
         { 'kind': 'block', 'type': 'attach_interrupt' }
       ]},
     { 'kind': 'category', 'name': '%{BKY_CAT_TIEMPO}', 'colour': '290',
-      'contents': [{ 'kind': 'block', 'type': 'delay_ms' }]},
+      'contents': [
+        { 'kind': 'block', 'type': 'delay_ms' },
+        { 'kind': 'block', 'type': 'millis' }
+      ]},
     { 'kind': 'category', 'name': '%{BKY_CAT_SONIDO}', 'colour': '260',
       'contents': [
         { 'kind': 'block', 'type': 'tone_output' },

@@ -98,6 +98,11 @@ cppGenerator.forBlock['delay_ms'] = function(block) {
   return 'delay(' + ms + ');\n';
 };
 
+// ── millis ───────────────────────────────────
+cppGenerator.forBlock['millis'] = function(_block) {
+  return ['millis()', cppGenerator.ORDER_ATOMIC];
+};
+
 // ── serial_begin ─────────────────────────────
 cppGenerator.forBlock['serial_begin'] = function(block) {
   const baud = block.getFieldValue('BAUD');
