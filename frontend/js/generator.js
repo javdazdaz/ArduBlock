@@ -678,9 +678,9 @@ export function generateArduinoCode(workspace) {
   // Helper: isPrime() para bloque math_number_property PRIME
   if (cppGenerator._needsIsPrime) {
     sketch += '// Helper — verifica si un número es primo\n';
-    sketch += 'bool isPrime(int n) {\n';
+    sketch += 'bool isPrime(long n) {\n';
     sketch += '  if (n < 2) return false;\n';
-    sketch += '  for (int i = 2; i * i <= n; i++) {\n';
+    sketch += '  for (long i = 2; i * i <= n; i++) {\n';
     sketch += '    if (n % i == 0) return false;\n';
     sketch += '  }\n';
     sketch += '  return true;\n';
