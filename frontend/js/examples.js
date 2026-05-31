@@ -12,6 +12,7 @@ import { analog3 }          from './examples-analog3.js';
 import { communicationExamples } from './examples-communication.js';
 import { controlExamples }  from './examples-control.js';
 import { remainingExamples } from './examples-remaining.js';
+import { missingExamples }   from './examples-missing.js';
 import { escapeHtml }       from './project-manager.js';
 
 // ── Consolidar todos los ejemplos ─────────────────
@@ -24,6 +25,7 @@ const allExamples = [
   ...communicationExamples,
   ...controlExamples,
   ...remainingExamples,
+  ...missingExamples,
 ];
 
 // Solo los convertidos (con state, no reason)
