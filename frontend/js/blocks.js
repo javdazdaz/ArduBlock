@@ -558,8 +558,10 @@ Blockly.common.defineBlocksWithJsonArray([
     "message0": Blockly.Msg.MSG_TONE_DURATION,
     "args0": [
       { "type": "field_number", "name": "PIN", "value": 8, "min": 0, "max": 54 },
-      { "type": "field_number", "name": "FREQ", "value": 440, "min": 31, "max": 65535 },
-      { "type": "field_number", "name": "DURATION", "value": 500, "min": 1 }
+      { "type": "input_value", "name": "FREQ", "check": "Number",
+        "shadow": { "type": "math_number", "fields": { "NUM": 440 } } },
+      { "type": "input_value", "name": "DURATION", "check": "Number",
+        "shadow": { "type": "math_number", "fields": { "NUM": 500 } } }
     ],
     "previousStatement": null,
     "nextStatement": null,
@@ -870,6 +872,83 @@ Blockly.common.defineBlocksWithJsonArray([
     "output": null,
     "colour": 330,
     "tooltip": Blockly.Msg.TOOLTIP_VARIABLE_GET,
+    "helpUrl": ""
+  },
+  {
+    "type": "include_header",
+    "message0": Blockly.Msg.MSG_INCLUDE_HEADER,
+    "args0": [
+      { "type": "field_input", "name": "FILE", "text": "config.h" }
+    ],
+    "colour": 230,
+    "tooltip": Blockly.Msg.TOOLTIP_INCLUDE_HEADER,
+    "helpUrl": ""
+  },
+  {
+    "type": "arduino_for_index",
+    "message0": Blockly.Msg.MSG_FOR_INDEX,
+    "args0": [
+      { "type": "field_input", "name": "VAR", "text": "i" },
+      { "type": "input_value", "name": "FROM", "check": "Number",
+        "shadow": { "type": "math_number", "fields": { "NUM": 0 } } },
+      { "type": "input_value", "name": "TO", "check": "Number",
+        "shadow": { "type": "math_number", "fields": { "NUM": 10 } } },
+      { "type": "input_value", "name": "BY", "check": "Number",
+        "shadow": { "type": "math_number", "fields": { "NUM": 1 } } }
+    ],
+    "message1": "hacer %1",
+    "args1": [
+      { "type": "input_statement", "name": "DO" }
+    ],
+    "previousStatement": null,
+    "nextStatement": null,
+    "colour": 120,
+    "tooltip": Blockly.Msg.TOOLTIP_FOR_INDEX,
+    "helpUrl": ""
+  },
+  {
+    "type": "array_declare",
+    "message0": Blockly.Msg.MSG_ARRAY_DECLARE,
+    "args0": [
+      { "type": "field_dropdown", "name": "TYPE",
+        "options": [
+          ["int", "int"],
+          ["float", "float"],
+          ["char", "char"],
+          ["long", "long"],
+          ["byte", "byte"]
+        ]
+      },
+      { "type": "field_input", "name": "NAME", "text": "arr" },
+      { "type": "field_input", "name": "VALUES", "text": "1, 2, 3" }
+    ],
+    "previousStatement": null,
+    "nextStatement": null,
+    "colour": 330,
+    "tooltip": Blockly.Msg.TOOLTIP_ARRAY_DECLARE,
+    "helpUrl": ""
+  },
+  {
+    "type": "array_get",
+    "message0": Blockly.Msg.MSG_ARRAY_GET,
+    "args0": [
+      { "type": "field_input", "name": "NAME", "text": "arr" },
+      { "type": "input_value", "name": "INDEX", "check": "Number" }
+    ],
+    "output": null,
+    "colour": 330,
+    "tooltip": Blockly.Msg.TOOLTIP_ARRAY_GET,
+    "helpUrl": ""
+  },
+  {
+    "type": "array_length",
+    "message0": Blockly.Msg.MSG_ARRAY_LENGTH,
+    "args0": [
+      { "type": "field_input", "name": "NAME", "text": "arr" }
+    ],
+    "output": "Number",
+    "colour": 330,
+    "tooltip": Blockly.Msg.TOOLTIP_ARRAY_LENGTH,
     "helpUrl": ""
   }
 

@@ -38,11 +38,25 @@
           <span id="line-count">0 <span data-i18n="panel_lines">líneas</span></span>
         </div>
       </div>
+
+      <!-- Barra de tabs: .ino (fijo) + .h (dinámicos) -->
+      <div id="code-tabs">
+        <button class="code-tab active" data-tab="sketch.ino" data-readonly="true">📄 sketch.ino</button>
+        <button id="btn-add-tab" class="code-tab-add" title="Nuevo archivo .h">+</button>
+      </div>
+
       <div class="arduino-toolbar">
         <button id="btn-console-toggle" class="arduino-btn console" data-i18n="btn_console" title="Abrir/cerrar monitor serial">🔌 Consola</button>
         <button id="btn-upload" class="arduino-btn upload" data-i18n="btn_upload" title="Compilar y subir al Arduino">⚡ Subir</button>
       </div>
-      <pre><code id="code-output">// Arrastrá bloques y el código C++ aparece aquí.</code></pre>
+
+      <!-- Código .ino (readonly, generado por bloques) -->
+      <pre id="code-view-ino"><code id="code-output">// Arrastrá bloques y el código C++ aparece aquí.</code></pre>
+
+      <!-- Editor .h (textarea editable, oculto por defecto) -->
+      <textarea id="code-edit-h" style="display:none"
+                placeholder="// Escribí tu código C++ acá..."
+                spellcheck="false"></textarea>
     </section>
   </main>
 

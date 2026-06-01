@@ -27,6 +27,7 @@ export async function uploadToArduino() {
   if (isSerialConnected()) disconnectSerial();
 
   const code = generateArduinoCode(workspace);
+  const tabs = window._tabManager ? window._tabManager.getTabs() : [];
   consoleLog('🔍 Buscando Arduino...', 'info');
 
   let port = '';
@@ -58,7 +59,7 @@ export async function uploadToArduino() {
     const res = await fetch('/api/upload', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ code, port, fqbn })
+      body: JSON.stringify({ code, port, fqbn, tabs })
     });
     const data = await res.json();
 

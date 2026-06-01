@@ -43,6 +43,46 @@ cppGenerator.scrub_ = function(block, code, thisOnly) {
   return code;
 };
 
+// ── controls_for (for loop con índices) ───────
+cppGenerator.forBlock['controls_for'] = function(block) {
+  const varName = cppGenerator.nameDB_.getName(
+    block.getFieldValue('VAR'), 'VARIABLE'
+  );
+  const from = cppGenerator.valueToCode(block, 'FROM',
+    cppGenerator.ORDER_NONE) || '0';
+  const to = cppGenerator.valueToCode(block, 'TO',
+    cppGenerator.ORDER_NONE) || '0';
+  const by = cppGenerator.valueToCode(block, 'BY',
+    cppGenerator.ORDER_NONE) || '1';
+  const branch = cppGenerator.statementToCode(block, 'DO');
+
+  let code = 'for (int ' + varName + ' = ' + from + '; '
+           + varName + ' <= ' + to + '; '
+           + varName + ' += ' + by + ') {\n';
+  code += branch || '  //\n';
+  code += '}\n';
+  return code;
+};
+
+// ── arduino_for_index (custom, field_input) ──
+cppGenerator.forBlock['arduino_for_index'] = function(block) {
+  const varName = block.getFieldValue('VAR') || 'i';
+  const from = cppGenerator.valueToCode(block, 'FROM',
+    cppGenerator.ORDER_NONE) || '0';
+  const to = cppGenerator.valueToCode(block, 'TO',
+    cppGenerator.ORDER_NONE) || '10';
+  const by = cppGenerator.valueToCode(block, 'BY',
+    cppGenerator.ORDER_NONE) || '1';
+  const branch = cppGenerator.statementToCode(block, 'DO');
+
+  let code = 'for (int ' + varName + ' = ' + from + '; '
+           + varName + ' <= ' + to + '; '
+           + varName + ' += ' + by + ') {\n';
+  code += branch || '  //\n';
+  code += '}\n';
+  return code;
+};
+
 // ═══════════════════════════════════════════════
 //  GENERADORES DE BLOQUES ARDUINO
 // ═══════════════════════════════════════════════
@@ -388,8 +428,10 @@ cppGenerator.forBlock['tone_output'] = function(block) {
 // ── tone_duration ─────────────────────────────
 cppGenerator.forBlock['tone_duration'] = function(block) {
   const pin  = block.getFieldValue('PIN');
-  const freq = block.getFieldValue('FREQ');
-  const dur  = block.getFieldValue('DURATION');
+  const freq = cppGenerator.valueToCode(block, 'FREQ',
+    cppGenerator.ORDER_ATOMIC) || '440';
+  const dur  = cppGenerator.valueToCode(block, 'DURATION',
+    cppGenerator.ORDER_ATOMIC) || '500';
   return 'tone(' + pin + ', ' + freq + ', ' + dur + ');\n';
 };
 
@@ -664,9 +706,46 @@ cppGenerator.forBlock['procedures_callreturn'] = function(block) {
 };
 
 // ═══════════════════════════════════════════════
+//  GENERADORES DE ARRAYS
+// ═══════════════════════════════════════════════
+
+// ── array_declare ────────────────────────────
+cppGenerator.forBlock['array_declare'] = function(block) {
+  const type = block.getFieldValue('TYPE') || 'int';
+  const name = block.getFieldValue('NAME') || 'arr';
+  const raw = block.getFieldValue('VALUES') || '';
+  const vals = raw.split(',').map(v => v.trim()).filter(v => v);
+  const joined = vals.join(', ');
+  return type + ' ' + name + '[] = {' + joined + '};\n';
+};
+
+// ── array_get ────────────────────────────────
+cppGenerator.forBlock['array_get'] = function(block) {
+  const name = block.getFieldValue('NAME') || 'arr';
+  const idx = cppGenerator.valueToCode(block, 'INDEX',
+    cppGenerator.ORDER_ATOMIC) || '0';
+  return [name + '[' + idx + ']', cppGenerator.ORDER_ATOMIC];
+};
+
+// ── array_length ─────────────────────────────
+cppGenerator.forBlock['array_length'] = function(block) {
+  const name = block.getFieldValue('NAME') || 'arr';
+  return ['(sizeof(' + name + ') / sizeof(' + name + '[0]))',
+    cppGenerator.ORDER_ATOMIC];
+};
+
+// ═══════════════════════════════════════════════
 //  MÉTODO PRINCIPAL: workspaceToCode
 //  Junta setup() + loop() → sketch completo
 // ═══════════════════════════════════════════════
+
+// ── include_header ───────────────────────────
+// Los #include de .h del proyecto se recolectan en generateArduinoCode.
+// Este generador no produce salida directa; el bloque se ignora en el flujo
+// normal y se recolecta vía workspace.getAllBlocks().
+cppGenerator.forBlock['include_header'] = function(block) {
+  return '';
+};
 
 /**
  * Genera el sketch completo de Arduino desde el workspace.
@@ -729,6 +808,27 @@ export function generateArduinoCode(workspace) {
     } else if (b.type === 'ultrasonic_create') {
       const n = (b.getFieldValue('NAME') || '').trim();
       if (n) usNames.add(n);
+    }
+  }
+
+  // ── Recolectar #include: bloque include_header + tabs .h del proyecto ──
+  const userIncludes = [];
+
+  // 1. Bloques include_header del workspace
+  for (const b of allBlocks) {
+    if (b.type === 'include_header') {
+      const file = (b.getFieldValue('FILE') || '').trim();
+      if (file) userIncludes.push(file);
+    }
+  }
+
+  // 2. Tabs .h con contenido (desde TabManager)
+  if (window._tabManager) {
+    const tabs = window._tabManager.getTabs();
+    for (const tab of tabs) {
+      if (tab.content && tab.content.trim() && tab.filename) {
+        userIncludes.push(tab.filename);
+      }
     }
   }
 
@@ -806,6 +906,17 @@ export function generateArduinoCode(workspace) {
     sketch += '  }\n';
     sketch += '  return true;\n';
     sketch += '}\n\n';
+  }
+
+  // ── Includes de archivos .h del proyecto ──
+  if (userIncludes.length > 0) {
+    const seen = new Set();
+    for (const file of userIncludes) {
+      if (seen.has(file)) continue;
+      seen.add(file);
+      sketch += '#include "' + file + '"\n';
+    }
+    sketch += '\n';
   }
 
   // Emitir ISR functions (de attach_interrupt)

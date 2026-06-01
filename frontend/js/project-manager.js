@@ -5,6 +5,8 @@
  * Recibe dependencias vía init() para evitar acoplamiento circular.
  */
 
+import * as Blockly from 'blockly';
+
 let workspace, projectInput, projectList, showToast;
 let LS_PREFIX, LAST_KEY, autoSaveTimer;
 
@@ -70,12 +72,12 @@ export function escapeHtml(str) {
 }
 
 export function saveProject(name) {
-  const Blockly = window._Blockly || globalThis.Blockly;
   name = name || getProjectName();
   projectInput.value = name;
 
   const state = Blockly.serialization.workspaces.save(workspace);
-  const record = { name, saved: Date.now(), state };
+  const tabs = window._tabManager ? window._tabManager.getTabs() : [];
+  const record = { name, saved: Date.now(), state, tabs };
   try {
     localStorage.setItem(lsKey(name), JSON.stringify(record));
     localStorage.setItem(LAST_KEY, name);
@@ -86,7 +88,6 @@ export function saveProject(name) {
 }
 
 export function loadProject(name) {
-  const Blockly = window._Blockly || globalThis.Blockly;
   if (!name) return;
   try {
     const raw = localStorage.getItem(lsKey(name));
@@ -96,6 +97,12 @@ export function loadProject(name) {
     Blockly.serialization.workspaces.load(record.state, workspace);
     projectInput.value = record.name;
     window._exampleComment = null;
+
+    // Restaurar tabs .h del proyecto
+    if (window._tabManager && record.tabs) {
+      window._tabManager.loadTabs(record.tabs);
+    }
+
     localStorage.setItem(LAST_KEY, record.name);
     showToast(`Proyecto "${record.name}" cargado`);
   } catch (e) {
@@ -114,6 +121,7 @@ export function deleteProject(name) {
   if (projectInput.value.trim() === name) {
     workspace.clear();
     projectInput.value = '';
+    if (window._tabManager) window._tabManager.loadTabs([]);
   }
   showToast(`Proyecto "${name}" eliminado`);
   projectList.classList.add('hidden');

@@ -87,9 +87,12 @@ async function openExamples() {
     for (const [cat, items] of Object.entries(notByCat).sort()) {
       html += `<div class="example-category-sub">${cat} (${items.length})</div>`;
       for (const ex of items) {
-        html += `<div class="example-item example-item-disabled" title="${escapeHtml(ex.note || '')}">
-          <span>${escapeHtml(ex.name)}</span>
-          <span class="example-desc" style="font-size:0.7rem;opacity:0.6">${escapeHtml(ex.note || 'No convertible')}</span>
+        const hasTabs = ex.tabs && ex.tabs.length > 0;
+        const cls = hasTabs ? 'example-item' : 'example-item example-item-disabled';
+        const title = escapeHtml(ex.note || 'No convertible');
+        html += `<div class="${cls}" data-name="${ex.name.replace(/"/g, '&quot;')}" title="${title}">
+          <span>${escapeHtml(ex.name)}${hasTabs ? ' 📎' : ''}</span>
+          <span class="example-desc" style="font-size:0.7rem;opacity:0.6">${title}</span>
         </div>`;
       }
     }
@@ -105,8 +108,20 @@ async function openExamples() {
 
   examplesList.querySelectorAll('.example-item:not(.example-item-disabled)').forEach(el => {
     el.addEventListener('click', () => {
-      if (el.dataset.name === '__browse__') loadBrowseExamples();
-      else loadPresetExample(el.dataset.name);
+      const name = el.dataset.name;
+      if (name === '__browse__') loadBrowseExamples();
+      else {
+        // Puede ser convertible o NOT_CONVERTIBLE con tabs
+        const ex = allExamples.find(e => e.name === name);
+        if (ex && ex.state) {
+          loadPresetExample(name);
+        } else if (ex && ex.tabs && ex.tabs.length > 0) {
+          // NOT_CONVERTIBLE con tabs: solo cargar tabs, no tocar workspace
+          if (window._tabManager) window._tabManager.loadTabs(ex.tabs);
+          showToast(`Archivos de "${ex.name}" cargados como tabs`);
+          closeExamples();
+        }
+      }
     });
   });
 }
@@ -129,6 +144,7 @@ function loadPresetExample(name) {
   window._exampleComment = comment;
   updateCodeFn();
   projectInput.value = '';
+  if (window._tabManager) window._tabManager.loadTabs(ex.tabs || []);
   closeExamples();
   showToast(`Ejemplo "${ex.name}" cargado`);
 }

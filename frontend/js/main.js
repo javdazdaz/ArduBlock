@@ -85,6 +85,7 @@ import { initSerial }        from './serial.js';
 import { initUpload }         from './upload.js';
 import { initExamples }       from './examples.js';
 import { initResize }         from './resize.js';
+import { initTabManager, getTabs, loadTabs } from './tab-manager.js';
 import { t, applyDOMLanguage } from './i18n.js';
 
 // ═══ Toolbox ══════════════════════════════════
@@ -94,7 +95,8 @@ const toolbox = {
     { 'kind': 'category', 'name': '%{BKY_CAT_ARDUINO}', 'colour': '230',
       'contents': [
         { 'kind': 'block', 'type': 'arduino_setup' },
-        { 'kind': 'block', 'type': 'arduino_loop' }
+        { 'kind': 'block', 'type': 'arduino_loop' },
+        { 'kind': 'block', 'type': 'include_header' }
       ]},
     { 'kind': 'category', 'name': '%{BKY_CAT_PINES}', 'colour': '190',
       'contents': [
@@ -163,7 +165,8 @@ const toolbox = {
     { 'kind': 'category', 'name': '%{BKY_CAT_BUCLES}', 'colour': '120',
       'contents': [
         { 'kind': 'block', 'type': 'controls_repeat_ext' },
-        { 'kind': 'block', 'type': 'controls_whileUntil' }
+        { 'kind': 'block', 'type': 'controls_whileUntil' },
+        { 'kind': 'block', 'type': 'arduino_for_index' }
       ]},
     { 'kind': 'category', 'name': '%{BKY_CAT_MATEMATICAS}', 'colour': '230',
       'contents': [
@@ -181,6 +184,12 @@ const toolbox = {
         { 'kind': 'block', 'type': 'variable_declare' },
         { 'kind': 'block', 'type': 'variable_set' },
         { 'kind': 'block', 'type': 'variable_get' }
+      ]},
+    { 'kind': 'category', 'name': '%{BKY_CAT_ARRAYS}', 'colour': '330',
+      'contents': [
+        { 'kind': 'block', 'type': 'array_declare' },
+        { 'kind': 'block', 'type': 'array_get' },
+        { 'kind': 'block', 'type': 'array_length' }
       ]},
     { 'kind': 'category', 'name': '%{BKY_CAT_FUNCTIONS}', 'colour': '290', 'custom': 'PROCEDURE' },
     { 'kind': 'category', 'name': '%{BKY_CAT_TEXTO}', 'colour': '160',
@@ -246,6 +255,7 @@ document.getElementById('btn-new').addEventListener('click', () => {
   Blockly.serialization.workspaces.load(getDefaultState(), workspace);
   projectInput.value = '';
   window._exampleComment = null;
+  if (window._tabManager) window._tabManager.loadTabs([]);
   showToast('Proyecto nuevo');
 });
 
@@ -355,6 +365,11 @@ initResize({
   workspace, resizer, editorPanel, codePanel, floatExpandBtn, collapseBtn
 });
 
+// Tab manager: barra de tabs .ino + .h
+initTabManager();
+window._tabManager = { getTabs, loadTabs };
+window.updateCode = updateCode;  // para que tab-manager refresque el .ino
+
 // ═══ Carga inicial del workspace ══════════════
 (function initWorkspace() {
   const lastName = localStorage.getItem(LAST_KEY);
@@ -365,6 +380,12 @@ initResize({
         const record = JSON.parse(raw);
         Blockly.serialization.workspaces.load(record.state, workspace);
         projectInput.value = record.name;
+
+        // Restaurar tabs .h del último proyecto
+        if (window._tabManager) {
+          window._tabManager.loadTabs(record.tabs || []);
+        }
+
         return;
       } catch (e) {
         console.warn('[ArduBlock] Último proyecto corrupto, cargando default:', e.message);

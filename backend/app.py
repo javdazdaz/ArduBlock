@@ -88,6 +88,21 @@ def static_files(filename):
 
 # ── API REST ────────────────────────────────────
 
+def _write_tabs(sketch_dir, tabs):
+    """Escribe archivos .h de los tabs en el directorio del sketch."""
+    if not tabs:
+        return
+    for tab in tabs:
+        filename = tab.get('filename', '')
+        content = tab.get('content', '')
+        if not filename or not content.strip():
+            continue
+        # Sanitizar: solo permitir nombres seguros dentro del sketch dir
+        safe = os.path.basename(filename)
+        if safe != filename or '..' in safe:
+            continue
+        (sketch_dir / safe).write_text(content)
+
 @app.route('/api/projects', methods=['GET'])
 def list_projects():
     """Lista proyectos guardados"""
@@ -213,6 +228,7 @@ def compile_sketch():
     data = request.get_json()
     code = data.get('code', '') if data else ''
     fqbn = data.get('fqbn', 'arduino:avr:uno') if data else 'arduino:avr:uno'
+    tabs = data.get('tabs', []) if data else []
 
     if not code.strip():
         return jsonify({'error': 'Código vacío'}), 400
@@ -225,6 +241,7 @@ def compile_sketch():
 
     try:
         ino_file.write_text(code)
+        _write_tabs(sketch_dir, tabs)
 
         result = subprocess.run(
             ['arduino-cli', 'compile', '--fqbn', fqbn, str(sketch_dir)],
@@ -251,6 +268,7 @@ def upload_sketch():
     code = data.get('code', '') if data else ''
     port = data.get('port', '') if data else ''
     fqbn = data.get('fqbn', 'arduino:avr:uno') if data else 'arduino:avr:uno'
+    tabs = data.get('tabs', []) if data else []
 
     if not code.strip():
         return jsonify({'error': 'Código vacío'}), 400
@@ -265,6 +283,7 @@ def upload_sketch():
 
     try:
         ino_file.write_text(code)
+        _write_tabs(sketch_dir, tabs)
 
         compile_result = subprocess.run(
             ['arduino-cli', 'compile', '--fqbn', fqbn, str(sketch_dir)],

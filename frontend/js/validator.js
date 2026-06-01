@@ -118,6 +118,7 @@ function validateWorkspace(workspace) {
   const topBlocks = workspace.getTopBlocks(true);
   for (const block of topBlocks) {
     if (block.type === 'arduino_setup' || block.type === 'arduino_loop') continue;
+    if (block.type === 'include_header') continue; // va suelto, los recolecta el generador
     const statementTypes = [
       'pin_mode', 'digital_write', 'analog_write',
       'delay_ms', 'serial_print', 'serial_println',
