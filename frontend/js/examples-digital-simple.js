@@ -508,5 +508,259 @@ Added to ArduBlock — 2026-05-31`
         ]
       }
     }
+  },
+
+  // ═══ 5. BlinkWithoutDelay ═══════════════════════
+  {
+    name: 'BlinkWithoutDelay',
+    category: '02.Digital',
+    description: 'Parpadea un LED sin usar delay(), usando millis()',
+    comment: {
+      es: `/*
+  Blink without Delay
+
+  Enciende y apaga un LED sin usar la función delay().
+  Esto permite que otro código se ejecute al mismo tiempo
+  sin ser interrumpido por el parpadeo.
+
+  creado 2005 por David A. Mellis
+  modificado 8 Feb 2010 por Paul Stoffregen
+  modificado 11 Nov 2013 por Scott Fitzgerald
+  modificado 9 Ene 2017 por Arturo Guadalupi
+
+  Este código es de dominio público.
+
+  https://docs.arduino.cc/built-in-examples/digital/BlinkWithoutDelay/
+*/
+Agregado a ArduBlock — 2026-05-31`,
+      en: `/*
+  Blink without Delay
+
+  Turns on and off a light emitting diode (LED) connected to a digital pin,
+  without using the delay() function. This means that other code can run at the
+  same time without being interrupted by the LED code.
+
+  created 2005 by David A. Mellis
+  modified 8 Feb 2010 by Paul Stoffregen
+  modified 11 Nov 2013 by Scott Fitzgerald
+  modified 9 Jan 2017 by Arturo Guadalupi
+
+  This example code is in the public domain.
+
+  https://docs.arduino.cc/built-in-examples/digital/BlinkWithoutDelay/
+*/
+Added to ArduBlock — 2026-05-31`
+    },
+    reason: 'NOT_CONVERTIBLE',
+    note: 'El bloque digital_write usa un dropdown estático (HIGH/LOW). El sketch original usa digitalWrite(13, ledState) donde ledState alterna entre HIGH y LOW. Se necesita un bloque con entrada de valor dinámica.'
+  },
+
+  // ═══ 6. Debounce ═══════════════════════════════
+  {
+    name: 'Debounce',
+    category: '02.Digital',
+    description: 'Anti-rebote de pulsador con millis()',
+    comment: {
+      es: `/*
+  Debounce
+
+  Cada vez que el pin de entrada pasa de LOW a HIGH
+  (al presionar un pulsador), el pin de salida alterna
+  entre LOW y HIGH. Incluye un retardo mínimo para
+  eliminar el ruido del rebote.
+
+  creado 21 Nov 2006 por David A. Mellis
+  modificado 30 Ago 2011 por Limor Fried
+  modificado 28 Dic 2012 por Mike Walters
+  modificado 30 Ago 2016 por Arturo Guadalupi
+
+  Este código es de dominio público.
+
+  https://docs.arduino.cc/built-in-examples/digital/Debounce/
+*/
+Agregado a ArduBlock — 2026-05-31`,
+      en: `/*
+  Debounce
+
+  Each time the input pin goes from LOW to HIGH (e.g. because of a push-button
+  press), the output pin is toggled from LOW to HIGH or HIGH to LOW. There's a
+  minimum delay between toggles to debounce the circuit (i.e. to ignore noise).
+
+  created 21 Nov 2006 by David A. Mellis
+  modified 30 Aug 2011 by Limor Fried
+  modified 28 Dec 2012 by Mike Walters
+  modified 30 Aug 2016 by Arturo Guadalupi
+
+  This example code is in the public domain.
+
+  https://docs.arduino.cc/built-in-examples/digital/Debounce/
+*/
+Added to ArduBlock — 2026-05-31`
+    },
+    reason: 'NOT_CONVERTIBLE',
+    note: 'Máquina de estados compleja con millis(), múltiples variables de tiempo y toggle ledState = !ledState. El workspace sería excesivamente complejo para uso educativo, y el toggle requiere digital_write con entrada dinámica.'
+  },
+
+  // ═══ 7. StateChangeDetection ═══════════════════
+  {
+    name: 'StateChangeDetection',
+    category: '02.Digital',
+    description: 'Detección de cambio de estado (flanco) de un pulsador',
+    comment: {
+      es: `/*
+  State change detection (edge detection)
+
+  Detecta cuando un pulsador cambia de estado (de OFF a ON
+  o de ON a OFF). Cuenta las veces que se presiona y enciende
+  un LED cada 4 pulsaciones.
+
+  creado 27 Sep 2005, modificado 30 Ago 2011 por Tom Igoe
+
+  Este código es de dominio público.
+
+  https://docs.arduino.cc/built-in-examples/digital/StateChangeDetection/
+*/
+Agregado a ArduBlock — 2026-05-31`,
+      en: `/*
+  State change detection (edge detection)
+
+  Often, you don't need to know the state of a digital input all the time, but
+  you just need to know when the input changes from one state to another.
+
+  created 27 Sep 2005, modified 30 Aug 2011 by Tom Igoe
+
+  This example code is in the public domain.
+
+  https://docs.arduino.cc/built-in-examples/digital/StateChangeDetection/
+*/
+Added to ArduBlock — 2026-05-31`
+    },
+    reason: 'NOT_CONVERTIBLE',
+    note: 'Usa digitalWrite(ledPin, ledState) con variable dinámica (el bloque solo acepta dropdown HIGH/LOW). Además requiere buttonPushCounter++ (incremento) y buttonPushCounter % 4 == 0 (módulo).'
+  },
+
+  // ═══ 8. toneMelody ═════════════════════════════
+  {
+    name: 'toneMelody',
+    category: '02.Digital',
+    description: 'Reproduce una melodía con tonos',
+    comment: {
+      es: `/*
+  Melody
+
+  Reproduce una melodía usando la función tone().
+
+  circuito:
+  - parlante de 8 ohm en el pin digital 8
+
+  creado 21 Ene 2010, modificado 30 Ago 2011 por Tom Igoe
+
+  Este código es de dominio público.
+
+  https://docs.arduino.cc/built-in-examples/digital/toneMelody/
+*/
+Agregado a ArduBlock — 2026-05-31`,
+      en: `/*
+  Melody
+
+  Plays a melody
+
+  circuit:
+  - 8 ohm speaker on digital pin 8
+
+  created 21 Jan 2010, modified 30 Aug 2011 by Tom Igoe
+
+  This example code is in the public domain.
+
+  https://docs.arduino.cc/built-in-examples/digital/toneMelody/
+*/
+Added to ArduBlock — 2026-05-31`
+    },
+    reason: 'NOT_CONVERTIBLE',
+    note: 'Usa arrays (melody[], noteDurations[]) y #include "pitches.h" para definir notas musicales. Sin soporte de arrays ni archivos de cabecera externos en ArduBlock.'
+  },
+
+  // ═══ 9. toneMultiple ═══════════════════════════
+  {
+    name: 'toneMultiple',
+    category: '02.Digital',
+    description: 'Reproduce tonos en múltiples pines en secuencia',
+    comment: {
+      es: `/*
+  Multiple tone player
+
+  Reproduce tonos en múltiples pines de forma secuencial.
+
+  circuito:
+  - tres parlantes de 8 ohm en los pines digitales 6, 7 y 8
+
+  creado 8 Mar 2010 por Tom Igoe
+  basado en un fragmento de Greg Borenstein
+
+  Este código es de dominio público.
+
+  https://docs.arduino.cc/built-in-examples/digital/toneMultiple/
+*/
+Agregado a ArduBlock — 2026-05-31`,
+      en: `/*
+  Multiple tone player
+
+  Plays multiple tones on multiple pins in sequence
+
+  circuit:
+  - three 8 ohm speakers on digital pins 6, 7, and 8
+
+  created 8 Mar 2010 by Tom Igoe
+  based on a snippet from Greg Borenstein
+
+  This example code is in the public domain.
+
+  https://docs.arduino.cc/built-in-examples/digital/toneMultiple/
+*/
+Added to ArduBlock — 2026-05-31`
+    },
+    state: {
+      blocks: {
+        languageVersion: 0,
+        blocks: [
+          { type: 'arduino_setup', id: 'tm1', x: 20, y: 20 },
+          {
+            type: 'arduino_loop', id: 'tm2', x: 20, y: 120,
+            inputs: {
+              BODY: {
+                block: {
+                  type: 'no_tone_output', id: 'tm3', fields: { PIN: 8 },
+                  next: {
+                    block: {
+                      type: 'tone_duration', id: 'tm4', fields: { PIN: 6, FREQ: 440, DURATION: 200 },
+                      next: {
+                        block: {
+                          type: 'no_tone_output', id: 'tm5', fields: { PIN: 6 },
+                          next: {
+                            block: {
+                              type: 'tone_duration', id: 'tm6', fields: { PIN: 7, FREQ: 494, DURATION: 500 },
+                              next: {
+                                block: {
+                                  type: 'no_tone_output', id: 'tm7', fields: { PIN: 7 },
+                                  next: {
+                                    block: {
+                                      type: 'tone_duration', id: 'tm8', fields: { PIN: 8, FREQ: 523, DURATION: 300 }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
   }
 ];
