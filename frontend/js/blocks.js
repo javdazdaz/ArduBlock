@@ -492,6 +492,75 @@ Blockly.common.defineBlocksWithJsonArray([
     "helpUrl": ""
   },
 
+  // ═══ Serial.available ═════════════════════════
+  {
+    "type": "serial_available",
+    "message0": Blockly.Msg.MSG_SERIAL_AVAILABLE,
+    "args0": [],
+    "output": "Number",
+    "colour": 120,
+    "tooltip": Blockly.Msg.TOOLTIP_SERIAL_AVAILABLE,
+    "helpUrl": ""
+  },
+
+  // ═══ Serial.read ══════════════════════════════
+  {
+    "type": "serial_read",
+    "message0": Blockly.Msg.MSG_SERIAL_READ,
+    "args0": [],
+    "output": "Number",
+    "colour": 120,
+    "tooltip": Blockly.Msg.TOOLTIP_SERIAL_READ,
+    "helpUrl": ""
+  },
+
+  // ═══ Serial.parseInt ══════════════════════════
+  {
+    "type": "serial_parse_int",
+    "message0": Blockly.Msg.MSG_SERIAL_PARSE_INT,
+    "args0": [],
+    "output": "Number",
+    "colour": 120,
+    "tooltip": Blockly.Msg.TOOLTIP_SERIAL_PARSE_INT,
+    "helpUrl": ""
+  },
+
+  // ═══ Serial.parseFloat ════════════════════════
+  {
+    "type": "serial_parse_float",
+    "message0": Blockly.Msg.MSG_SERIAL_PARSE_FLOAT,
+    "args0": [],
+    "output": "Number",
+    "colour": 120,
+    "tooltip": Blockly.Msg.TOOLTIP_SERIAL_PARSE_FLOAT,
+    "helpUrl": ""
+  },
+
+  // ═══ Serial.readString ════════════════════════
+  {
+    "type": "serial_read_string",
+    "message0": Blockly.Msg.MSG_SERIAL_READ_STRING,
+    "args0": [],
+    "output": "String",
+    "colour": 120,
+    "tooltip": Blockly.Msg.TOOLTIP_SERIAL_READ_STRING,
+    "helpUrl": ""
+  },
+
+  // ═══ Serial.write ═════════════════════════════
+  {
+    "type": "serial_write",
+    "message0": Blockly.Msg.MSG_SERIAL_WRITE,
+    "args0": [
+      { "type": "input_value", "name": "VALUE", "check": "Number" }
+    ],
+    "previousStatement": null,
+    "nextStatement": null,
+    "colour": 120,
+    "tooltip": Blockly.Msg.TOOLTIP_SERIAL_WRITE,
+    "helpUrl": ""
+  },
+
   // ═══ Servo: crear (declara + attach) ════════
   {
     "type": "servo_create",

@@ -161,6 +161,37 @@ cppGenerator.forBlock['serial_println'] = function(block) {
   return 'Serial.println(' + text + ');\n';
 };
 
+// ── serial_available ─────────────────────────
+cppGenerator.forBlock['serial_available'] = function(_block) {
+  return ['Serial.available()', cppGenerator.ORDER_ATOMIC];
+};
+
+// ── serial_read ──────────────────────────────
+cppGenerator.forBlock['serial_read'] = function(_block) {
+  return ['Serial.read()', cppGenerator.ORDER_ATOMIC];
+};
+
+// ── serial_parse_int ─────────────────────────
+cppGenerator.forBlock['serial_parse_int'] = function(_block) {
+  return ['Serial.parseInt()', cppGenerator.ORDER_ATOMIC];
+};
+
+// ── serial_parse_float ───────────────────────
+cppGenerator.forBlock['serial_parse_float'] = function(_block) {
+  return ['Serial.parseFloat()', cppGenerator.ORDER_ATOMIC];
+};
+
+// ── serial_read_string ───────────────────────
+cppGenerator.forBlock['serial_read_string'] = function(_block) {
+  return ['Serial.readString()', cppGenerator.ORDER_ATOMIC];
+};
+
+// ── serial_write ─────────────────────────────
+cppGenerator.forBlock['serial_write'] = function(block) {
+  const val = cppGenerator.valueToCode(block, 'VALUE', cppGenerator.ORDER_NONE) || '0';
+  return 'Serial.write(' + val + ');\n';
+};
+
 // ── servo_create (declara + attach) ──────────
 cppGenerator.forBlock['servo_create'] = function(block) {
   const name = block.getFieldValue('NAME').trim() || 'servo';

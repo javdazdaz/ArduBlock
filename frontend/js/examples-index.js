@@ -19,7 +19,7 @@ export { analogControlExamples } from './examples-analog-control.js';
 export { analog2 } from './examples-analog2.js';
 export { analog3 } from './examples-analog3.js';
 
-// 04.Communication — 8 sketches (1 convertido, 7 no convertibles)
+// 04.Communication — 12 sketches (7 convertidos, 5 no convertibles)
 export { communicationExamples } from './examples-communication.js';
 
 // 05.Control — 6 sketches (3 convertidos, 3 no convertibles)

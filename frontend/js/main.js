@@ -151,7 +151,13 @@ const toolbox = {
       'contents': [
         { 'kind': 'block', 'type': 'serial_begin' },
         { 'kind': 'block', 'type': 'serial_print' },
-        { 'kind': 'block', 'type': 'serial_println' }
+        { 'kind': 'block', 'type': 'serial_println' },
+        { 'kind': 'block', 'type': 'serial_available' },
+        { 'kind': 'block', 'type': 'serial_read' },
+        { 'kind': 'block', 'type': 'serial_parse_int' },
+        { 'kind': 'block', 'type': 'serial_parse_float' },
+        { 'kind': 'block', 'type': 'serial_read_string' },
+        { 'kind': 'block', 'type': 'serial_write' }
       ]},
     { 'kind': 'sep' },
     { 'kind': 'category', 'name': '%{BKY_CAT_LOGICA}', 'colour': '210',
