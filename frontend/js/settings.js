@@ -99,7 +99,9 @@ export function applySettings(s) {
   const uiFont = s.fontUi + 'px';
   document.querySelector('header').style.fontSize = uiFont;
   document.querySelector('.arduino-toolbar') && (document.querySelector('.arduino-toolbar').style.fontSize = uiFont);
-  document.getElementById('code-output').style.fontSize = s.fontCode + 'px';
+  const codeFont = s.fontCode + 'px';
+  document.getElementById('code-view-ino').style.fontSize = codeFont;
+  document.getElementById('code-edit-h').style.fontSize = codeFont;
   document.getElementById('console-output').style.fontSize = s.fontSerial + 'px';
 
   const currentTheme = workspace.getTheme();
@@ -151,6 +153,7 @@ export function applyTheme(theme) {
     root.setProperty('--btn-danger-text', '#333');
     root.setProperty('--console-border', '#e67e22');
     workspace.setTheme(Blockly.Themes.Classic);
+    if (window._tabManager?.setCodeTheme) window._tabManager.setCodeTheme(false);
   } else {
     root.setProperty('--bg', '#1a1a2e');
     root.setProperty('--bg-panel', '#16213e');
@@ -174,6 +177,7 @@ export function applyTheme(theme) {
     root.setProperty('--btn-danger-text', '#ddd');
     root.setProperty('--console-border', '#e67e22');
     workspace.setTheme(DarkTheme);
+    if (window._tabManager?.setCodeTheme) window._tabManager.setCodeTheme(true);
   }
 }
 

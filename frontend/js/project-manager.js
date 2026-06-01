@@ -10,6 +10,10 @@ import * as Blockly from 'blockly';
 let workspace, projectInput, projectList, showToast;
 let LS_PREFIX, LAST_KEY, autoSaveTimer;
 
+export function cancelAutoSave() {
+  clearTimeout(autoSaveTimer);
+}
+
 export function initProjectManager(deps) {
   workspace     = deps.workspace;
   projectInput  = deps.projectInput;
@@ -48,18 +52,29 @@ export function initProjectManager(deps) {
       if (name) saveProject(name);
     }, 2000);
   });
+
+  // Sincronizar nombre del tab .ino con el input
+  projectInput.addEventListener('input', () => {
+    const name = projectInput.value.trim();
+    if (name && window._tabManager) {
+      const withIno = name.endsWith('.ino') ? name : name + '.ino';
+      window._tabManager.setSketchName(withIno);
+    }
+  });
 }
 
 export function getProjectName() {
   const raw = projectInput.value.trim();
-  return raw || 'sin-nombre';
+  let name = raw || 'sin-nombre';
+  if (!name.endsWith('.ino')) name += '.ino';
+  return name;
 }
 
 export function lsKey(name) {
   const sanitized = name
     .trim()
     .replace(/\s+/g, '_')
-    .replace(/[^a-zA-Z0-9_-]/g, '')
+    .replace(/[^a-zA-Z0-9_\-.]/g, '')
     .substring(0, 64)
     || 'sin-nombre';
   return LS_PREFIX + sanitized;
@@ -73,6 +88,7 @@ export function escapeHtml(str) {
 
 export function saveProject(name) {
   name = name || getProjectName();
+  if (!name.endsWith('.ino')) name += '.ino';
   projectInput.value = name;
 
   const state = Blockly.serialization.workspaces.save(workspace);
@@ -95,12 +111,14 @@ export function loadProject(name) {
     const record = JSON.parse(raw);
     workspace.clear();
     Blockly.serialization.workspaces.load(record.state, workspace);
-    projectInput.value = record.name;
+    let displayName = record.name;
+    if (!displayName.endsWith('.ino')) displayName += '.ino';
+    projectInput.value = displayName;
     window._exampleComment = null;
 
     // Restaurar tabs .h del proyecto
     if (window._tabManager && record.tabs) {
-      window._tabManager.loadTabs(record.tabs);
+      window._tabManager.loadTabs(record.tabs, displayName);
     }
 
     localStorage.setItem(LAST_KEY, record.name);

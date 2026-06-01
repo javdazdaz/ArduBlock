@@ -1,28 +1,113 @@
 /**
- * ArduBlock — Gestión de Tabs de Código
+ * ArduBlock — Gestión de Tabs de Código (CodeMirror 6)
  *
  * Maneja la barra de tabs: sketch.ino (readonly, fijo) + .h (editables).
- * Sincroniza contenido entre textarea y estado interno, expone getTabs()
+ * Usa CodeMirror 6 para syntax highlighting (C++) y números de línea.
+ * Sincroniza contenido entre editor y estado interno, expone getTabs()
  * para el generador, upload y project-manager.
- *
- * Actualiza #line-count al cambiar de tab y al editar .h.
  */
 
-let tabs, activeFilename, tabBar, preView, textEditor, lineCount;
+import { EditorView, keymap, lineNumbers, highlightActiveLine, highlightActiveLineGutter } from '@codemirror/view';
+import { EditorState, Compartment } from '@codemirror/state';
+import { cpp } from '@codemirror/lang-cpp';
+import { oneDark } from '@codemirror/theme-one-dark';
+import { syntaxHighlighting, defaultHighlightStyle } from '@codemirror/language';
+import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
 
-/**
- * Inicializa el TabManager con referencias del DOM.
- * @param {Object} deps - Dependencias (no requiere dependencias externas por ahora)
- */
+let tabs, activeFilename, tabBar, lineCount;
+let inoView, hView;           // CodeMirror EditorView instances
+let inoContainer, hContainer;  // DOM parents
+
+// ═══ Tema dinámico (light/dark) ══════════════════
+
+const themeCompartment = new Compartment();
+
+const lightTheme = [
+  EditorView.theme({
+    '&': {
+      backgroundColor: 'var(--bg-code)',
+      color: 'var(--code-text)'
+    },
+    '.cm-gutters': {
+      backgroundColor: 'var(--bg-panel)',
+      color: 'var(--text-dim)',
+      border: 'none'
+    },
+    '.cm-activeLineGutter': {
+      backgroundColor: 'var(--bg-input)'
+    },
+    '.cm-activeLine': {
+      backgroundColor: 'var(--bg-input)'
+    },
+    '.cm-cursor': {
+      borderLeftColor: 'var(--accent, #0077aa)'
+    },
+    '.cm-selectionBackground, &.cm-focused .cm-selectionBackground': {
+      backgroundColor: '#0077aa40'
+    },
+    '.cm-matchingBracket': {
+      backgroundColor: '#0077aa30',
+      outline: '1px solid #0077aa80'
+    },
+  }, { dark: false }),
+  syntaxHighlighting(defaultHighlightStyle),
+];
+
+// ═══ Extensiones compartidas ══════════════════════
+
+const sharedExtensions = [
+  cpp(),
+  themeCompartment.of([...oneDark]),  // default: dark
+  lineNumbers(),
+  highlightActiveLineGutter(),
+];
+
+const editableExtensions = [
+  ...sharedExtensions,
+  history(),
+  keymap.of([...defaultKeymap, ...historyKeymap]),
+  highlightActiveLine(),
+  EditorView.updateListener.of((update) => {
+    if (update.docChanged) _syncContent();
+  }),
+];
+
+// ═══ Inicialización ══════════════════════════════
+
 export function initTabManager(deps = {}) {
   tabs = [
     { filename: 'sketch.ino', content: '', readonly: true }
   ];
   activeFilename = 'sketch.ino';
   tabBar    = document.getElementById('code-tabs');
-  preView   = document.getElementById('code-view-ino');
-  textEditor = document.getElementById('code-edit-h');
+  inoContainer = document.getElementById('code-view-ino');
+  hContainer   = document.getElementById('code-edit-h');
   lineCount = document.getElementById('line-count');
+
+  // CodeMirror: editor .ino (readonly)
+  inoView = new EditorView({
+    doc: '',
+    extensions: [
+      ...sharedExtensions,
+      EditorState.readOnly.of(true),
+    ],
+    parent: inoContainer,
+  });
+
+  // CodeMirror: editor .h (editable, oculto al inicio)
+  hView = new EditorView({
+    doc: '',
+    extensions: editableExtensions,
+    parent: hContainer,
+  });
+
+  // Aplicar tema inicial según settings (dark por defecto)
+  let isDark = true;
+  try {
+    const raw = localStorage.getItem('ardublock:settings');
+    if (raw) isDark = JSON.parse(raw).theme !== 'light';
+  } catch (_) { /* default dark */ }
+  if (!isDark) setCodeTheme(false);
 
   _bindEvents();
   _showActiveTab();
@@ -31,19 +116,14 @@ export function initTabManager(deps = {}) {
 // ── Eventos ──────────────────────────────────────
 
 function _bindEvents() {
-  // Botón "+" para nuevo .h
   const addBtn = document.getElementById('btn-add-tab');
   if (addBtn) addBtn.addEventListener('click', () => _addTab());
-
-  // Sincronizar contenido del textarea al estado
-  textEditor.addEventListener('input', () => _syncContent());
 
   // Delegación de clicks en la barra de tabs
   tabBar.addEventListener('click', (e) => {
     const tabBtn = e.target.closest('.code-tab');
     if (!tabBtn) return;
 
-    // ¿Click en el botón de cerrar?
     if (e.target.closest('.tab-close')) {
       e.stopPropagation();
       _closeTab(tabBtn.dataset.tab);
@@ -61,18 +141,15 @@ function _addTab() {
   if (!name || !name.trim()) return;
 
   let filename = name.trim();
-  // Agregar .h si el usuario no lo puso
   if (!filename.endsWith('.h') && !filename.endsWith('.hpp')) {
     filename += '.h';
   }
 
-  // Validar nombre: solo letras, números, guiones, underscore, punto
   if (!/^[a-zA-Z0-9_-]+\.(h|hpp)$/.test(filename)) {
     alert('Nombre inválido. Usá solo letras, números, guiones y underscore (ej: config.h).');
     return;
   }
 
-  // Duplicados
   if (tabs.find(t => t.filename === filename)) {
     alert(`Ya existe un archivo "${filename}".`);
     return;
@@ -86,16 +163,14 @@ function _addTab() {
 function _closeTab(filename) {
   const idx = tabs.findIndex(t => t.filename === filename);
   if (idx === -1) return;
-  if (tabs[idx].readonly) return; // sketch.ino no se cierra
+  if (tabs[idx].readonly) return;
 
-  // Si tiene contenido, confirmar
   if (tabs[idx].content.trim()) {
     if (!confirm(`¿Eliminar "${filename}"? Su contenido se perderá.`)) return;
   }
 
-  // Si es el tab activo, volver a sketch.ino
   if (activeFilename === filename) {
-    _switchTab('sketch.ino');
+    _switchTab(tabs[0].filename);
   }
 
   tabs.splice(idx, 1);
@@ -113,15 +188,22 @@ function _switchTab(filename) {
   if (!tab) return;
 
   if (tab.readonly) {
-    preView.style.display = '';
-    textEditor.style.display = 'none';
-    // Refrescar código generado al volver a .ino
+    inoContainer.style.display = '';
+    hContainer.style.display = 'none';
     if (typeof window.updateCode === 'function') window.updateCode();
   } else {
-    preView.style.display = 'none';
-    textEditor.style.display = '';
-    textEditor.value = tab.content;
-    textEditor.focus();
+    inoContainer.style.display = 'none';
+    hContainer.style.display = '';
+    // Actualizar contenido del editor .h
+    hView.dispatch({
+      changes: {
+        from: 0,
+        to: hView.state.doc.length,
+        insert: tab.content
+      }
+    });
+    hView.focus();
+    _updateLineCount();
   }
 
   _renderTabs();
@@ -130,10 +212,10 @@ function _switchTab(filename) {
 // ── Sincronización ───────────────────────────────
 
 function _syncContent() {
-  if (activeFilename === 'sketch.ino') return; // readonly, no sincronizar
   const tab = tabs.find(t => t.filename === activeFilename);
+  if (tab && tab.readonly) return;
   if (tab && !tab.readonly) {
-    tab.content = textEditor.value;
+    tab.content = hView.state.doc.toString();
     _updateLineCount();
   }
 }
@@ -141,7 +223,6 @@ function _syncContent() {
 // ── Renderizado de la barra de tabs ──────────────
 
 function _renderTabs() {
-  // Limpiar tabs existentes (pero no el botón "+")
   const existing = tabBar.querySelectorAll('.code-tab');
   existing.forEach(el => el.remove());
 
@@ -163,7 +244,6 @@ function _renderTabs() {
     if (tab.readonly) {
       btn.textContent = `${icon} ${tab.filename}`;
     } else {
-      // Indicador visual si tiene contenido (círculo verde)
       const dot = hasContent ? ' <span style="color:#27ae60;font-size:10px">●</span>' : '';
       btn.innerHTML = `${icon} ${tab.filename}${dot} <span class="tab-close">&times;</span>`;
     }
@@ -176,10 +256,8 @@ function _renderTabs() {
 
 /**
  * Devuelve los tabs .h con su contenido para guardar/cargar.
- * @returns {Array<{filename: string, content: string}>}
  */
 export function getTabs() {
-  // Sincronizar el tab activo antes de devolver
   _syncContent();
   return tabs
     .filter(t => !t.readonly)
@@ -187,21 +265,21 @@ export function getTabs() {
 }
 
 /**
- * Carga tabs desde datos de proyecto (usado por project-manager).
- * @param {Array<{filename: string, content: string}>} tabData
+ * Carga tabs desde datos de proyecto.
  */
-export function loadTabs(tabData) {
+export function loadTabs(tabData, sketchName = null) {
+  const name = sketchName || (tabs && tabs.length > 0 && tabs[0].filename || 'sketch.ino');
+
   if (!Array.isArray(tabData) || !tabData.length) {
-    // Resetear a estado inicial
-    tabs = [{ filename: 'sketch.ino', content: '', readonly: true }];
-    activeFilename = 'sketch.ino';
+    tabs = [{ filename: name, content: '', readonly: true }];
+    activeFilename = name;
     _renderTabs();
     _showActiveTab();
     return;
   }
 
   tabs = [
-    { filename: 'sketch.ino', content: '', readonly: true },
+    { filename: name, content: '', readonly: true },
     ...tabData.map(t => ({
       filename: t.filename,
       content: t.content || '',
@@ -209,37 +287,96 @@ export function loadTabs(tabData) {
     }))
   ];
 
-  activeFilename = 'sketch.ino';
+  activeFilename = name;
   _renderTabs();
   _showActiveTab();
+}
+
+/**
+ * Actualiza el nombre del tab del sketch sin recargar tabs .h.
+ */
+export function setSketchName(name) {
+  if (!tabs || !tabs.length) return;
+  tabs[0].filename = name;
+  if (activeFilename === tabs[0].filename || activeFilename === 'sketch.ino') {
+    activeFilename = name;
+  }
+  _renderTabs();
+  _showActiveTab();
+}
+
+/**
+ * Actualiza el contenido del editor .ino (generado por bloques).
+ * Llamado desde main.js updateCode().
+ */
+export function setInoContent(code) {
+  if (!inoView) return;
+  inoView.dispatch({
+    changes: {
+      from: 0,
+      to: inoView.state.doc.length,
+      insert: code
+    }
+  });
+  _updateInoLineCount(code);
+}
+
+/**
+ * Devuelve el contenido actual del editor .ino.
+ */
+export function getInoContent() {
+  return inoView ? inoView.state.doc.toString() : '';
+}
+
+/**
+ * Cambia el tema de CodeMirror (llamado desde settings.js).
+ * @param {boolean} isDark — true para tema oscuro, false para claro
+ */
+export function setCodeTheme(isDark) {
+  const theme = isDark ? [...oneDark] : lightTheme;
+  if (inoView) inoView.dispatch({ effects: themeCompartment.reconfigure(theme) });
+  if (hView)   hView.dispatch({ effects: themeCompartment.reconfigure(theme) });
 }
 
 // ── Helpers internos ─────────────────────────────
 
 function _showActiveTab() {
-  if (activeFilename === 'sketch.ino') {
-    preView.style.display = '';
-    textEditor.style.display = 'none';
+  const tab = tabs.find(t => t.filename === activeFilename);
+  if (tab && tab.readonly) {
+    inoContainer.style.display = '';
+    hContainer.style.display = 'none';
+    if (typeof window.updateCode === 'function') window.updateCode();
   } else {
-    preView.style.display = 'none';
-    textEditor.style.display = '';
-    const tab = tabs.find(t => t.filename === activeFilename);
-    if (tab) textEditor.value = tab.content;
-    textEditor.focus();
+    inoContainer.style.display = 'none';
+    hContainer.style.display = '';
+    if (tab) {
+      hView.dispatch({
+        changes: {
+          from: 0,
+          to: hView.state.doc.length,
+          insert: tab.content
+        }
+      });
+    }
+    hView.focus();
     _updateLineCount();
   }
 }
 
-/**
- * Actualiza el contador de líneas según el tab activo.
- * Para .h: cuenta líneas del textarea. Para .ino: lo maneja updateCode() en main.js.
- */
 function _updateLineCount() {
   if (!lineCount) return;
-  if (activeFilename === 'sketch.ino') return; // main.js se encarga
+  if (activeFilename === tabs[0].filename) return; // .ino: main.js se encarga
 
-  const lines = textEditor.value.split('\n').length;
-  // Buscar el texto "líneas" / "lines" para preservar i18n
+  const doc = hView.state.doc;
+  const lines = doc.lines;
+  const labelEl = lineCount.querySelector('span');
+  const label = labelEl ? labelEl.textContent : 'líneas';
+  lineCount.childNodes[0].textContent = lines + ' ';
+}
+
+function _updateInoLineCount(code) {
+  if (!lineCount) return;
+  const lines = code ? code.split('\n').length : 0;
   const labelEl = lineCount.querySelector('span');
   const label = labelEl ? labelEl.textContent : 'líneas';
   lineCount.childNodes[0].textContent = lines + ' ';

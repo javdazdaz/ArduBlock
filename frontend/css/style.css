@@ -329,8 +329,38 @@ main {
   word-break: break-word;
 }
 
-#code-output {
-  color: var(--code-text);
+/* ── CodeMirror containers ─────────────────────── */
+#code-view-ino,
+#code-edit-h {
+  flex: 1;
+  overflow: hidden;
+  font-size: 0.8rem;
+}
+
+#code-view-ino .cm-editor,
+#code-edit-h .cm-editor {
+  height: 100%;
+}
+
+#code-view-ino .cm-editor .cm-scroller,
+#code-edit-h .cm-editor .cm-scroller {
+  font-family: var(--font-mono, 'JetBrains Mono', 'Fira Code', monospace);
+  line-height: 1.5;
+}
+
+#code-view-ino .cm-editor .cm-content,
+#code-edit-h .cm-editor .cm-content {
+  padding: 1rem;
+}
+
+/* CodeMirror readonly: cursor default, no selection highlight */
+#code-view-ino .cm-editor .cm-content {
+  cursor: default;
+}
+
+#code-view-ino .cm-editor .cm-cursor,
+#code-view-ino .cm-editor .cm-cursorLayer {
+  display: none !important;
 }
 
 /* ── Tab bar ──────────────────────────────────── */
@@ -415,30 +445,7 @@ main {
   background: rgba(0, 180, 216, 0.1);
 }
 
-/* ── .h textarea editor ───────────────────────── */
-#code-edit-h {
-  flex: 1;
-  padding: 1rem;
-  margin: 0;
-  border: none;
-  background: var(--bg-code);
-  color: var(--code-text);
-  font-family: inherit;
-  font-size: 0.8rem;
-  line-height: 1.5;
-  resize: none;
-  outline: none;
-  tab-size: 2;
-}
-
-#code-edit-h::placeholder {
-  color: var(--text-dim);
-  opacity: 0.5;
-}
-
-#code-edit-h:focus {
-  box-shadow: inset 0 0 0 1px var(--accent2);
-}
+/* ── .h editor (CodeMirror) ────────────────────── */
 
 /* Copied toast ─────────────────────────────── */
 .toast {
@@ -534,12 +541,9 @@ main {
 }
 
 /* ── Scrollbar styling ────────────────────────── */
-#code-panel pre::-webkit-scrollbar,
-#code-edit-h::-webkit-scrollbar { width: 6px; }
-#code-panel pre::-webkit-scrollbar-track,
-#code-edit-h::-webkit-scrollbar-track { background: var(--bg); }
-#code-panel pre::-webkit-scrollbar-thumb,
-#code-edit-h::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+.cm-scroller::-webkit-scrollbar { width: 6px; }
+.cm-scroller::-webkit-scrollbar-track { background: var(--bg); }
+.cm-scroller::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 
 /* ── Examples Modal ──────────────────────────── */
 .modal {

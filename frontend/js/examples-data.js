@@ -185,8 +185,14 @@ export const basicsExamples = [
             inputs: {
               BODY: {
                 block: {
-                  type: 'serial_begin', id: 'ar2',
-                  fields: { BAUD: '9600' }
+                  type: 'pin_mode', id: 'ar_setup1',
+                  fields: { PIN: 0, MODE: 'INPUT' },
+                  next: {
+                    block: {
+                      type: 'serial_begin', id: 'ar2',
+                      fields: { BAUD: '9600' }
+                    }
+                  }
                 }
               }
             }
@@ -567,8 +573,14 @@ export const basicsExamples = [
             inputs: {
               BODY: {
                 block: {
-                  type: 'serial_begin', id: 'rv2',
-                  fields: { BAUD: '9600' }
+                  type: 'pin_mode', id: 'rv_setup1',
+                  fields: { PIN: 0, MODE: 'INPUT' },
+                  next: {
+                    block: {
+                      type: 'serial_begin', id: 'rv2',
+                      fields: { BAUD: '9600' }
+                    }
+                  }
                 }
               }
             }

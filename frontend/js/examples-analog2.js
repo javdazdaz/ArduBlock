@@ -40,8 +40,20 @@ export const analog2 = [
             inputs: {
               BODY: {
                 block: {
-                  type: 'serial_begin', id: 'aos2',
-                  fields: { BAUD: '9600' }
+                  type: 'pin_mode', id: 'aos_setup1',
+                  fields: { PIN: 0, MODE: 'INPUT' },
+                  next: {
+                    block: {
+                      type: 'pin_mode', id: 'aos_setup2',
+                      fields: { PIN: 9, MODE: 'OUTPUT' },
+                      next: {
+                        block: {
+                          type: 'serial_begin', id: 'aos2',
+                          fields: { BAUD: '9600' }
+                        }
+                      }
+                    }
+                  }
                 }
               }
             }

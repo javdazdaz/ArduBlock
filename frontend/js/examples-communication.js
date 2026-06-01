@@ -78,8 +78,14 @@ export const communicationExamples = [
             inputs: {
               BODY: {
                 block: {
-                  type: 'serial_begin', id: 'g2',
-                  fields: { BAUD: '9600' }
+                  type: 'pin_mode', id: 'g_setup1',
+                  fields: { PIN: 0, MODE: 'INPUT' },
+                  next: {
+                    block: {
+                      type: 'serial_begin', id: 'g2',
+                      fields: { BAUD: '9600' }
+                    }
+                  }
                 }
               }
             }

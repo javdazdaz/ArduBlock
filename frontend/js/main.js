@@ -85,7 +85,7 @@ import { initSerial }        from './serial.js';
 import { initUpload }         from './upload.js';
 import { initExamples }       from './examples.js';
 import { initResize }         from './resize.js';
-import { initTabManager, getTabs, loadTabs } from './tab-manager.js';
+import { initTabManager, getTabs, loadTabs, setSketchName, setInoContent, getInoContent, setCodeTheme } from './tab-manager.js';
 import { t, applyDOMLanguage } from './i18n.js';
 
 // ═══ Toolbox ══════════════════════════════════
@@ -223,17 +223,16 @@ new ScrollOptions(workspace).init({ enableBlockDragging: true, enableScroll: tru
 new CrossTabCopyPaste().init({ contextMenu: true, shortcut: true });
 
 // ═══ UI: Código ══════════════════════════════
-const codeOutput = document.getElementById('code-output');
-const lineCount  = document.getElementById('line-count');
+const lineCount = document.getElementById('line-count');
 
 export function updateCode() {
   try {
     let code = generateArduinoCode(workspace);
     if (window._exampleComment) code = window._exampleComment + '\n' + code;
-    codeOutput.textContent = code;
+    setInoContent(code);
     lineCount.textContent = code.split('\n').length + ' ' + t('panel_lines');
   } catch (e) {
-    codeOutput.textContent = '// Error: ' + e.message;
+    setInoContent('// Error: ' + e.message);
     lineCount.textContent = 'error';
   }
 }
@@ -241,10 +240,11 @@ workspace.addChangeListener(updateCode);
 updateCode();
 
 document.getElementById('btn-copy').addEventListener('click', async () => {
-  try { await navigator.clipboard.writeText(codeOutput.textContent); showToast(t('toast_copied')); }
+  const code = getInoContent();
+  try { await navigator.clipboard.writeText(code); showToast(t('toast_copied')); }
   catch {
     const ta = document.createElement('textarea');
-    ta.value = codeOutput.textContent; ta.style.cssText = 'position:fixed;opacity:0';
+    ta.value = code; ta.style.cssText = 'position:fixed;opacity:0';
     document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
     showToast(t('toast_copied'));
   }
@@ -367,7 +367,7 @@ initResize({
 
 // Tab manager: barra de tabs .ino + .h
 initTabManager();
-window._tabManager = { getTabs, loadTabs };
+window._tabManager = { getTabs, loadTabs, setSketchName, setInoContent, getInoContent, setCodeTheme };
 window.updateCode = updateCode;  // para que tab-manager refresque el .ino
 
 // ═══ Carga inicial del workspace ══════════════
@@ -379,11 +379,13 @@ window.updateCode = updateCode;  // para que tab-manager refresque el .ino
       try {
         const record = JSON.parse(raw);
         Blockly.serialization.workspaces.load(record.state, workspace);
-        projectInput.value = record.name;
+        let displayName = record.name;
+        if (!displayName.endsWith('.ino')) displayName += '.ino';
+        projectInput.value = displayName;
 
         // Restaurar tabs .h del último proyecto
         if (window._tabManager) {
-          window._tabManager.loadTabs(record.tabs || []);
+          window._tabManager.loadTabs(record.tabs || [], displayName);
         }
 
         return;

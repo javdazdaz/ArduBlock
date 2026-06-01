@@ -378,49 +378,55 @@ export const controlExamples = [
             inputs: {
               BODY: {
                 block: {
-                  type: 'pin_mode', id: 'ws2',
-                  fields: { PIN: 13, MODE: 'OUTPUT' },
+                  type: 'pin_mode', id: 'ws_setup0',
+                  fields: { PIN: 0, MODE: 'INPUT' },
                   next: {
                     block: {
-                      type: 'pin_mode', id: 'ws3',
-                      fields: { PIN: 9, MODE: 'OUTPUT' },
+                      type: 'pin_mode', id: 'ws2',
+                      fields: { PIN: 13, MODE: 'OUTPUT' },
                       next: {
                         block: {
-                          type: 'pin_mode', id: 'ws4',
-                          fields: { PIN: 2, MODE: 'INPUT' },
+                          type: 'pin_mode', id: 'ws3',
+                          fields: { PIN: 9, MODE: 'OUTPUT' },
                           next: {
                             block: {
-                              type: 'variables_set', id: 'ws5',
-                              fields: { VAR: { name: 'sensorMin' } },
-                              inputs: {
-                                VALUE: {
-                                  block: {
-                                    type: 'math_number', id: 'ws6',
-                                    fields: { NUM: 1023 }
-                                  }
-                                }
-                              },
+                              type: 'pin_mode', id: 'ws4',
+                              fields: { PIN: 2, MODE: 'INPUT' },
                               next: {
                                 block: {
-                                  type: 'variables_set', id: 'ws7',
-                                  fields: { VAR: { name: 'sensorMax' } },
+                                  type: 'variables_set', id: 'ws5',
+                                  fields: { VAR: { name: 'sensorMin' } },
                                   inputs: {
                                     VALUE: {
                                       block: {
-                                        type: 'math_number', id: 'ws8',
-                                        fields: { NUM: 0 }
+                                        type: 'math_number', id: 'ws6',
+                                        fields: { NUM: 1023 }
                                       }
                                     }
                                   },
                                   next: {
                                     block: {
-                                      type: 'variables_set', id: 'ws9',
-                                      fields: { VAR: { name: 'sensorValue' } },
+                                      type: 'variables_set', id: 'ws7',
+                                      fields: { VAR: { name: 'sensorMax' } },
                                       inputs: {
                                         VALUE: {
                                           block: {
-                                            type: 'math_number', id: 'ws10',
+                                            type: 'math_number', id: 'ws8',
                                             fields: { NUM: 0 }
+                                          }
+                                        }
+                                      },
+                                      next: {
+                                        block: {
+                                          type: 'variables_set', id: 'ws9',
+                                          fields: { VAR: { name: 'sensorValue' } },
+                                          inputs: {
+                                            VALUE: {
+                                              block: {
+                                                type: 'math_number', id: 'ws10',
+                                                fields: { NUM: 0 }
+                                              }
+                                            }
                                           }
                                         }
                                       }

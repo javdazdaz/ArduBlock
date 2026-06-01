@@ -13,7 +13,7 @@ import { communicationExamples } from './examples-communication.js';
 import { controlExamples }  from './examples-control.js';
 import { remainingExamples } from './examples-remaining.js';
 import { missingExamples }   from './examples-missing.js';
-import { escapeHtml }       from './project-manager.js';
+import { escapeHtml, cancelAutoSave } from './project-manager.js';
 import * as Blockly from 'blockly';
 
 // ── Consolidar todos los ejemplos ─────────────────
@@ -143,8 +143,9 @@ function loadPresetExample(name) {
 
   window._exampleComment = comment;
   updateCodeFn();
-  projectInput.value = '';
-  if (window._tabManager) window._tabManager.loadTabs(ex.tabs || []);
+  projectInput.value = ex.name + '.ino';
+  if (window._tabManager) window._tabManager.loadTabs(ex.tabs || [], ex.name + '.ino');
+  cancelAutoSave();
   closeExamples();
   showToast(`Ejemplo "${ex.name}" cargado`);
 }
