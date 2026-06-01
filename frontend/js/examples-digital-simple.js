@@ -603,8 +603,89 @@ export const digitalSimple = [
   Added to ArduBlock — 2026-05-31
 */`
     },
-    reason: 'NOT_CONVERTIBLE',
-    note: 'El bloque digital_write usa un dropdown estático (HIGH/LOW). El sketch original usa digitalWrite(13, ledState) donde ledState alterna entre HIGH y LOW. Se necesita un bloque con entrada de valor dinámica.'
+    state: {
+      blocks: {
+        languageVersion: 0,
+        blocks: [
+          {
+            type: 'variable_declare', id: 'bwd_g1',
+            fields: { NAME: 'ledState', TYPE: 'int' },
+            inputs: { VALUE: { block: { type: 'math_number', id: 'bwd_gn1', fields: { NUM: 0 } } } },
+            x: 20, y: 240
+          },
+          {
+            type: 'variable_declare', id: 'bwd_g2',
+            fields: { NAME: 'previousMillis', TYPE: 'unsigned long' },
+            inputs: { VALUE: { block: { type: 'math_number', id: 'bwd_gn2', fields: { NUM: 0 } } } },
+            x: 20, y: 280
+          },
+          {
+            type: 'variable_declare', id: 'bwd_g3',
+            fields: { NAME: 'interval', TYPE: 'unsigned long' },
+            inputs: { VALUE: { block: { type: 'math_number', id: 'bwd_gn3', fields: { NUM: 1000 } } } },
+            x: 20, y: 320
+          },
+          {
+            type: 'arduino_setup', id: 'bwd_s', x: 20, y: 20,
+            inputs: { BODY: { block: {
+              type: 'pin_mode', id: 'bwd_p1',
+              fields: { PIN: 13, MODE: 'OUTPUT' }
+            }}}
+          },
+          {
+            type: 'arduino_loop', id: 'bwd_l', x: 20, y: 160,
+            inputs: { BODY: { block: {
+              type: 'controls_if', id: 'bwd_if1',
+              inputs: {
+                IF0: { block: {
+                  type: 'logic_compare', id: 'bwd_cmp1', fields: { OP: 'GTE' },
+                  inputs: {
+                    A: { block: {
+                      type: 'math_arithmetic', id: 'bwd_ar1', fields: { OP: 'MINUS' },
+                      inputs: {
+                        A: { block: { type: 'millis', id: 'bwd_m1' } },
+                        B: { block: { type: 'variable_get', id: 'bwd_vg1', fields: { NAME: 'previousMillis' } } }
+                      }
+                    }},
+                    B: { block: { type: 'variable_get', id: 'bwd_vg2', fields: { NAME: 'interval' } } }
+                  }
+                }},
+                DO0: { block: {
+                  type: 'variable_set', id: 'bwd_s1',
+                  fields: { NAME: 'previousMillis' },
+                  inputs: { VALUE: { block: { type: 'millis', id: 'bwd_m2' } } },
+                  next: { block: {
+                    type: 'controls_if', id: 'bwd_if2',
+                    extraState: { hasElse: true },
+                    inputs: {
+                      IF0: { block: {
+                        type: 'logic_compare', id: 'bwd_cmp2', fields: { OP: 'EQ' },
+                        inputs: {
+                          A: { block: { type: 'variable_get', id: 'bwd_vg3', fields: { NAME: 'ledState' } } },
+                          B: { block: { type: 'math_number', id: 'bwd_n1', fields: { NUM: 0 } } }
+                        }
+                      }},
+                      DO0: { block: {
+                        type: 'variable_set', id: 'bwd_s2',
+                        fields: { NAME: 'ledState' },
+                        inputs: { VALUE: { block: { type: 'math_number', id: 'bwd_n2', fields: { NUM: 1 } } } },
+                        next: { block: { type: 'digital_write', id: 'bwd_dw1', fields: { PIN: 13, VALUE: 'HIGH' } } }
+                      }},
+                      ELSE: { block: {
+                        type: 'variable_set', id: 'bwd_s3',
+                        fields: { NAME: 'ledState' },
+                        inputs: { VALUE: { block: { type: 'math_number', id: 'bwd_n3', fields: { NUM: 0 } } } },
+                        next: { block: { type: 'digital_write', id: 'bwd_dw2', fields: { PIN: 13, VALUE: 'LOW' } } }
+                      }}
+                    }
+                  }}
+                }}
+              }
+            }}}
+          }
+        ]
+      }
+    },
   },
 
   // ═══ 6. Debounce ═══════════════════════════════
@@ -651,8 +732,173 @@ export const digitalSimple = [
   Added to ArduBlock — 2026-05-31
 */`
     },
-    reason: 'NOT_CONVERTIBLE',
-    note: 'Máquina de estados compleja con millis(), múltiples variables de tiempo y toggle ledState = !ledState. El workspace sería excesivamente complejo para uso educativo, y el toggle requiere digital_write con entrada dinámica.'
+    state: {
+      blocks: {
+        languageVersion: 0,
+        blocks: [
+          {
+            type: 'variable_declare',
+            id: 'db_g1',
+            fields: { NAME: 'ledState', TYPE: 'int' },
+            inputs: { VALUE: { block: { type: 'math_number', id: 'db_gn1', fields: { NUM: 1 } } } },
+            x: 20, y: 240
+          },
+          {
+            type: 'variable_declare',
+            id: 'db_g2',
+            fields: { NAME: 'buttonState', TYPE: 'int' },
+            inputs: { VALUE: { block: { type: 'math_number', id: 'db_gn2', fields: { NUM: 0 } } } },
+            x: 20, y: 280
+          },
+          {
+            type: 'variable_declare',
+            id: 'db_g3',
+            fields: { NAME: 'lastButtonState', TYPE: 'int' },
+            inputs: { VALUE: { block: { type: 'math_number', id: 'db_gn3', fields: { NUM: 0 } } } },
+            x: 20, y: 320
+          },
+          {
+            type: 'variable_declare',
+            id: 'db_g4',
+            fields: { NAME: 'lastDebounceTime', TYPE: 'unsigned long' },
+            inputs: { VALUE: { block: { type: 'math_number', id: 'db_gn4', fields: { NUM: 0 } } } },
+            x: 20, y: 360
+          },
+          {
+            type: 'variable_declare',
+            id: 'db_g5',
+            fields: { NAME: 'debounceDelay', TYPE: 'unsigned long' },
+            inputs: { VALUE: { block: { type: 'math_number', id: 'db_gn5', fields: { NUM: 50 } } } },
+            x: 20, y: 400
+          },
+          {
+            type: 'variable_declare',
+            id: 'db_g6',
+            fields: { NAME: 'reading', TYPE: 'int' },
+            inputs: { VALUE: { block: { type: 'math_number', id: 'db_gn6', fields: { NUM: 0 } } } },
+            x: 20, y: 440
+          },
+          {
+            type: 'arduino_setup', id: 'db_s', x: 20, y: 20,
+            inputs: { BODY: { block: {
+              type: 'pin_mode', id: 'db_p1',
+              fields: { PIN: 2, MODE: 'INPUT' },
+              next: { block: {
+                type: 'pin_mode', id: 'db_p2',
+                fields: { PIN: 13, MODE: 'OUTPUT' },
+                next: { block: {
+                  type: 'digital_write', id: 'db_dw0',
+                  fields: { PIN: 13, VALUE: 'HIGH' }
+                }}
+              }}
+            }}}
+          },
+          {
+            type: 'arduino_loop', id: 'db_l', x: 20, y: 160,
+            inputs: { BODY: { block: {
+              type: 'variable_set', id: 'db_s1',
+              fields: { NAME: 'reading' },
+              inputs: { VALUE: { block: { type: 'digital_read', id: 'db_dr', fields: { PIN: 2 } } } },
+              next: { block: {
+                type: 'controls_if', id: 'db_if1',
+                inputs: {
+                  IF0: { block: {
+                    type: 'logic_compare', id: 'db_cmp1', fields: { OP: 'NEQ' },
+                    inputs: {
+                      A: { block: { type: 'variable_get', id: 'db_vg1', fields: { NAME: 'reading' } } },
+                      B: { block: { type: 'variable_get', id: 'db_vg2', fields: { NAME: 'lastButtonState' } } }
+                    }
+                  }},
+                  DO0: { block: {
+                    type: 'variable_set', id: 'db_s2',
+                    fields: { NAME: 'lastDebounceTime' },
+                    inputs: { VALUE: { block: { type: 'millis', id: 'db_m1' } } }
+                  }}
+                },
+                next: { block: {
+                  type: 'controls_if', id: 'db_if2',
+                  inputs: {
+                    IF0: { block: {
+                      type: 'logic_compare', id: 'db_cmp2', fields: { OP: 'GT' },
+                      inputs: {
+                        A: { block: {
+                          type: 'math_arithmetic', id: 'db_ar1', fields: { OP: 'MINUS' },
+                          inputs: {
+                            A: { block: { type: 'millis', id: 'db_m2' } },
+                            B: { block: { type: 'variable_get', id: 'db_vg3', fields: { NAME: 'lastDebounceTime' } } }
+                          }
+                        }},
+                        B: { block: { type: 'variable_get', id: 'db_vg4', fields: { NAME: 'debounceDelay' } } }
+                      }
+                    }},
+                    DO0: { block: {
+                      type: 'controls_if', id: 'db_if3',
+                      inputs: {
+                        IF0: { block: {
+                          type: 'logic_compare', id: 'db_cmp3', fields: { OP: 'NEQ' },
+                          inputs: {
+                            A: { block: { type: 'variable_get', id: 'db_vg5', fields: { NAME: 'reading' } } },
+                            B: { block: { type: 'variable_get', id: 'db_vg6', fields: { NAME: 'buttonState' } } }
+                          }
+                        }},
+                        DO0: { block: {
+                          type: 'variable_set', id: 'db_s3',
+                          fields: { NAME: 'buttonState' },
+                          inputs: { VALUE: { block: { type: 'variable_get', id: 'db_vg7', fields: { NAME: 'reading' } } } },
+                          next: { block: {
+                            type: 'controls_if', id: 'db_l6',
+                            extraState: { hasElse: true },
+                            inputs: {
+                              IF0: { block: {
+                                type: 'logic_compare', id: 'db_cmp4', fields: { OP: 'EQ' },
+                                inputs: {
+                                  A: { block: { type: 'variable_get', id: 'db_vg8', fields: { NAME: 'buttonState' } } },
+                                  B: { block: { type: 'math_number', id: 'db_n1', fields: { NUM: 1 } } }
+                                }
+                              }},
+                              DO0: { block: {
+                                type: 'controls_if', id: 'db_l7',
+                                extraState: { hasElse: true },
+                                inputs: {
+                                  IF0: { block: {
+                                    type: 'logic_compare', id: 'db_cmp5', fields: { OP: 'EQ' },
+                                    inputs: {
+                                      A: { block: { type: 'variable_get', id: 'db_vg9', fields: { NAME: 'ledState' } } },
+                                      B: { block: { type: 'math_number', id: 'db_n2', fields: { NUM: 0 } } }
+                                    }
+                                  }},
+                                  DO0: { block: {
+                                    type: 'variable_set', id: 'db_s4',
+                                    fields: { NAME: 'ledState' },
+                                    inputs: { VALUE: { block: { type: 'math_number', id: 'db_n3', fields: { NUM: 1 } } } },
+                                    next: { block: { type: 'digital_write', id: 'db_dw1', fields: { PIN: 13, VALUE: 'HIGH' } } }
+                                  }},
+                                  ELSE: { block: {
+                                    type: 'variable_set', id: 'db_s5',
+                                    fields: { NAME: 'ledState' },
+                                    inputs: { VALUE: { block: { type: 'math_number', id: 'db_n4', fields: { NUM: 0 } } } },
+                                    next: { block: { type: 'digital_write', id: 'db_dw2', fields: { PIN: 13, VALUE: 'LOW' } } }
+                                  }}
+                                }
+                              }}
+                            }
+                          }}
+                        }}
+                      }
+                    }}
+                  },
+                  next: { block: {
+                    type: 'variable_set', id: 'db_s6',
+                    fields: { NAME: 'lastButtonState' },
+                    inputs: { VALUE: { block: { type: 'variable_get', id: 'db_vg10', fields: { NAME: 'reading' } } } }
+                  }}
+                }}
+              }}
+            }}}
+          }
+        ]
+      }
+    },
   },
 
   // ═══ 7. StateChangeDetection ═══════════════════
@@ -691,8 +937,215 @@ export const digitalSimple = [
   Added to ArduBlock — 2026-05-31
 */`
     },
-    reason: 'NOT_CONVERTIBLE',
-    note: 'Usa digitalWrite(ledPin, ledState) con variable dinámica (el bloque solo acepta dropdown HIGH/LOW). Además requiere buttonPushCounter++ (incremento) y buttonPushCounter % 4 == 0 (módulo).'
+    state: {
+      blocks: {
+        languageVersion: 0,
+        blocks: [
+          {
+            type: 'variable_declare',
+            id: 'sc_g1',
+            fields: { NAME: 'buttonPushCounter', TYPE: 'int' },
+            inputs: { VALUE: { block: { type: 'math_number', id: 'sc_gn1', fields: { NUM: 0 } } } },
+            x: 20,
+            y: 240
+          },
+          {
+            type: 'variable_declare',
+            id: 'sc_g2',
+            fields: { NAME: 'buttonState', TYPE: 'int' },
+            inputs: { VALUE: { block: { type: 'math_number', id: 'sc_gn2', fields: { NUM: 0 } } } },
+            x: 20,
+            y: 280
+          },
+          {
+            type: 'variable_declare',
+            id: 'sc_g3',
+            fields: { NAME: 'lastButtonState', TYPE: 'int' },
+            inputs: { VALUE: { block: { type: 'math_number', id: 'sc_gn3', fields: { NUM: 0 } } } },
+            x: 20,
+            y: 320
+          },
+          {
+            type: 'arduino_setup',
+            id: 'sc_s',
+            x: 20,
+            y: 20,
+            inputs: {
+              BODY: {
+                block: {
+                  type: 'pin_mode',
+                  id: 'sc_p1',
+                  fields: { PIN: 2, MODE: 'INPUT' },
+                  next: {
+                    block: {
+                      type: 'pin_mode',
+                      id: 'sc_p2',
+                      fields: { PIN: 13, MODE: 'OUTPUT' },
+                      next: {
+                        block: {
+                          type: 'serial_begin',
+                          id: 'sc_sb',
+                          fields: { BAUD: '9600' }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            type: 'arduino_loop',
+            id: 'sc_l',
+            x: 20,
+            y: 160,
+            inputs: {
+              BODY: {
+                block: {
+                  type: 'variable_set',
+                  id: 'sc_s1',
+                  fields: { NAME: 'buttonState' },
+                  inputs: { VALUE: { block: { type: 'digital_read', id: 'sc_dr', fields: { PIN: 2 } } } },
+                  next: {
+                    block: {
+                      type: 'controls_if',
+                      id: 'sc_if1',
+                      inputs: {
+                        IF0: {
+                          block: {
+                            type: 'logic_compare',
+                            id: 'sc_cmp1',
+                            fields: { OP: 'NEQ' },
+                            inputs: {
+                              A: { block: { type: 'variable_get', id: 'sc_vg1', fields: { NAME: 'buttonState' } } },
+                              B: { block: { type: 'variable_get', id: 'sc_vg2', fields: { NAME: 'lastButtonState' } } }
+                            }
+                          }
+                        },
+                        DO0: {
+                          block: {
+                            type: 'controls_if',
+                            id: 'sc7',
+                            extraState: { hasElse: true },
+                            inputs: {
+                              IF0: {
+                                block: {
+                                  type: 'logic_compare',
+                                  id: 'sc_cmp2',
+                                  fields: { OP: 'EQ' },
+                                  inputs: {
+                                    A: { block: { type: 'variable_get', id: 'sc_vg3', fields: { NAME: 'buttonState' } } },
+                                    B: { block: { type: 'math_number', id: 'sc_n1', fields: { NUM: 1 } } }
+                                  }
+                                }
+                              },
+                              DO0: {
+                                block: {
+                                  type: 'variable_set',
+                                  id: 'sc_s2',
+                                  fields: { NAME: 'buttonPushCounter' },
+                                  inputs: {
+                                    VALUE: {
+                                      block: {
+                                        type: 'math_arithmetic',
+                                        id: 'sc_ar1',
+                                        fields: { OP: 'ADD' },
+                                        inputs: {
+                                          A: { block: { type: 'variable_get', id: 'sc_vg4', fields: { NAME: 'buttonPushCounter' } } },
+                                          B: { block: { type: 'math_number', id: 'sc_n2', fields: { NUM: 1 } } }
+                                        }
+                                      }
+                                    }
+                                  },
+                                  next: {
+                                    block: {
+                                      type: 'serial_println',
+                                      id: 'sc_sp1',
+                                      inputs: { TEXT: { block: { type: 'text', id: 'sc_t1', fields: { TEXT: 'on' } } } },
+                                      next: {
+                                        block: {
+                                          type: 'serial_print',
+                                          id: 'sc_sp2',
+                                          inputs: { TEXT: { block: { type: 'text', id: 'sc_t2', fields: { TEXT: 'number of button pushes: ' } } } },
+                                          next: {
+                                            block: {
+                                              type: 'serial_println',
+                                              id: 'sc_sp3',
+                                              inputs: { TEXT: { block: { type: 'variable_get', id: 'sc_vg5', fields: { NAME: 'buttonPushCounter' } } } }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              },
+                              ELSE: {
+                                block: {
+                                  type: 'serial_println',
+                                  id: 'sc_sp4',
+                                  inputs: { TEXT: { block: { type: 'text', id: 'sc_t3', fields: { TEXT: 'off' } } } }
+                                }
+                              }
+                            },
+                            next: {
+                              block: {
+                                type: 'delay_ms',
+                                id: 'sc_d1',
+                                fields: { MS: 50 },
+                                next: {
+                                  block: {
+                                    type: 'variable_set',
+                                    id: 'sc_s3',
+                                    fields: { NAME: 'lastButtonState' },
+                                    inputs: { VALUE: { block: { type: 'variable_get', id: 'sc_vg6', fields: { NAME: 'buttonState' } } } },
+                                    next: {
+                                      block: {
+                                        type: 'controls_if',
+                                        id: 'sc21',
+                                        extraState: { hasElse: true },
+                                        inputs: {
+                                          IF0: {
+                                            block: {
+                                              type: 'logic_compare',
+                                              id: 'sc_cmp3',
+                                              fields: { OP: 'EQ' },
+                                              inputs: {
+                                                A: {
+                                                  block: {
+                                                    type: 'math_modulo',
+                                                    id: 'sc_mod',
+                                                    inputs: {
+                                                      DIVIDEND: { block: { type: 'variable_get', id: 'sc_vg7', fields: { NAME: 'buttonPushCounter' } } },
+                                                      DIVISOR: { block: { type: 'math_number', id: 'sc_n3', fields: { NUM: 4 } } }
+                                                    }
+                                                  }
+                                                },
+                                                B: { block: { type: 'math_number', id: 'sc_n4', fields: { NUM: 0 } } }
+                                              }
+                                            }
+                                          },
+                                          DO0: { block: { type: 'digital_write', id: 'sc_dw1', fields: { PIN: 13, VALUE: 'HIGH' } } },
+                                          ELSE: { block: { type: 'digital_write', id: 'sc_dw2', fields: { PIN: 13, VALUE: 'LOW' } } }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
   },
 
   // ═══ 8. toneMelody ═════════════════════════════

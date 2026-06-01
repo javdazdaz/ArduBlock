@@ -189,6 +189,7 @@ const toolbox = {
       'contents': [
         { 'kind': 'block', 'type': 'array_declare' },
         { 'kind': 'block', 'type': 'array_get' },
+        { 'kind': 'block', 'type': 'array_set' },
         { 'kind': 'block', 'type': 'array_length' }
       ]},
     { 'kind': 'category', 'name': '%{BKY_CAT_FUNCTIONS}', 'colour': '290', 'custom': 'PROCEDURE' },

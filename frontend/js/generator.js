@@ -727,6 +727,16 @@ cppGenerator.forBlock['array_get'] = function(block) {
   return [name + '[' + idx + ']', cppGenerator.ORDER_ATOMIC];
 };
 
+// ── array_set ────────────────────────────────
+cppGenerator.forBlock['array_set'] = function(block) {
+  const name = block.getFieldValue('NAME') || 'arr';
+  const idx  = cppGenerator.valueToCode(block, 'INDEX',
+    cppGenerator.ORDER_ATOMIC) || '0';
+  const val  = cppGenerator.valueToCode(block, 'VALUE',
+    cppGenerator.ORDER_ASSIGNMENT) || '0';
+  return name + '[' + idx + '] = ' + val + ';\n';
+};
+
 // ── array_length ─────────────────────────────
 cppGenerator.forBlock['array_length'] = function(block) {
   const name = block.getFieldValue('NAME') || 'arr';

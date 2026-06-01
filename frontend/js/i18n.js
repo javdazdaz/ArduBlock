@@ -138,6 +138,8 @@ const messages = {
     TOOLTIP_ARRAY_DECLARE: 'Declara un arreglo del tipo elegido con los valores dados. Escribí los valores separados por coma.',
     MSG_ARRAY_GET: '%1 en posición %2',
     TOOLTIP_ARRAY_GET: 'Devuelve el valor del arreglo en la posición indicada (empieza en 0).',
+    MSG_ARRAY_SET: 'asignar en %1 índice %2 el valor %3',
+    TOOLTIP_ARRAY_SET: 'Asigna un valor al arreglo en la posición indicada (empieza en 0).',
     MSG_ARRAY_LENGTH: 'largo de %1',
     TOOLTIP_ARRAY_LENGTH: 'Devuelve la cantidad de elementos del arreglo.',
     // ── UI principal ──
@@ -342,6 +344,8 @@ const messages = {
     TOOLTIP_ARRAY_DECLARE: 'Declares an array of the chosen type with the given values. Write values separated by commas.',
     MSG_ARRAY_GET: '%1 at position %2',
     TOOLTIP_ARRAY_GET: 'Returns the array value at the given position (starts at 0).',
+    MSG_ARRAY_SET: 'set %1 at index %2 to %3',
+    TOOLTIP_ARRAY_SET: 'Assigns a value to the array at the given position (starts at 0).',
     MSG_ARRAY_LENGTH: 'length of %1',
     TOOLTIP_ARRAY_LENGTH: 'Returns the number of elements in the array.',
     // ── Main toolbar ──

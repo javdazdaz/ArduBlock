@@ -941,6 +941,20 @@ Blockly.common.defineBlocksWithJsonArray([
     "helpUrl": ""
   },
   {
+    "type": "array_set",
+    "message0": Blockly.Msg.MSG_ARRAY_SET,
+    "args0": [
+      { "type": "field_input", "name": "NAME", "text": "arr" },
+      { "type": "input_value", "name": "INDEX", "check": "Number" },
+      { "type": "input_value", "name": "VALUE", "check": ["Number", "String", "Boolean"] }
+    ],
+    "previousStatement": null,
+    "nextStatement": null,
+    "colour": 330,
+    "tooltip": Blockly.Msg.TOOLTIP_ARRAY_SET,
+    "helpUrl": ""
+  },
+  {
     "type": "array_length",
     "message0": Blockly.Msg.MSG_ARRAY_LENGTH,
     "args0": [

@@ -29,8 +29,126 @@ export const analog3 = [
 
   Agregado a ArduBlock — 2026-05-31
 */`,
-    reason: 'NOT_CONVERTIBLE',
-    note: 'Usa arrays (int readings[numReadings]), índice circular, y algoritmo de promedio móvil con resta/acumulación. ArduBlock no soporta arrays ni indexado de arrays.'
+state: {
+      blocks: {
+        languageVersion: 0,
+        blocks: [
+          {
+            type: 'variable_declare', id: 'sm_g1',
+            fields: { NAME: 'readIndex', TYPE: 'int' },
+            inputs: { VALUE: { block: { type: 'math_number', id: 'sm_gn1', fields: { NUM: 0 } } } },
+            x: 20, y: 240
+          },
+          {
+            type: 'variable_declare', id: 'sm_g2',
+            fields: { NAME: 'total', TYPE: 'int' },
+            inputs: { VALUE: { block: { type: 'math_number', id: 'sm_gn2', fields: { NUM: 0 } } } },
+            x: 20, y: 280
+          },
+          {
+            type: 'variable_declare', id: 'sm_g3',
+            fields: { NAME: 'average', TYPE: 'int' },
+            inputs: { VALUE: { block: { type: 'math_number', id: 'sm_gn3', fields: { NUM: 0 } } } },
+            x: 20, y: 320
+          },
+          {
+            type: 'array_declare', id: 'sm_arr',
+            fields: { TYPE: 'int', NAME: 'readings', VALUES: '0, 0, 0, 0, 0, 0, 0, 0, 0, 0' },
+            x: 20, y: 360
+          },
+          {
+            type: 'arduino_setup', id: 'sm_s', x: 20, y: 20,
+            inputs: { BODY: { block: {
+              type: 'serial_begin', id: 'sm_sb',
+              fields: { BAUD: '9600' }
+            }}}
+          },
+          {
+            type: 'arduino_loop', id: 'sm_l', x: 20, y: 160,
+            inputs: { BODY: { block: {
+              type: 'variable_set', id: 'sm_sub',
+              fields: { NAME: 'total' },
+              inputs: { VALUE: { block: {
+                type: 'math_arithmetic', id: 'sm_ar1', fields: { OP: 'MINUS' },
+                inputs: {
+                  A: { block: { type: 'variable_get', id: 'sm_vg1', fields: { NAME: 'total' } } },
+                  B: { block: { type: 'array_get', id: 'sm_ag1', fields: { NAME: 'readings' },
+                    inputs: { INDEX: { block: { type: 'variable_get', id: 'sm_vg2', fields: { NAME: 'readIndex' } } } }
+                  }}
+                }
+              }}},
+              next: { block: {
+                type: 'array_set', id: 'sm_as1',
+                fields: { NAME: 'readings' },
+                inputs: {
+                  INDEX: { block: { type: 'variable_get', id: 'sm_vg3', fields: { NAME: 'readIndex' } } },
+                  VALUE: { block: { type: 'analog_read', id: 'sm_ar0', fields: { PIN: 0 } } }
+                },
+                next: { block: {
+                  type: 'variable_set', id: 'sm_add',
+                  fields: { NAME: 'total' },
+                  inputs: { VALUE: { block: {
+                    type: 'math_arithmetic', id: 'sm_ar2', fields: { OP: 'ADD' },
+                    inputs: {
+                      A: { block: { type: 'variable_get', id: 'sm_vg4', fields: { NAME: 'total' } } },
+                      B: { block: { type: 'array_get', id: 'sm_ag2', fields: { NAME: 'readings' },
+                        inputs: { INDEX: { block: { type: 'variable_get', id: 'sm_vg5', fields: { NAME: 'readIndex' } } } }
+                      }}
+                    }
+                  }}},
+                  next: { block: {
+                    type: 'variable_set', id: 'sm_inc',
+                    fields: { NAME: 'readIndex' },
+                    inputs: { VALUE: { block: {
+                      type: 'math_arithmetic', id: 'sm_ar3', fields: { OP: 'ADD' },
+                      inputs: {
+                        A: { block: { type: 'variable_get', id: 'sm_vg6', fields: { NAME: 'readIndex' } } },
+                        B: { block: { type: 'math_number', id: 'sm_n1', fields: { NUM: 1 } } }
+                      }
+                    }}},
+                    next: { block: {
+                      type: 'controls_if', id: 'sm_if1',
+                      inputs: {
+                        IF0: { block: {
+                          type: 'logic_compare', id: 'sm_cmp1', fields: { OP: 'GTE' },
+                          inputs: {
+                            A: { block: { type: 'variable_get', id: 'sm_vg7', fields: { NAME: 'readIndex' } } },
+                            B: { block: { type: 'math_number', id: 'sm_n2', fields: { NUM: 10 } } }
+                          }
+                        }},
+                        DO0: { block: {
+                          type: 'variable_set', id: 'sm_rst',
+                          fields: { NAME: 'readIndex' },
+                          inputs: { VALUE: { block: { type: 'math_number', id: 'sm_n3', fields: { NUM: 0 } } } }
+                        }}
+                      },
+                      next: { block: {
+                        type: 'variable_set', id: 'sm_avg',
+                        fields: { NAME: 'average' },
+                        inputs: { VALUE: { block: {
+                          type: 'math_arithmetic', id: 'sm_ar4', fields: { OP: 'DIVIDE' },
+                          inputs: {
+                            A: { block: { type: 'variable_get', id: 'sm_vg8', fields: { NAME: 'total' } } },
+                            B: { block: { type: 'math_number', id: 'sm_n4', fields: { NUM: 10 } } }
+                          }
+                        }}},
+                        next: { block: {
+                          type: 'serial_println', id: 'sm_sp1',
+                          inputs: { TEXT: { block: { type: 'variable_get', id: 'sm_vg9', fields: { NAME: 'average' } } } },
+                          next: { block: {
+                            type: 'delay_ms', id: 'sm_d1', fields: { MS: 1 }
+                          }}
+                        }}
+                      }}
+                    }}
+                  }}
+                }}
+              }}
+            }}}
+          }
+        ]
+      }
+    },
   },
 
   // ═══ AnalogWriteMega ═══════════════════════
