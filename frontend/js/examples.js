@@ -117,7 +117,16 @@ function loadPresetExample(name) {
 
   workspace.clear();
   Blockly.serialization.workspaces.load(ex.state, workspace);
-  window._exampleComment = ex.comment;
+
+  // Elegir idioma del comentario según settings
+  let lang = 'es';
+  try {
+    const raw = localStorage.getItem('ardublock:settings');
+    if (raw) lang = JSON.parse(raw).language || 'es';
+  } catch (_) { /* default es */ }
+  const comment = (typeof ex.comment === 'object') ? (ex.comment[lang] || ex.comment.en || '') : (ex.comment || '');
+
+  window._exampleComment = comment;
   updateCodeFn();
   projectInput.value = '';
   closeExamples();
