@@ -174,6 +174,11 @@ restricciones técnicas. Cada aviso le dice al estudiante **qué pasa y por qué
 | R6c | `crear LCD/DHT/ultrasónico` fuera de setup() | Estos bloques deben ir dentro de `al iniciar (setup)`. |
 | R7 | Pin usado sin `configurar pin` | El pin no fue declarado con `configurar pin` en `al iniciar (setup)`. |
 
+## Roadmap
+
+- [ ] **Múltiples tabs en el workspace** — soportar varias pestañas de sketches abiertas simultáneamente, como un IDE.
+- [ ] **Selector de placa en la toolbar de Arduino** — dropdown para elegir modelo de placa (Uno, Nano, Mega, etc.) y que afecte compilación y pines disponibles.
+
 ## Licencia
 
 GPL-3.0-or-later
