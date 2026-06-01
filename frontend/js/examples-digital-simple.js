@@ -1,14 +1,35 @@
 /**
- * ArduBlock — Ejemplos 02.Digital (simples) como workspace states
- * Cada ejemplo tiene: name, description, comment (header .ino), state (Blockly JSON)
+ * ArduBlock — Ejemplos 02.Digital como workspace states.
+ * Comentarios bilingües (es/en). Variables usan el sistema custom de ArduBlock.
  */
 export const digitalSimple = [
+
   // ═══ 1. Button ════════════════════════════════
   {
     name: 'Button',
     category: '02.Digital',
     description: 'Enciende un LED al presionar un pulsador',
-    comment: `/*
+    comment: {
+      es: `/*
+  Button
+
+  Enciende y apaga un LED conectado al pin digital 13
+  al presionar un pulsador conectado al pin 2.
+
+  El circuito:
+  - LED del pin 13 a tierra con resistencia de 220 ohm
+  - pulsador del pin 2 a +5V
+  - resistencia de 10K del pin 2 a tierra
+
+  creado 2005 por DojoDave
+  modificado 30 Ago 2011 por Tom Igoe
+
+  Este código es de dominio público.
+
+  https://docs.arduino.cc/built-in-examples/digital/Button/
+*/
+Agregado a ArduBlock — 2026-05-31`,
+      en: `/*
   Button
 
   Turns on and off a light emitting diode(LED) connected to digital pin 13,
@@ -19,19 +40,15 @@ export const digitalSimple = [
   - pushbutton attached to pin 2 from +5V
   - 10K resistor attached to pin 2 from ground
 
-  - Note: on most Arduinos there is already an LED on the board
-    attached to pin 13.
-
-  created 2005
-  by DojoDave <http://www.0j0.org>
-  modified 30 Aug 2011
-  by Tom Igoe
+  created 2005 by DojoDave
+  modified 30 Aug 2011 by Tom Igoe
 
   This example code is in the public domain.
 
   https://docs.arduino.cc/built-in-examples/digital/Button/
 */
-Agregado a ArduBlock — 2026-05-31`,
+Added to ArduBlock — 2026-05-31`
+    },
     state: {
       blocks: {
         languageVersion: 0,
@@ -58,8 +75,8 @@ Agregado a ArduBlock — 2026-05-31`,
             inputs: {
               BODY: {
                 block: {
-                  type: 'variables_set', id: 'bt5',
-                  fields: { VAR: { name: 'buttonState' } },
+                  type: 'variable_set', id: 'bt5',
+                  fields: { NAME: 'buttonState' },
                   inputs: {
                     VALUE: {
                       block: {
@@ -77,18 +94,8 @@ Agregado a ArduBlock — 2026-05-31`,
                             type: 'logic_compare', id: 'bt8',
                             fields: { OP: 'EQ' },
                             inputs: {
-                              A: {
-                                block: {
-                                  type: 'variables_get', id: 'bt9',
-                                  fields: { VAR: { name: 'buttonState' } }
-                                }
-                              },
-                              B: {
-                                block: {
-                                  type: 'math_number', id: 'bt10',
-                                  fields: { NUM: 1 }
-                                }
-                              }
+                              A: { block: { type: 'variable_get', id: 'bt9', fields: { NAME: 'buttonState' } } },
+                              B: { block: { type: 'math_number', id: 'bt10', fields: { NUM: 1 } } }
                             }
                           }
                         },
@@ -121,7 +128,31 @@ Agregado a ArduBlock — 2026-05-31`,
     name: 'DigitalInputPullup',
     category: '02.Digital',
     description: 'Lee un pulsador con resistencia pull-up interna y lo imprime por Serial',
-    comment: `/*
+    comment: {
+      es: `/*
+  Input Pull-up Serial
+
+  Este ejemplo demuestra el uso de pinMode(INPUT_PULLUP).
+  Lee una entrada digital en el pin 2 e imprime los resultados
+  en el Monitor Serial.
+
+  El circuito:
+  - pulsador momentáneo del pin 2 a tierra
+  - LED integrado en el pin 13
+
+  A diferencia de pinMode(INPUT), no se necesita resistencia
+  pull-down externa. Una resistencia interna de 20K ohm está
+  conectada a 5V. La entrada lee HIGH cuando el pulsador está
+  abierto, y LOW cuando está cerrado.
+
+  creado 14 Mar 2012 por Scott Fitzgerald
+
+  Este código es de dominio público.
+
+  https://docs.arduino.cc/built-in-examples/digital/InputPullupSerial/
+*/
+Agregado a ArduBlock — 2026-05-31`,
+      en: `/*
   Input Pull-up Serial
 
   This example demonstrates the use of pinMode(INPUT_PULLUP). It reads a digital
@@ -135,14 +166,14 @@ Agregado a ArduBlock — 2026-05-31`,
   20K-ohm resistor is pulled to 5V. This configuration causes the input to read
   HIGH when the switch is open, and LOW when it is closed.
 
-  created 14 Mar 2012
-  by Scott Fitzgerald
+  created 14 Mar 2012 by Scott Fitzgerald
 
   This example code is in the public domain.
 
   https://docs.arduino.cc/built-in-examples/digital/InputPullupSerial/
 */
-Agregado a ArduBlock — 2026-05-31`,
+Added to ArduBlock — 2026-05-31`
+    },
     state: {
       blocks: {
         languageVersion: 0,
@@ -175,8 +206,8 @@ Agregado a ArduBlock — 2026-05-31`,
             inputs: {
               BODY: {
                 block: {
-                  type: 'variables_set', id: 'dp6',
-                  fields: { VAR: { name: 'sensorVal' } },
+                  type: 'variable_declare', id: 'dp6',
+                  fields: { NAME: 'sensorVal', TYPE: 'int' },
                   inputs: {
                     VALUE: {
                       block: {
@@ -190,10 +221,7 @@ Agregado a ArduBlock — 2026-05-31`,
                       type: 'serial_println', id: 'dp8',
                       inputs: {
                         TEXT: {
-                          block: {
-                            type: 'variables_get', id: 'dp9',
-                            fields: { VAR: { name: 'sensorVal' } }
-                          }
+                          block: { type: 'variable_get', id: 'dp9', fields: { NAME: 'sensorVal' } }
                         }
                       },
                       next: {
@@ -205,32 +233,16 @@ Agregado a ArduBlock — 2026-05-31`,
                                 type: 'logic_compare', id: 'dp11',
                                 fields: { OP: 'EQ' },
                                 inputs: {
-                                  A: {
-                                    block: {
-                                      type: 'variables_get', id: 'dp12',
-                                      fields: { VAR: { name: 'sensorVal' } }
-                                    }
-                                  },
-                                  B: {
-                                    block: {
-                                      type: 'math_number', id: 'dp13',
-                                      fields: { NUM: 1 }
-                                    }
-                                  }
+                                  A: { block: { type: 'variable_get', id: 'dp12', fields: { NAME: 'sensorVal' } } },
+                                  B: { block: { type: 'math_number', id: 'dp13', fields: { NUM: 1 } } }
                                 }
                               }
                             },
                             DO0: {
-                              block: {
-                                type: 'digital_write', id: 'dp14',
-                                fields: { PIN: 13, VALUE: 'LOW' }
-                              }
+                              block: { type: 'digital_write', id: 'dp14', fields: { PIN: 13, VALUE: 'LOW' } }
                             },
                             ELSE: {
-                              block: {
-                                type: 'digital_write', id: 'dp15',
-                                fields: { PIN: 13, VALUE: 'HIGH' }
-                              }
+                              block: { type: 'digital_write', id: 'dp15', fields: { PIN: 13, VALUE: 'HIGH' } }
                             }
                           }
                         }
@@ -250,162 +262,109 @@ Agregado a ArduBlock — 2026-05-31`,
   {
     name: 'toneKeyboard',
     category: '02.Digital',
-    description: 'Teclado de 3 sensores de presión que generan notas musicales',
-    comment: `/*
+    description: 'Teclado de 3 sensores que generan notas musicales',
+    comment: {
+      es: `/*
+  Keyboard
+
+  Toca notas musicales según la lectura de sensores
+  de presión analógicos.
+
+  circuito:
+  - tres resistencias sensoras de fuerza de +5V a A0, A1, A2
+  - tres resistencias de 10 kilohm de A0, A1, A2 a tierra
+  - parlante de 8 ohm en el pin digital 8
+
+  creado 21 Ene 2010, modificado 9 Abr 2012 por Tom Igoe
+
+  Este código es de dominio público.
+
+  https://docs.arduino.cc/built-in-examples/digital/toneKeyboard/
+*/
+Agregado a ArduBlock — 2026-05-31`,
+      en: `/*
   Keyboard
 
   Plays a pitch that changes based on a changing analog input
 
   circuit:
-  - three force-sensing resistors from +5V to analog in 0 through 5
-  - three 10 kilohm resistors from analog in 0 through 5 to ground
+  - three force-sensing resistors from +5V to analog in 0 through 2
+  - three 10 kilohm resistors from analog in 0 through 2 to ground
   - 8 ohm speaker on digital pin 8
 
-  created 21 Jan 2010
-  modified 9 Apr 2012
-  by Tom Igoe
+  created 21 Jan 2010, modified 9 Apr 2012 by Tom Igoe
 
   This example code is in the public domain.
 
   https://docs.arduino.cc/built-in-examples/digital/toneKeyboard/
 */
-Agregado a ArduBlock — 2026-05-31`,
+Added to ArduBlock — 2026-05-31`
+    },
     state: {
       blocks: {
         languageVersion: 0,
         blocks: [
-          {
-            type: 'arduino_setup', id: 'tk1', x: 20, y: 20
-          },
+          { type: 'arduino_setup', id: 'tk1', x: 20, y: 20 },
           {
             type: 'arduino_loop', id: 'tk2', x: 20, y: 120,
             inputs: {
               BODY: {
                 block: {
-                  type: 'variables_set', id: 'tk3',
-                  fields: { VAR: { name: 'sensorReading' } },
+                  // if analogRead(A0) > 10: tone(8, 440, 20)
+                  type: 'controls_if', id: 'tk3',
                   inputs: {
-                    VALUE: {
+                    IF0: {
                       block: {
-                        type: 'analog_read', id: 'tk4',
-                        fields: { PIN: 0 }
-                      }
-                    }
-                  },
-                  next: {
-                    block: {
-                      type: 'controls_if', id: 'tk5',
-                      inputs: {
-                        IF0: {
-                          block: {
-                            type: 'logic_compare', id: 'tk6',
-                            fields: { OP: 'GT' },
-                            inputs: {
-                              A: {
-                                block: {
-                                  type: 'variables_get', id: 'tk7',
-                                  fields: { VAR: { name: 'sensorReading' } }
-                                }
-                              },
-                              B: {
-                                block: {
-                                  type: 'math_number', id: 'tk8',
-                                  fields: { NUM: 10 }
-                                }
-                              }
-                            }
-                          }
-                        },
-                        DO0: {
-                          block: {
-                            type: 'tone_output', id: 'tk9',
-                            fields: { PIN: 8, FREQ: 440 }
-                          }
+                        type: 'logic_compare', id: 'tk4',
+                        fields: { OP: 'GT' },
+                        inputs: {
+                          A: { block: { type: 'analog_read', id: 'tk5', fields: { PIN: 0 } } },
+                          B: { block: { type: 'math_number', id: 'tk6', fields: { NUM: 10 } } }
                         }
-                      },
-                      next: {
-                        block: {
-                          type: 'variables_set', id: 'tk10',
-                          fields: { VAR: { name: 'sensorReading' } },
-                          inputs: {
-                            VALUE: {
-                              block: {
-                                type: 'analog_read', id: 'tk11',
-                                fields: { PIN: 1 }
-                              }
-                            }
-                          },
-                          next: {
-                            block: {
-                              type: 'controls_if', id: 'tk12',
-                              inputs: {
-                                IF0: {
-                                  block: {
-                                    type: 'logic_compare', id: 'tk13',
-                                    fields: { OP: 'GT' },
-                                    inputs: {
-                                      A: {
-                                        block: {
-                                          type: 'variables_get', id: 'tk14',
-                                          fields: { VAR: { name: 'sensorReading' } }
-                                        }
-                                      },
-                                      B: {
-                                        block: {
-                                          type: 'math_number', id: 'tk15',
-                                          fields: { NUM: 10 }
-                                        }
-                                      }
-                                    }
-                                  }
-                                },
-                                DO0: {
-                                  block: {
-                                    type: 'tone_output', id: 'tk16',
-                                    fields: { PIN: 8, FREQ: 494 }
+                      }
+                    },
+                    DO0: {
+                      block: {
+                        type: 'tone_duration', id: 'tk7',
+                        fields: { PIN: 8, FREQ: 440, DURATION: 20 },
+                        next: {
+                          block: {
+                            // if analogRead(A1) > 10: tone(8, 494, 20)
+                            type: 'controls_if', id: 'tk8',
+                            inputs: {
+                              IF0: {
+                                block: {
+                                  type: 'logic_compare', id: 'tk9',
+                                  fields: { OP: 'GT' },
+                                  inputs: {
+                                    A: { block: { type: 'analog_read', id: 'tk10', fields: { PIN: 1 } } },
+                                    B: { block: { type: 'math_number', id: 'tk11', fields: { NUM: 10 } } }
                                   }
                                 }
                               },
-                              next: {
+                              DO0: {
                                 block: {
-                                  type: 'variables_set', id: 'tk17',
-                                  fields: { VAR: { name: 'sensorReading' } },
-                                  inputs: {
-                                    VALUE: {
-                                      block: {
-                                        type: 'analog_read', id: 'tk18',
-                                        fields: { PIN: 2 }
-                                      }
-                                    }
-                                  },
+                                  type: 'tone_duration', id: 'tk12',
+                                  fields: { PIN: 8, FREQ: 494, DURATION: 20 },
                                   next: {
                                     block: {
-                                      type: 'controls_if', id: 'tk19',
+                                      // if analogRead(A2) > 10: tone(8, 131, 20)
+                                      type: 'controls_if', id: 'tk13',
                                       inputs: {
                                         IF0: {
                                           block: {
-                                            type: 'logic_compare', id: 'tk20',
+                                            type: 'logic_compare', id: 'tk14',
                                             fields: { OP: 'GT' },
                                             inputs: {
-                                              A: {
-                                                block: {
-                                                  type: 'variables_get', id: 'tk21',
-                                                  fields: { VAR: { name: 'sensorReading' } }
-                                                }
-                                              },
-                                              B: {
-                                                block: {
-                                                  type: 'math_number', id: 'tk22',
-                                                  fields: { NUM: 10 }
-                                                }
-                                              }
+                                              A: { block: { type: 'analog_read', id: 'tk15', fields: { PIN: 2 } } },
+                                              B: { block: { type: 'math_number', id: 'tk16', fields: { NUM: 10 } } }
                                             }
                                           }
                                         },
                                         DO0: {
                                           block: {
-                                            type: 'tone_output', id: 'tk23',
-                                            fields: { PIN: 8, FREQ: 131 }
+                                            type: 'tone_duration', id: 'tk17',
+                                            fields: { PIN: 8, FREQ: 131, DURATION: 20 }
                                           }
                                         }
                                       }
@@ -432,8 +391,28 @@ Agregado a ArduBlock — 2026-05-31`,
   {
     name: 'tonePitchFollower',
     category: '02.Digital',
-    description: 'Genera un tono cuya frecuencia varía según la luz captada por un fotorresistor',
-    comment: `/*
+    description: 'Genera un tono cuya frecuencia varía según un sensor de luz',
+    comment: {
+      es: `/*
+  Pitch follower
+
+  Toca un tono cuya frecuencia cambia según la lectura
+  de una entrada analógica (fotorresistor).
+
+  circuito:
+  - parlante de 8 ohm en el pin digital 9
+  - fotorresistor en A0 a 5V
+  - resistencia de 4.7 kilohm en A0 a tierra
+
+  creado 21 Ene 2010, modificado 31 May 2012
+  por Tom Igoe, con sugerencia de Michael Flynn
+
+  Este código es de dominio público.
+
+  https://docs.arduino.cc/built-in-examples/digital/tonePitchFollower/
+*/
+Agregado a ArduBlock — 2026-05-31`,
+      en: `/*
   Pitch follower
 
   Plays a pitch that changes based on a changing analog input
@@ -443,15 +422,15 @@ Agregado a ArduBlock — 2026-05-31`,
   - photoresistor on analog 0 to 5V
   - 4.7 kilohm resistor on analog 0 to ground
 
-  created 21 Jan 2010
-  modified 31 May 2012
+  created 21 Jan 2010, modified 31 May 2012
   by Tom Igoe, with suggestion from Michael Flynn
 
   This example code is in the public domain.
 
   https://docs.arduino.cc/built-in-examples/digital/tonePitchFollower/
 */
-Agregado a ArduBlock — 2026-05-31`,
+Added to ArduBlock — 2026-05-31`
+    },
     state: {
       blocks: {
         languageVersion: 0,
@@ -472,56 +451,45 @@ Agregado a ArduBlock — 2026-05-31`,
             inputs: {
               BODY: {
                 block: {
-                  type: 'variables_set', id: 'tp4',
-                  fields: { VAR: { name: 'sensorReading' } },
+                  type: 'variable_declare', id: 'tp4',
+                  fields: { NAME: 'sensorReading', TYPE: 'int' },
                   inputs: {
-                    VALUE: {
-                      block: {
-                        type: 'analog_read', id: 'tp5',
-                        fields: { PIN: 0 }
-                      }
-                    }
+                    VALUE: { block: { type: 'analog_read', id: 'tp5', fields: { PIN: 0 } } }
                   },
                   next: {
                     block: {
                       type: 'serial_println', id: 'tp6',
                       inputs: {
-                        TEXT: {
-                          block: {
-                            type: 'variables_get', id: 'tp7',
-                            fields: { VAR: { name: 'sensorReading' } }
-                          }
-                        }
+                        TEXT: { block: { type: 'variable_get', id: 'tp7', fields: { NAME: 'sensorReading' } } }
                       },
                       next: {
                         block: {
-                          type: 'variables_set', id: 'tp8',
-                          fields: { VAR: { name: 'thisPitch' } },
+                          type: 'variable_declare', id: 'tp8',
+                          fields: { NAME: 'thisPitch', TYPE: 'int' },
                           inputs: {
                             VALUE: {
                               block: {
                                 type: 'map_value', id: 'tp9',
-                                fields: {
-                                  FROM_LOW: 400,
-                                  FROM_HIGH: 1000,
-                                  TO_LOW: 120,
-                                  TO_HIGH: 1500
-                                },
+                                fields: { FROM_LOW: 400, FROM_HIGH: 1000, TO_LOW: 120, TO_HIGH: 1500 },
                                 inputs: {
-                                  VALUE: {
-                                    block: {
-                                      type: 'variables_get', id: 'tp10',
-                                      fields: { VAR: { name: 'sensorReading' } }
-                                    }
-                                  }
+                                  VALUE: { block: { type: 'variable_get', id: 'tp10', fields: { NAME: 'sensorReading' } } }
                                 }
                               }
                             }
                           },
                           next: {
                             block: {
-                              type: 'tone_output', id: 'tp11',
-                              fields: { PIN: 9, FREQ: 120 }
+                              // Limitación: tone_output FREQ es field_number estático,
+                              // no puede recibir la variable thisPitch.
+                              // Usamos el valor mínimo del rango (120 Hz) como aproximación.
+                              type: 'tone_duration', id: 'tp11',
+                              fields: { PIN: 9, FREQ: 120, DURATION: 10 },
+                              next: {
+                                block: {
+                                  type: 'delay_ms', id: 'tp12',
+                                  fields: { MS: 1 }
+                                }
+                              }
                             }
                           }
                         }
