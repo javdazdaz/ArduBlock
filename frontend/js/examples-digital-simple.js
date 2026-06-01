@@ -54,6 +54,11 @@ Added to ArduBlock — 2026-05-31`
         languageVersion: 0,
         blocks: [
           {
+            type: 'variable_declare', id: 'bt0', x: 20, y: 280,
+            fields: { NAME: 'buttonState', TYPE: 'int' },
+            inputs: { VALUE: { block: { type: 'math_number', id: 'bt0v', fields: { NUM: 0 } } } }
+          },
+          {
             type: 'arduino_setup', id: 'bt1', x: 20, y: 20,
             inputs: {
               BODY: {
