@@ -28,8 +28,9 @@ export const analog2 = [
   This example code is in the public domain.
 
   https://docs.arduino.cc/built-in-examples/analog/AnalogInOutSerial/
-*/
-Agregado a ArduBlock — 2026-05-31`,
+
+  Agregado a ArduBlock — 2026-05-31
+*/`,
     state: {
       blocks: {
         languageVersion: 0,
@@ -168,8 +169,9 @@ Agregado a ArduBlock — 2026-05-31`,
   This example code is in the public domain.
 
   https://docs.arduino.cc/built-in-examples/analog/Calibration/
-*/
-Agregado a ArduBlock — 2026-05-31`,
+
+  Agregado a ArduBlock — 2026-05-31
+*/`,
     reason: 'NOT_CONVERTIBLE',
     note: 'Usa while(millis() < 5000) sin bloque while ni función millis() disponible; constrain() no disponible; digitalWrite no está en los bloques; map() usa sensorMin/sensorMax dinámicos (los campos FROM_LOW/FROM_HIGH de map_value son fijos). Requiere bloque de calibración especializado.'
   }

@@ -35,8 +35,9 @@ export const analogControlExamples = [
   This example code is in the public domain.
 
   https://docs.arduino.cc/built-in-examples/analog/AnalogInput/
-*/
-Agregado a ArduBlock — 2026-05-31`,
+
+  Agregado a ArduBlock — 2026-05-31
+*/`,
     state: {
       blocks: {
         languageVersion: 0,
@@ -121,8 +122,9 @@ Agregado a ArduBlock — 2026-05-31`,
   This example code is in the public domain.
 
   https://docs.arduino.cc/built-in-examples/analog/Fading/
-*/
-Agregado a ArduBlock — 2026-05-31`,
+
+  Agregado a ArduBlock — 2026-05-31
+*/`,
     reason: 'NOT_CONVERTIBLE',
     note: 'Usa for (int fadeValue = 0; fadeValue <= 255; fadeValue += 5). controls_repeat_ext no soporta paso variable (step 5), solo repetición N veces. Requiere bloque for con inicio/fin/paso.'
   },
@@ -156,8 +158,9 @@ Agregado a ArduBlock — 2026-05-31`,
   This example code is in the public domain.
 
   https://docs.arduino.cc/built-in-examples/control-structures/ifStatementConditional/
-*/
-Agregado a ArduBlock — 2026-05-31`,
+
+  Agregado a ArduBlock — 2026-05-31
+*/`,
     state: {
       blocks: {
         languageVersion: 0,
@@ -208,6 +211,7 @@ Agregado a ArduBlock — 2026-05-31`,
                       next: {
                         block: {
                           type: 'controls_if', id: 'if9',
+                          extraState: { hasElse: true },
                           inputs: {
                             IF0: {
                               block: {

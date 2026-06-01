@@ -27,8 +27,9 @@ export const digitalSimple = [
   Este código es de dominio público.
 
   https://docs.arduino.cc/built-in-examples/digital/Button/
-*/
-Agregado a ArduBlock — 2026-05-31`,
+
+  Agregado a ArduBlock — 2026-05-31
+*/`,
       en: `/*
   Button
 
@@ -46,8 +47,9 @@ Agregado a ArduBlock — 2026-05-31`,
   This example code is in the public domain.
 
   https://docs.arduino.cc/built-in-examples/digital/Button/
-*/
-Added to ArduBlock — 2026-05-31`
+
+  Added to ArduBlock — 2026-05-31
+*/`
     },
     state: {
       blocks: {
@@ -93,6 +95,7 @@ Added to ArduBlock — 2026-05-31`
                   next: {
                     block: {
                       type: 'controls_if', id: 'bt7',
+                      extraState: { hasElse: true },
                       inputs: {
                         IF0: {
                           block: {
@@ -155,8 +158,9 @@ Added to ArduBlock — 2026-05-31`
   Este código es de dominio público.
 
   https://docs.arduino.cc/built-in-examples/digital/InputPullupSerial/
-*/
-Agregado a ArduBlock — 2026-05-31`,
+
+  Agregado a ArduBlock — 2026-05-31
+*/`,
       en: `/*
   Input Pull-up Serial
 
@@ -176,8 +180,9 @@ Agregado a ArduBlock — 2026-05-31`,
   This example code is in the public domain.
 
   https://docs.arduino.cc/built-in-examples/digital/InputPullupSerial/
-*/
-Added to ArduBlock — 2026-05-31`
+
+  Added to ArduBlock — 2026-05-31
+*/`
     },
     state: {
       blocks: {
@@ -232,6 +237,7 @@ Added to ArduBlock — 2026-05-31`
                       next: {
                         block: {
                           type: 'controls_if', id: 'dp10',
+                          extraState: { hasElse: true },
                           inputs: {
                             IF0: {
                               block: {
@@ -285,8 +291,9 @@ Added to ArduBlock — 2026-05-31`
   Este código es de dominio público.
 
   https://docs.arduino.cc/built-in-examples/digital/toneKeyboard/
-*/
-Agregado a ArduBlock — 2026-05-31`,
+
+  Agregado a ArduBlock — 2026-05-31
+*/`,
       en: `/*
   Keyboard
 
@@ -302,8 +309,9 @@ Agregado a ArduBlock — 2026-05-31`,
   This example code is in the public domain.
 
   https://docs.arduino.cc/built-in-examples/digital/toneKeyboard/
-*/
-Added to ArduBlock — 2026-05-31`
+
+  Added to ArduBlock — 2026-05-31
+*/`
     },
     state: {
       blocks: {
@@ -415,8 +423,9 @@ Added to ArduBlock — 2026-05-31`
   Este código es de dominio público.
 
   https://docs.arduino.cc/built-in-examples/digital/tonePitchFollower/
-*/
-Agregado a ArduBlock — 2026-05-31`,
+
+  Agregado a ArduBlock — 2026-05-31
+*/`,
       en: `/*
   Pitch follower
 
@@ -433,8 +442,9 @@ Agregado a ArduBlock — 2026-05-31`,
   This example code is in the public domain.
 
   https://docs.arduino.cc/built-in-examples/digital/tonePitchFollower/
-*/
-Added to ArduBlock — 2026-05-31`
+
+  Added to ArduBlock — 2026-05-31
+*/`
     },
     state: {
       blocks: {
@@ -531,8 +541,9 @@ Added to ArduBlock — 2026-05-31`
   Este código es de dominio público.
 
   https://docs.arduino.cc/built-in-examples/digital/BlinkWithoutDelay/
-*/
-Agregado a ArduBlock — 2026-05-31`,
+
+  Agregado a ArduBlock — 2026-05-31
+*/`,
       en: `/*
   Blink without Delay
 
@@ -548,8 +559,9 @@ Agregado a ArduBlock — 2026-05-31`,
   This example code is in the public domain.
 
   https://docs.arduino.cc/built-in-examples/digital/BlinkWithoutDelay/
-*/
-Added to ArduBlock — 2026-05-31`
+
+  Added to ArduBlock — 2026-05-31
+*/`
     },
     reason: 'NOT_CONVERTIBLE',
     note: 'El bloque digital_write usa un dropdown estático (HIGH/LOW). El sketch original usa digitalWrite(13, ledState) donde ledState alterna entre HIGH y LOW. Se necesita un bloque con entrada de valor dinámica.'
@@ -577,8 +589,9 @@ Added to ArduBlock — 2026-05-31`
   Este código es de dominio público.
 
   https://docs.arduino.cc/built-in-examples/digital/Debounce/
-*/
-Agregado a ArduBlock — 2026-05-31`,
+
+  Agregado a ArduBlock — 2026-05-31
+*/`,
       en: `/*
   Debounce
 
@@ -594,8 +607,9 @@ Agregado a ArduBlock — 2026-05-31`,
   This example code is in the public domain.
 
   https://docs.arduino.cc/built-in-examples/digital/Debounce/
-*/
-Added to ArduBlock — 2026-05-31`
+
+  Added to ArduBlock — 2026-05-31
+*/`
     },
     reason: 'NOT_CONVERTIBLE',
     note: 'Máquina de estados compleja con millis(), múltiples variables de tiempo y toggle ledState = !ledState. El workspace sería excesivamente complejo para uso educativo, y el toggle requiere digital_write con entrada dinámica.'
@@ -619,8 +633,9 @@ Added to ArduBlock — 2026-05-31`
   Este código es de dominio público.
 
   https://docs.arduino.cc/built-in-examples/digital/StateChangeDetection/
-*/
-Agregado a ArduBlock — 2026-05-31`,
+
+  Agregado a ArduBlock — 2026-05-31
+*/`,
       en: `/*
   State change detection (edge detection)
 
@@ -632,8 +647,9 @@ Agregado a ArduBlock — 2026-05-31`,
   This example code is in the public domain.
 
   https://docs.arduino.cc/built-in-examples/digital/StateChangeDetection/
-*/
-Added to ArduBlock — 2026-05-31`
+
+  Added to ArduBlock — 2026-05-31
+*/`
     },
     reason: 'NOT_CONVERTIBLE',
     note: 'Usa digitalWrite(ledPin, ledState) con variable dinámica (el bloque solo acepta dropdown HIGH/LOW). Además requiere buttonPushCounter++ (incremento) y buttonPushCounter % 4 == 0 (módulo).'
@@ -658,8 +674,9 @@ Added to ArduBlock — 2026-05-31`
   Este código es de dominio público.
 
   https://docs.arduino.cc/built-in-examples/digital/toneMelody/
-*/
-Agregado a ArduBlock — 2026-05-31`,
+
+  Agregado a ArduBlock — 2026-05-31
+*/`,
       en: `/*
   Melody
 
@@ -673,8 +690,9 @@ Agregado a ArduBlock — 2026-05-31`,
   This example code is in the public domain.
 
   https://docs.arduino.cc/built-in-examples/digital/toneMelody/
-*/
-Added to ArduBlock — 2026-05-31`
+
+  Added to ArduBlock — 2026-05-31
+*/`
     },
     reason: 'NOT_CONVERTIBLE',
     note: 'Usa arrays (melody[], noteDurations[]) y #include "pitches.h" para definir notas musicales. Sin soporte de arrays ni archivos de cabecera externos en ArduBlock.'
@@ -700,8 +718,9 @@ Added to ArduBlock — 2026-05-31`
   Este código es de dominio público.
 
   https://docs.arduino.cc/built-in-examples/digital/toneMultiple/
-*/
-Agregado a ArduBlock — 2026-05-31`,
+
+  Agregado a ArduBlock — 2026-05-31
+*/`,
       en: `/*
   Multiple tone player
 
@@ -716,8 +735,9 @@ Agregado a ArduBlock — 2026-05-31`,
   This example code is in the public domain.
 
   https://docs.arduino.cc/built-in-examples/digital/toneMultiple/
-*/
-Added to ArduBlock — 2026-05-31`
+
+  Added to ArduBlock — 2026-05-31
+*/`
     },
     state: {
       blocks: {

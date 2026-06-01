@@ -17,8 +17,9 @@ export const remainingExamples = [
   created 3 Nov 2008 by David A. Mellis
   modified 30 Aug 2011 by Tom Igoe
   This example code is in the public domain.
-*/
-Agregado a ArduBlock — 2026-05-31`,
+
+  Agregado a ArduBlock — 2026-05-31
+*/`,
     reason: 'NOT_CONVERTIBLE',
     note: 'Usa funciones personalizadas (microsecondsToInches, microsecondsToCentimeters) y cambio de pinMode en el mismo pin (OUTPUT → INPUT). ArduBlock tiene bloque ultrasonic_read con helper interno — usar ese en vez de este ejemplo crudo.'
   },
@@ -31,8 +32,9 @@ Agregado a ArduBlock — 2026-05-31`,
   LED bar graph — Turns on a series of LEDs based on analog sensor value.
   created 4 Sep 2010 by Tom Igoe
   This example code is in the public domain.
-*/
-Agregado a ArduBlock — 2026-05-31`,
+
+  Agregado a ArduBlock — 2026-05-31
+*/`,
     reason: 'NOT_CONVERTIBLE',
     note: 'Usa array ledPins[10] y for-loop sobre índices del array. Sin soporte de arrays en ArduBlock.'
   },

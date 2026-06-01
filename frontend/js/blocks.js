@@ -396,7 +396,7 @@ Blockly.common.defineBlocksWithJsonArray([
     "message0": Blockly.Msg.MSG_ANALOG_WRITE,
     "args0": [
       { "type": "field_number", "name": "PIN", "value": 9, "min": 0, "max": 54 },
-      { "type": "field_number", "name": "VALUE", "value": 128, "min": 0, "max": 255 }
+      { "type": "input_value", "name": "VALUE", "check": "Number" }
     ],
     "previousStatement": null,
     "nextStatement": null,

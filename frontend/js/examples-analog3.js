@@ -26,8 +26,9 @@ export const analog3 = [
   This example code is in the public domain.
 
   https://docs.arduino.cc/built-in-examples/analog/Smoothing/
-*/
-Agregado a ArduBlock — 2026-05-31`,
+
+  Agregado a ArduBlock — 2026-05-31
+*/`,
     reason: 'NOT_CONVERTIBLE',
     note: 'Usa arrays (int readings[numReadings]), índice circular, y algoritmo de promedio móvil con resta/acumulación. ArduBlock no soporta arrays ni indexado de arrays.'
   },
@@ -52,8 +53,9 @@ Agregado a ArduBlock — 2026-05-31`,
   This example code is in the public domain.
 
   https://docs.arduino.cc/built-in-examples/analog/AnalogWriteMega/
-*/
-Agregado a ArduBlock — 2026-05-31`,
+
+  Agregado a ArduBlock — 2026-05-31
+*/`,
     reason: 'NOT_CONVERTIBLE',
     note: 'Escrito específicamente para Arduino Mega. Usa analogWrite() en los pines 2-13, pero en Arduino Uno solo los pines 3, 5, 6, 9, 10, 11 tienen PWM. El sketch mismo advierte: "will not work on other boards". ArduBlock apunta a Uno.'
   }

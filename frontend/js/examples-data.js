@@ -19,8 +19,9 @@ export const basicsExamples = [
   Este código es de dominio público.
 
   https://docs.arduino.cc/built-in-examples/basics/BareMinimum/
-*/
-Agregado a ArduBlock — 2026-05-31`,
+
+  Agregado a ArduBlock — 2026-05-31
+*/`,
       en: `/*
   BareMinimum
 
@@ -30,8 +31,9 @@ Agregado a ArduBlock — 2026-05-31`,
   This example code is in the public domain.
 
   https://docs.arduino.cc/built-in-examples/basics/BareMinimum/
-*/
-Added to ArduBlock — 2026-05-31`
+
+  Added to ArduBlock — 2026-05-31
+*/`
     },
     state: {
       blocks: {
@@ -66,8 +68,9 @@ Added to ArduBlock — 2026-05-31`
   Este código es de dominio público.
 
   https://docs.arduino.cc/built-in-examples/basics/Blink/
-*/
-Agregado a ArduBlock — 2026-05-31`,
+
+  Agregado a ArduBlock — 2026-05-31
+*/`,
       en: `/*
   Blink
 
@@ -84,8 +87,9 @@ Agregado a ArduBlock — 2026-05-31`,
   This example code is in the public domain.
 
   https://docs.arduino.cc/built-in-examples/basics/Blink/
-*/
-Added to ArduBlock — 2026-05-31`
+
+  Added to ArduBlock — 2026-05-31
+*/`
     },
     state: {
       blocks: {
@@ -155,8 +159,9 @@ Added to ArduBlock — 2026-05-31`
   Este código es de dominio público.
 
   https://docs.arduino.cc/built-in-examples/basics/AnalogReadSerial/
-*/
-Agregado a ArduBlock — 2026-05-31`,
+
+  Agregado a ArduBlock — 2026-05-31
+*/`,
       en: `/*
   AnalogReadSerial
 
@@ -167,8 +172,9 @@ Agregado a ArduBlock — 2026-05-31`,
   This example code is in the public domain.
 
   https://docs.arduino.cc/built-in-examples/basics/AnalogReadSerial/
-*/
-Added to ArduBlock — 2026-05-31`
+
+  Added to ArduBlock — 2026-05-31
+*/`
     },
     state: {
       blocks: {
@@ -246,8 +252,9 @@ Added to ArduBlock — 2026-05-31`
   Este código es de dominio público.
 
   https://docs.arduino.cc/built-in-examples/basics/DigitalReadSerial/
-*/
-Agregado a ArduBlock — 2026-05-31`,
+
+  Agregado a ArduBlock — 2026-05-31
+*/`,
       en: `/*
   DigitalReadSerial
 
@@ -256,8 +263,9 @@ Agregado a ArduBlock — 2026-05-31`,
   This example code is in the public domain.
 
   https://docs.arduino.cc/built-in-examples/basics/DigitalReadSerial/
-*/
-Added to ArduBlock — 2026-05-31`
+
+  Added to ArduBlock — 2026-05-31
+*/`
     },
     state: {
       blocks: {
@@ -341,8 +349,9 @@ Added to ArduBlock — 2026-05-31`
   Este código es de dominio público.
 
   https://docs.arduino.cc/built-in-examples/basics/Fade/
-*/
-Agregado a ArduBlock — 2026-05-31`,
+
+  Agregado a ArduBlock — 2026-05-31
+*/`,
       en: `/*
   Fade
 
@@ -355,8 +364,9 @@ Agregado a ArduBlock — 2026-05-31`,
   This example code is in the public domain.
 
   https://docs.arduino.cc/built-in-examples/basics/Fade/
-*/
-Added to ArduBlock — 2026-05-31`
+
+  Added to ArduBlock — 2026-05-31
+*/`
     },
     state: {
       blocks: {
@@ -530,8 +540,9 @@ Added to ArduBlock — 2026-05-31`
   Este código es de dominio público.
 
   https://docs.arduino.cc/built-in-examples/basics/ReadAnalogVoltage/
-*/
-Agregado a ArduBlock — 2026-05-31`,
+
+  Agregado a ArduBlock — 2026-05-31
+*/`,
       en: `/*
   ReadAnalogVoltage
 
@@ -543,8 +554,9 @@ Agregado a ArduBlock — 2026-05-31`,
   This example code is in the public domain.
 
   https://docs.arduino.cc/built-in-examples/basics/ReadAnalogVoltage/
-*/
-Added to ArduBlock — 2026-05-31`
+
+  Added to ArduBlock — 2026-05-31
+*/`
     },
     state: {
       blocks: {

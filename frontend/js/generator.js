@@ -82,7 +82,7 @@ cppGenerator.forBlock['digital_read'] = function(block) {
 // ── analog_write ─────────────────────────────
 cppGenerator.forBlock['analog_write'] = function(block) {
   const pin   = block.getFieldValue('PIN');
-  const value = block.getFieldValue('VALUE');
+  const value = cppGenerator.valueToCode(block, 'VALUE', cppGenerator.ORDER_ATOMIC) || '0';
   return 'analogWrite(' + pin + ', ' + value + ');\n';
 };
 

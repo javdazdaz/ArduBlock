@@ -25,8 +25,9 @@ export const controlExamples = [
   This example code is in the public domain.
 
   https://docs.arduino.cc/built-in-examples/control-structures/ForLoopIteration/
-*/
-Agregado a ArduBlock — 2026-05-31`,
+
+  Agregado a ArduBlock — 2026-05-31
+*/`,
     state: {
       blocks: {
         languageVersion: 0,
@@ -326,8 +327,9 @@ Agregado a ArduBlock — 2026-05-31`,
   This example code is in the public domain.
 
   https://docs.arduino.cc/built-in-examples/control-structures/SwitchCase/
-*/
-Agregado a ArduBlock — 2026-05-31`,
+
+  Agregado a ArduBlock — 2026-05-31
+*/`,
     reason: 'NOT_CONVERTIBLE',
     note: 'Usa switch/case con 4 ramas (0-3). No existe bloque switch en ArduBlock. Podría aproximarse con controls_if anidados, pero el propósito del ejemplo es demostrar switch, no if/else.'
   },
@@ -364,8 +366,9 @@ Agregado a ArduBlock — 2026-05-31`,
   This example code is in the public domain.
 
   https://docs.arduino.cc/built-in-examples/control-structures/WhileStatementConditional/
-*/
-Agregado a ArduBlock — 2026-05-31`,
+
+  Agregado a ArduBlock — 2026-05-31
+*/`,
     state: {
       blocks: {
         languageVersion: 0,

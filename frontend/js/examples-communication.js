@@ -29,8 +29,9 @@ export const communicationExamples = [
   This example code is in the public domain.
 
   https://docs.arduino.cc/built-in-examples/communication/Dimmer/
-*/
-Agregado a ArduBlock — 2026-05-31`,
+
+  Agregado a ArduBlock — 2026-05-31
+*/`,
     reason: 'NOT_CONVERTIBLE',
     note: 'Usa Serial.available() y Serial.read() para recibir bytes y controlar LED con analogWrite. No existen bloques serial_read / serial_available en ArduBlock.'
   },
@@ -65,8 +66,9 @@ Agregado a ArduBlock — 2026-05-31`,
   This example code is in the public domain.
 
   https://docs.arduino.cc/built-in-examples/communication/Graph/
-*/
-Agregado a ArduBlock — 2026-05-31`,
+
+  Agregado a ArduBlock — 2026-05-31
+*/`,
     state: {
       blocks: {
         languageVersion: 0,
@@ -137,8 +139,9 @@ Agregado a ArduBlock — 2026-05-31`,
   This example code is in the public domain.
 
   https://docs.arduino.cc/built-in-examples/communication/PhysicalPixel/
-*/
-Agregado a ArduBlock — 2026-05-31`,
+
+  Agregado a ArduBlock — 2026-05-31
+*/`,
     reason: 'NOT_CONVERTIBLE',
     note: 'Usa Serial.available() y Serial.read() para recibir caracteres (H/L) y controlar LED con digitalWrite. No existen bloques serial_read / serial_available en ArduBlock.'
   },
@@ -169,8 +172,9 @@ Agregado a ArduBlock — 2026-05-31`,
   This example code is in the public domain.
 
   https://docs.arduino.cc/built-in-examples/communication/ReadASCIIString/
-*/
-Agregado a ArduBlock — 2026-05-31`,
+
+  Agregado a ArduBlock — 2026-05-31
+*/`,
     reason: 'NOT_CONVERTIBLE',
     note: 'Usa Serial.parseInt() tres veces para parsear valores RGB separados por coma, Serial.read() para detectar newline, y analogWrite para LED RGB. Requiere bloques serial_read, serial_available y parseInt no disponibles en ArduBlock.'
   },
@@ -201,8 +205,9 @@ Agregado a ArduBlock — 2026-05-31`,
   This example code is in the public domain.
 
   https://docs.arduino.cc/built-in-examples/communication/SerialCallResponse/
-*/
-Agregado a ArduBlock — 2026-05-31`,
+
+  Agregado a ArduBlock — 2026-05-31
+*/`,
     reason: 'NOT_CONVERTIBLE',
     note: 'Implementa protocolo de handshake call-response con establishContact(), usa Serial.available(), Serial.read(), Serial.write(), analogRead, digitalRead y map(). Requiere bloques serial_read/serial_available y soporte para funciones custom no disponibles en ArduBlock.'
   },
@@ -234,8 +239,9 @@ Agregado a ArduBlock — 2026-05-31`,
   This example code is in the public domain.
 
   https://docs.arduino.cc/built-in-examples/communication/SerialCallResponseASCII/
-*/
-Agregado a ArduBlock — 2026-05-31`,
+
+  Agregado a ArduBlock — 2026-05-31
+*/`,
     reason: 'NOT_CONVERTIBLE',
     note: 'Similar a SerialCallResponse pero con salida ASCII (valores separados por coma). Implementa handshake con establishContact(), usa Serial.available() y Serial.read(). Requiere bloques serial_read/serial_available no disponibles en ArduBlock.'
   },
@@ -265,8 +271,9 @@ Agregado a ArduBlock — 2026-05-31`,
   This example code is in the public domain.
 
   https://docs.arduino.cc/built-in-examples/communication/Midi/
-*/
-Agregado a ArduBlock — 2026-05-31`,
+
+  Agregado a ArduBlock — 2026-05-31
+*/`,
     reason: 'NOT_CONVERTIBLE',
     note: 'Requiere hardware MIDI (jack MIDI, sintetizador), usa baud rate MIDI específico (31250) y envía secuencias de bytes del protocolo MIDI mediante función custom noteOn(). Hardware y protocolo MIDI no representables en bloques ArduBlock.'
   },
@@ -297,8 +304,9 @@ Agregado a ArduBlock — 2026-05-31`,
   This example code is in the public domain.
 
   https://docs.arduino.cc/built-in-examples/communication/MultiSerialMega/
-*/
-Agregado a ArduBlock — 2026-05-31`,
+
+  Agregado a ArduBlock — 2026-05-31
+*/`,
     reason: 'NOT_CONVERTIBLE',
     note: 'Usa Serial1 (hardware UART #1) que solo existe en Arduino Mega, Due, Zero, etc. No compatible con Arduino Uno estándar. ArduBlock no tiene bloque para Serial1 ni configuración multi-UART.'
   }
