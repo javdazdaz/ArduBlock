@@ -29,6 +29,21 @@ export default [
     },
   },
   {
+    files: ['tests/**/*.js'],
+    languageOptions: {
+      globals: {
+        describe: 'readonly',
+        it: 'readonly',
+        expect: 'readonly',
+        beforeAll: 'readonly',
+        beforeEach: 'readonly',
+        afterAll: 'readonly',
+        afterEach: 'readonly',
+        vi: 'readonly',
+      },
+    },
+  },
+  {
     ignores: ['node_modules/', 'dist/', '.vite/', 'backend/.venv/'],
   },
 ];
