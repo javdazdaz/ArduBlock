@@ -891,7 +891,7 @@ Blockly.common.defineBlocksWithJsonArray([
     "colour": 310,
     "tooltip": Blockly.Msg.TOOLTIP_STEPPER_STEP,
     "helpUrl": ""
-  },,
+  },
   {
     "type": "variable_declare",
     "message0": Blockly.Msg.MSG_VARIABLE_DECLARE,
@@ -938,7 +938,7 @@ Blockly.common.defineBlocksWithJsonArray([
     "args0": [
       { "type": "field_input", "name": "NAME", "text": "a" }
     ],
-    "output": null,
+    "output": ["Number", "String", "Boolean"],
     "colour": 330,
     "tooltip": Blockly.Msg.TOOLTIP_VARIABLE_GET,
     "helpUrl": ""
@@ -1004,7 +1004,7 @@ Blockly.common.defineBlocksWithJsonArray([
       { "type": "field_input", "name": "NAME", "text": "arr" },
       { "type": "input_value", "name": "INDEX", "check": "Number" }
     ],
-    "output": null,
+    "output": ["Number", "String", "Boolean"],
     "colour": 330,
     "tooltip": Blockly.Msg.TOOLTIP_ARRAY_GET,
     "helpUrl": ""
