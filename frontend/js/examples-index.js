@@ -8,23 +8,25 @@
  * para mostrar al usuario por qué ese ejemplo no está disponible como bloques.
  */
 
-// 01.Basics — 6 sketches (todos convertidos)
+// ── Registro de fuentes ────────────────────────
+export { sources } from './examples-sources.js';
+
+// ── 01.Basics — 6 sketches (todos convertidos) ──
 export { basicsExamples } from './examples-data.js';
 
-// 02.Digital — 9 sketches (4 convertidos, 5 no convertibles)
+// ── 02.Digital — 9 sketches ─────────────────────
 export { digitalSimple } from './examples-digital-simple.js';
 
-// 03.Analog — 6 sketches (3 convertidos, 3 no convertibles)
+// ── 03.Analog — 6 sketches ──────────────────────
 export { analogControlExamples } from './examples-analog-control.js';
 export { analog2 } from './examples-analog2.js';
 export { analog3 } from './examples-analog3.js';
 
-// 04.Communication — 12 sketches (7 convertidos, 5 no convertibles)
+// ── 04.Communication — 12 sketches ──────────────
 export { communicationExamples } from './examples-communication.js';
 
-// 05.Control — 6 sketches (3 convertidos, 3 no convertibles)
+// ── 05.Control — 3 sketches ─────────────────────
 export { controlExamples } from './examples-control.js';
 
-// 06.Sensors, 07.Display, 08.Strings, 09.USB, 10.StarterKit, 11.ArduinoISP
-// — 39 sketches (todos no convertibles o pendientes de revisión)
+// ── Resto — 39 sketches no convertibles ─────────
 export { remainingExamples } from './examples-remaining.js';
