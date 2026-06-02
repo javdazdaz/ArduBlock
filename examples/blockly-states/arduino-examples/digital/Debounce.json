@@ -1,0 +1,524 @@
+{
+  "blocks": {
+    "languageVersion": 0,
+    "blocks": [
+      {
+        "type": "variable_declare",
+        "id": "db_g1",
+        "fields": {
+          "NAME": "ledState",
+          "TYPE": "int"
+        },
+        "inputs": {
+          "VALUE": {
+            "block": {
+              "type": "math_number",
+              "id": "db_gn1",
+              "fields": {
+                "NUM": 1
+              }
+            }
+          }
+        },
+        "x": 20,
+        "y": 240
+      },
+      {
+        "type": "variable_declare",
+        "id": "db_g2",
+        "fields": {
+          "NAME": "buttonState",
+          "TYPE": "int"
+        },
+        "inputs": {
+          "VALUE": {
+            "block": {
+              "type": "math_number",
+              "id": "db_gn2",
+              "fields": {
+                "NUM": 0
+              }
+            }
+          }
+        },
+        "x": 20,
+        "y": 280
+      },
+      {
+        "type": "variable_declare",
+        "id": "db_g3",
+        "fields": {
+          "NAME": "lastButtonState",
+          "TYPE": "int"
+        },
+        "inputs": {
+          "VALUE": {
+            "block": {
+              "type": "math_number",
+              "id": "db_gn3",
+              "fields": {
+                "NUM": 0
+              }
+            }
+          }
+        },
+        "x": 20,
+        "y": 320
+      },
+      {
+        "type": "variable_declare",
+        "id": "db_g4",
+        "fields": {
+          "NAME": "lastDebounceTime",
+          "TYPE": "unsigned long"
+        },
+        "inputs": {
+          "VALUE": {
+            "block": {
+              "type": "math_number",
+              "id": "db_gn4",
+              "fields": {
+                "NUM": 0
+              }
+            }
+          }
+        },
+        "x": 20,
+        "y": 360
+      },
+      {
+        "type": "variable_declare",
+        "id": "db_g5",
+        "fields": {
+          "NAME": "debounceDelay",
+          "TYPE": "unsigned long"
+        },
+        "inputs": {
+          "VALUE": {
+            "block": {
+              "type": "math_number",
+              "id": "db_gn5",
+              "fields": {
+                "NUM": 50
+              }
+            }
+          }
+        },
+        "x": 20,
+        "y": 400
+      },
+      {
+        "type": "variable_declare",
+        "id": "db_g6",
+        "fields": {
+          "NAME": "reading",
+          "TYPE": "int"
+        },
+        "inputs": {
+          "VALUE": {
+            "block": {
+              "type": "math_number",
+              "id": "db_gn6",
+              "fields": {
+                "NUM": 0
+              }
+            }
+          }
+        },
+        "x": 20,
+        "y": 440
+      },
+      {
+        "type": "arduino_setup",
+        "id": "db_s",
+        "x": 20,
+        "y": 20,
+        "inputs": {
+          "BODY": {
+            "block": {
+              "type": "pin_mode",
+              "id": "db_p1",
+              "fields": {
+                "PIN": 2,
+                "MODE": "INPUT"
+              },
+              "next": {
+                "block": {
+                  "type": "pin_mode",
+                  "id": "db_p2",
+                  "fields": {
+                    "PIN": 13,
+                    "MODE": "OUTPUT"
+                  },
+                  "next": {
+                    "block": {
+                      "type": "digital_write",
+                      "id": "db_dw0",
+                      "fields": {
+                        "PIN": 13,
+                        "VALUE": "HIGH"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "arduino_loop",
+        "id": "db_l",
+        "x": 20,
+        "y": 160,
+        "inputs": {
+          "BODY": {
+            "block": {
+              "type": "variable_set",
+              "id": "db_s1",
+              "fields": {
+                "NAME": "reading"
+              },
+              "inputs": {
+                "VALUE": {
+                  "block": {
+                    "type": "digital_read",
+                    "id": "db_dr",
+                    "fields": {
+                      "PIN": 2
+                    }
+                  }
+                }
+              },
+              "next": {
+                "block": {
+                  "type": "controls_if",
+                  "id": "db_if1",
+                  "inputs": {
+                    "IF0": {
+                      "block": {
+                        "type": "logic_compare",
+                        "id": "db_cmp1",
+                        "fields": {
+                          "OP": "NEQ"
+                        },
+                        "inputs": {
+                          "A": {
+                            "block": {
+                              "type": "variable_get",
+                              "id": "db_vg1",
+                              "fields": {
+                                "NAME": "reading"
+                              }
+                            }
+                          },
+                          "B": {
+                            "block": {
+                              "type": "variable_get",
+                              "id": "db_vg2",
+                              "fields": {
+                                "NAME": "lastButtonState"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "DO0": {
+                      "block": {
+                        "type": "variable_set",
+                        "id": "db_s2",
+                        "fields": {
+                          "NAME": "lastDebounceTime"
+                        },
+                        "inputs": {
+                          "VALUE": {
+                            "block": {
+                              "type": "millis",
+                              "id": "db_m1"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "next": {
+                    "block": {
+                      "type": "controls_if",
+                      "id": "db_if2",
+                      "inputs": {
+                        "IF0": {
+                          "block": {
+                            "type": "logic_compare",
+                            "id": "db_cmp2",
+                            "fields": {
+                              "OP": "GT"
+                            },
+                            "inputs": {
+                              "A": {
+                                "block": {
+                                  "type": "math_arithmetic",
+                                  "id": "db_ar1",
+                                  "fields": {
+                                    "OP": "MINUS"
+                                  },
+                                  "inputs": {
+                                    "A": {
+                                      "block": {
+                                        "type": "millis",
+                                        "id": "db_m2"
+                                      }
+                                    },
+                                    "B": {
+                                      "block": {
+                                        "type": "variable_get",
+                                        "id": "db_vg3",
+                                        "fields": {
+                                          "NAME": "lastDebounceTime"
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              },
+                              "B": {
+                                "block": {
+                                  "type": "variable_get",
+                                  "id": "db_vg4",
+                                  "fields": {
+                                    "NAME": "debounceDelay"
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        },
+                        "DO0": {
+                          "block": {
+                            "type": "controls_if",
+                            "id": "db_if3",
+                            "inputs": {
+                              "IF0": {
+                                "block": {
+                                  "type": "logic_compare",
+                                  "id": "db_cmp3",
+                                  "fields": {
+                                    "OP": "NEQ"
+                                  },
+                                  "inputs": {
+                                    "A": {
+                                      "block": {
+                                        "type": "variable_get",
+                                        "id": "db_vg5",
+                                        "fields": {
+                                          "NAME": "reading"
+                                        }
+                                      }
+                                    },
+                                    "B": {
+                                      "block": {
+                                        "type": "variable_get",
+                                        "id": "db_vg6",
+                                        "fields": {
+                                          "NAME": "buttonState"
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              },
+                              "DO0": {
+                                "block": {
+                                  "type": "variable_set",
+                                  "id": "db_s3",
+                                  "fields": {
+                                    "NAME": "buttonState"
+                                  },
+                                  "inputs": {
+                                    "VALUE": {
+                                      "block": {
+                                        "type": "variable_get",
+                                        "id": "db_vg7",
+                                        "fields": {
+                                          "NAME": "reading"
+                                        }
+                                      }
+                                    }
+                                  },
+                                  "next": {
+                                    "block": {
+                                      "type": "controls_if",
+                                      "id": "db_l6",
+                                      "extraState": {
+                                        "hasElse": true
+                                      },
+                                      "inputs": {
+                                        "IF0": {
+                                          "block": {
+                                            "type": "logic_compare",
+                                            "id": "db_cmp4",
+                                            "fields": {
+                                              "OP": "EQ"
+                                            },
+                                            "inputs": {
+                                              "A": {
+                                                "block": {
+                                                  "type": "variable_get",
+                                                  "id": "db_vg8",
+                                                  "fields": {
+                                                    "NAME": "buttonState"
+                                                  }
+                                                }
+                                              },
+                                              "B": {
+                                                "block": {
+                                                  "type": "math_number",
+                                                  "id": "db_n1",
+                                                  "fields": {
+                                                    "NUM": 1
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          }
+                                        },
+                                        "DO0": {
+                                          "block": {
+                                            "type": "controls_if",
+                                            "id": "db_l7",
+                                            "extraState": {
+                                              "hasElse": true
+                                            },
+                                            "inputs": {
+                                              "IF0": {
+                                                "block": {
+                                                  "type": "logic_compare",
+                                                  "id": "db_cmp5",
+                                                  "fields": {
+                                                    "OP": "EQ"
+                                                  },
+                                                  "inputs": {
+                                                    "A": {
+                                                      "block": {
+                                                        "type": "variable_get",
+                                                        "id": "db_vg9",
+                                                        "fields": {
+                                                          "NAME": "ledState"
+                                                        }
+                                                      }
+                                                    },
+                                                    "B": {
+                                                      "block": {
+                                                        "type": "math_number",
+                                                        "id": "db_n2",
+                                                        "fields": {
+                                                          "NUM": 0
+                                                        }
+                                                      }
+                                                    }
+                                                  }
+                                                }
+                                              },
+                                              "DO0": {
+                                                "block": {
+                                                  "type": "variable_set",
+                                                  "id": "db_s4",
+                                                  "fields": {
+                                                    "NAME": "ledState"
+                                                  },
+                                                  "inputs": {
+                                                    "VALUE": {
+                                                      "block": {
+                                                        "type": "math_number",
+                                                        "id": "db_n3",
+                                                        "fields": {
+                                                          "NUM": 1
+                                                        }
+                                                      }
+                                                    }
+                                                  },
+                                                  "next": {
+                                                    "block": {
+                                                      "type": "digital_write",
+                                                      "id": "db_dw1",
+                                                      "fields": {
+                                                        "PIN": 13,
+                                                        "VALUE": "HIGH"
+                                                      }
+                                                    }
+                                                  }
+                                                }
+                                              },
+                                              "ELSE": {
+                                                "block": {
+                                                  "type": "variable_set",
+                                                  "id": "db_s5",
+                                                  "fields": {
+                                                    "NAME": "ledState"
+                                                  },
+                                                  "inputs": {
+                                                    "VALUE": {
+                                                      "block": {
+                                                        "type": "math_number",
+                                                        "id": "db_n4",
+                                                        "fields": {
+                                                          "NUM": 0
+                                                        }
+                                                      }
+                                                    }
+                                                  },
+                                                  "next": {
+                                                    "block": {
+                                                      "type": "digital_write",
+                                                      "id": "db_dw2",
+                                                      "fields": {
+                                                        "PIN": 13,
+                                                        "VALUE": "LOW"
+                                                      }
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "next": {
+                        "block": {
+                          "type": "variable_set",
+                          "id": "db_s6",
+                          "fields": {
+                            "NAME": "lastButtonState"
+                          },
+                          "inputs": {
+                            "VALUE": {
+                              "block": {
+                                "type": "variable_get",
+                                "id": "db_vg10",
+                                "fields": {
+                                  "NAME": "reading"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}

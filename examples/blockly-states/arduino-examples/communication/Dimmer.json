@@ -1,0 +1,134 @@
+{
+  "blocks": {
+    "languageVersion": 0,
+    "blocks": [
+      {
+        "type": "variable_declare",
+        "id": "dm_g1",
+        "x": 20,
+        "y": 240,
+        "fields": {
+          "NAME": "ledPin",
+          "TYPE": "int"
+        },
+        "inputs": {
+          "VALUE": {
+            "block": {
+              "type": "math_number",
+              "id": "dm_gn1",
+              "fields": {
+                "NUM": 9
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "arduino_setup",
+        "id": "dm_s",
+        "x": 20,
+        "y": 20,
+        "inputs": {
+          "BODY": {
+            "block": {
+              "type": "serial_begin",
+              "id": "dm_sb",
+              "fields": {
+                "BAUD": "9600"
+              },
+              "next": {
+                "block": {
+                  "type": "pin_mode",
+                  "id": "dm_pm",
+                  "fields": {
+                    "PIN": 9,
+                    "MODE": "OUTPUT"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "arduino_loop",
+        "id": "dm_l",
+        "x": 20,
+        "y": 140,
+        "inputs": {
+          "BODY": {
+            "block": {
+              "type": "controls_if",
+              "id": "dm_if",
+              "inputs": {
+                "IF0": {
+                  "block": {
+                    "type": "logic_compare",
+                    "id": "dm_cmp",
+                    "fields": {
+                      "OP": "GT"
+                    },
+                    "inputs": {
+                      "A": {
+                        "block": {
+                          "type": "serial_available",
+                          "id": "dm_av"
+                        }
+                      },
+                      "B": {
+                        "block": {
+                          "type": "math_number",
+                          "id": "dm_n0",
+                          "fields": {
+                            "NUM": 0
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "DO0": {
+                  "block": {
+                    "type": "variable_set",
+                    "id": "dm_set",
+                    "fields": {
+                      "NAME": "ledPin"
+                    },
+                    "inputs": {
+                      "VALUE": {
+                        "block": {
+                          "type": "serial_read",
+                          "id": "dm_rd"
+                        }
+                      }
+                    },
+                    "next": {
+                      "block": {
+                        "type": "analog_write",
+                        "id": "dm_aw",
+                        "fields": {
+                          "PIN": 9
+                        },
+                        "inputs": {
+                          "VALUE": {
+                            "block": {
+                              "type": "variable_get",
+                              "id": "dm_vg",
+                              "fields": {
+                                "NAME": "ledPin"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}

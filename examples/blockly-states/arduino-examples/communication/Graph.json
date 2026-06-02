@@ -1,0 +1,68 @@
+{
+  "blocks": {
+    "languageVersion": 0,
+    "blocks": [
+      {
+        "type": "arduino_setup",
+        "id": "g1",
+        "x": 20,
+        "y": 20,
+        "inputs": {
+          "BODY": {
+            "block": {
+              "type": "pin_mode",
+              "id": "g_setup1",
+              "fields": {
+                "PIN": 0,
+                "MODE": "INPUT"
+              },
+              "next": {
+                "block": {
+                  "type": "serial_begin",
+                  "id": "g2",
+                  "fields": {
+                    "BAUD": "9600"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "arduino_loop",
+        "id": "g3",
+        "x": 20,
+        "y": 160,
+        "inputs": {
+          "BODY": {
+            "block": {
+              "type": "serial_println",
+              "id": "g4",
+              "inputs": {
+                "TEXT": {
+                  "block": {
+                    "type": "analog_read",
+                    "id": "g5",
+                    "fields": {
+                      "PIN": 0
+                    }
+                  }
+                }
+              },
+              "next": {
+                "block": {
+                  "type": "delay_ms",
+                  "id": "g6",
+                  "fields": {
+                    "MS": 2
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}

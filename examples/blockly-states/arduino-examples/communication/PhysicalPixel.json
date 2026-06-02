@@ -1,0 +1,229 @@
+{
+  "blocks": {
+    "languageVersion": 0,
+    "blocks": [
+      {
+        "type": "variable_declare",
+        "id": "pp_g1",
+        "x": 20,
+        "y": 240,
+        "fields": {
+          "NAME": "ledPin",
+          "TYPE": "int"
+        },
+        "inputs": {
+          "VALUE": {
+            "block": {
+              "type": "math_number",
+              "id": "pp_gn1",
+              "fields": {
+                "NUM": 13
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "variable_declare",
+        "id": "pp_g2",
+        "x": 20,
+        "y": 280,
+        "fields": {
+          "NAME": "incomingByte",
+          "TYPE": "int"
+        },
+        "inputs": {
+          "VALUE": {
+            "block": {
+              "type": "math_number",
+              "id": "pp_gn2",
+              "fields": {
+                "NUM": 0
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "arduino_setup",
+        "id": "pp_s",
+        "x": 20,
+        "y": 20,
+        "inputs": {
+          "BODY": {
+            "block": {
+              "type": "serial_begin",
+              "id": "pp_sb",
+              "fields": {
+                "BAUD": "9600"
+              },
+              "next": {
+                "block": {
+                  "type": "pin_mode",
+                  "id": "pp_pm",
+                  "fields": {
+                    "PIN": 13,
+                    "MODE": "OUTPUT"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "arduino_loop",
+        "id": "pp_l",
+        "x": 20,
+        "y": 160,
+        "inputs": {
+          "BODY": {
+            "block": {
+              "type": "controls_if",
+              "id": "pp_if1",
+              "inputs": {
+                "IF0": {
+                  "block": {
+                    "type": "logic_compare",
+                    "id": "pp_cmp1",
+                    "fields": {
+                      "OP": "GT"
+                    },
+                    "inputs": {
+                      "A": {
+                        "block": {
+                          "type": "serial_available",
+                          "id": "pp_av"
+                        }
+                      },
+                      "B": {
+                        "block": {
+                          "type": "math_number",
+                          "id": "pp_n0",
+                          "fields": {
+                            "NUM": 0
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "DO0": {
+                  "block": {
+                    "type": "variable_set",
+                    "id": "pp_set",
+                    "fields": {
+                      "NAME": "incomingByte"
+                    },
+                    "inputs": {
+                      "VALUE": {
+                        "block": {
+                          "type": "serial_read",
+                          "id": "pp_rd"
+                        }
+                      }
+                    },
+                    "next": {
+                      "block": {
+                        "type": "controls_if",
+                        "id": "pp_if2",
+                        "inputs": {
+                          "IF0": {
+                            "block": {
+                              "type": "logic_compare",
+                              "id": "pp_cmp2",
+                              "fields": {
+                                "OP": "EQ"
+                              },
+                              "inputs": {
+                                "A": {
+                                  "block": {
+                                    "type": "variable_get",
+                                    "id": "pp_vg1",
+                                    "fields": {
+                                      "NAME": "incomingByte"
+                                    }
+                                  }
+                                },
+                                "B": {
+                                  "block": {
+                                    "type": "math_number",
+                                    "id": "pp_nH",
+                                    "fields": {
+                                      "NUM": 72
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "DO0": {
+                            "block": {
+                              "type": "digital_write",
+                              "id": "pp_dw1",
+                              "fields": {
+                                "PIN": 13,
+                                "VALUE": "HIGH"
+                              }
+                            }
+                          }
+                        },
+                        "next": {
+                          "block": {
+                            "type": "controls_if",
+                            "id": "pp_if3",
+                            "inputs": {
+                              "IF0": {
+                                "block": {
+                                  "type": "logic_compare",
+                                  "id": "pp_cmp3",
+                                  "fields": {
+                                    "OP": "EQ"
+                                  },
+                                  "inputs": {
+                                    "A": {
+                                      "block": {
+                                        "type": "variable_get",
+                                        "id": "pp_vg2",
+                                        "fields": {
+                                          "NAME": "incomingByte"
+                                        }
+                                      }
+                                    },
+                                    "B": {
+                                      "block": {
+                                        "type": "math_number",
+                                        "id": "pp_nL",
+                                        "fields": {
+                                          "NUM": 76
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              },
+                              "DO0": {
+                                "block": {
+                                  "type": "digital_write",
+                                  "id": "pp_dw2",
+                                  "fields": {
+                                    "PIN": 13,
+                                    "VALUE": "LOW"
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}

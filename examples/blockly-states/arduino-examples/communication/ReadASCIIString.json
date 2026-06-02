@@ -1,0 +1,388 @@
+{
+  "blocks": {
+    "languageVersion": 0,
+    "blocks": [
+      {
+        "type": "variable_declare",
+        "id": "ras_p1",
+        "x": 20,
+        "y": 240,
+        "fields": {
+          "NAME": "redPin",
+          "TYPE": "int"
+        },
+        "inputs": {
+          "VALUE": {
+            "block": {
+              "type": "math_number",
+              "id": "ras_np1",
+              "fields": {
+                "NUM": 3
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "variable_declare",
+        "id": "ras_p2",
+        "x": 20,
+        "y": 280,
+        "fields": {
+          "NAME": "greenPin",
+          "TYPE": "int"
+        },
+        "inputs": {
+          "VALUE": {
+            "block": {
+              "type": "math_number",
+              "id": "ras_np2",
+              "fields": {
+                "NUM": 5
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "variable_declare",
+        "id": "ras_p3",
+        "x": 20,
+        "y": 320,
+        "fields": {
+          "NAME": "bluePin",
+          "TYPE": "int"
+        },
+        "inputs": {
+          "VALUE": {
+            "block": {
+              "type": "math_number",
+              "id": "ras_np3",
+              "fields": {
+                "NUM": 6
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "arduino_setup",
+        "id": "ras_s",
+        "x": 20,
+        "y": 20,
+        "inputs": {
+          "BODY": {
+            "block": {
+              "type": "serial_begin",
+              "id": "ras_sb",
+              "fields": {
+                "BAUD": "9600"
+              },
+              "next": {
+                "block": {
+                  "type": "pin_mode",
+                  "id": "ras_pm1",
+                  "fields": {
+                    "PIN": 3,
+                    "MODE": "OUTPUT"
+                  },
+                  "next": {
+                    "block": {
+                      "type": "pin_mode",
+                      "id": "ras_pm2",
+                      "fields": {
+                        "PIN": 5,
+                        "MODE": "OUTPUT"
+                      },
+                      "next": {
+                        "block": {
+                          "type": "pin_mode",
+                          "id": "ras_pm3",
+                          "fields": {
+                            "PIN": 6,
+                            "MODE": "OUTPUT"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "arduino_loop",
+        "id": "ras_l",
+        "x": 20,
+        "y": 160,
+        "inputs": {
+          "BODY": {
+            "block": {
+              "type": "controls_whileUntil",
+              "id": "ras_wh",
+              "fields": {
+                "MODE": "WHILE"
+              },
+              "inputs": {
+                "BOOL": {
+                  "block": {
+                    "type": "logic_compare",
+                    "id": "ras_c0",
+                    "fields": {
+                      "OP": "GT"
+                    },
+                    "inputs": {
+                      "A": {
+                        "block": {
+                          "type": "serial_available",
+                          "id": "ras_av"
+                        }
+                      },
+                      "B": {
+                        "block": {
+                          "type": "math_number",
+                          "id": "ras_n0",
+                          "fields": {
+                            "NUM": 0
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "DO": {
+                  "block": {
+                    "type": "variable_declare",
+                    "id": "ras_vr",
+                    "fields": {
+                      "NAME": "red",
+                      "TYPE": "int"
+                    },
+                    "inputs": {
+                      "VALUE": {
+                        "block": {
+                          "type": "serial_parse_int",
+                          "id": "ras_pi1"
+                        }
+                      }
+                    },
+                    "next": {
+                      "block": {
+                        "type": "variable_declare",
+                        "id": "ras_vg",
+                        "fields": {
+                          "NAME": "green",
+                          "TYPE": "int"
+                        },
+                        "inputs": {
+                          "VALUE": {
+                            "block": {
+                              "type": "serial_parse_int",
+                              "id": "ras_pi2"
+                            }
+                          }
+                        },
+                        "next": {
+                          "block": {
+                            "type": "variable_declare",
+                            "id": "ras_vb",
+                            "fields": {
+                              "NAME": "blue",
+                              "TYPE": "int"
+                            },
+                            "inputs": {
+                              "VALUE": {
+                                "block": {
+                                  "type": "serial_parse_int",
+                                  "id": "ras_pi3"
+                                }
+                              }
+                            },
+                            "next": {
+                              "block": {
+                                "type": "controls_if",
+                                "id": "ras_if",
+                                "inputs": {
+                                  "IF0": {
+                                    "block": {
+                                      "type": "logic_compare",
+                                      "id": "ras_c1",
+                                      "fields": {
+                                        "OP": "EQ"
+                                      },
+                                      "inputs": {
+                                        "A": {
+                                          "block": {
+                                            "type": "serial_read",
+                                            "id": "ras_rd"
+                                          }
+                                        },
+                                        "B": {
+                                          "block": {
+                                            "type": "math_number",
+                                            "id": "ras_nl",
+                                            "fields": {
+                                              "NUM": 10
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  },
+                                  "DO0": {
+                                    "block": {
+                                      "type": "analog_write",
+                                      "id": "ras_aw1",
+                                      "fields": {
+                                        "PIN": 3
+                                      },
+                                      "inputs": {
+                                        "VALUE": {
+                                          "block": {
+                                            "type": "math_constrain",
+                                            "id": "ras_ct1",
+                                            "inputs": {
+                                              "VALUE": {
+                                                "block": {
+                                                  "type": "variable_get",
+                                                  "id": "ras_g1",
+                                                  "fields": {
+                                                    "NAME": "red"
+                                                  }
+                                                }
+                                              },
+                                              "LOW": {
+                                                "block": {
+                                                  "type": "math_number",
+                                                  "id": "ras_lo1",
+                                                  "fields": {
+                                                    "NUM": 0
+                                                  }
+                                                }
+                                              },
+                                              "HIGH": {
+                                                "block": {
+                                                  "type": "math_number",
+                                                  "id": "ras_hi1",
+                                                  "fields": {
+                                                    "NUM": 255
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      },
+                                      "next": {
+                                        "block": {
+                                          "type": "analog_write",
+                                          "id": "ras_aw2",
+                                          "fields": {
+                                            "PIN": 5
+                                          },
+                                          "inputs": {
+                                            "VALUE": {
+                                              "block": {
+                                                "type": "math_constrain",
+                                                "id": "ras_ct2",
+                                                "inputs": {
+                                                  "VALUE": {
+                                                    "block": {
+                                                      "type": "variable_get",
+                                                      "id": "ras_g2",
+                                                      "fields": {
+                                                        "NAME": "green"
+                                                      }
+                                                    }
+                                                  },
+                                                  "LOW": {
+                                                    "block": {
+                                                      "type": "math_number",
+                                                      "id": "ras_lo2",
+                                                      "fields": {
+                                                        "NUM": 0
+                                                      }
+                                                    }
+                                                  },
+                                                  "HIGH": {
+                                                    "block": {
+                                                      "type": "math_number",
+                                                      "id": "ras_hi2",
+                                                      "fields": {
+                                                        "NUM": 255
+                                                      }
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          },
+                                          "next": {
+                                            "block": {
+                                              "type": "analog_write",
+                                              "id": "ras_aw3",
+                                              "fields": {
+                                                "PIN": 6
+                                              },
+                                              "inputs": {
+                                                "VALUE": {
+                                                  "block": {
+                                                    "type": "math_constrain",
+                                                    "id": "ras_ct3",
+                                                    "inputs": {
+                                                      "VALUE": {
+                                                        "block": {
+                                                          "type": "variable_get",
+                                                          "id": "ras_g3",
+                                                          "fields": {
+                                                            "NAME": "blue"
+                                                          }
+                                                        }
+                                                      },
+                                                      "LOW": {
+                                                        "block": {
+                                                          "type": "math_number",
+                                                          "id": "ras_lo3",
+                                                          "fields": {
+                                                            "NUM": 0
+                                                          }
+                                                        }
+                                                      },
+                                                      "HIGH": {
+                                                        "block": {
+                                                          "type": "math_number",
+                                                          "id": "ras_hi3",
+                                                          "fields": {
+                                                            "NUM": 255
+                                                          }
+                                                        }
+                                                      }
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}

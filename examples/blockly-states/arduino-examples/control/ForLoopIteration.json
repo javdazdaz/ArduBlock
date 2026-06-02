@@ -1,0 +1,431 @@
+{
+  "blocks": {
+    "languageVersion": 0,
+    "blocks": [
+      {
+        "type": "arduino_setup",
+        "id": "fl1",
+        "x": 20,
+        "y": 20,
+        "inputs": {
+          "BODY": {
+            "block": {
+              "type": "pin_mode",
+              "id": "fl2",
+              "fields": {
+                "PIN": 2,
+                "MODE": "OUTPUT"
+              },
+              "next": {
+                "block": {
+                  "type": "pin_mode",
+                  "id": "fl3",
+                  "fields": {
+                    "PIN": 3,
+                    "MODE": "OUTPUT"
+                  },
+                  "next": {
+                    "block": {
+                      "type": "pin_mode",
+                      "id": "fl4",
+                      "fields": {
+                        "PIN": 4,
+                        "MODE": "OUTPUT"
+                      },
+                      "next": {
+                        "block": {
+                          "type": "pin_mode",
+                          "id": "fl5",
+                          "fields": {
+                            "PIN": 5,
+                            "MODE": "OUTPUT"
+                          },
+                          "next": {
+                            "block": {
+                              "type": "pin_mode",
+                              "id": "fl6",
+                              "fields": {
+                                "PIN": 6,
+                                "MODE": "OUTPUT"
+                              },
+                              "next": {
+                                "block": {
+                                  "type": "pin_mode",
+                                  "id": "fl7",
+                                  "fields": {
+                                    "PIN": 7,
+                                    "MODE": "OUTPUT"
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "arduino_loop",
+        "id": "fl8",
+        "x": 20,
+        "y": 200,
+        "inputs": {
+          "BODY": {
+            "block": {
+              "type": "digital_write",
+              "id": "fl9",
+              "fields": {
+                "PIN": 2,
+                "VALUE": "HIGH"
+              },
+              "next": {
+                "block": {
+                  "type": "delay_ms",
+                  "id": "fl10",
+                  "fields": {
+                    "DELAY": 100
+                  },
+                  "next": {
+                    "block": {
+                      "type": "digital_write",
+                      "id": "fl11",
+                      "fields": {
+                        "PIN": 2,
+                        "VALUE": "LOW"
+                      },
+                      "next": {
+                        "block": {
+                          "type": "digital_write",
+                          "id": "fl12",
+                          "fields": {
+                            "PIN": 3,
+                            "VALUE": "HIGH"
+                          },
+                          "next": {
+                            "block": {
+                              "type": "delay_ms",
+                              "id": "fl13",
+                              "fields": {
+                                "DELAY": 100
+                              },
+                              "next": {
+                                "block": {
+                                  "type": "digital_write",
+                                  "id": "fl14",
+                                  "fields": {
+                                    "PIN": 3,
+                                    "VALUE": "LOW"
+                                  },
+                                  "next": {
+                                    "block": {
+                                      "type": "digital_write",
+                                      "id": "fl15",
+                                      "fields": {
+                                        "PIN": 4,
+                                        "VALUE": "HIGH"
+                                      },
+                                      "next": {
+                                        "block": {
+                                          "type": "delay_ms",
+                                          "id": "fl16",
+                                          "fields": {
+                                            "DELAY": 100
+                                          },
+                                          "next": {
+                                            "block": {
+                                              "type": "digital_write",
+                                              "id": "fl17",
+                                              "fields": {
+                                                "PIN": 4,
+                                                "VALUE": "LOW"
+                                              },
+                                              "next": {
+                                                "block": {
+                                                  "type": "digital_write",
+                                                  "id": "fl18",
+                                                  "fields": {
+                                                    "PIN": 5,
+                                                    "VALUE": "HIGH"
+                                                  },
+                                                  "next": {
+                                                    "block": {
+                                                      "type": "delay_ms",
+                                                      "id": "fl19",
+                                                      "fields": {
+                                                        "DELAY": 100
+                                                      },
+                                                      "next": {
+                                                        "block": {
+                                                          "type": "digital_write",
+                                                          "id": "fl20",
+                                                          "fields": {
+                                                            "PIN": 5,
+                                                            "VALUE": "LOW"
+                                                          },
+                                                          "next": {
+                                                            "block": {
+                                                              "type": "digital_write",
+                                                              "id": "fl21",
+                                                              "fields": {
+                                                                "PIN": 6,
+                                                                "VALUE": "HIGH"
+                                                              },
+                                                              "next": {
+                                                                "block": {
+                                                                  "type": "delay_ms",
+                                                                  "id": "fl22",
+                                                                  "fields": {
+                                                                    "DELAY": 100
+                                                                  },
+                                                                  "next": {
+                                                                    "block": {
+                                                                      "type": "digital_write",
+                                                                      "id": "fl23",
+                                                                      "fields": {
+                                                                        "PIN": 6,
+                                                                        "VALUE": "LOW"
+                                                                      },
+                                                                      "next": {
+                                                                        "block": {
+                                                                          "type": "digital_write",
+                                                                          "id": "fl24",
+                                                                          "fields": {
+                                                                            "PIN": 7,
+                                                                            "VALUE": "HIGH"
+                                                                          },
+                                                                          "next": {
+                                                                            "block": {
+                                                                              "type": "delay_ms",
+                                                                              "id": "fl25",
+                                                                              "fields": {
+                                                                                "DELAY": 100
+                                                                              },
+                                                                              "next": {
+                                                                                "block": {
+                                                                                  "type": "digital_write",
+                                                                                  "id": "fl26",
+                                                                                  "fields": {
+                                                                                    "PIN": 7,
+                                                                                    "VALUE": "LOW"
+                                                                                  },
+                                                                                  "next": {
+                                                                                    "block": {
+                                                                                      "type": "digital_write",
+                                                                                      "id": "fl27",
+                                                                                      "fields": {
+                                                                                        "PIN": 7,
+                                                                                        "VALUE": "HIGH"
+                                                                                      },
+                                                                                      "next": {
+                                                                                        "block": {
+                                                                                          "type": "delay_ms",
+                                                                                          "id": "fl28",
+                                                                                          "fields": {
+                                                                                            "DELAY": 100
+                                                                                          },
+                                                                                          "next": {
+                                                                                            "block": {
+                                                                                              "type": "digital_write",
+                                                                                              "id": "fl29",
+                                                                                              "fields": {
+                                                                                                "PIN": 7,
+                                                                                                "VALUE": "LOW"
+                                                                                              },
+                                                                                              "next": {
+                                                                                                "block": {
+                                                                                                  "type": "digital_write",
+                                                                                                  "id": "fl30",
+                                                                                                  "fields": {
+                                                                                                    "PIN": 6,
+                                                                                                    "VALUE": "HIGH"
+                                                                                                  },
+                                                                                                  "next": {
+                                                                                                    "block": {
+                                                                                                      "type": "delay_ms",
+                                                                                                      "id": "fl31",
+                                                                                                      "fields": {
+                                                                                                        "DELAY": 100
+                                                                                                      },
+                                                                                                      "next": {
+                                                                                                        "block": {
+                                                                                                          "type": "digital_write",
+                                                                                                          "id": "fl32",
+                                                                                                          "fields": {
+                                                                                                            "PIN": 6,
+                                                                                                            "VALUE": "LOW"
+                                                                                                          },
+                                                                                                          "next": {
+                                                                                                            "block": {
+                                                                                                              "type": "digital_write",
+                                                                                                              "id": "fl33",
+                                                                                                              "fields": {
+                                                                                                                "PIN": 5,
+                                                                                                                "VALUE": "HIGH"
+                                                                                                              },
+                                                                                                              "next": {
+                                                                                                                "block": {
+                                                                                                                  "type": "delay_ms",
+                                                                                                                  "id": "fl34",
+                                                                                                                  "fields": {
+                                                                                                                    "DELAY": 100
+                                                                                                                  },
+                                                                                                                  "next": {
+                                                                                                                    "block": {
+                                                                                                                      "type": "digital_write",
+                                                                                                                      "id": "fl35",
+                                                                                                                      "fields": {
+                                                                                                                        "PIN": 5,
+                                                                                                                        "VALUE": "LOW"
+                                                                                                                      },
+                                                                                                                      "next": {
+                                                                                                                        "block": {
+                                                                                                                          "type": "digital_write",
+                                                                                                                          "id": "fl36",
+                                                                                                                          "fields": {
+                                                                                                                            "PIN": 4,
+                                                                                                                            "VALUE": "HIGH"
+                                                                                                                          },
+                                                                                                                          "next": {
+                                                                                                                            "block": {
+                                                                                                                              "type": "delay_ms",
+                                                                                                                              "id": "fl37",
+                                                                                                                              "fields": {
+                                                                                                                                "DELAY": 100
+                                                                                                                              },
+                                                                                                                              "next": {
+                                                                                                                                "block": {
+                                                                                                                                  "type": "digital_write",
+                                                                                                                                  "id": "fl38",
+                                                                                                                                  "fields": {
+                                                                                                                                    "PIN": 4,
+                                                                                                                                    "VALUE": "LOW"
+                                                                                                                                  },
+                                                                                                                                  "next": {
+                                                                                                                                    "block": {
+                                                                                                                                      "type": "digital_write",
+                                                                                                                                      "id": "fl39",
+                                                                                                                                      "fields": {
+                                                                                                                                        "PIN": 3,
+                                                                                                                                        "VALUE": "HIGH"
+                                                                                                                                      },
+                                                                                                                                      "next": {
+                                                                                                                                        "block": {
+                                                                                                                                          "type": "delay_ms",
+                                                                                                                                          "id": "fl40",
+                                                                                                                                          "fields": {
+                                                                                                                                            "DELAY": 100
+                                                                                                                                          },
+                                                                                                                                          "next": {
+                                                                                                                                            "block": {
+                                                                                                                                              "type": "digital_write",
+                                                                                                                                              "id": "fl41",
+                                                                                                                                              "fields": {
+                                                                                                                                                "PIN": 3,
+                                                                                                                                                "VALUE": "LOW"
+                                                                                                                                              },
+                                                                                                                                              "next": {
+                                                                                                                                                "block": {
+                                                                                                                                                  "type": "digital_write",
+                                                                                                                                                  "id": "fl42",
+                                                                                                                                                  "fields": {
+                                                                                                                                                    "PIN": 2,
+                                                                                                                                                    "VALUE": "HIGH"
+                                                                                                                                                  },
+                                                                                                                                                  "next": {
+                                                                                                                                                    "block": {
+                                                                                                                                                      "type": "delay_ms",
+                                                                                                                                                      "id": "fl43",
+                                                                                                                                                      "fields": {
+                                                                                                                                                        "DELAY": 100
+                                                                                                                                                      },
+                                                                                                                                                      "next": {
+                                                                                                                                                        "block": {
+                                                                                                                                                          "type": "digital_write",
+                                                                                                                                                          "id": "fl44",
+                                                                                                                                                          "fields": {
+                                                                                                                                                            "PIN": 2,
+                                                                                                                                                            "VALUE": "LOW"
+                                                                                                                                                          }
+                                                                                                                                                        }
+                                                                                                                                                      }
+                                                                                                                                                    }
+                                                                                                                                                  }
+                                                                                                                                                }
+                                                                                                                                              }
+                                                                                                                                            }
+                                                                                                                                          }
+                                                                                                                                        }
+                                                                                                                                      }
+                                                                                                                                    }
+                                                                                                                                  }
+                                                                                                                                }
+                                                                                                                              }
+                                                                                                                            }
+                                                                                                                          }
+                                                                                                                        }
+                                                                                                                      }
+                                                                                                                    }
+                                                                                                                  }
+                                                                                                                }
+                                                                                                              }
+                                                                                                            }
+                                                                                                          }
+                                                                                                        }
+                                                                                                      }
+                                                                                                    }
+                                                                                                  }
+                                                                                                }
+                                                                                              }
+                                                                                            }
+                                                                                          }
+                                                                                        }
+                                                                                      }
+                                                                                    }
+                                                                                  }
+                                                                                }
+                                                                              }
+                                                                            }
+                                                                          }
+                                                                        }
+                                                                      }
+                                                                    }
+                                                                  }
+                                                                }
+                                                              }
+                                                            }
+                                                          }
+                                                        }
+                                                      }
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}

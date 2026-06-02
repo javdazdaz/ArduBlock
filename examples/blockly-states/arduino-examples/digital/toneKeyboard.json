@@ -1,0 +1,207 @@
+{
+  "blocks": {
+    "languageVersion": 0,
+    "blocks": [
+      {
+        "type": "arduino_setup",
+        "id": "tk1",
+        "x": 20,
+        "y": 20,
+        "inputs": {
+          "BODY": {
+            "block": {
+              "type": "pin_mode",
+              "id": "tk_setup1",
+              "fields": {
+                "PIN": 0,
+                "MODE": "INPUT"
+              },
+              "next": {
+                "block": {
+                  "type": "pin_mode",
+                  "id": "tk_setup2",
+                  "fields": {
+                    "PIN": 1,
+                    "MODE": "INPUT"
+                  },
+                  "next": {
+                    "block": {
+                      "type": "pin_mode",
+                      "id": "tk_setup3",
+                      "fields": {
+                        "PIN": 2,
+                        "MODE": "INPUT"
+                      },
+                      "next": {
+                        "block": {
+                          "type": "pin_mode",
+                          "id": "tk_setup4",
+                          "fields": {
+                            "PIN": 8,
+                            "MODE": "OUTPUT"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "arduino_loop",
+        "id": "tk2",
+        "x": 20,
+        "y": 120,
+        "inputs": {
+          "BODY": {
+            "block": {
+              "type": "controls_if",
+              "id": "tk3",
+              "inputs": {
+                "IF0": {
+                  "block": {
+                    "type": "logic_compare",
+                    "id": "tk4",
+                    "fields": {
+                      "OP": "GT"
+                    },
+                    "inputs": {
+                      "A": {
+                        "block": {
+                          "type": "analog_read",
+                          "id": "tk5",
+                          "fields": {
+                            "PIN": 0
+                          }
+                        }
+                      },
+                      "B": {
+                        "block": {
+                          "type": "math_number",
+                          "id": "tk6",
+                          "fields": {
+                            "NUM": 10
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "DO0": {
+                  "block": {
+                    "type": "tone_duration",
+                    "id": "tk7",
+                    "fields": {
+                      "PIN": 8,
+                      "FREQ": 440,
+                      "DURATION": 20
+                    },
+                    "next": {
+                      "block": {
+                        "type": "controls_if",
+                        "id": "tk8",
+                        "inputs": {
+                          "IF0": {
+                            "block": {
+                              "type": "logic_compare",
+                              "id": "tk9",
+                              "fields": {
+                                "OP": "GT"
+                              },
+                              "inputs": {
+                                "A": {
+                                  "block": {
+                                    "type": "analog_read",
+                                    "id": "tk10",
+                                    "fields": {
+                                      "PIN": 1
+                                    }
+                                  }
+                                },
+                                "B": {
+                                  "block": {
+                                    "type": "math_number",
+                                    "id": "tk11",
+                                    "fields": {
+                                      "NUM": 10
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "DO0": {
+                            "block": {
+                              "type": "tone_duration",
+                              "id": "tk12",
+                              "fields": {
+                                "PIN": 8,
+                                "FREQ": 494,
+                                "DURATION": 20
+                              },
+                              "next": {
+                                "block": {
+                                  "type": "controls_if",
+                                  "id": "tk13",
+                                  "inputs": {
+                                    "IF0": {
+                                      "block": {
+                                        "type": "logic_compare",
+                                        "id": "tk14",
+                                        "fields": {
+                                          "OP": "GT"
+                                        },
+                                        "inputs": {
+                                          "A": {
+                                            "block": {
+                                              "type": "analog_read",
+                                              "id": "tk15",
+                                              "fields": {
+                                                "PIN": 2
+                                              }
+                                            }
+                                          },
+                                          "B": {
+                                            "block": {
+                                              "type": "math_number",
+                                              "id": "tk16",
+                                              "fields": {
+                                                "NUM": 10
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    },
+                                    "DO0": {
+                                      "block": {
+                                        "type": "tone_duration",
+                                        "id": "tk17",
+                                        "fields": {
+                                          "PIN": 8,
+                                          "FREQ": 131,
+                                          "DURATION": 20
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,89 @@
+{
+  "blocks": {
+    "languageVersion": 0,
+    "blocks": [
+      {
+        "type": "arduino_setup",
+        "id": "dr1",
+        "x": 20,
+        "y": 20,
+        "inputs": {
+          "BODY": {
+            "block": {
+              "type": "serial_begin",
+              "id": "dr2",
+              "fields": {
+                "BAUD": "9600"
+              },
+              "next": {
+                "block": {
+                  "type": "pin_mode",
+                  "id": "dr3",
+                  "fields": {
+                    "PIN": 2,
+                    "MODE": "INPUT"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "arduino_loop",
+        "id": "dr4",
+        "x": 20,
+        "y": 180,
+        "inputs": {
+          "BODY": {
+            "block": {
+              "type": "variable_declare",
+              "id": "dr5",
+              "fields": {
+                "NAME": "buttonState",
+                "TYPE": "int"
+              },
+              "inputs": {
+                "VALUE": {
+                  "block": {
+                    "type": "digital_read",
+                    "id": "dr6",
+                    "fields": {
+                      "PIN": 2
+                    }
+                  }
+                }
+              },
+              "next": {
+                "block": {
+                  "type": "serial_println",
+                  "id": "dr7",
+                  "inputs": {
+                    "TEXT": {
+                      "block": {
+                        "type": "variable_get",
+                        "id": "dr8",
+                        "fields": {
+                          "NAME": "buttonState"
+                        }
+                      }
+                    }
+                  },
+                  "next": {
+                    "block": {
+                      "type": "delay_ms",
+                      "id": "dr9",
+                      "fields": {
+                        "MS": 1
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}

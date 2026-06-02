@@ -1,0 +1,267 @@
+{
+  "blocks": {
+    "languageVersion": 0,
+    "blocks": [
+      {
+        "type": "variable_declare",
+        "id": "bwd_g1",
+        "fields": {
+          "NAME": "ledState",
+          "TYPE": "int"
+        },
+        "inputs": {
+          "VALUE": {
+            "block": {
+              "type": "math_number",
+              "id": "bwd_gn1",
+              "fields": {
+                "NUM": 0
+              }
+            }
+          }
+        },
+        "x": 20,
+        "y": 240
+      },
+      {
+        "type": "variable_declare",
+        "id": "bwd_g2",
+        "fields": {
+          "NAME": "previousMillis",
+          "TYPE": "unsigned long"
+        },
+        "inputs": {
+          "VALUE": {
+            "block": {
+              "type": "math_number",
+              "id": "bwd_gn2",
+              "fields": {
+                "NUM": 0
+              }
+            }
+          }
+        },
+        "x": 20,
+        "y": 280
+      },
+      {
+        "type": "variable_declare",
+        "id": "bwd_g3",
+        "fields": {
+          "NAME": "interval",
+          "TYPE": "unsigned long"
+        },
+        "inputs": {
+          "VALUE": {
+            "block": {
+              "type": "math_number",
+              "id": "bwd_gn3",
+              "fields": {
+                "NUM": 1000
+              }
+            }
+          }
+        },
+        "x": 20,
+        "y": 320
+      },
+      {
+        "type": "arduino_setup",
+        "id": "bwd_s",
+        "x": 20,
+        "y": 20,
+        "inputs": {
+          "BODY": {
+            "block": {
+              "type": "pin_mode",
+              "id": "bwd_p1",
+              "fields": {
+                "PIN": 13,
+                "MODE": "OUTPUT"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "arduino_loop",
+        "id": "bwd_l",
+        "x": 20,
+        "y": 160,
+        "inputs": {
+          "BODY": {
+            "block": {
+              "type": "controls_if",
+              "id": "bwd_if1",
+              "inputs": {
+                "IF0": {
+                  "block": {
+                    "type": "logic_compare",
+                    "id": "bwd_cmp1",
+                    "fields": {
+                      "OP": "GTE"
+                    },
+                    "inputs": {
+                      "A": {
+                        "block": {
+                          "type": "math_arithmetic",
+                          "id": "bwd_ar1",
+                          "fields": {
+                            "OP": "MINUS"
+                          },
+                          "inputs": {
+                            "A": {
+                              "block": {
+                                "type": "millis",
+                                "id": "bwd_m1"
+                              }
+                            },
+                            "B": {
+                              "block": {
+                                "type": "variable_get",
+                                "id": "bwd_vg1",
+                                "fields": {
+                                  "NAME": "previousMillis"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "B": {
+                        "block": {
+                          "type": "variable_get",
+                          "id": "bwd_vg2",
+                          "fields": {
+                            "NAME": "interval"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "DO0": {
+                  "block": {
+                    "type": "variable_set",
+                    "id": "bwd_s1",
+                    "fields": {
+                      "NAME": "previousMillis"
+                    },
+                    "inputs": {
+                      "VALUE": {
+                        "block": {
+                          "type": "millis",
+                          "id": "bwd_m2"
+                        }
+                      }
+                    },
+                    "next": {
+                      "block": {
+                        "type": "controls_if",
+                        "id": "bwd_if2",
+                        "extraState": {
+                          "hasElse": true
+                        },
+                        "inputs": {
+                          "IF0": {
+                            "block": {
+                              "type": "logic_compare",
+                              "id": "bwd_cmp2",
+                              "fields": {
+                                "OP": "EQ"
+                              },
+                              "inputs": {
+                                "A": {
+                                  "block": {
+                                    "type": "variable_get",
+                                    "id": "bwd_vg3",
+                                    "fields": {
+                                      "NAME": "ledState"
+                                    }
+                                  }
+                                },
+                                "B": {
+                                  "block": {
+                                    "type": "math_number",
+                                    "id": "bwd_n1",
+                                    "fields": {
+                                      "NUM": 0
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "DO0": {
+                            "block": {
+                              "type": "variable_set",
+                              "id": "bwd_s2",
+                              "fields": {
+                                "NAME": "ledState"
+                              },
+                              "inputs": {
+                                "VALUE": {
+                                  "block": {
+                                    "type": "math_number",
+                                    "id": "bwd_n2",
+                                    "fields": {
+                                      "NUM": 1
+                                    }
+                                  }
+                                }
+                              },
+                              "next": {
+                                "block": {
+                                  "type": "digital_write",
+                                  "id": "bwd_dw1",
+                                  "fields": {
+                                    "PIN": 13,
+                                    "VALUE": "HIGH"
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "ELSE": {
+                            "block": {
+                              "type": "variable_set",
+                              "id": "bwd_s3",
+                              "fields": {
+                                "NAME": "ledState"
+                              },
+                              "inputs": {
+                                "VALUE": {
+                                  "block": {
+                                    "type": "math_number",
+                                    "id": "bwd_n3",
+                                    "fields": {
+                                      "NUM": 0
+                                    }
+                                  }
+                                }
+                              },
+                              "next": {
+                                "block": {
+                                  "type": "digital_write",
+                                  "id": "bwd_dw2",
+                                  "fields": {
+                                    "PIN": 13,
+                                    "VALUE": "LOW"
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}

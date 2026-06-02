@@ -1,0 +1,19 @@
+{
+  "blocks": {
+    "languageVersion": 0,
+    "blocks": [
+      {
+        "type": "arduino_setup",
+        "id": "bm1",
+        "x": 20,
+        "y": 20
+      },
+      {
+        "type": "arduino_loop",
+        "id": "bm2",
+        "x": 20,
+        "y": 120
+      }
+    ]
+  }
+}

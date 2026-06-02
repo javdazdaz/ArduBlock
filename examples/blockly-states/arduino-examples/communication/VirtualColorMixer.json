@@ -1,0 +1,388 @@
+{
+  "blocks": {
+    "languageVersion": 0,
+    "blocks": [
+      {
+        "type": "variable_declare",
+        "id": "vcm_g1",
+        "x": 20,
+        "y": 240,
+        "fields": {
+          "NAME": "redPin",
+          "TYPE": "int"
+        },
+        "inputs": {
+          "VALUE": {
+            "block": {
+              "type": "math_number",
+              "id": "vcm_np1",
+              "fields": {
+                "NUM": 9
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "variable_declare",
+        "id": "vcm_g2",
+        "x": 20,
+        "y": 280,
+        "fields": {
+          "NAME": "greenPin",
+          "TYPE": "int"
+        },
+        "inputs": {
+          "VALUE": {
+            "block": {
+              "type": "math_number",
+              "id": "vcm_np2",
+              "fields": {
+                "NUM": 10
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "variable_declare",
+        "id": "vcm_g3",
+        "x": 20,
+        "y": 320,
+        "fields": {
+          "NAME": "bluePin",
+          "TYPE": "int"
+        },
+        "inputs": {
+          "VALUE": {
+            "block": {
+              "type": "math_number",
+              "id": "vcm_np3",
+              "fields": {
+                "NUM": 11
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "arduino_setup",
+        "id": "vcm_s",
+        "x": 20,
+        "y": 20,
+        "inputs": {
+          "BODY": {
+            "block": {
+              "type": "serial_begin",
+              "id": "vcm_sb",
+              "fields": {
+                "BAUD": "9600"
+              },
+              "next": {
+                "block": {
+                  "type": "pin_mode",
+                  "id": "vcm_pm1",
+                  "fields": {
+                    "PIN": 9,
+                    "MODE": "OUTPUT"
+                  },
+                  "next": {
+                    "block": {
+                      "type": "pin_mode",
+                      "id": "vcm_pm2",
+                      "fields": {
+                        "PIN": 10,
+                        "MODE": "OUTPUT"
+                      },
+                      "next": {
+                        "block": {
+                          "type": "pin_mode",
+                          "id": "vcm_pm3",
+                          "fields": {
+                            "PIN": 11,
+                            "MODE": "OUTPUT"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "arduino_loop",
+        "id": "vcm_l",
+        "x": 20,
+        "y": 160,
+        "inputs": {
+          "BODY": {
+            "block": {
+              "type": "controls_whileUntil",
+              "id": "vcm_wh",
+              "fields": {
+                "MODE": "WHILE"
+              },
+              "inputs": {
+                "BOOL": {
+                  "block": {
+                    "type": "logic_compare",
+                    "id": "vcm_c0",
+                    "fields": {
+                      "OP": "GT"
+                    },
+                    "inputs": {
+                      "A": {
+                        "block": {
+                          "type": "serial_available",
+                          "id": "vcm_av"
+                        }
+                      },
+                      "B": {
+                        "block": {
+                          "type": "math_number",
+                          "id": "vcm_n0",
+                          "fields": {
+                            "NUM": 0
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "DO": {
+                  "block": {
+                    "type": "variable_declare",
+                    "id": "vcm_vr",
+                    "fields": {
+                      "NAME": "red",
+                      "TYPE": "int"
+                    },
+                    "inputs": {
+                      "VALUE": {
+                        "block": {
+                          "type": "serial_parse_int",
+                          "id": "vcm_pi1"
+                        }
+                      }
+                    },
+                    "next": {
+                      "block": {
+                        "type": "variable_declare",
+                        "id": "vcm_vg",
+                        "fields": {
+                          "NAME": "green",
+                          "TYPE": "int"
+                        },
+                        "inputs": {
+                          "VALUE": {
+                            "block": {
+                              "type": "serial_parse_int",
+                              "id": "vcm_pi2"
+                            }
+                          }
+                        },
+                        "next": {
+                          "block": {
+                            "type": "variable_declare",
+                            "id": "vcm_vb",
+                            "fields": {
+                              "NAME": "blue",
+                              "TYPE": "int"
+                            },
+                            "inputs": {
+                              "VALUE": {
+                                "block": {
+                                  "type": "serial_parse_int",
+                                  "id": "vcm_pi3"
+                                }
+                              }
+                            },
+                            "next": {
+                              "block": {
+                                "type": "controls_if",
+                                "id": "vcm_if",
+                                "inputs": {
+                                  "IF0": {
+                                    "block": {
+                                      "type": "logic_compare",
+                                      "id": "vcm_c1",
+                                      "fields": {
+                                        "OP": "EQ"
+                                      },
+                                      "inputs": {
+                                        "A": {
+                                          "block": {
+                                            "type": "serial_read",
+                                            "id": "vcm_rd"
+                                          }
+                                        },
+                                        "B": {
+                                          "block": {
+                                            "type": "math_number",
+                                            "id": "vcm_nl",
+                                            "fields": {
+                                              "NUM": 10
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  },
+                                  "DO0": {
+                                    "block": {
+                                      "type": "analog_write",
+                                      "id": "vcm_aw1",
+                                      "fields": {
+                                        "PIN": 9
+                                      },
+                                      "inputs": {
+                                        "VALUE": {
+                                          "block": {
+                                            "type": "math_constrain",
+                                            "id": "vcm_ct1",
+                                            "inputs": {
+                                              "VALUE": {
+                                                "block": {
+                                                  "type": "variable_get",
+                                                  "id": "vcm_g1b",
+                                                  "fields": {
+                                                    "NAME": "red"
+                                                  }
+                                                }
+                                              },
+                                              "LOW": {
+                                                "block": {
+                                                  "type": "math_number",
+                                                  "id": "vcm_lo1",
+                                                  "fields": {
+                                                    "NUM": 0
+                                                  }
+                                                }
+                                              },
+                                              "HIGH": {
+                                                "block": {
+                                                  "type": "math_number",
+                                                  "id": "vcm_hi1",
+                                                  "fields": {
+                                                    "NUM": 255
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      },
+                                      "next": {
+                                        "block": {
+                                          "type": "analog_write",
+                                          "id": "vcm_aw2",
+                                          "fields": {
+                                            "PIN": 10
+                                          },
+                                          "inputs": {
+                                            "VALUE": {
+                                              "block": {
+                                                "type": "math_constrain",
+                                                "id": "vcm_ct2",
+                                                "inputs": {
+                                                  "VALUE": {
+                                                    "block": {
+                                                      "type": "variable_get",
+                                                      "id": "vcm_g2b",
+                                                      "fields": {
+                                                        "NAME": "green"
+                                                      }
+                                                    }
+                                                  },
+                                                  "LOW": {
+                                                    "block": {
+                                                      "type": "math_number",
+                                                      "id": "vcm_lo2",
+                                                      "fields": {
+                                                        "NUM": 0
+                                                      }
+                                                    }
+                                                  },
+                                                  "HIGH": {
+                                                    "block": {
+                                                      "type": "math_number",
+                                                      "id": "vcm_hi2",
+                                                      "fields": {
+                                                        "NUM": 255
+                                                      }
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          },
+                                          "next": {
+                                            "block": {
+                                              "type": "analog_write",
+                                              "id": "vcm_aw3",
+                                              "fields": {
+                                                "PIN": 11
+                                              },
+                                              "inputs": {
+                                                "VALUE": {
+                                                  "block": {
+                                                    "type": "math_constrain",
+                                                    "id": "vcm_ct3",
+                                                    "inputs": {
+                                                      "VALUE": {
+                                                        "block": {
+                                                          "type": "variable_get",
+                                                          "id": "vcm_g3b",
+                                                          "fields": {
+                                                            "NAME": "blue"
+                                                          }
+                                                        }
+                                                      },
+                                                      "LOW": {
+                                                        "block": {
+                                                          "type": "math_number",
+                                                          "id": "vcm_lo3",
+                                                          "fields": {
+                                                            "NUM": 0
+                                                          }
+                                                        }
+                                                      },
+                                                      "HIGH": {
+                                                        "block": {
+                                                          "type": "math_number",
+                                                          "id": "vcm_hi3",
+                                                          "fields": {
+                                                            "NUM": 255
+                                                          }
+                                                        }
+                                                      }
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}

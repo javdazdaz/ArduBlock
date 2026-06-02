@@ -1,0 +1,169 @@
+{
+  "blocks": {
+    "languageVersion": 0,
+    "blocks": [
+      {
+        "type": "arduino_setup",
+        "id": "aos1",
+        "x": 20,
+        "y": 20,
+        "inputs": {
+          "BODY": {
+            "block": {
+              "type": "pin_mode",
+              "id": "aos_setup1",
+              "fields": {
+                "PIN": 0,
+                "MODE": "INPUT"
+              },
+              "next": {
+                "block": {
+                  "type": "pin_mode",
+                  "id": "aos_setup2",
+                  "fields": {
+                    "PIN": 9,
+                    "MODE": "OUTPUT"
+                  },
+                  "next": {
+                    "block": {
+                      "type": "serial_begin",
+                      "id": "aos2",
+                      "fields": {
+                        "BAUD": "9600"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "arduino_loop",
+        "id": "aos3",
+        "x": 20,
+        "y": 160,
+        "inputs": {
+          "BODY": {
+            "block": {
+              "type": "variable_set",
+              "id": "aos4",
+              "fields": {
+                "NAME": "sensorValue"
+              },
+              "inputs": {
+                "VALUE": {
+                  "block": {
+                    "type": "analog_read",
+                    "id": "aos5",
+                    "fields": {
+                      "PIN": 0
+                    }
+                  }
+                }
+              },
+              "next": {
+                "block": {
+                  "type": "variable_set",
+                  "id": "aos6",
+                  "fields": {
+                    "NAME": "outputValue"
+                  },
+                  "inputs": {
+                    "VALUE": {
+                      "block": {
+                        "type": "map_value",
+                        "id": "aos7",
+                        "fields": {
+                          "FROM_LOW": 0,
+                          "FROM_HIGH": 1023,
+                          "TO_LOW": 0,
+                          "TO_HIGH": 255
+                        },
+                        "inputs": {
+                          "VALUE": {
+                            "block": {
+                              "type": "variable_get",
+                              "id": "aos8",
+                              "fields": {
+                                "NAME": "sensorValue"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "next": {
+                    "block": {
+                      "type": "analog_write",
+                      "id": "aos9",
+                      "fields": {
+                        "PIN": 9
+                      },
+                      "inputs": {
+                        "VALUE": {
+                          "block": {
+                            "type": "variable_get",
+                            "id": "aos10",
+                            "fields": {
+                              "NAME": "outputValue"
+                            }
+                          }
+                        }
+                      },
+                      "next": {
+                        "block": {
+                          "type": "serial_println",
+                          "id": "aos11",
+                          "inputs": {
+                            "TEXT": {
+                              "block": {
+                                "type": "variable_get",
+                                "id": "aos12",
+                                "fields": {
+                                  "NAME": "sensorValue"
+                                }
+                              }
+                            }
+                          },
+                          "next": {
+                            "block": {
+                              "type": "serial_println",
+                              "id": "aos13",
+                              "inputs": {
+                                "TEXT": {
+                                  "block": {
+                                    "type": "variable_get",
+                                    "id": "aos14",
+                                    "fields": {
+                                      "NAME": "outputValue"
+                                    }
+                                  }
+                                }
+                              },
+                              "next": {
+                                "block": {
+                                  "type": "delay_ms",
+                                  "id": "aos15",
+                                  "fields": {
+                                    "MS": 2
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}

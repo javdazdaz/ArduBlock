@@ -1,0 +1,399 @@
+{
+  "blocks": {
+    "languageVersion": 0,
+    "blocks": [
+      {
+        "type": "variable_declare",
+        "id": "sca_g1",
+        "x": 20,
+        "y": 240,
+        "fields": {
+          "NAME": "firstSensor",
+          "TYPE": "int"
+        },
+        "inputs": {
+          "VALUE": {
+            "block": {
+              "type": "math_number",
+              "id": "sca_n1",
+              "fields": {
+                "NUM": 0
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "variable_declare",
+        "id": "sca_g2",
+        "x": 20,
+        "y": 280,
+        "fields": {
+          "NAME": "secondSensor",
+          "TYPE": "int"
+        },
+        "inputs": {
+          "VALUE": {
+            "block": {
+              "type": "math_number",
+              "id": "sca_n2",
+              "fields": {
+                "NUM": 0
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "variable_declare",
+        "id": "sca_g3",
+        "x": 20,
+        "y": 320,
+        "fields": {
+          "NAME": "thirdSensor",
+          "TYPE": "int"
+        },
+        "inputs": {
+          "VALUE": {
+            "block": {
+              "type": "math_number",
+              "id": "sca_n3",
+              "fields": {
+                "NUM": 0
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "variable_declare",
+        "id": "sca_g4",
+        "x": 20,
+        "y": 360,
+        "fields": {
+          "NAME": "inByte",
+          "TYPE": "int"
+        },
+        "inputs": {
+          "VALUE": {
+            "block": {
+              "type": "math_number",
+              "id": "sca_n4",
+              "fields": {
+                "NUM": 0
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "arduino_setup",
+        "id": "sca_s",
+        "x": 20,
+        "y": 20,
+        "inputs": {
+          "BODY": {
+            "block": {
+              "type": "serial_begin",
+              "id": "sca_sb",
+              "fields": {
+                "BAUD": "9600"
+              },
+              "next": {
+                "block": {
+                  "type": "pin_mode",
+                  "id": "sca_pm",
+                  "fields": {
+                    "PIN": 2,
+                    "MODE": "INPUT"
+                  },
+                  "next": {
+                    "block": {
+                      "type": "controls_whileUntil",
+                      "id": "sca_ec",
+                      "fields": {
+                        "MODE": "WHILE"
+                      },
+                      "inputs": {
+                        "BOOL": {
+                          "block": {
+                            "type": "logic_compare",
+                            "id": "sca_c0",
+                            "fields": {
+                              "OP": "LTE"
+                            },
+                            "inputs": {
+                              "A": {
+                                "block": {
+                                  "type": "serial_available",
+                                  "id": "sca_av1"
+                                }
+                              },
+                              "B": {
+                                "block": {
+                                  "type": "math_number",
+                                  "id": "sca_n0",
+                                  "fields": {
+                                    "NUM": 0
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        },
+                        "DO": {
+                          "block": {
+                            "type": "serial_println",
+                            "id": "sca_pl",
+                            "inputs": {
+                              "TEXT": {
+                                "block": {
+                                  "type": "text",
+                                  "id": "sca_t1",
+                                  "fields": {
+                                    "TEXT": "0,0,0"
+                                  }
+                                }
+                              }
+                            },
+                            "next": {
+                              "block": {
+                                "type": "delay_ms",
+                                "id": "sca_d3",
+                                "fields": {
+                                  "MS": 300
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "arduino_loop",
+        "id": "sca_l",
+        "x": 20,
+        "y": 200,
+        "inputs": {
+          "BODY": {
+            "block": {
+              "type": "controls_if",
+              "id": "sca_if",
+              "inputs": {
+                "IF0": {
+                  "block": {
+                    "type": "logic_compare",
+                    "id": "sca_c1",
+                    "fields": {
+                      "OP": "GT"
+                    },
+                    "inputs": {
+                      "A": {
+                        "block": {
+                          "type": "serial_available",
+                          "id": "sca_av2"
+                        }
+                      },
+                      "B": {
+                        "block": {
+                          "type": "math_number",
+                          "id": "sca_n01",
+                          "fields": {
+                            "NUM": 0
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "DO0": {
+                  "block": {
+                    "type": "variable_set",
+                    "id": "sca_si",
+                    "fields": {
+                      "NAME": "inByte"
+                    },
+                    "inputs": {
+                      "VALUE": {
+                        "block": {
+                          "type": "serial_read",
+                          "id": "sca_rd"
+                        }
+                      }
+                    },
+                    "next": {
+                      "block": {
+                        "type": "variable_set",
+                        "id": "sca_s1",
+                        "fields": {
+                          "NAME": "firstSensor"
+                        },
+                        "inputs": {
+                          "VALUE": {
+                            "block": {
+                              "type": "analog_read",
+                              "id": "sca_ar1",
+                              "fields": {
+                                "PIN": 0
+                              }
+                            }
+                          }
+                        },
+                        "next": {
+                          "block": {
+                            "type": "variable_set",
+                            "id": "sca_s2",
+                            "fields": {
+                              "NAME": "secondSensor"
+                            },
+                            "inputs": {
+                              "VALUE": {
+                                "block": {
+                                  "type": "analog_read",
+                                  "id": "sca_ar2",
+                                  "fields": {
+                                    "PIN": 1
+                                  }
+                                }
+                              }
+                            },
+                            "next": {
+                              "block": {
+                                "type": "variable_set",
+                                "id": "sca_s3",
+                                "fields": {
+                                  "NAME": "thirdSensor"
+                                },
+                                "inputs": {
+                                  "VALUE": {
+                                    "block": {
+                                      "type": "map_value",
+                                      "id": "sca_mp",
+                                      "fields": {
+                                        "FROM_LOW": 0,
+                                        "FROM_HIGH": 1,
+                                        "TO_LOW": 0,
+                                        "TO_HIGH": 255
+                                      },
+                                      "inputs": {
+                                        "VALUE": {
+                                          "block": {
+                                            "type": "digital_read",
+                                            "id": "sca_dr",
+                                            "fields": {
+                                              "PIN": 2
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                },
+                                "next": {
+                                  "block": {
+                                    "type": "serial_print",
+                                    "id": "sca_sp1",
+                                    "inputs": {
+                                      "TEXT": {
+                                        "block": {
+                                          "type": "variable_get",
+                                          "id": "sca_v1",
+                                          "fields": {
+                                            "NAME": "firstSensor"
+                                          }
+                                        }
+                                      }
+                                    },
+                                    "next": {
+                                      "block": {
+                                        "type": "serial_print",
+                                        "id": "sca_spc1",
+                                        "inputs": {
+                                          "TEXT": {
+                                            "block": {
+                                              "type": "text",
+                                              "id": "sca_t2",
+                                              "fields": {
+                                                "TEXT": ","
+                                              }
+                                            }
+                                          }
+                                        },
+                                        "next": {
+                                          "block": {
+                                            "type": "serial_print",
+                                            "id": "sca_sp2",
+                                            "inputs": {
+                                              "TEXT": {
+                                                "block": {
+                                                  "type": "variable_get",
+                                                  "id": "sca_v2",
+                                                  "fields": {
+                                                    "NAME": "secondSensor"
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            "next": {
+                                              "block": {
+                                                "type": "serial_print",
+                                                "id": "sca_spc2",
+                                                "inputs": {
+                                                  "TEXT": {
+                                                    "block": {
+                                                      "type": "text",
+                                                      "id": "sca_t3",
+                                                      "fields": {
+                                                        "TEXT": ","
+                                                      }
+                                                    }
+                                                  }
+                                                },
+                                                "next": {
+                                                  "block": {
+                                                    "type": "serial_println",
+                                                    "id": "sca_sp3",
+                                                    "inputs": {
+                                                      "TEXT": {
+                                                        "block": {
+                                                          "type": "variable_get",
+                                                          "id": "sca_v3",
+                                                          "fields": {
+                                                            "NAME": "thirdSensor"
+                                                          }
+                                                        }
+                                                      }
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}

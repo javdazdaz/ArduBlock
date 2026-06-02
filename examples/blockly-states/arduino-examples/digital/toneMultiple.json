@@ -1,0 +1,113 @@
+{
+  "blocks": {
+    "languageVersion": 0,
+    "blocks": [
+      {
+        "type": "arduino_setup",
+        "id": "tm1",
+        "x": 20,
+        "y": 20,
+        "inputs": {
+          "BODY": {
+            "block": {
+              "type": "pin_mode",
+              "id": "tm_setup1",
+              "fields": {
+                "PIN": 6,
+                "MODE": "OUTPUT"
+              },
+              "next": {
+                "block": {
+                  "type": "pin_mode",
+                  "id": "tm_setup2",
+                  "fields": {
+                    "PIN": 7,
+                    "MODE": "OUTPUT"
+                  },
+                  "next": {
+                    "block": {
+                      "type": "pin_mode",
+                      "id": "tm_setup3",
+                      "fields": {
+                        "PIN": 8,
+                        "MODE": "OUTPUT"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "arduino_loop",
+        "id": "tm2",
+        "x": 20,
+        "y": 120,
+        "inputs": {
+          "BODY": {
+            "block": {
+              "type": "no_tone_output",
+              "id": "tm3",
+              "fields": {
+                "PIN": 8
+              },
+              "next": {
+                "block": {
+                  "type": "tone_duration",
+                  "id": "tm4",
+                  "fields": {
+                    "PIN": 6,
+                    "FREQ": 440,
+                    "DURATION": 200
+                  },
+                  "next": {
+                    "block": {
+                      "type": "no_tone_output",
+                      "id": "tm5",
+                      "fields": {
+                        "PIN": 6
+                      },
+                      "next": {
+                        "block": {
+                          "type": "tone_duration",
+                          "id": "tm6",
+                          "fields": {
+                            "PIN": 7,
+                            "FREQ": 494,
+                            "DURATION": 500
+                          },
+                          "next": {
+                            "block": {
+                              "type": "no_tone_output",
+                              "id": "tm7",
+                              "fields": {
+                                "PIN": 7
+                              },
+                              "next": {
+                                "block": {
+                                  "type": "tone_duration",
+                                  "id": "tm8",
+                                  "fields": {
+                                    "PIN": 8,
+                                    "FREQ": 523,
+                                    "DURATION": 300
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}

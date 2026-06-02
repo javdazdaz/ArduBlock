@@ -1,0 +1,149 @@
+{
+  "blocks": {
+    "languageVersion": 0,
+    "blocks": [
+      {
+        "type": "arduino_setup",
+        "id": "if1",
+        "x": 20,
+        "y": 20,
+        "inputs": {
+          "BODY": {
+            "block": {
+              "type": "pin_mode",
+              "id": "if2",
+              "fields": {
+                "PIN": 13,
+                "MODE": "OUTPUT"
+              },
+              "next": {
+                "block": {
+                  "type": "serial_begin",
+                  "id": "if3",
+                  "fields": {
+                    "BAUD": "9600"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "arduino_loop",
+        "id": "if4",
+        "x": 20,
+        "y": 180,
+        "inputs": {
+          "BODY": {
+            "block": {
+              "type": "variable_declare",
+              "id": "if5",
+              "fields": {
+                "NAME": "analogValue",
+                "TYPE": "int"
+              },
+              "inputs": {
+                "VALUE": {
+                  "block": {
+                    "type": "analog_read",
+                    "id": "if6",
+                    "fields": {
+                      "PIN": 0
+                    }
+                  }
+                }
+              },
+              "next": {
+                "block": {
+                  "type": "serial_println",
+                  "id": "if7",
+                  "inputs": {
+                    "TEXT": {
+                      "block": {
+                        "type": "variable_get",
+                        "id": "if8",
+                        "fields": {
+                          "NAME": "analogValue"
+                        }
+                      }
+                    }
+                  },
+                  "next": {
+                    "block": {
+                      "type": "controls_if",
+                      "id": "if9",
+                      "extraState": {
+                        "hasElse": true
+                      },
+                      "inputs": {
+                        "IF0": {
+                          "block": {
+                            "type": "logic_compare",
+                            "id": "if10",
+                            "fields": {
+                              "OP": "GT"
+                            },
+                            "inputs": {
+                              "A": {
+                                "block": {
+                                  "type": "variable_get",
+                                  "id": "if11",
+                                  "fields": {
+                                    "NAME": "analogValue"
+                                  }
+                                }
+                              },
+                              "B": {
+                                "block": {
+                                  "type": "math_number",
+                                  "id": "if12",
+                                  "fields": {
+                                    "NUM": 400
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        },
+                        "DO0": {
+                          "block": {
+                            "type": "digital_write",
+                            "id": "if13",
+                            "fields": {
+                              "PIN": 13,
+                              "VALUE": "HIGH"
+                            }
+                          }
+                        },
+                        "ELSE": {
+                          "block": {
+                            "type": "digital_write",
+                            "id": "if14",
+                            "fields": {
+                              "PIN": 13,
+                              "VALUE": "LOW"
+                            }
+                          }
+                        }
+                      },
+                      "next": {
+                        "block": {
+                          "type": "delay_ms",
+                          "id": "if15",
+                          "fields": {
+                            "MS": 1
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}

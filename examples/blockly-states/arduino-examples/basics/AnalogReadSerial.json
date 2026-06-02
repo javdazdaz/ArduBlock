@@ -1,0 +1,89 @@
+{
+  "blocks": {
+    "languageVersion": 0,
+    "blocks": [
+      {
+        "type": "arduino_setup",
+        "id": "ar1",
+        "x": 20,
+        "y": 20,
+        "inputs": {
+          "BODY": {
+            "block": {
+              "type": "pin_mode",
+              "id": "ar_setup1",
+              "fields": {
+                "PIN": 0,
+                "MODE": "INPUT"
+              },
+              "next": {
+                "block": {
+                  "type": "serial_begin",
+                  "id": "ar2",
+                  "fields": {
+                    "BAUD": "9600"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "arduino_loop",
+        "id": "ar3",
+        "x": 20,
+        "y": 160,
+        "inputs": {
+          "BODY": {
+            "block": {
+              "type": "variable_declare",
+              "id": "ar4",
+              "fields": {
+                "NAME": "sensorValue",
+                "TYPE": "int"
+              },
+              "inputs": {
+                "VALUE": {
+                  "block": {
+                    "type": "analog_read",
+                    "id": "ar5",
+                    "fields": {
+                      "PIN": 0
+                    }
+                  }
+                }
+              },
+              "next": {
+                "block": {
+                  "type": "serial_println",
+                  "id": "ar6",
+                  "inputs": {
+                    "TEXT": {
+                      "block": {
+                        "type": "variable_get",
+                        "id": "ar7",
+                        "fields": {
+                          "NAME": "sensorValue"
+                        }
+                      }
+                    }
+                  },
+                  "next": {
+                    "block": {
+                      "type": "delay_ms",
+                      "id": "ar8",
+                      "fields": {
+                        "MS": 1
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}

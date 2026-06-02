@@ -1,0 +1,144 @@
+{
+  "blocks": {
+    "languageVersion": 0,
+    "blocks": [
+      {
+        "type": "variable_declare",
+        "id": "bt0",
+        "x": 20,
+        "y": 280,
+        "fields": {
+          "NAME": "buttonState",
+          "TYPE": "int"
+        },
+        "inputs": {
+          "VALUE": {
+            "block": {
+              "type": "math_number",
+              "id": "bt0v",
+              "fields": {
+                "NUM": 0
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "arduino_setup",
+        "id": "bt1",
+        "x": 20,
+        "y": 20,
+        "inputs": {
+          "BODY": {
+            "block": {
+              "type": "pin_mode",
+              "id": "bt2",
+              "fields": {
+                "PIN": 13,
+                "MODE": "OUTPUT"
+              },
+              "next": {
+                "block": {
+                  "type": "pin_mode",
+                  "id": "bt3",
+                  "fields": {
+                    "PIN": 2,
+                    "MODE": "INPUT"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "arduino_loop",
+        "id": "bt4",
+        "x": 20,
+        "y": 160,
+        "inputs": {
+          "BODY": {
+            "block": {
+              "type": "variable_set",
+              "id": "bt5",
+              "fields": {
+                "NAME": "buttonState"
+              },
+              "inputs": {
+                "VALUE": {
+                  "block": {
+                    "type": "digital_read",
+                    "id": "bt6",
+                    "fields": {
+                      "PIN": 2
+                    }
+                  }
+                }
+              },
+              "next": {
+                "block": {
+                  "type": "controls_if",
+                  "id": "bt7",
+                  "extraState": {
+                    "hasElse": true
+                  },
+                  "inputs": {
+                    "IF0": {
+                      "block": {
+                        "type": "logic_compare",
+                        "id": "bt8",
+                        "fields": {
+                          "OP": "EQ"
+                        },
+                        "inputs": {
+                          "A": {
+                            "block": {
+                              "type": "variable_get",
+                              "id": "bt9",
+                              "fields": {
+                                "NAME": "buttonState"
+                              }
+                            }
+                          },
+                          "B": {
+                            "block": {
+                              "type": "math_number",
+                              "id": "bt10",
+                              "fields": {
+                                "NUM": 1
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "DO0": {
+                      "block": {
+                        "type": "digital_write",
+                        "id": "bt11",
+                        "fields": {
+                          "PIN": 13,
+                          "VALUE": "HIGH"
+                        }
+                      }
+                    },
+                    "ELSE": {
+                      "block": {
+                        "type": "digital_write",
+                        "id": "bt12",
+                        "fields": {
+                          "PIN": 13,
+                          "VALUE": "LOW"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}

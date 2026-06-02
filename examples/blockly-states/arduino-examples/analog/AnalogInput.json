@@ -1,0 +1,91 @@
+{
+  "blocks": {
+    "languageVersion": 0,
+    "blocks": [
+      {
+        "type": "arduino_setup",
+        "id": "ai1",
+        "x": 20,
+        "y": 20,
+        "inputs": {
+          "BODY": {
+            "block": {
+              "type": "pin_mode",
+              "id": "ai2",
+              "fields": {
+                "PIN": 13,
+                "MODE": "OUTPUT"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "arduino_loop",
+        "id": "ai3",
+        "x": 20,
+        "y": 160,
+        "inputs": {
+          "BODY": {
+            "block": {
+              "type": "variable_set",
+              "id": "ai4",
+              "fields": {
+                "NAME": "sensorValue"
+              },
+              "inputs": {
+                "VALUE": {
+                  "block": {
+                    "type": "analog_read",
+                    "id": "ai5",
+                    "fields": {
+                      "PIN": 0
+                    }
+                  }
+                }
+              },
+              "next": {
+                "block": {
+                  "type": "digital_write",
+                  "id": "ai6",
+                  "fields": {
+                    "PIN": 13,
+                    "VALUE": "HIGH"
+                  },
+                  "next": {
+                    "block": {
+                      "type": "delay_ms",
+                      "id": "ai7",
+                      "fields": {
+                        "MS": 500
+                      },
+                      "next": {
+                        "block": {
+                          "type": "digital_write",
+                          "id": "ai8",
+                          "fields": {
+                            "PIN": 13,
+                            "VALUE": "LOW"
+                          },
+                          "next": {
+                            "block": {
+                              "type": "delay_ms",
+                              "id": "ai9",
+                              "fields": {
+                                "MS": 500
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}

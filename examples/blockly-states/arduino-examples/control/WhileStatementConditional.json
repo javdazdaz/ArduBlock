@@ -1,0 +1,385 @@
+{
+  "blocks": {
+    "languageVersion": 0,
+    "blocks": [
+      {
+        "type": "arduino_setup",
+        "id": "ws1",
+        "x": 20,
+        "y": 20,
+        "inputs": {
+          "BODY": {
+            "block": {
+              "type": "pin_mode",
+              "id": "ws_setup0",
+              "fields": {
+                "PIN": 0,
+                "MODE": "INPUT"
+              },
+              "next": {
+                "block": {
+                  "type": "pin_mode",
+                  "id": "ws2",
+                  "fields": {
+                    "PIN": 13,
+                    "MODE": "OUTPUT"
+                  },
+                  "next": {
+                    "block": {
+                      "type": "pin_mode",
+                      "id": "ws3",
+                      "fields": {
+                        "PIN": 9,
+                        "MODE": "OUTPUT"
+                      },
+                      "next": {
+                        "block": {
+                          "type": "pin_mode",
+                          "id": "ws4",
+                          "fields": {
+                            "PIN": 2,
+                            "MODE": "INPUT"
+                          },
+                          "next": {
+                            "block": {
+                              "type": "variables_set",
+                              "id": "ws5",
+                              "fields": {
+                                "VAR": {
+                                  "name": "sensorMin"
+                                }
+                              },
+                              "inputs": {
+                                "VALUE": {
+                                  "block": {
+                                    "type": "math_number",
+                                    "id": "ws6",
+                                    "fields": {
+                                      "NUM": 1023
+                                    }
+                                  }
+                                }
+                              },
+                              "next": {
+                                "block": {
+                                  "type": "variables_set",
+                                  "id": "ws7",
+                                  "fields": {
+                                    "VAR": {
+                                      "name": "sensorMax"
+                                    }
+                                  },
+                                  "inputs": {
+                                    "VALUE": {
+                                      "block": {
+                                        "type": "math_number",
+                                        "id": "ws8",
+                                        "fields": {
+                                          "NUM": 0
+                                        }
+                                      }
+                                    }
+                                  },
+                                  "next": {
+                                    "block": {
+                                      "type": "variables_set",
+                                      "id": "ws9",
+                                      "fields": {
+                                        "VAR": {
+                                          "name": "sensorValue"
+                                        }
+                                      },
+                                      "inputs": {
+                                        "VALUE": {
+                                          "block": {
+                                            "type": "math_number",
+                                            "id": "ws10",
+                                            "fields": {
+                                              "NUM": 0
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "arduino_loop",
+        "id": "ws11",
+        "x": 20,
+        "y": 260,
+        "inputs": {
+          "BODY": {
+            "block": {
+              "type": "controls_whileUntil",
+              "id": "ws12",
+              "fields": {
+                "MODE": "WHILE"
+              },
+              "inputs": {
+                "BOOL": {
+                  "block": {
+                    "type": "logic_compare",
+                    "id": "ws13",
+                    "fields": {
+                      "OP": "EQ"
+                    },
+                    "inputs": {
+                      "A": {
+                        "block": {
+                          "type": "digital_read",
+                          "id": "ws14",
+                          "fields": {
+                            "PIN": 2
+                          }
+                        }
+                      },
+                      "B": {
+                        "block": {
+                          "type": "math_number",
+                          "id": "ws15",
+                          "fields": {
+                            "NUM": 1
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "DO": {
+                  "block": {
+                    "type": "digital_write",
+                    "id": "ws16",
+                    "fields": {
+                      "PIN": 13,
+                      "VALUE": "HIGH"
+                    },
+                    "next": {
+                      "block": {
+                        "type": "variables_set",
+                        "id": "ws17",
+                        "fields": {
+                          "VAR": {
+                            "name": "sensorValue"
+                          }
+                        },
+                        "inputs": {
+                          "VALUE": {
+                            "block": {
+                              "type": "analog_read",
+                              "id": "ws18",
+                              "fields": {
+                                "PIN": 0
+                              }
+                            }
+                          }
+                        },
+                        "next": {
+                          "block": {
+                            "type": "controls_if",
+                            "id": "ws19",
+                            "inputs": {
+                              "IF0": {
+                                "block": {
+                                  "type": "logic_compare",
+                                  "id": "ws20",
+                                  "fields": {
+                                    "OP": "GT"
+                                  },
+                                  "inputs": {
+                                    "A": {
+                                      "block": {
+                                        "type": "variables_get",
+                                        "id": "ws21",
+                                        "fields": {
+                                          "VAR": {
+                                            "name": "sensorValue"
+                                          }
+                                        }
+                                      }
+                                    },
+                                    "B": {
+                                      "block": {
+                                        "type": "variables_get",
+                                        "id": "ws22",
+                                        "fields": {
+                                          "VAR": {
+                                            "name": "sensorMax"
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              },
+                              "DO0": {
+                                "block": {
+                                  "type": "variables_set",
+                                  "id": "ws23",
+                                  "fields": {
+                                    "VAR": {
+                                      "name": "sensorMax"
+                                    }
+                                  },
+                                  "inputs": {
+                                    "VALUE": {
+                                      "block": {
+                                        "type": "variables_get",
+                                        "id": "ws24",
+                                        "fields": {
+                                          "VAR": {
+                                            "name": "sensorValue"
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            },
+                            "next": {
+                              "block": {
+                                "type": "controls_if",
+                                "id": "ws25",
+                                "inputs": {
+                                  "IF0": {
+                                    "block": {
+                                      "type": "logic_compare",
+                                      "id": "ws26",
+                                      "fields": {
+                                        "OP": "LT"
+                                      },
+                                      "inputs": {
+                                        "A": {
+                                          "block": {
+                                            "type": "variables_get",
+                                            "id": "ws27",
+                                            "fields": {
+                                              "VAR": {
+                                                "name": "sensorValue"
+                                              }
+                                            }
+                                          }
+                                        },
+                                        "B": {
+                                          "block": {
+                                            "type": "variables_get",
+                                            "id": "ws28",
+                                            "fields": {
+                                              "VAR": {
+                                                "name": "sensorMin"
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  },
+                                  "DO0": {
+                                    "block": {
+                                      "type": "variables_set",
+                                      "id": "ws29",
+                                      "fields": {
+                                        "VAR": {
+                                          "name": "sensorMin"
+                                        }
+                                      },
+                                      "inputs": {
+                                        "VALUE": {
+                                          "block": {
+                                            "type": "variables_get",
+                                            "id": "ws30",
+                                            "fields": {
+                                              "VAR": {
+                                                "name": "sensorValue"
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "next": {
+                "block": {
+                  "type": "digital_write",
+                  "id": "ws31",
+                  "fields": {
+                    "PIN": 13,
+                    "VALUE": "LOW"
+                  },
+                  "next": {
+                    "block": {
+                      "type": "variables_set",
+                      "id": "ws32",
+                      "fields": {
+                        "VAR": {
+                          "name": "sensorValue"
+                        }
+                      },
+                      "inputs": {
+                        "VALUE": {
+                          "block": {
+                            "type": "analog_read",
+                            "id": "ws33",
+                            "fields": {
+                              "PIN": 0
+                            }
+                          }
+                        }
+                      },
+                      "next": {
+                        "block": {
+                          "type": "analog_write",
+                          "id": "ws34",
+                          "fields": {
+                            "PIN": 9
+                          },
+                          "inputs": {
+                            "VALUE": {
+                              "block": {
+                                "type": "variables_get",
+                                "id": "ws35",
+                                "fields": {
+                                  "VAR": {
+                                    "name": "sensorValue"
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}

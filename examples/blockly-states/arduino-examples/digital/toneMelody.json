@@ -1,0 +1,205 @@
+{
+  "blocks": {
+    "languageVersion": 0,
+    "blocks": [
+      {
+        "type": "include_header",
+        "id": "tm_inc",
+        "x": 250,
+        "y": 20,
+        "fields": {
+          "FILE": "pitches.h"
+        }
+      },
+      {
+        "type": "arduino_setup",
+        "id": "tm_s",
+        "x": 20,
+        "y": 20,
+        "inputs": {
+          "BODY": {
+            "block": {
+              "type": "pin_mode",
+              "id": "tm_pin",
+              "fields": {
+                "PIN": 8,
+                "MODE": "OUTPUT"
+              },
+              "next": {
+                "block": {
+                  "type": "array_declare",
+                  "id": "tm_a1",
+                  "fields": {
+                    "TYPE": "int",
+                    "NAME": "melodia",
+                    "VALUES": "NOTE_C4, NOTE_G3, NOTE_G3, NOTE_A3, NOTE_G3, 0, NOTE_B3, NOTE_C4"
+                  },
+                  "next": {
+                    "block": {
+                      "type": "array_declare",
+                      "id": "tm_a2",
+                      "fields": {
+                        "TYPE": "int",
+                        "NAME": "tiempos",
+                        "VALUES": "4, 8, 8, 4, 4, 4, 4, 4"
+                      },
+                      "next": {
+                        "block": {
+                          "type": "arduino_for_index",
+                          "id": "tm_for",
+                          "fields": {
+                            "VAR": "i"
+                          },
+                          "inputs": {
+                            "FROM": {
+                              "shadow": {
+                                "type": "math_number",
+                                "fields": {
+                                  "NUM": 0
+                                }
+                              }
+                            },
+                            "TO": {
+                              "block": {
+                                "type": "math_arithmetic",
+                                "id": "tm_to",
+                                "fields": {
+                                  "OP": "MINUS"
+                                },
+                                "inputs": {
+                                  "A": {
+                                    "block": {
+                                      "type": "array_length",
+                                      "id": "tm_len",
+                                      "fields": {
+                                        "NAME": "melodia"
+                                      }
+                                    }
+                                  },
+                                  "B": {
+                                    "shadow": {
+                                      "type": "math_number",
+                                      "fields": {
+                                        "NUM": 1
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            },
+                            "BY": {
+                              "shadow": {
+                                "type": "math_number",
+                                "fields": {
+                                  "NUM": 1
+                                }
+                              }
+                            },
+                            "DO": {
+                              "block": {
+                                "type": "tone_duration",
+                                "id": "tm_tone",
+                                "fields": {
+                                  "PIN": 8
+                                },
+                                "inputs": {
+                                  "FREQ": {
+                                    "block": {
+                                      "type": "array_get",
+                                      "id": "tm_ag1",
+                                      "fields": {
+                                        "NAME": "melodia"
+                                      },
+                                      "inputs": {
+                                        "INDEX": {
+                                          "block": {
+                                            "type": "variable_get",
+                                            "id": "tm_vg1",
+                                            "fields": {
+                                              "NAME": "i"
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  },
+                                  "DURATION": {
+                                    "block": {
+                                      "type": "math_arithmetic",
+                                      "id": "tm_div",
+                                      "fields": {
+                                        "OP": "DIVIDE"
+                                      },
+                                      "inputs": {
+                                        "A": {
+                                          "shadow": {
+                                            "type": "math_number",
+                                            "fields": {
+                                              "NUM": 1000
+                                            }
+                                          }
+                                        },
+                                        "B": {
+                                          "block": {
+                                            "type": "array_get",
+                                            "id": "tm_ag2",
+                                            "fields": {
+                                              "NAME": "tiempos"
+                                            },
+                                            "inputs": {
+                                              "INDEX": {
+                                                "block": {
+                                                  "type": "variable_get",
+                                                  "id": "tm_vg2",
+                                                  "fields": {
+                                                    "NAME": "i"
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                },
+                                "next": {
+                                  "block": {
+                                    "type": "delay_ms",
+                                    "id": "tm_del",
+                                    "fields": {
+                                      "MS": 300
+                                    },
+                                    "next": {
+                                      "block": {
+                                        "type": "no_tone_output",
+                                        "id": "tm_nt",
+                                        "fields": {
+                                          "PIN": 8
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "arduino_loop",
+        "id": "tm_l",
+        "x": 20,
+        "y": 550
+      }
+    ]
+  }
+}

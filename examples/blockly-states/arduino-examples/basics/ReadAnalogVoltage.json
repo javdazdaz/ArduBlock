@@ -1,0 +1,141 @@
+{
+  "blocks": {
+    "languageVersion": 0,
+    "blocks": [
+      {
+        "type": "arduino_setup",
+        "id": "rv1",
+        "x": 20,
+        "y": 20,
+        "inputs": {
+          "BODY": {
+            "block": {
+              "type": "pin_mode",
+              "id": "rv_setup1",
+              "fields": {
+                "PIN": 0,
+                "MODE": "INPUT"
+              },
+              "next": {
+                "block": {
+                  "type": "serial_begin",
+                  "id": "rv2",
+                  "fields": {
+                    "BAUD": "9600"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "arduino_loop",
+        "id": "rv3",
+        "x": 20,
+        "y": 160,
+        "inputs": {
+          "BODY": {
+            "block": {
+              "type": "variable_declare",
+              "id": "rv4",
+              "fields": {
+                "NAME": "sensorValue",
+                "TYPE": "int"
+              },
+              "inputs": {
+                "VALUE": {
+                  "block": {
+                    "type": "analog_read",
+                    "id": "rv5",
+                    "fields": {
+                      "PIN": 0
+                    }
+                  }
+                }
+              },
+              "next": {
+                "block": {
+                  "type": "variable_declare",
+                  "id": "rv6",
+                  "fields": {
+                    "NAME": "voltage",
+                    "TYPE": "float"
+                  },
+                  "inputs": {
+                    "VALUE": {
+                      "block": {
+                        "type": "math_arithmetic",
+                        "id": "rv7",
+                        "fields": {
+                          "OP": "MULTIPLY"
+                        },
+                        "inputs": {
+                          "A": {
+                            "block": {
+                              "type": "variable_get",
+                              "id": "rv8",
+                              "fields": {
+                                "NAME": "sensorValue"
+                              }
+                            }
+                          },
+                          "B": {
+                            "block": {
+                              "type": "math_arithmetic",
+                              "id": "rv9",
+                              "fields": {
+                                "OP": "DIVIDE"
+                              },
+                              "inputs": {
+                                "A": {
+                                  "block": {
+                                    "type": "math_number",
+                                    "id": "rv10",
+                                    "fields": {
+                                      "NUM": 5
+                                    }
+                                  }
+                                },
+                                "B": {
+                                  "block": {
+                                    "type": "math_number",
+                                    "id": "rv11",
+                                    "fields": {
+                                      "NUM": 1023
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "next": {
+                    "block": {
+                      "type": "serial_println",
+                      "id": "rv12",
+                      "inputs": {
+                        "TEXT": {
+                          "block": {
+                            "type": "variable_get",
+                            "id": "rv13",
+                            "fields": {
+                              "NAME": "voltage"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,150 @@
+{
+  "blocks": {
+    "languageVersion": 0,
+    "blocks": [
+      {
+        "type": "arduino_setup",
+        "id": "dp1",
+        "x": 20,
+        "y": 20,
+        "inputs": {
+          "BODY": {
+            "block": {
+              "type": "serial_begin",
+              "id": "dp2",
+              "fields": {
+                "BAUD": "9600"
+              },
+              "next": {
+                "block": {
+                  "type": "pin_mode",
+                  "id": "dp3",
+                  "fields": {
+                    "PIN": 2,
+                    "MODE": "INPUT_PULLUP"
+                  },
+                  "next": {
+                    "block": {
+                      "type": "pin_mode",
+                      "id": "dp4",
+                      "fields": {
+                        "PIN": 13,
+                        "MODE": "OUTPUT"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "arduino_loop",
+        "id": "dp5",
+        "x": 20,
+        "y": 180,
+        "inputs": {
+          "BODY": {
+            "block": {
+              "type": "variable_declare",
+              "id": "dp6",
+              "fields": {
+                "NAME": "sensorVal",
+                "TYPE": "int"
+              },
+              "inputs": {
+                "VALUE": {
+                  "block": {
+                    "type": "digital_read",
+                    "id": "dp7",
+                    "fields": {
+                      "PIN": 2
+                    }
+                  }
+                }
+              },
+              "next": {
+                "block": {
+                  "type": "serial_println",
+                  "id": "dp8",
+                  "inputs": {
+                    "TEXT": {
+                      "block": {
+                        "type": "variable_get",
+                        "id": "dp9",
+                        "fields": {
+                          "NAME": "sensorVal"
+                        }
+                      }
+                    }
+                  },
+                  "next": {
+                    "block": {
+                      "type": "controls_if",
+                      "id": "dp10",
+                      "extraState": {
+                        "hasElse": true
+                      },
+                      "inputs": {
+                        "IF0": {
+                          "block": {
+                            "type": "logic_compare",
+                            "id": "dp11",
+                            "fields": {
+                              "OP": "EQ"
+                            },
+                            "inputs": {
+                              "A": {
+                                "block": {
+                                  "type": "variable_get",
+                                  "id": "dp12",
+                                  "fields": {
+                                    "NAME": "sensorVal"
+                                  }
+                                }
+                              },
+                              "B": {
+                                "block": {
+                                  "type": "math_number",
+                                  "id": "dp13",
+                                  "fields": {
+                                    "NUM": 1
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        },
+                        "DO0": {
+                          "block": {
+                            "type": "digital_write",
+                            "id": "dp14",
+                            "fields": {
+                              "PIN": 13,
+                              "VALUE": "LOW"
+                            }
+                          }
+                        },
+                        "ELSE": {
+                          "block": {
+                            "type": "digital_write",
+                            "id": "dp15",
+                            "fields": {
+                              "PIN": 13,
+                              "VALUE": "HIGH"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}

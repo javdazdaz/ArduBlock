@@ -1,0 +1,252 @@
+{
+  "blocks": {
+    "languageVersion": 0,
+    "blocks": [
+      {
+        "type": "variable_declare",
+        "id": "fv1",
+        "x": 20,
+        "y": 310,
+        "fields": {
+          "NAME": "brightness",
+          "TYPE": "int"
+        },
+        "inputs": {
+          "VALUE": {
+            "block": {
+              "type": "math_number",
+              "id": "fv2",
+              "fields": {
+                "NUM": 0
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "variable_declare",
+        "id": "fv3",
+        "x": 20,
+        "y": 400,
+        "fields": {
+          "NAME": "fadeAmount",
+          "TYPE": "int"
+        },
+        "inputs": {
+          "VALUE": {
+            "block": {
+              "type": "math_number",
+              "id": "fv4",
+              "fields": {
+                "NUM": 5
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "arduino_setup",
+        "id": "f1",
+        "x": 20,
+        "y": 20,
+        "inputs": {
+          "BODY": {
+            "block": {
+              "type": "pin_mode",
+              "id": "f2",
+              "fields": {
+                "PIN": 9,
+                "MODE": "OUTPUT"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "arduino_loop",
+        "id": "f3",
+        "x": 20,
+        "y": 160,
+        "inputs": {
+          "BODY": {
+            "block": {
+              "type": "analog_write",
+              "id": "f4",
+              "fields": {
+                "PIN": 9
+              },
+              "inputs": {
+                "VALUE": {
+                  "block": {
+                    "type": "variable_get",
+                    "id": "f5",
+                    "fields": {
+                      "NAME": "brightness"
+                    }
+                  }
+                }
+              },
+              "next": {
+                "block": {
+                  "type": "variable_set",
+                  "id": "f6",
+                  "fields": {
+                    "NAME": "brightness"
+                  },
+                  "inputs": {
+                    "VALUE": {
+                      "block": {
+                        "type": "math_arithmetic",
+                        "id": "f7",
+                        "fields": {
+                          "OP": "ADD"
+                        },
+                        "inputs": {
+                          "A": {
+                            "block": {
+                              "type": "variable_get",
+                              "id": "f8",
+                              "fields": {
+                                "NAME": "brightness"
+                              }
+                            }
+                          },
+                          "B": {
+                            "block": {
+                              "type": "variable_get",
+                              "id": "f9",
+                              "fields": {
+                                "NAME": "fadeAmount"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "next": {
+                    "block": {
+                      "type": "controls_if",
+                      "id": "f10",
+                      "inputs": {
+                        "IF0": {
+                          "block": {
+                            "type": "logic_operation",
+                            "id": "f11",
+                            "fields": {
+                              "OP": "OR"
+                            },
+                            "inputs": {
+                              "A": {
+                                "block": {
+                                  "type": "logic_compare",
+                                  "id": "f12",
+                                  "fields": {
+                                    "OP": "LTE"
+                                  },
+                                  "inputs": {
+                                    "A": {
+                                      "block": {
+                                        "type": "variable_get",
+                                        "id": "f13",
+                                        "fields": {
+                                          "NAME": "brightness"
+                                        }
+                                      }
+                                    },
+                                    "B": {
+                                      "block": {
+                                        "type": "math_number",
+                                        "id": "f14",
+                                        "fields": {
+                                          "NUM": 0
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              },
+                              "B": {
+                                "block": {
+                                  "type": "logic_compare",
+                                  "id": "f15",
+                                  "fields": {
+                                    "OP": "GTE"
+                                  },
+                                  "inputs": {
+                                    "A": {
+                                      "block": {
+                                        "type": "variable_get",
+                                        "id": "f16",
+                                        "fields": {
+                                          "NAME": "brightness"
+                                        }
+                                      }
+                                    },
+                                    "B": {
+                                      "block": {
+                                        "type": "math_number",
+                                        "id": "f17",
+                                        "fields": {
+                                          "NUM": 255
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        },
+                        "DO0": {
+                          "block": {
+                            "type": "variable_set",
+                            "id": "f18",
+                            "fields": {
+                              "NAME": "fadeAmount"
+                            },
+                            "inputs": {
+                              "VALUE": {
+                                "block": {
+                                  "type": "math_single",
+                                  "id": "f19",
+                                  "fields": {
+                                    "OP": "NEG"
+                                  },
+                                  "inputs": {
+                                    "NUM": {
+                                      "block": {
+                                        "type": "variable_get",
+                                        "id": "f20",
+                                        "fields": {
+                                          "NAME": "fadeAmount"
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "next": {
+                        "block": {
+                          "type": "delay_ms",
+                          "id": "f21",
+                          "fields": {
+                            "MS": 30
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}

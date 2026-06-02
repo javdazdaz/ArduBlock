@@ -1,0 +1,350 @@
+{
+  "blocks": {
+    "languageVersion": 0,
+    "blocks": [
+      {
+        "type": "variable_declare",
+        "id": "cal_g1",
+        "fields": {
+          "NAME": "sensorValue",
+          "TYPE": "int"
+        },
+        "inputs": {
+          "VALUE": {
+            "block": {
+              "type": "math_number",
+              "id": "cal_gn1",
+              "fields": {
+                "NUM": 0
+              }
+            }
+          }
+        },
+        "x": 20,
+        "y": 240
+      },
+      {
+        "type": "variable_declare",
+        "id": "cal_g2",
+        "fields": {
+          "NAME": "sensorMin",
+          "TYPE": "int"
+        },
+        "inputs": {
+          "VALUE": {
+            "block": {
+              "type": "math_number",
+              "id": "cal_gn2",
+              "fields": {
+                "NUM": 1023
+              }
+            }
+          }
+        },
+        "x": 20,
+        "y": 280
+      },
+      {
+        "type": "variable_declare",
+        "id": "cal_g3",
+        "fields": {
+          "NAME": "sensorMax",
+          "TYPE": "int"
+        },
+        "inputs": {
+          "VALUE": {
+            "block": {
+              "type": "math_number",
+              "id": "cal_gn3",
+              "fields": {
+                "NUM": 0
+              }
+            }
+          }
+        },
+        "x": 20,
+        "y": 320
+      },
+      {
+        "type": "arduino_setup",
+        "id": "cal_s",
+        "x": 20,
+        "y": 20,
+        "inputs": {
+          "BODY": {
+            "block": {
+              "type": "pin_mode",
+              "id": "cal_p1",
+              "fields": {
+                "PIN": 13,
+                "MODE": "OUTPUT"
+              },
+              "next": {
+                "block": {
+                  "type": "digital_write",
+                  "id": "cal_dw0",
+                  "fields": {
+                    "PIN": 13,
+                    "VALUE": "HIGH"
+                  },
+                  "next": {
+                    "block": {
+                      "type": "controls_whileUntil",
+                      "id": "cal_wh",
+                      "fields": {
+                        "MODE": "WHILE"
+                      },
+                      "inputs": {
+                        "BOOL": {
+                          "block": {
+                            "type": "logic_compare",
+                            "id": "cal_cmp0",
+                            "fields": {
+                              "OP": "LT"
+                            },
+                            "inputs": {
+                              "A": {
+                                "block": {
+                                  "type": "millis",
+                                  "id": "cal_m0"
+                                }
+                              },
+                              "B": {
+                                "block": {
+                                  "type": "math_number",
+                                  "id": "cal_n0",
+                                  "fields": {
+                                    "NUM": 5000
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        },
+                        "DO": {
+                          "block": {
+                            "type": "variable_set",
+                            "id": "cal_sv1",
+                            "fields": {
+                              "NAME": "sensorValue"
+                            },
+                            "inputs": {
+                              "VALUE": {
+                                "block": {
+                                  "type": "analog_read",
+                                  "id": "cal_ar1",
+                                  "fields": {
+                                    "PIN": 0
+                                  }
+                                }
+                              }
+                            },
+                            "next": {
+                              "block": {
+                                "type": "controls_if",
+                                "id": "cal_if1",
+                                "inputs": {
+                                  "IF0": {
+                                    "block": {
+                                      "type": "logic_compare",
+                                      "id": "cal_cmp1",
+                                      "fields": {
+                                        "OP": "GT"
+                                      },
+                                      "inputs": {
+                                        "A": {
+                                          "block": {
+                                            "type": "variable_get",
+                                            "id": "cal_vg1",
+                                            "fields": {
+                                              "NAME": "sensorValue"
+                                            }
+                                          }
+                                        },
+                                        "B": {
+                                          "block": {
+                                            "type": "variable_get",
+                                            "id": "cal_vg2",
+                                            "fields": {
+                                              "NAME": "sensorMax"
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  },
+                                  "DO0": {
+                                    "block": {
+                                      "type": "variable_set",
+                                      "id": "cal_mx",
+                                      "fields": {
+                                        "NAME": "sensorMax"
+                                      },
+                                      "inputs": {
+                                        "VALUE": {
+                                          "block": {
+                                            "type": "variable_get",
+                                            "id": "cal_vg3",
+                                            "fields": {
+                                              "NAME": "sensorValue"
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                },
+                                "next": {
+                                  "block": {
+                                    "type": "controls_if",
+                                    "id": "cal_if2",
+                                    "inputs": {
+                                      "IF0": {
+                                        "block": {
+                                          "type": "logic_compare",
+                                          "id": "cal_cmp2",
+                                          "fields": {
+                                            "OP": "LT"
+                                          },
+                                          "inputs": {
+                                            "A": {
+                                              "block": {
+                                                "type": "variable_get",
+                                                "id": "cal_vg4",
+                                                "fields": {
+                                                  "NAME": "sensorValue"
+                                                }
+                                              }
+                                            },
+                                            "B": {
+                                              "block": {
+                                                "type": "variable_get",
+                                                "id": "cal_vg5",
+                                                "fields": {
+                                                  "NAME": "sensorMin"
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      },
+                                      "DO0": {
+                                        "block": {
+                                          "type": "variable_set",
+                                          "id": "cal_mn",
+                                          "fields": {
+                                            "NAME": "sensorMin"
+                                          },
+                                          "inputs": {
+                                            "VALUE": {
+                                              "block": {
+                                                "type": "variable_get",
+                                                "id": "cal_vg6",
+                                                "fields": {
+                                                  "NAME": "sensorValue"
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "next": {
+                        "block": {
+                          "type": "digital_write",
+                          "id": "cal_dw1",
+                          "fields": {
+                            "PIN": 13,
+                            "VALUE": "LOW"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "arduino_loop",
+        "id": "cal_l",
+        "x": 20,
+        "y": 200,
+        "inputs": {
+          "BODY": {
+            "block": {
+              "type": "variable_set",
+              "id": "cal_sv2",
+              "fields": {
+                "NAME": "sensorValue"
+              },
+              "inputs": {
+                "VALUE": {
+                  "block": {
+                    "type": "analog_read",
+                    "id": "cal_ar2",
+                    "fields": {
+                      "PIN": 0
+                    }
+                  }
+                }
+              },
+              "next": {
+                "block": {
+                  "type": "analog_write",
+                  "id": "cal_aw",
+                  "fields": {
+                    "PIN": 9
+                  },
+                  "inputs": {
+                    "VALUE": {
+                      "block": {
+                        "type": "map_value",
+                        "id": "cal_map",
+                        "fields": {
+                          "FROM_LOW": 0,
+                          "FROM_HIGH": 1023,
+                          "TO_LOW": 0,
+                          "TO_HIGH": 255
+                        },
+                        "inputs": {
+                          "VALUE": {
+                            "block": {
+                              "type": "variable_get",
+                              "id": "cal_vg7",
+                              "fields": {
+                                "NAME": "sensorValue"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "next": {
+                    "block": {
+                      "type": "delay_ms",
+                      "id": "cal_d1",
+                      "fields": {
+                        "MS": 50
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,426 @@
+{
+  "blocks": {
+    "languageVersion": 0,
+    "blocks": [
+      {
+        "type": "variable_declare",
+        "id": "sc_g1",
+        "fields": {
+          "NAME": "buttonPushCounter",
+          "TYPE": "int"
+        },
+        "inputs": {
+          "VALUE": {
+            "block": {
+              "type": "math_number",
+              "id": "sc_gn1",
+              "fields": {
+                "NUM": 0
+              }
+            }
+          }
+        },
+        "x": 20,
+        "y": 240
+      },
+      {
+        "type": "variable_declare",
+        "id": "sc_g2",
+        "fields": {
+          "NAME": "buttonState",
+          "TYPE": "int"
+        },
+        "inputs": {
+          "VALUE": {
+            "block": {
+              "type": "math_number",
+              "id": "sc_gn2",
+              "fields": {
+                "NUM": 0
+              }
+            }
+          }
+        },
+        "x": 20,
+        "y": 280
+      },
+      {
+        "type": "variable_declare",
+        "id": "sc_g3",
+        "fields": {
+          "NAME": "lastButtonState",
+          "TYPE": "int"
+        },
+        "inputs": {
+          "VALUE": {
+            "block": {
+              "type": "math_number",
+              "id": "sc_gn3",
+              "fields": {
+                "NUM": 0
+              }
+            }
+          }
+        },
+        "x": 20,
+        "y": 320
+      },
+      {
+        "type": "arduino_setup",
+        "id": "sc_s",
+        "x": 20,
+        "y": 20,
+        "inputs": {
+          "BODY": {
+            "block": {
+              "type": "pin_mode",
+              "id": "sc_p1",
+              "fields": {
+                "PIN": 2,
+                "MODE": "INPUT"
+              },
+              "next": {
+                "block": {
+                  "type": "pin_mode",
+                  "id": "sc_p2",
+                  "fields": {
+                    "PIN": 13,
+                    "MODE": "OUTPUT"
+                  },
+                  "next": {
+                    "block": {
+                      "type": "serial_begin",
+                      "id": "sc_sb",
+                      "fields": {
+                        "BAUD": "9600"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "arduino_loop",
+        "id": "sc_l",
+        "x": 20,
+        "y": 160,
+        "inputs": {
+          "BODY": {
+            "block": {
+              "type": "variable_set",
+              "id": "sc_s1",
+              "fields": {
+                "NAME": "buttonState"
+              },
+              "inputs": {
+                "VALUE": {
+                  "block": {
+                    "type": "digital_read",
+                    "id": "sc_dr",
+                    "fields": {
+                      "PIN": 2
+                    }
+                  }
+                }
+              },
+              "next": {
+                "block": {
+                  "type": "controls_if",
+                  "id": "sc_if1",
+                  "inputs": {
+                    "IF0": {
+                      "block": {
+                        "type": "logic_compare",
+                        "id": "sc_cmp1",
+                        "fields": {
+                          "OP": "NEQ"
+                        },
+                        "inputs": {
+                          "A": {
+                            "block": {
+                              "type": "variable_get",
+                              "id": "sc_vg1",
+                              "fields": {
+                                "NAME": "buttonState"
+                              }
+                            }
+                          },
+                          "B": {
+                            "block": {
+                              "type": "variable_get",
+                              "id": "sc_vg2",
+                              "fields": {
+                                "NAME": "lastButtonState"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "DO0": {
+                      "block": {
+                        "type": "controls_if",
+                        "id": "sc7",
+                        "extraState": {
+                          "hasElse": true
+                        },
+                        "inputs": {
+                          "IF0": {
+                            "block": {
+                              "type": "logic_compare",
+                              "id": "sc_cmp2",
+                              "fields": {
+                                "OP": "EQ"
+                              },
+                              "inputs": {
+                                "A": {
+                                  "block": {
+                                    "type": "variable_get",
+                                    "id": "sc_vg3",
+                                    "fields": {
+                                      "NAME": "buttonState"
+                                    }
+                                  }
+                                },
+                                "B": {
+                                  "block": {
+                                    "type": "math_number",
+                                    "id": "sc_n1",
+                                    "fields": {
+                                      "NUM": 1
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "DO0": {
+                            "block": {
+                              "type": "variable_set",
+                              "id": "sc_s2",
+                              "fields": {
+                                "NAME": "buttonPushCounter"
+                              },
+                              "inputs": {
+                                "VALUE": {
+                                  "block": {
+                                    "type": "math_arithmetic",
+                                    "id": "sc_ar1",
+                                    "fields": {
+                                      "OP": "ADD"
+                                    },
+                                    "inputs": {
+                                      "A": {
+                                        "block": {
+                                          "type": "variable_get",
+                                          "id": "sc_vg4",
+                                          "fields": {
+                                            "NAME": "buttonPushCounter"
+                                          }
+                                        }
+                                      },
+                                      "B": {
+                                        "block": {
+                                          "type": "math_number",
+                                          "id": "sc_n2",
+                                          "fields": {
+                                            "NUM": 1
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              },
+                              "next": {
+                                "block": {
+                                  "type": "serial_println",
+                                  "id": "sc_sp1",
+                                  "inputs": {
+                                    "TEXT": {
+                                      "block": {
+                                        "type": "text",
+                                        "id": "sc_t1",
+                                        "fields": {
+                                          "TEXT": "on"
+                                        }
+                                      }
+                                    }
+                                  },
+                                  "next": {
+                                    "block": {
+                                      "type": "serial_print",
+                                      "id": "sc_sp2",
+                                      "inputs": {
+                                        "TEXT": {
+                                          "block": {
+                                            "type": "text",
+                                            "id": "sc_t2",
+                                            "fields": {
+                                              "TEXT": "number of button pushes: "
+                                            }
+                                          }
+                                        }
+                                      },
+                                      "next": {
+                                        "block": {
+                                          "type": "serial_println",
+                                          "id": "sc_sp3",
+                                          "inputs": {
+                                            "TEXT": {
+                                              "block": {
+                                                "type": "variable_get",
+                                                "id": "sc_vg5",
+                                                "fields": {
+                                                  "NAME": "buttonPushCounter"
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "ELSE": {
+                            "block": {
+                              "type": "serial_println",
+                              "id": "sc_sp4",
+                              "inputs": {
+                                "TEXT": {
+                                  "block": {
+                                    "type": "text",
+                                    "id": "sc_t3",
+                                    "fields": {
+                                      "TEXT": "off"
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        },
+                        "next": {
+                          "block": {
+                            "type": "delay_ms",
+                            "id": "sc_d1",
+                            "fields": {
+                              "MS": 50
+                            },
+                            "next": {
+                              "block": {
+                                "type": "variable_set",
+                                "id": "sc_s3",
+                                "fields": {
+                                  "NAME": "lastButtonState"
+                                },
+                                "inputs": {
+                                  "VALUE": {
+                                    "block": {
+                                      "type": "variable_get",
+                                      "id": "sc_vg6",
+                                      "fields": {
+                                        "NAME": "buttonState"
+                                      }
+                                    }
+                                  }
+                                },
+                                "next": {
+                                  "block": {
+                                    "type": "controls_if",
+                                    "id": "sc21",
+                                    "extraState": {
+                                      "hasElse": true
+                                    },
+                                    "inputs": {
+                                      "IF0": {
+                                        "block": {
+                                          "type": "logic_compare",
+                                          "id": "sc_cmp3",
+                                          "fields": {
+                                            "OP": "EQ"
+                                          },
+                                          "inputs": {
+                                            "A": {
+                                              "block": {
+                                                "type": "math_modulo",
+                                                "id": "sc_mod",
+                                                "inputs": {
+                                                  "DIVIDEND": {
+                                                    "block": {
+                                                      "type": "variable_get",
+                                                      "id": "sc_vg7",
+                                                      "fields": {
+                                                        "NAME": "buttonPushCounter"
+                                                      }
+                                                    }
+                                                  },
+                                                  "DIVISOR": {
+                                                    "block": {
+                                                      "type": "math_number",
+                                                      "id": "sc_n3",
+                                                      "fields": {
+                                                        "NUM": 4
+                                                      }
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            "B": {
+                                              "block": {
+                                                "type": "math_number",
+                                                "id": "sc_n4",
+                                                "fields": {
+                                                  "NUM": 0
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      },
+                                      "DO0": {
+                                        "block": {
+                                          "type": "digital_write",
+                                          "id": "sc_dw1",
+                                          "fields": {
+                                            "PIN": 13,
+                                            "VALUE": "HIGH"
+                                          }
+                                        }
+                                      },
+                                      "ELSE": {
+                                        "block": {
+                                          "type": "digital_write",
+                                          "id": "sc_dw2",
+                                          "fields": {
+                                            "PIN": 13,
+                                            "VALUE": "LOW"
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}

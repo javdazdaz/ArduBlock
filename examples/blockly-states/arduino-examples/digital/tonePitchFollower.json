@@ -1,0 +1,145 @@
+{
+  "blocks": {
+    "languageVersion": 0,
+    "blocks": [
+      {
+        "type": "arduino_setup",
+        "id": "tp1",
+        "x": 20,
+        "y": 20,
+        "inputs": {
+          "BODY": {
+            "block": {
+              "type": "pin_mode",
+              "id": "tp_setup1",
+              "fields": {
+                "PIN": 0,
+                "MODE": "INPUT"
+              },
+              "next": {
+                "block": {
+                  "type": "pin_mode",
+                  "id": "tp_setup2",
+                  "fields": {
+                    "PIN": 9,
+                    "MODE": "OUTPUT"
+                  },
+                  "next": {
+                    "block": {
+                      "type": "serial_begin",
+                      "id": "tp2",
+                      "fields": {
+                        "BAUD": "9600"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "arduino_loop",
+        "id": "tp3",
+        "x": 20,
+        "y": 160,
+        "inputs": {
+          "BODY": {
+            "block": {
+              "type": "variable_declare",
+              "id": "tp4",
+              "fields": {
+                "NAME": "sensorReading",
+                "TYPE": "int"
+              },
+              "inputs": {
+                "VALUE": {
+                  "block": {
+                    "type": "analog_read",
+                    "id": "tp5",
+                    "fields": {
+                      "PIN": 0
+                    }
+                  }
+                }
+              },
+              "next": {
+                "block": {
+                  "type": "serial_println",
+                  "id": "tp6",
+                  "inputs": {
+                    "TEXT": {
+                      "block": {
+                        "type": "variable_get",
+                        "id": "tp7",
+                        "fields": {
+                          "NAME": "sensorReading"
+                        }
+                      }
+                    }
+                  },
+                  "next": {
+                    "block": {
+                      "type": "variable_declare",
+                      "id": "tp8",
+                      "fields": {
+                        "NAME": "thisPitch",
+                        "TYPE": "int"
+                      },
+                      "inputs": {
+                        "VALUE": {
+                          "block": {
+                            "type": "map_value",
+                            "id": "tp9",
+                            "fields": {
+                              "FROM_LOW": 400,
+                              "FROM_HIGH": 1000,
+                              "TO_LOW": 120,
+                              "TO_HIGH": 1500
+                            },
+                            "inputs": {
+                              "VALUE": {
+                                "block": {
+                                  "type": "variable_get",
+                                  "id": "tp10",
+                                  "fields": {
+                                    "NAME": "sensorReading"
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "next": {
+                        "block": {
+                          "type": "tone_duration",
+                          "id": "tp11",
+                          "fields": {
+                            "PIN": 9,
+                            "FREQ": 120,
+                            "DURATION": 10
+                          },
+                          "next": {
+                            "block": {
+                              "type": "delay_ms",
+                              "id": "tp12",
+                              "fields": {
+                                "MS": 1
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}
