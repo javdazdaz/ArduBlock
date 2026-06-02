@@ -334,7 +334,7 @@ function applyWarnings(workspace, warnings) {
   const allBlocks = workspace.getAllBlocks(false);
   for (const block of allBlocks) {
     block.setWarningText(null);
-    try { block.setDisabledReason(false, DISABLE_REASON); } catch(e) {}
+    try { block.setDisabledReason(false, DISABLE_REASON); } catch(e) { console.warn('[Validator] setDisabledReason(false) failed:', e); }
   }
 
   const errors = warnings.filter(w => w.severity === 'error');
@@ -343,7 +343,7 @@ function applyWarnings(workspace, warnings) {
   for (const w of errors) {
     for (const block of w.blocks) {
       if (w.disable) {
-        try { block.setDisabledReason(true, DISABLE_REASON); } catch(e) {}
+        try { block.setDisabledReason(true, DISABLE_REASON); } catch(e) { console.warn('[Validator] setDisabledReason(true) failed:', e); }
       }
       block.setWarningText(w.message);
     }
