@@ -80,7 +80,7 @@ FixedEdgesScrollMetricsManager.setFixedEdges({ top: true, left: true });
 
 // Módulos de la aplicación
 import { initProjectManager, lsKey } from './project-manager.js';
-import { initSettings }      from './settings.js';
+import { initSettings, getSetting } from './settings.js';
 import { initSerial }        from './serial.js';
 import { initUpload }         from './upload.js';
 import { initExamples }       from './examples.js';
@@ -89,125 +89,14 @@ import { initTabManager, getTabs, loadTabs, setSketchName, setInoContent, getIno
 import { t, applyDOMLanguage } from './i18n.js';
 
 // ═══ Toolbox ══════════════════════════════════
-const toolbox = {
-  'kind': 'categoryToolbox',
-  'contents': [
-    { 'kind': 'category', 'name': '%{BKY_CAT_ARDUINO}', 'colour': '230',
-      'contents': [
-        { 'kind': 'block', 'type': 'arduino_setup' },
-        { 'kind': 'block', 'type': 'arduino_loop' },
-        { 'kind': 'block', 'type': 'include_header' }
-      ]},
-    { 'kind': 'category', 'name': '%{BKY_CAT_PINES}', 'colour': '190',
-      'contents': [
-        { 'kind': 'block', 'type': 'pin_mode' },
-        { 'kind': 'block', 'type': 'digital_write' },
-        { 'kind': 'block', 'type': 'digital_read' },
-        { 'kind': 'block', 'type': 'analog_write' },
-        { 'kind': 'block', 'type': 'analog_read' },
-        { 'kind': 'block', 'type': 'pulse_in' },
-        { 'kind': 'block', 'type': 'attach_interrupt' }
-      ]},
-    { 'kind': 'category', 'name': '%{BKY_CAT_TIEMPO}', 'colour': '290',
-      'contents': [
-        { 'kind': 'block', 'type': 'delay_ms' },
-        { 'kind': 'block', 'type': 'millis' }
-      ]},
-    { 'kind': 'category', 'name': '%{BKY_CAT_SONIDO}', 'colour': '260',
-      'contents': [
-        { 'kind': 'block', 'type': 'tone_output' },
-        { 'kind': 'block', 'type': 'tone_duration' },
-        { 'kind': 'block', 'type': 'no_tone_output' }
-      ]},
-    { 'kind': 'category', 'name': '%{BKY_CAT_LCD}', 'colour': '180',
-      'contents': [
-        { 'kind': 'block', 'type': 'lcd_create' },
-        { 'kind': 'block', 'type': 'lcd_i2c_create' },
-        { 'kind': 'block', 'type': 'lcd_print' },
-        { 'kind': 'block', 'type': 'lcd_set_cursor' },
-        { 'kind': 'block', 'type': 'lcd_clear' }
-      ]},
-    { 'kind': 'category', 'name': '%{BKY_CAT_SENSORES}', 'colour': '100',
-      'contents': [
-        { 'kind': 'block', 'type': 'dht_create' },
-        { 'kind': 'block', 'type': 'dht_temp' },
-        { 'kind': 'block', 'type': 'dht_humidity' },
-        { 'kind': 'block', 'type': 'ultrasonic_create' },
-        { 'kind': 'block', 'type': 'ultrasonic_read' }
-      ]},
-    { 'kind': 'category', 'name': '%{BKY_CAT_MOTOR}', 'colour': '310',
-      'contents': [
-        { 'kind': 'block', 'type': 'stepper_create' },
-        { 'kind': 'block', 'type': 'stepper_speed' },
-        { 'kind': 'block', 'type': 'stepper_step' }
-      ]},
-    { 'kind': 'category', 'name': '%{BKY_CAT_SERVO}', 'colour': '40',
-      'contents': [
-        { 'kind': 'block', 'type': 'servo_create' },
-        { 'kind': 'block', 'type': 'servo_write' },
-        { 'kind': 'block', 'type': 'servo_write_us' }
-      ]},
-    { 'kind': 'category', 'name': '%{BKY_CAT_SERIAL}', 'colour': '120',
-      'contents': [
-        { 'kind': 'block', 'type': 'serial_begin' },
-        { 'kind': 'block', 'type': 'serial_print' },
-        { 'kind': 'block', 'type': 'serial_println' },
-        { 'kind': 'block', 'type': 'serial_available' },
-        { 'kind': 'block', 'type': 'serial_read' },
-        { 'kind': 'block', 'type': 'serial_parse_int' },
-        { 'kind': 'block', 'type': 'serial_parse_float' },
-        { 'kind': 'block', 'type': 'serial_read_string' },
-        { 'kind': 'block', 'type': 'serial_write' }
-      ]},
-    { 'kind': 'sep' },
-    { 'kind': 'category', 'name': '%{BKY_CAT_LOGICA}', 'colour': '210',
-      'contents': [
-        { 'kind': 'block', 'type': 'controls_if' },
-        { 'kind': 'block', 'type': 'logic_compare' },
-        { 'kind': 'block', 'type': 'logic_operation' },
-        { 'kind': 'block', 'type': 'logic_negate' },
-        { 'kind': 'block', 'type': 'logic_boolean' }
-      ]},
-    { 'kind': 'category', 'name': '%{BKY_CAT_BUCLES}', 'colour': '120',
-      'contents': [
-        { 'kind': 'block', 'type': 'controls_repeat_ext' },
-        { 'kind': 'block', 'type': 'controls_whileUntil' },
-        { 'kind': 'block', 'type': 'arduino_for_index' }
-      ]},
-    { 'kind': 'category', 'name': '%{BKY_CAT_MATEMATICAS}', 'colour': '230',
-      'contents': [
-        { 'kind': 'block', 'type': 'math_number' },
-        { 'kind': 'block', 'type': 'math_arithmetic' },
-        { 'kind': 'block', 'type': 'math_single' },
-        { 'kind': 'block', 'type': 'math_modulo' },
-        { 'kind': 'block', 'type': 'math_random_int' },
-        { 'kind': 'block', 'type': 'math_constrain' },
-        { 'kind': 'block', 'type': 'map_value' },
-        { 'kind': 'block', 'type': 'math_number_property' }
-      ]},
-    { 'kind': 'category', 'name': '%{BKY_CAT_VARIABLES}', 'colour': '330',
-      'contents': [
-        { 'kind': 'block', 'type': 'variable_declare' },
-        { 'kind': 'block', 'type': 'variable_set' },
-        { 'kind': 'block', 'type': 'variable_get' }
-      ]},
-    { 'kind': 'category', 'name': '%{BKY_CAT_ARRAYS}', 'colour': '330',
-      'contents': [
-        { 'kind': 'block', 'type': 'array_declare' },
-        { 'kind': 'block', 'type': 'array_get' },
-        { 'kind': 'block', 'type': 'array_set' },
-        { 'kind': 'block', 'type': 'array_length' }
-      ]},
-    { 'kind': 'category', 'name': '%{BKY_CAT_FUNCTIONS}', 'colour': '290', 'custom': 'PROCEDURE' },
-    { 'kind': 'category', 'name': '%{BKY_CAT_TEXTO}', 'colour': '160',
-      'contents': [
-        { 'kind': 'block', 'type': 'text' },
-        { 'kind': 'block', 'type': 'text_join' },
-        { 'kind': 'block', 'type': 'text_print' },
-        { 'kind': 'block', 'type': 'text_length' }
-      ]},
-    { 'kind': 'search', 'name': '%{BKY_CAT_BUSCAR}', 'contents': [] }
-  ]
+import { buildToolboxForBoard } from './blocks.js';
+
+const toolbox = buildToolboxForBoard(getSetting('board'));
+
+// Función para reconstruir toolbox al cambiar de placa
+window._rebuildToolbox = function(fqbn) {
+  const newToolbox = buildToolboxForBoard(fqbn);
+  workspace.updateToolbox(newToolbox);
 };
 
 // ═══ Workspace ════════════════════════════════
@@ -355,6 +244,51 @@ initProjectManager({
 initSettings({
   workspace, toolbox, updateCode, initValidator, serialBaud
 });
+
+// ── Selector de placa en toolbar ─────────────────
+import { loadSettings, saveSettings } from './settings.js';
+
+const boardSelector = document.getElementById('board-selector');
+if (boardSelector) {
+  // Sincronizar valor inicial desde settings
+  boardSelector.value = getSetting('board');
+
+  boardSelector.addEventListener('change', async () => {
+    const fqbn = boardSelector.value;
+    const s = loadSettings();
+    s.board = fqbn;
+    saveSettings(s);
+
+    // Sincronizar settings modal
+    const settingsBoard = document.getElementById('setting-board');
+    if (settingsBoard) settingsBoard.value = fqbn;
+
+    // Reconstruir toolbox
+    if (window._rebuildToolbox) window._rebuildToolbox(fqbn);
+
+    // Instalar cores/libs con feedback
+    const boardName = boardSelector.options[boardSelector.selectedIndex]?.text || fqbn;
+    showToast(`Instalando ${boardName}...`);
+    try {
+      const res = await fetch('/api/board/install', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fqbn })
+      });
+      const data = await res.json();
+      const failed = (data.results || []).filter(r => !r.success);
+      if (failed.length === 0) {
+        showToast('✅ Placa lista');
+      } else {
+        showToast(`⚠ ${failed.length} componente(s) fallaron. Revisa la Consola.`);
+        console.warn('[ArduBlock] Fallos en instalación:', failed);
+      }
+    } catch (e) {
+      showToast('⚠ Error de conexión al instalar dependencias');
+      console.warn('[ArduBlock] board/install:', e);
+    }
+  });
+}
 
 initSerial({
   arduinoConsole, consoleOutput, btnConnect, btnConsoleToggle, serialBaud

@@ -8,6 +8,8 @@
  */
 
 import { t } from './i18n.js';
+import { getBoardConfig, isValidDigitalPin, isValidAnalogPin } from './board.js';
+import { getSetting } from './settings.js';
 
 // ── Estado de validación ────────────────────────
 
@@ -272,6 +274,68 @@ function validateWorkspace(workspace) {
           message: `Pin ${pin}: configurado como ${modeLabels[declared.mode] || declared.mode} en setup(), pero ${cfg.label}() espera ${expected}.`,
           blocks: [block]
         });
+      }
+    }
+  }
+
+  // ═══ R8: Pines fuera del rango de la placa ══════
+  const fqbn = getSetting('board');
+  const board = getBoardConfig(fqbn);
+
+  const pinBlocks = [
+    { type: 'pin_mode', field: 'PIN', label: 'pinMode', kind: 'digital' },
+    { type: 'digital_write', field: 'PIN', label: 'digitalWrite', kind: 'digital' },
+    { type: 'digital_read', field: 'PIN', label: 'digitalRead', kind: 'digital' },
+    { type: 'analog_write', field: 'PIN', label: 'analogWrite', kind: 'pwm' },
+    { type: 'analog_read', field: 'PIN', label: 'analogRead', kind: 'analog' },
+    { type: 'pulse_in', field: 'PIN', label: 'pulseIn', kind: 'digital' },
+    { type: 'attach_interrupt', field: 'PIN', label: 'attachInterrupt', kind: 'digital' },
+    { type: 'tone_output', field: 'PIN', label: 'tone', kind: 'digital' },
+    { type: 'tone_duration', field: 'PIN', label: 'tone', kind: 'digital' },
+    { type: 'no_tone_output', field: 'PIN', label: 'noTone', kind: 'digital' },
+    // Bloques de librerías con pines
+    { type: 'servo_create', field: 'PIN', label: 'servo.attach', kind: 'digital' },
+    { type: 'lcd_create', multiField: ['RS', 'EN', 'D4', 'D5', 'D6', 'D7'], label: 'LCD', kind: 'digital' },
+    { type: 'dht_create', field: 'PIN', label: 'sensor DHT', kind: 'digital' },
+    { type: 'ultrasonic_create', multiField: ['TRIG', 'ECHO'], label: 'ultrasónico', kind: 'digital' },
+    { type: 'stepper_create', multiField: ['P1', 'P2', 'P3', 'P4'], label: 'motor paso a paso', kind: 'digital' }
+  ];
+
+  for (const cfg of pinBlocks) {
+    const blocks = findAllBlocksOfType(workspace, cfg.type);
+    for (const block of blocks) {
+      // Soporta multiField (array de campos) o field único
+      const fields = cfg.multiField || [cfg.field];
+      for (const fieldName of fields) {
+        const pin = parseInt(block.getFieldValue(fieldName), 10);
+        if (isNaN(pin)) continue;
+
+        let invalid = false;
+        let maxPin = 0;
+
+        if (cfg.kind === 'digital' || cfg.kind === 'pwm') {
+          if (!isValidDigitalPin(fqbn, pin)) {
+            invalid = true;
+            maxPin = board.maxDigital;
+          }
+        } else if (cfg.kind === 'analog') {
+          if (!isValidAnalogPin(fqbn, pin)) {
+            invalid = true;
+            maxPin = board.maxAnalog;
+          }
+        }
+
+        if (invalid) {
+          warnings.push({
+            type: 'pin_out_of_range',
+            severity: 'error',
+            message: `Pin ${pin} no existe en ${board.name}. ` +
+                     (cfg.kind === 'analog'
+                       ? `Pines analógicos válidos: A0-A${maxPin}.`
+                       : `Pines digitales válidos: 0-${maxPin}.`),
+            blocks: [block]
+          });
+        }
       }
     }
   }

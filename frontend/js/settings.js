@@ -52,7 +52,24 @@ export function initSettings(deps) {
   settingsModal.addEventListener('click', (e) => { if (e.target === settingsModal) settingsModal.classList.add('hidden'); });
 
   // Selects & sliders: guardar y aplicar
-  document.getElementById('setting-board').addEventListener('change', function() { onSettingChange('board', this.value); });
+  document.getElementById('setting-board').addEventListener('change', function() {
+    const fqbn = this.value;
+    onSettingChange('board', fqbn);
+
+    // Sincronizar toolbar selector
+    const toolbarSel = document.getElementById('board-selector');
+    if (toolbarSel) toolbarSel.value = fqbn;
+
+    // Reconstruir toolbox si está disponible
+    if (window._rebuildToolbox) window._rebuildToolbox(fqbn);
+
+    // Disparar instalación de cores/libs
+    fetch('/api/board/install', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fqbn })
+    }).catch(e => console.warn('[ArduBlock] board/install:', e));
+  });
   document.getElementById('setting-baud').addEventListener('change', function() { onSettingChange('baud', parseInt(this.value)); });
   document.getElementById('setting-theme').addEventListener('change', function() { onSettingChange('theme', this.value, applyTheme); });
   document.getElementById('setting-renderer').addEventListener('change', function() {

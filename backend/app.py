@@ -45,6 +45,15 @@ PROJECTS_DIR = Path(__file__).resolve().parent / "projects"
 EXAMPLES_DIR = Path(__file__).resolve().parent.parent / "examples" / "arduino"
 PROJECTS_DIR.mkdir(exist_ok=True)
 
+# ── Board config: cores y libs requeridas ──────
+BOARD_DEPS = {
+    'arduino:avr:uno':              {'cores': [], 'libs': []},
+    'arduino:renesas_uno:minima':   {'cores': ['arduino:renesas_uno'], 'libs': []},
+    'arduino:renesas_uno:wifi':     {'cores': ['arduino:renesas_uno'], 'libs': []},  # WiFiS3 incluida en el core
+    'arduino:esp32:nano_nora':      {'cores': ['arduino:esp32'], 'libs': []},
+    'arduino:avr:mega':             {'cores': [], 'libs': []},
+}
+
 HOST = os.environ.get('ARDUBLOCK_HOST', '0.0.0.0')
 PORT = int(os.environ.get('ARDUBLOCK_PORT', '5001'))
 
@@ -409,6 +418,53 @@ def serial_status():
 def health():
     """Health check"""
     return jsonify({'status': 'ok', 'app': 'ArduBlock'})
+
+@app.route('/api/board/install', methods=['POST'])
+def board_install():
+    """Instala cores y librerías necesarias para la placa seleccionada."""
+    data = request.get_json() or {}
+    fqbn = data.get('fqbn', 'arduino:avr:uno')
+
+    deps = BOARD_DEPS.get(fqbn, {'cores': [], 'libs': []})
+    results = []
+
+    # Instalar cores
+    for core in deps.get('cores', []):
+        try:
+            r = subprocess.run(
+                ['arduino-cli', 'core', 'install', core],
+                capture_output=True, text=True, timeout=120
+            )
+            results.append({
+                'type': 'core', 'name': core,
+                'success': r.returncode == 0,
+                'stdout': r.stdout[-500:] if r.stdout else '',
+                'stderr': r.stderr[-500:] if r.stderr else ''
+            })
+        except subprocess.TimeoutExpired:
+            results.append({'type': 'core', 'name': core, 'success': False, 'error': 'timeout'})
+        except Exception as e:
+            results.append({'type': 'core', 'name': core, 'success': False, 'error': str(e)})
+
+    # Instalar librerías
+    for lib in deps.get('libs', []):
+        try:
+            r = subprocess.run(
+                ['arduino-cli', 'lib', 'install', lib],
+                capture_output=True, text=True, timeout=120
+            )
+            results.append({
+                'type': 'lib', 'name': lib,
+                'success': r.returncode == 0,
+                'stdout': r.stdout[-500:] if r.stdout else '',
+                'stderr': r.stderr[-500:] if r.stderr else ''
+            })
+        except subprocess.TimeoutExpired:
+            results.append({'type': 'lib', 'name': lib, 'success': False, 'error': 'timeout'})
+        except Exception as e:
+            results.append({'type': 'lib', 'name': lib, 'success': False, 'error': str(e)})
+
+    return jsonify({'fqbn': fqbn, 'results': results})
 
 # ── Main ────────────────────────────────────────
 

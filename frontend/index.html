@@ -46,6 +46,13 @@
       </div>
 
       <div class="arduino-toolbar">
+        <select id="board-selector" class="arduino-select" title="Seleccionar placa Arduino">
+          <option value="arduino:avr:uno">Arduino Uno R3</option>
+          <option value="arduino:renesas_uno:minima">Arduino Uno R4 Minima</option>
+          <option value="arduino:renesas_uno:wifi">Arduino Uno R4 WiFi</option>
+          <option value="arduino:esp32:nano_nora">Arduino Nano ESP32</option>
+          <option value="arduino:avr:mega">Arduino Mega</option>
+        </select>
         <button id="btn-console-toggle" class="arduino-btn console" data-i18n="btn_console" title="Abrir/cerrar monitor serial">🔌 Consola</button>
         <button id="btn-upload" class="arduino-btn upload" data-i18n="btn_upload" title="Compilar y subir al Arduino">⚡ Subir</button>
       </div>
@@ -95,10 +102,11 @@
         <div class="setting-row">
           <label data-i18n="settings_board">Placa</label>
           <select id="setting-board">
-            <option value="arduino:avr:uno">Arduino Uno</option>
-            <option value="arduino:avr:nano">Arduino Nano</option>
+            <option value="arduino:avr:uno">Arduino Uno R3</option>
+            <option value="arduino:renesas_uno:minima">Arduino Uno R4 Minima</option>
+            <option value="arduino:renesas_uno:wifi">Arduino Uno R4 WiFi</option>
+            <option value="arduino:esp32:nano_nora">Arduino Nano ESP32</option>
             <option value="arduino:avr:mega">Arduino Mega</option>
-            <option value="arduino:avr:leonardo">Arduino Leonardo</option>
           </select>
         </div>
         <div class="setting-row">
