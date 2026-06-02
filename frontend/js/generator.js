@@ -32,7 +32,7 @@ cppGenerator.ORDER_NONE           = 99;  // statements
 cppGenerator.INDENT = '  ';
 
 // ── init (reserva de variables) ───────────────
-cppGenerator.init = function(workspace) {};
+cppGenerator.init = function(_workspace) {};
 
 // ── scrub_ (limpieza de nombres) ──────────────
 cppGenerator.scrub_ = function(block, code, thisOnly) {
@@ -240,8 +240,8 @@ cppGenerator.forBlock['math_arithmetic'] = function(block) {
     'DIVIDE': ' / ', 'POWER': ' ^ '
   };
   const order = orderMap[op];
-  let lhs = cppGenerator.valueToCode(block, 'A', order);
-  let rhs = cppGenerator.valueToCode(block, 'B', order);
+  const lhs = cppGenerator.valueToCode(block, 'A', order);
+  const rhs = cppGenerator.valueToCode(block, 'B', order);
 
   if (op === 'POWER') {
     // Arduino doesn't have ^ for power. Use pow().
@@ -784,7 +784,7 @@ cppGenerator.forBlock['array_length'] = function(block) {
 // Los #include de .h del proyecto se recolectan en generateArduinoCode.
 // Este generador no produce salida directa; el bloque se ignora en el flujo
 // normal y se recolecta vía workspace.getAllBlocks().
-cppGenerator.forBlock['include_header'] = function(block) {
+cppGenerator.forBlock['include_header'] = function(_block) {
   return '';
 };
 

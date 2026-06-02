@@ -74,7 +74,7 @@ const editableExtensions = [
 
 // ═══ Inicialización ══════════════════════════════
 
-export function initTabManager(deps = {}) {
+export function initTabManager(_deps = {}) {
   tabs = [
     { filename: 'sketch.ino', content: '', readonly: true }
   ];

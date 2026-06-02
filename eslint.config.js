@@ -17,10 +17,12 @@ export default [
         confirm: 'readonly',
         navigator: 'readonly',
         getComputedStyle: 'readonly',
+        prompt: 'readonly',
+        alert: 'readonly',
       },
     },
     rules: {
-      'no-console': 'warn',
+      'no-console': ['warn', { allow: ['warn', 'error'] }],
       'no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
       'no-empty': ['warn', { allowEmptyCatch: true }],
       'prefer-const': 'warn',

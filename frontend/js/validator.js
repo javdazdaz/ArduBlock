@@ -7,11 +7,9 @@
  * - Advertencias sobre bloques huérfanos
  */
 
-import * as Blockly from 'blockly';
 import { t } from './i18n.js';
 
 // ── Estado de validación ────────────────────────
-let lastWarnings = [];
 
 // ── Reglas de validación ────────────────────────
 
@@ -356,7 +354,6 @@ function applyWarnings(workspace, warnings) {
   }
 
   updateStatusPanel(warnings);
-  lastWarnings = warnings;
 }
 
 // ── Panel de estado en el header ────────────────
