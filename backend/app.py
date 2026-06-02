@@ -374,6 +374,7 @@ def serial_open():
         return jsonify({'error': f'No se pudo abrir {port}: {str(e)}'}), 500
 
 @app.route('/api/serial/read')
+@limiter.exempt
 def serial_read():
     """Lee datos del buffer serial"""
     global serial_buffer
