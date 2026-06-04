@@ -91,11 +91,12 @@ import { t, applyDOMLanguage } from './i18n.js';
 // ═══ Toolbox ══════════════════════════════════
 import { buildToolboxForBoard } from './blocks.js';
 
-const toolbox = buildToolboxForBoard(getSetting('board'));
+const toolbox = buildToolboxForBoard(getSetting('board'), getSetting('level'));
 
-// Función para reconstruir toolbox al cambiar de placa
-window._rebuildToolbox = function(fqbn) {
-  const newToolbox = buildToolboxForBoard(fqbn);
+// Función para reconstruir toolbox al cambiar de placa o nivel
+window._rebuildToolbox = function(fqbn, level) {
+  const currentLevel = level ?? getSetting('level');
+  const newToolbox = buildToolboxForBoard(fqbn, currentLevel);
   workspace.updateToolbox(newToolbox);
 };
 
@@ -287,6 +288,27 @@ if (boardSelector) {
       showToast('⚠ Error de conexión al instalar dependencias');
       console.warn('[ArduBlock] board/install:', e);
     }
+  });
+}
+
+// ── Selector de nivel ──────────────────────────
+const levelSelector = document.getElementById('level-selector');
+if (levelSelector) {
+  // Sincronizar valor inicial desde settings
+  levelSelector.value = getSetting('level');
+
+  levelSelector.addEventListener('change', () => {
+    const level = parseInt(levelSelector.value, 10);
+    const s = loadSettings();
+    s.level = level;
+    saveSettings(s);
+
+    // Reconstruir toolbox con el nuevo nivel
+    if (window._rebuildToolbox) {
+      window._rebuildToolbox(getSetting('board'), level);
+    }
+
+    showToast(`Nivel: ${levelSelector.options[levelSelector.selectedIndex]?.text || level}`);
   });
 }
 

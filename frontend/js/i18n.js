@@ -181,6 +181,14 @@ const messages = {
     serial_close: '✕',
     serial_connected: '✓ Conectado a',
     serial_baud_label: 'baud',
+    // ── Levels ──
+    level_label: 'Nivel',
+    level_basic: '⚊ Básico',
+    level_intermediate: '⚌ Intermedio',
+    level_advanced: '⚋ Avanzado',
+    level_basic_desc: 'Instrucciones directas: secuencias paso a paso',
+    level_intermediate_desc: 'Uso de bibliotecas y control de flujo',
+    level_advanced_desc: 'Funciones propias, variables y arreglos',
     // ── Settings ──
     settings_title: 'Configuración',
     settings_hardware: 'Hardware',
@@ -399,6 +407,14 @@ const messages = {
     serial_close: '✕',
     serial_connected: '✓ Connected to',
     serial_baud_label: 'baud',
+    // ── Levels ──
+    level_label: 'Level',
+    level_basic: '⚊ Basic',
+    level_intermediate: '⚌ Intermediate',
+    level_advanced: '⚋ Advanced',
+    level_basic_desc: 'Direct instructions: step-by-step sequences',
+    level_intermediate_desc: 'Using libraries and flow control',
+    level_advanced_desc: 'Custom functions, variables and arrays',
     // ── Settings ──
     settings_title: 'Settings',
     settings_hardware: 'Hardware',

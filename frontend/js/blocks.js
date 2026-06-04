@@ -1040,131 +1040,162 @@ Blockly.common.defineBlocksWithJsonArray([
 // ═══ Toolbox dinámico por placa ═════════════════
 import { getBoardConfig, getDefaultFqbn } from './board.js';
 
-export function buildToolboxForBoard(fqbn) {
+export function buildToolboxForBoard(fqbn, level) {
   const board = getBoardConfig(fqbn || getDefaultFqbn());
   // Por ahora el toolbox es idéntico para todas las placas.
   // En el futuro se filtrarán bloques según capacidades (WiFi, BLE, etc.).
 
+  // Nivel por defecto: Básico (1)
+  const currentLevel = level || 1;
+
   const toolbox = {
     'kind': 'categoryToolbox',
     'contents': [
-      { 'kind': 'category', 'name': '%{BKY_CAT_ARDUINO}', 'colour': '230',
+      { 'kind': 'category', 'name': '%{BKY_CAT_ARDUINO}', 'colour': '230', 'level': 1,
         'contents': [
-          { 'kind': 'block', 'type': 'arduino_setup' },
-          { 'kind': 'block', 'type': 'arduino_loop' },
-          { 'kind': 'block', 'type': 'include_header' }
+          { 'kind': 'block', 'type': 'arduino_setup', 'level': 1 },
+          { 'kind': 'block', 'type': 'arduino_loop', 'level': 1 },
+          { 'kind': 'block', 'type': 'include_header', 'level': 3 }
         ]},
-      { 'kind': 'category', 'name': '%{BKY_CAT_PINES}', 'colour': '190',
+      { 'kind': 'category', 'name': '%{BKY_CAT_PINES}', 'colour': '190', 'level': 1,
         'contents': [
-          { 'kind': 'block', 'type': 'pin_mode' },
-          { 'kind': 'block', 'type': 'digital_write' },
-          { 'kind': 'block', 'type': 'digital_read' },
-          { 'kind': 'block', 'type': 'analog_write' },
-          { 'kind': 'block', 'type': 'analog_read' },
-          { 'kind': 'block', 'type': 'pulse_in' },
-          { 'kind': 'block', 'type': 'attach_interrupt' }
+          { 'kind': 'block', 'type': 'pin_mode', 'level': 1 },
+          { 'kind': 'block', 'type': 'digital_write', 'level': 1 },
+          { 'kind': 'block', 'type': 'digital_read', 'level': 1 },
+          { 'kind': 'block', 'type': 'analog_write', 'level': 2 },
+          { 'kind': 'block', 'type': 'analog_read', 'level': 2 },
+          { 'kind': 'block', 'type': 'pulse_in', 'level': 2 },
+          { 'kind': 'block', 'type': 'attach_interrupt', 'level': 3 }
         ]},
-      { 'kind': 'category', 'name': '%{BKY_CAT_TIEMPO}', 'colour': '290',
+      { 'kind': 'category', 'name': '%{BKY_CAT_TIEMPO}', 'colour': '290', 'level': 1,
         'contents': [
-          { 'kind': 'block', 'type': 'delay_ms' },
-          { 'kind': 'block', 'type': 'millis' }
+          { 'kind': 'block', 'type': 'delay_ms', 'level': 1 },
+          { 'kind': 'block', 'type': 'millis', 'level': 2 }
         ]},
-      { 'kind': 'category', 'name': '%{BKY_CAT_SONIDO}', 'colour': '260',
+      { 'kind': 'category', 'name': '%{BKY_CAT_SONIDO}', 'colour': '260', 'level': 2,
         'contents': [
-          { 'kind': 'block', 'type': 'tone_output' },
-          { 'kind': 'block', 'type': 'tone_duration' },
-          { 'kind': 'block', 'type': 'no_tone_output' }
+          { 'kind': 'block', 'type': 'tone_output', 'level': 2 },
+          { 'kind': 'block', 'type': 'tone_duration', 'level': 2 },
+          { 'kind': 'block', 'type': 'no_tone_output', 'level': 2 }
         ]},
-      { 'kind': 'category', 'name': '%{BKY_CAT_LCD}', 'colour': '180',
+      { 'kind': 'category', 'name': '%{BKY_CAT_LCD}', 'colour': '180', 'level': 3,
         'contents': [
-          { 'kind': 'block', 'type': 'lcd_create' },
-          { 'kind': 'block', 'type': 'lcd_i2c_create' },
-          { 'kind': 'block', 'type': 'lcd_print' },
-          { 'kind': 'block', 'type': 'lcd_set_cursor' },
-          { 'kind': 'block', 'type': 'lcd_clear' }
+          { 'kind': 'block', 'type': 'lcd_create', 'level': 3 },
+          { 'kind': 'block', 'type': 'lcd_i2c_create', 'level': 3 },
+          { 'kind': 'block', 'type': 'lcd_print', 'level': 3 },
+          { 'kind': 'block', 'type': 'lcd_set_cursor', 'level': 3 },
+          { 'kind': 'block', 'type': 'lcd_clear', 'level': 3 }
         ]},
-      { 'kind': 'category', 'name': '%{BKY_CAT_SENSORES}', 'colour': '100',
+      { 'kind': 'category', 'name': '%{BKY_CAT_SENSORES}', 'colour': '100', 'level': 2,
         'contents': [
-          { 'kind': 'block', 'type': 'dht_create' },
-          { 'kind': 'block', 'type': 'dht_temp' },
-          { 'kind': 'block', 'type': 'dht_humidity' },
-          { 'kind': 'block', 'type': 'ultrasonic_create' },
-          { 'kind': 'block', 'type': 'ultrasonic_read' }
+          { 'kind': 'block', 'type': 'dht_create', 'level': 3 },
+          { 'kind': 'block', 'type': 'dht_temp', 'level': 3 },
+          { 'kind': 'block', 'type': 'dht_humidity', 'level': 3 },
+          { 'kind': 'block', 'type': 'ultrasonic_create', 'level': 2 },
+          { 'kind': 'block', 'type': 'ultrasonic_read', 'level': 2 }
         ]},
-      { 'kind': 'category', 'name': '%{BKY_CAT_MOTOR}', 'colour': '310',
+      { 'kind': 'category', 'name': '%{BKY_CAT_MOTOR}', 'colour': '310', 'level': 3,
         'contents': [
-          { 'kind': 'block', 'type': 'stepper_create' },
-          { 'kind': 'block', 'type': 'stepper_speed' },
-          { 'kind': 'block', 'type': 'stepper_step' }
+          { 'kind': 'block', 'type': 'stepper_create', 'level': 3 },
+          { 'kind': 'block', 'type': 'stepper_speed', 'level': 3 },
+          { 'kind': 'block', 'type': 'stepper_step', 'level': 3 }
         ]},
-      { 'kind': 'category', 'name': '%{BKY_CAT_SERVO}', 'colour': '40',
+      { 'kind': 'category', 'name': '%{BKY_CAT_SERVO}', 'colour': '40', 'level': 2,
         'contents': [
-          { 'kind': 'block', 'type': 'servo_create' },
-          { 'kind': 'block', 'type': 'servo_write' },
-          { 'kind': 'block', 'type': 'servo_write_us' }
+          { 'kind': 'block', 'type': 'servo_create', 'level': 2 },
+          { 'kind': 'block', 'type': 'servo_write', 'level': 2 },
+          { 'kind': 'block', 'type': 'servo_write_us', 'level': 3 }
         ]},
-      { 'kind': 'category', 'name': '%{BKY_CAT_SERIAL}', 'colour': '120',
+      { 'kind': 'category', 'name': '%{BKY_CAT_SERIAL}', 'colour': '120', 'level': 1,
         'contents': [
-          { 'kind': 'block', 'type': 'serial_begin' },
-          { 'kind': 'block', 'type': 'serial_print' },
-          { 'kind': 'block', 'type': 'serial_println' },
-          { 'kind': 'block', 'type': 'serial_available' },
-          { 'kind': 'block', 'type': 'serial_read' },
-          { 'kind': 'block', 'type': 'serial_parse_int' },
-          { 'kind': 'block', 'type': 'serial_parse_float' },
-          { 'kind': 'block', 'type': 'serial_read_string' },
-          { 'kind': 'block', 'type': 'serial_write' }
+          { 'kind': 'block', 'type': 'serial_begin', 'level': 2 },
+          { 'kind': 'block', 'type': 'serial_print', 'level': 2 },
+          { 'kind': 'block', 'type': 'serial_println', 'level': 1 },
+          { 'kind': 'block', 'type': 'serial_available', 'level': 3 },
+          { 'kind': 'block', 'type': 'serial_read', 'level': 3 },
+          { 'kind': 'block', 'type': 'serial_parse_int', 'level': 3 },
+          { 'kind': 'block', 'type': 'serial_parse_float', 'level': 3 },
+          { 'kind': 'block', 'type': 'serial_read_string', 'level': 3 },
+          { 'kind': 'block', 'type': 'serial_write', 'level': 3 }
         ]},
       { 'kind': 'sep' },
-      { 'kind': 'category', 'name': '%{BKY_CAT_LOGICA}', 'colour': '210',
+      { 'kind': 'category', 'name': '%{BKY_CAT_LOGICA}', 'colour': '210', 'level': 2,
         'contents': [
-          { 'kind': 'block', 'type': 'controls_if' },
-          { 'kind': 'block', 'type': 'logic_compare' },
-          { 'kind': 'block', 'type': 'logic_operation' },
-          { 'kind': 'block', 'type': 'logic_negate' },
-          { 'kind': 'block', 'type': 'logic_boolean' }
+          { 'kind': 'block', 'type': 'controls_if', 'level': 2 },
+          { 'kind': 'block', 'type': 'logic_compare', 'level': 2 },
+          { 'kind': 'block', 'type': 'logic_operation', 'level': 3 },
+          { 'kind': 'block', 'type': 'logic_negate', 'level': 3 },
+          { 'kind': 'block', 'type': 'logic_boolean', 'level': 2 }
         ]},
-      { 'kind': 'category', 'name': '%{BKY_CAT_BUCLES}', 'colour': '120',
+      { 'kind': 'category', 'name': '%{BKY_CAT_BUCLES}', 'colour': '120', 'level': 2,
         'contents': [
-          { 'kind': 'block', 'type': 'controls_repeat_ext' },
-          { 'kind': 'block', 'type': 'controls_whileUntil' },
-          { 'kind': 'block', 'type': 'arduino_for_index' }
+          { 'kind': 'block', 'type': 'controls_repeat_ext', 'level': 2 },
+          { 'kind': 'block', 'type': 'controls_whileUntil', 'level': 2 },
+          { 'kind': 'block', 'type': 'arduino_for_index', 'level': 3 }
         ]},
-      { 'kind': 'category', 'name': '%{BKY_CAT_MATEMATICAS}', 'colour': '230',
+      { 'kind': 'category', 'name': '%{BKY_CAT_MATEMATICAS}', 'colour': '230', 'level': 1,
         'contents': [
-          { 'kind': 'block', 'type': 'math_number' },
-          { 'kind': 'block', 'type': 'math_arithmetic' },
-          { 'kind': 'block', 'type': 'math_single' },
-          { 'kind': 'block', 'type': 'math_modulo' },
-          { 'kind': 'block', 'type': 'math_random_int' },
-          { 'kind': 'block', 'type': 'math_constrain' },
-          { 'kind': 'block', 'type': 'map_value' },
-          { 'kind': 'block', 'type': 'math_number_property' }
+          { 'kind': 'block', 'type': 'math_number', 'level': 1 },
+          { 'kind': 'block', 'type': 'math_arithmetic', 'level': 2 },
+          { 'kind': 'block', 'type': 'math_single', 'level': 2 },
+          { 'kind': 'block', 'type': 'math_modulo', 'level': 3 },
+          { 'kind': 'block', 'type': 'math_random_int', 'level': 2 },
+          { 'kind': 'block', 'type': 'math_constrain', 'level': 3 },
+          { 'kind': 'block', 'type': 'map_value', 'level': 3 },
+          { 'kind': 'block', 'type': 'math_number_property', 'level': 3 }
         ]},
-      { 'kind': 'category', 'name': '%{BKY_CAT_VARIABLES}', 'colour': '330',
+      { 'kind': 'category', 'name': '%{BKY_CAT_VARIABLES}', 'colour': '330', 'level': 3,
         'contents': [
-          { 'kind': 'block', 'type': 'variable_declare' },
-          { 'kind': 'block', 'type': 'variable_set' },
-          { 'kind': 'block', 'type': 'variable_get' }
+          { 'kind': 'block', 'type': 'variable_declare', 'level': 3 },
+          { 'kind': 'block', 'type': 'variable_set', 'level': 3 },
+          { 'kind': 'block', 'type': 'variable_get', 'level': 3 }
         ]},
-      { 'kind': 'category', 'name': '%{BKY_CAT_ARRAYS}', 'colour': '330',
+      { 'kind': 'category', 'name': '%{BKY_CAT_ARRAYS}', 'colour': '330', 'level': 3,
         'contents': [
-          { 'kind': 'block', 'type': 'array_declare' },
-          { 'kind': 'block', 'type': 'array_get' },
-          { 'kind': 'block', 'type': 'array_set' },
-          { 'kind': 'block', 'type': 'array_length' }
+          { 'kind': 'block', 'type': 'array_declare', 'level': 3 },
+          { 'kind': 'block', 'type': 'array_get', 'level': 3 },
+          { 'kind': 'block', 'type': 'array_set', 'level': 3 },
+          { 'kind': 'block', 'type': 'array_length', 'level': 3 }
         ]},
-      { 'kind': 'category', 'name': '%{BKY_CAT_FUNCTIONS}', 'colour': '290', 'custom': 'PROCEDURE' },
-      { 'kind': 'category', 'name': '%{BKY_CAT_TEXTO}', 'colour': '160',
+      { 'kind': 'category', 'name': '%{BKY_CAT_FUNCTIONS}', 'colour': '290', 'custom': 'PROCEDURE', 'level': 3 },
+      { 'kind': 'category', 'name': '%{BKY_CAT_TEXTO}', 'colour': '160', 'level': 3,
         'contents': [
-          { 'kind': 'block', 'type': 'text' },
-          { 'kind': 'block', 'type': 'text_join' },
-          { 'kind': 'block', 'type': 'text_print' },
-          { 'kind': 'block', 'type': 'text_length' }
+          { 'kind': 'block', 'type': 'text', 'level': 3 },
+          { 'kind': 'block', 'type': 'text_join', 'level': 3 },
+          { 'kind': 'block', 'type': 'text_print', 'level': 3 },
+          { 'kind': 'block', 'type': 'text_length', 'level': 3 }
         ]},
       { 'kind': 'search', 'name': '%{BKY_CAT_BUSCAR}', 'contents': [] }
     ]
   };
+
+  // ═══ Filtrar por nivel ═════════════════════
+  // Elimina categorías completas cuyo nivel > currentLevel,
+  // y dentro de categorías visibles, oculta bloques de nivel superior.
+  if (currentLevel < 3) {
+    toolbox.contents = toolbox.contents
+      .filter(cat => {
+        // Sep preservar, search preservar
+        if (cat.kind === 'sep' || cat.kind === 'search') return true;
+        // Categoría: mantener si tiene nivel <= currentLevel o no tiene nivel
+        return !cat.level || cat.level <= currentLevel;
+      })
+      .map(cat => {
+        if (cat.contents && Array.isArray(cat.contents)) {
+          cat.contents = cat.contents.filter(block => {
+            return !block.level || block.level <= currentLevel;
+          });
+        }
+        return cat;
+      });
+
+    // Limpiar categorías vacías
+    toolbox.contents = toolbox.contents.filter(cat => {
+      if (cat.kind === 'sep' || cat.kind === 'search') return true;
+      if (cat.contents && cat.contents.length === 0) return false;
+      return true;
+    });
+  }
 
   return toolbox;
 }

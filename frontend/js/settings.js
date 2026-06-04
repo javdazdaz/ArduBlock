@@ -16,7 +16,7 @@ import { setLanguage, getLanguage } from './i18n.js';
 export const SETTINGS_KEY = 'ardublock:settings';
 export const defaultSettings = {
   board: 'arduino:avr:uno', baud: 9600,
-  theme: 'dark', renderer: 'geras',
+  theme: 'dark', renderer: 'geras', level: 1,
   fontUi: 14, fontCode: 13, fontSerial: 12, fontBlocks: 16, fontToolbox: 13
 };
 
