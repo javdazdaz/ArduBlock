@@ -1,40 +1,29 @@
 /**
  * ArduBlock — Generador de Código C++ para Arduino
- *
- * Traduce bloques Blockly → código C++ válido para sketches de Arduino.
- * Soporta bloques Arduino personalizados + bloques built-in (lógica,
- * matemáticas, bucles, condicionales, variables, texto).
  */
 
 import * as Blockly from 'blockly';
 
-// ── Generador C++ ─────────────────────────────
 const cppGenerator = new Blockly.Generator('CPP');
-
 export { cppGenerator };
 
-// Inicializar nameDB para variables (no se auto-crea en v12)
 cppGenerator.nameDB_ = new Blockly.Names('_');
 
-// ── Precedencia (orden de paréntesis) ─────────
-cppGenerator.ORDER_ATOMIC         = 0;   // 0 ""    number, var, literal
-cppGenerator.ORDER_UNARY          = 2;   // 2 ! - ~
-cppGenerator.ORDER_MULTIPLICATIVE = 3;   // 3 * / %
-cppGenerator.ORDER_ADDITIVE       = 4;   // 4 + -
-cppGenerator.ORDER_RELATIONAL     = 5;   // 5 < <= > >=
-cppGenerator.ORDER_EQUALITY       = 6;   // 6 == !=
-cppGenerator.ORDER_LOGICAL_AND    = 7;   // 7 &&
-cppGenerator.ORDER_LOGICAL_OR     = 8;   // 8 ||
-cppGenerator.ORDER_ASSIGNMENT     = 1.1; // 1.1 =
-cppGenerator.ORDER_NONE           = 99;  // statements
+cppGenerator.ORDER_ATOMIC         = 0;
+cppGenerator.ORDER_UNARY          = 2;
+cppGenerator.ORDER_MULTIPLICATIVE = 3;
+cppGenerator.ORDER_ADDITIVE       = 4;
+cppGenerator.ORDER_RELATIONAL     = 5;
+cppGenerator.ORDER_EQUALITY       = 6;
+cppGenerator.ORDER_LOGICAL_AND    = 7;
+cppGenerator.ORDER_LOGICAL_OR     = 8;
+cppGenerator.ORDER_ASSIGNMENT     = 1.1;
+cppGenerator.ORDER_NONE           = 99;
 
-// ── Indentación ───────────────────────────────
 cppGenerator.INDENT = '  ';
 
-// ── init (reserva de variables) ───────────────
 cppGenerator.init = function(_workspace) {};
 
-// ── scrub_ (limpieza de nombres) ──────────────
 cppGenerator.scrub_ = function(block, code, thisOnly) {
   const nextBlock = block.getNextBlock();
   if (nextBlock && !thisOnly) {
@@ -42,6 +31,38 @@ cppGenerator.scrub_ = function(block, code, thisOnly) {
   }
   return code;
 };
+
+import { registerGenerators as regEstructura } from './blocks/estructura.js';
+import { registerGenerators as regDigital }    from './blocks/digital.js';
+import { registerGenerators as regAnaloga }    from './blocks/analoga.js';
+import { registerGenerators as regAvanzada }   from './blocks/avanzada.js';
+import { registerGenerators as regTiempo }     from './blocks/tiempo.js';
+import { registerGenerators as regSerial }     from './blocks/serial.js';
+import { registerGenerators as regServo }      from './blocks/servo.js';
+import { registerGenerators as regLcd }        from './blocks/lcd.js';
+import { registerGenerators as regSensores }   from './blocks/sensores.js';
+import { registerGenerators as regMotor }      from './blocks/motor.js';
+import { registerGenerators as regMatematicas } from './blocks/matematicas.js';
+import { registerGenerators as regVariables }  from './blocks/variables.js';
+import { registerGenerators as regArrays }     from './blocks/arrays.js';
+import { registerGenerators as regBucles }     from './blocks/bucles.js';
+
+regEstructura(cppGenerator);
+regDigital(cppGenerator);
+regAnaloga(cppGenerator);
+regAvanzada(cppGenerator);
+regTiempo(cppGenerator);
+regSerial(cppGenerator);
+regServo(cppGenerator);
+regLcd(cppGenerator);
+regSensores(cppGenerator);
+regMotor(cppGenerator);
+regMatematicas(cppGenerator);
+regVariables(cppGenerator);
+regArrays(cppGenerator);
+regBucles(cppGenerator);
+
+// ═══ Generadores built-in de Blockly ═══════════
 
 // ── controls_for (for loop con índices) ───────
 cppGenerator.forBlock['controls_for'] = function(block) {
@@ -82,219 +103,6 @@ cppGenerator.forBlock['arduino_for_index'] = function(block) {
   code += '}\n';
   return code;
 };
-
-// ═══════════════════════════════════════════════
-//  GENERADORES DE BLOQUES ARDUINO
-// ═══════════════════════════════════════════════
-
-// ── arduino_setup ────────────────────────────
-cppGenerator.forBlock['arduino_setup'] = function(block) {
-  const body = cppGenerator.statementToCode(block, 'BODY');
-  return body || '  // sin instrucciones\n';
-};
-
-// ── arduino_loop ─────────────────────────────
-cppGenerator.forBlock['arduino_loop'] = function(block) {
-  const body = cppGenerator.statementToCode(block, 'BODY');
-  return body || '  // sin instrucciones\n';
-};
-
-// ── pin_mode ────────────────────────────────
-cppGenerator.forBlock['pin_mode'] = function(block) {
-  const pin  = block.getFieldValue('PIN');
-  const mode = block.getFieldValue('MODE');
-  return 'pinMode(' + pin + ', ' + mode + ');\n';
-};
-// ── pin_mode_basic (N1) ──────────────────────
-cppGenerator.forBlock['pin_mode_basic'] = function(block) {
-  const pin  = block.getFieldValue('PIN');
-  const mode = block.getFieldValue('MODE');
-  return 'pinMode(' + pin + ', ' + mode + ');\n';
-};
-
-// ── pin_mode_advanced (N3) ───────────────────
-cppGenerator.forBlock['pin_mode_advanced'] = function(block) {
-  const pin  = cppGenerator.valueToCode(block, 'PIN', cppGenerator.ORDER_ATOMIC) || '0';
-  const mode = block.getFieldValue('MODE');
-  return 'pinMode(' + pin + ', ' + mode + ');\n';
-};
-
-
-// ── digital_write ────────────────────────────
-cppGenerator.forBlock['digital_write'] = function(block) {
-  const pin   = block.getFieldValue('PIN');
-  const value = block.getFieldValue('VALUE');
-  return 'digitalWrite(' + pin + ', ' + value + ');\n';
-};
-
-// ── digital_read ─────────────────────────────
-cppGenerator.forBlock['digital_read'] = function(block) {
-  const pin = block.getFieldValue('PIN');
-  return ['digitalRead(' + pin + ')', cppGenerator.ORDER_ATOMIC];
-};
-
-// ── analog_write ─────────────────────────────
-cppGenerator.forBlock['analog_write'] = function(block) {
-  const pin   = block.getFieldValue('PIN');
-  const value = cppGenerator.valueToCode(block, 'VALUE', cppGenerator.ORDER_ATOMIC) || '0';
-  return 'analogWrite(' + pin + ', ' + value + ');\n';
-};
-
-// ── analog_read ──────────────────────────────
-cppGenerator.forBlock['analog_read'] = function(block) {
-  const pin = block.getFieldValue('PIN');
-  return ['analogRead(A' + pin + ')', cppGenerator.ORDER_ATOMIC];
-};
-
-// ── digital_write_basic (N1) ──────────────────
-cppGenerator.forBlock['digital_write_basic'] = function(block) {
-  const pin   = block.getFieldValue('PIN');
-  const value = block.getFieldValue('VALUE');
-  return 'digitalWrite(' + pin + ', ' + value + ');\n';
-};
-
-// ── digital_write_advanced (N3) ───────────────
-cppGenerator.forBlock['digital_write_advanced'] = function(block) {
-  const pin   = cppGenerator.valueToCode(block, 'PIN', cppGenerator.ORDER_ATOMIC) || '0';
-  const value = block.getFieldValue('VALUE');
-  return 'digitalWrite(' + pin + ', ' + value + ');\n';
-};
-
-// ── digital_read_basic (N1) ───────────────────
-cppGenerator.forBlock['digital_read_basic'] = function(block) {
-  const pin = block.getFieldValue('PIN');
-  return ['digitalRead(' + pin + ')', cppGenerator.ORDER_ATOMIC];
-};
-
-// ── digital_read_advanced (N3) ────────────────
-cppGenerator.forBlock['digital_read_advanced'] = function(block) {
-  const pin = cppGenerator.valueToCode(block, 'PIN', cppGenerator.ORDER_ATOMIC) || '0';
-  return ['digitalRead(' + pin + ')', cppGenerator.ORDER_ATOMIC];
-};
-
-// ── analog_read_basic (N1) ────────────────────
-cppGenerator.forBlock['analog_read_basic'] = function(block) {
-  const pin = block.getFieldValue('PIN');
-  return ['analogRead(A' + pin + ')', cppGenerator.ORDER_ATOMIC];
-};
-
-// ── analog_read_advanced (N3) ─────────────────
-cppGenerator.forBlock['analog_read_advanced'] = function(block) {
-  const pin = cppGenerator.valueToCode(block, 'PIN', cppGenerator.ORDER_ATOMIC) || '0';
-  return ['analogRead(A' + pin + ')', cppGenerator.ORDER_ATOMIC];
-};
-
-// ── delay_ms_basic (N1) ───────────────────────
-cppGenerator.forBlock['delay_ms_basic'] = function(block) {
-  const ms = block.getFieldValue('MS');
-  return 'delay(' + ms + ');\n';
-};
-
-// ── delay_ms_advanced (N3) ────────────────────
-cppGenerator.forBlock['delay_ms_advanced'] = function(block) {
-  const ms = cppGenerator.valueToCode(block, 'MS', cppGenerator.ORDER_ATOMIC) || '0';
-  return 'delay(' + ms + ');\n';
-};
-
-// ── tone_output_basic (N1) ────────────────────
-cppGenerator.forBlock['tone_output_basic'] = function(block) {
-  const pin  = block.getFieldValue('PIN');
-  const freq = block.getFieldValue('FREQ');
-  return 'tone(' + pin + ', ' + freq + ');\n';
-};
-
-// ── tone_output_advanced (N3) ─────────────────
-cppGenerator.forBlock['tone_output_advanced'] = function(block) {
-  const pin  = cppGenerator.valueToCode(block, 'PIN', cppGenerator.ORDER_ATOMIC) || '0';
-  const freq = cppGenerator.valueToCode(block, 'FREQ', cppGenerator.ORDER_ATOMIC) || '440';
-  return 'tone(' + pin + ', ' + freq + ');\n';
-};
-
-// ── delay_ms ─────────────────────────────────
-cppGenerator.forBlock['delay_ms'] = function(block) {
-  const ms = block.getFieldValue('MS');
-  return 'delay(' + ms + ');\n';
-};
-
-// ── millis ───────────────────────────────────
-cppGenerator.forBlock['millis'] = function(_block) {
-  return ['millis()', cppGenerator.ORDER_ATOMIC];
-};
-
-// ── serial_begin ─────────────────────────────
-cppGenerator.forBlock['serial_begin'] = function(block) {
-  const baud = block.getFieldValue('BAUD');
-  return 'Serial.begin(' + baud + ');\n';
-};
-
-// ── serial_print ─────────────────────────────
-cppGenerator.forBlock['serial_print'] = function(block) {
-  const text = cppGenerator.valueToCode(block, 'TEXT', cppGenerator.ORDER_NONE) || '""';
-  return 'Serial.print(' + text + ');\n';
-};
-
-// ── serial_println ───────────────────────────
-cppGenerator.forBlock['serial_println'] = function(block) {
-  const text = cppGenerator.valueToCode(block, 'TEXT', cppGenerator.ORDER_NONE) || '""';
-  return 'Serial.println(' + text + ');\n';
-};
-
-// ── serial_available ─────────────────────────
-cppGenerator.forBlock['serial_available'] = function(_block) {
-  return ['Serial.available()', cppGenerator.ORDER_ATOMIC];
-};
-
-// ── serial_read ──────────────────────────────
-cppGenerator.forBlock['serial_read'] = function(_block) {
-  return ['Serial.read()', cppGenerator.ORDER_ATOMIC];
-};
-
-// ── serial_parse_int ─────────────────────────
-cppGenerator.forBlock['serial_parse_int'] = function(_block) {
-  return ['Serial.parseInt()', cppGenerator.ORDER_ATOMIC];
-};
-
-// ── serial_parse_float ───────────────────────
-cppGenerator.forBlock['serial_parse_float'] = function(_block) {
-  return ['Serial.parseFloat()', cppGenerator.ORDER_ATOMIC];
-};
-
-// ── serial_read_string ───────────────────────
-cppGenerator.forBlock['serial_read_string'] = function(_block) {
-  return ['Serial.readString()', cppGenerator.ORDER_ATOMIC];
-};
-
-// ── serial_write ─────────────────────────────
-cppGenerator.forBlock['serial_write'] = function(block) {
-  const val = cppGenerator.valueToCode(block, 'VALUE', cppGenerator.ORDER_NONE) || '0';
-  return 'Serial.write(' + val + ');\n';
-};
-
-// ── servo_create (declara + attach) ──────────
-cppGenerator.forBlock['servo_create'] = function(block) {
-  const name = block.getFieldValue('NAME').trim() || 'servo';
-  const pin  = block.getFieldValue('PIN');
-  // La declaración `Servo nombre;` se maneja en generateArduinoCode
-  return name + '.attach(' + pin + ');\n';
-};
-
-// ── servo_write ──────────────────────────────
-cppGenerator.forBlock['servo_write'] = function(block) {
-  const name  = block.getFieldValue('NAME').trim() || 'servo';
-  const angle = block.getFieldValue('ANGLE');
-  return name + '.write(' + angle + ');\n';
-};
-
-// ── servo_write_us ───────────────────────────
-cppGenerator.forBlock['servo_write_us'] = function(block) {
-  const name = block.getFieldValue('NAME').trim() || 'servo';
-  const us   = block.getFieldValue('US');
-  return name + '.writeMicroseconds(' + us + ');\n';
-};
-
-// ═══════════════════════════════════════════════
-//  GENERADORES DE BLOQUES BUILT-IN → C++
-// ═══════════════════════════════════════════════
 
 // ── math_number ──────────────────────────────
 cppGenerator.forBlock['math_number'] = function(block) {
@@ -527,203 +335,164 @@ cppGenerator.forBlock['math_single'] = function(block) {
   return [func + '(' + arg + ')', cppGenerator.ORDER_ATOMIC];
 };
 
-// ── tone_output ───────────────────────────────
-cppGenerator.forBlock['tone_output'] = function(block) {
-  const pin  = block.getFieldValue('PIN');
-  const freq = block.getFieldValue('FREQ');
-  return 'tone(' + pin + ', ' + freq + ');\n';
+// ── Funciones (procedures) ─────────────────────
+// Las definiciones se acumulan para emitirlas al
+// principio del sketch (scope global, antes de setup).
+
+cppGenerator.forBlock['procedures_defnoreturn'] = function(block) {
+  const name = block.getFieldValue('NAME') || 'miFuncion';
+  const body = cppGenerator.statementToCode(block, 'STACK') || '  //\n';
+
+  let params = [];
+  try {
+    const model = block.getProcedureModel?.();
+    if (model) {
+      const procParams = model.getParameters?.() || [];
+      params = procParams.map(p => {
+        const pName = p.getName?.() || 'p';
+        const types = p.getTypes?.() || [];
+        const cppType = (types[0]) || 'int';
+        return cppType + ' ' + pName;
+      });
+    }
+  } catch (_) { /* sin modelo, sin params */ }
+
+  cppGenerator._procedureDefs = cppGenerator._procedureDefs || [];
+  cppGenerator._procedureDefs.push({
+    name, params: params.join(', '), body, returnType: 'void'
+  });
+  return '';
 };
 
-// ── tone_duration ─────────────────────────────
-cppGenerator.forBlock['tone_duration'] = function(block) {
-  const pin  = block.getFieldValue('PIN');
-  const freq = cppGenerator.valueToCode(block, 'FREQ',
-    cppGenerator.ORDER_ATOMIC) || '440';
-  const dur  = cppGenerator.valueToCode(block, 'DURATION',
-    cppGenerator.ORDER_ATOMIC) || '500';
-  return 'tone(' + pin + ', ' + freq + ', ' + dur + ');\n';
+// ── Funciones (procedures) ─────────────────────
+// Las definiciones se acumulan para emitirlas al
+// principio del sketch (scope global, antes de setup).
+
+cppGenerator.forBlock['procedures_defnoreturn'] = function(block) {
+  const name = block.getFieldValue('NAME') || 'miFuncion';
+  const body = cppGenerator.statementToCode(block, 'STACK') || '  //\n';
+
+  let params = [];
+  try {
+    const model = block.getProcedureModel?.();
+    if (model) {
+      const procParams = model.getParameters?.() || [];
+      params = procParams.map(p => {
+        const pName = p.getName?.() || 'p';
+        const types = p.getTypes?.() || [];
+        const cppType = (types[0]) || 'int';
+        return cppType + ' ' + pName;
+      });
+    }
+  } catch (_) { /* sin modelo, sin params */ }
+
+  cppGenerator._procedureDefs = cppGenerator._procedureDefs || [];
+  cppGenerator._procedureDefs.push({
+    name, params: params.join(', '), body, returnType: 'void'
+  });
+  return '';
 };
 
-// ── no_tone_output ────────────────────────────
-cppGenerator.forBlock['no_tone_output'] = function(block) {
-  const pin = block.getFieldValue('PIN');
-  return 'noTone(' + pin + ');\n';
+cppGenerator.forBlock['procedures_defreturn'] = function(block) {
+  const name = block.getFieldValue('NAME') || 'miFuncion';
+  const body = cppGenerator.statementToCode(block, 'STACK') || '  //\n';
+  const retVal = cppGenerator.valueToCode(block, 'RETURN', cppGenerator.ORDER_NONE) || '0';
+
+  let params = [];
+  try {
+    const model = block.getProcedureModel?.();
+    if (model) {
+      const procParams = model.getParameters?.() || [];
+      params = procParams.map(p => {
+        const pName = p.getName?.() || 'p';
+        const types = p.getTypes?.() || [];
+        const cppType = (types[0]) || 'int';
+        return cppType + ' ' + pName;
+      });
+    }
+  } catch (_) { /* sin modelo, sin params */ }
+
+  cppGenerator._procedureDefs = cppGenerator._procedureDefs || [];
+  cppGenerator._procedureDefs.push({
+    name,
+    params: params.join(', '),
+    body: body + '  return ' + retVal + ';\n',
+    returnType: 'int'
+  });
+  return '';
 };
 
-// ── map_value (expression) ────────────────────
-cppGenerator.forBlock['map_value'] = function(block) {
-  const val     = cppGenerator.valueToCode(block, 'VALUE', cppGenerator.ORDER_NONE);
-  const fromLow  = block.getFieldValue('FROM_LOW');
-  const fromHigh = block.getFieldValue('FROM_HIGH');
-  const toLow    = block.getFieldValue('TO_LOW');
-  const toHigh   = block.getFieldValue('TO_HIGH');
-  return ['map(' + val + ', ' + fromLow + ', ' + fromHigh + ', ' + toLow + ', ' + toHigh + ')',
-          cppGenerator.ORDER_ATOMIC];
+// ── Funciones (procedures) ─────────────────────
+// Las definiciones se acumulan para emitirlas al
+// principio del sketch (scope global, antes de setup).
+
+cppGenerator.forBlock['procedures_defnoreturn'] = function(block) {
+  const name = block.getFieldValue('NAME') || 'miFuncion';
+  const body = cppGenerator.statementToCode(block, 'STACK') || '  //\n';
+
+  let params = [];
+  try {
+    const model = block.getProcedureModel?.();
+    if (model) {
+      const procParams = model.getParameters?.() || [];
+      params = procParams.map(p => {
+        const pName = p.getName?.() || 'p';
+        const types = p.getTypes?.() || [];
+        const cppType = (types[0]) || 'int';
+        return cppType + ' ' + pName;
+      });
+    }
+  } catch (_) { /* sin modelo, sin params */ }
+
+  cppGenerator._procedureDefs = cppGenerator._procedureDefs || [];
+  cppGenerator._procedureDefs.push({
+    name, params: params.join(', '), body, returnType: 'void'
+  });
+  return '';
 };
 
-// ── pulse_in (expression) ─────────────────────
-cppGenerator.forBlock['pulse_in'] = function(block) {
-  const pin     = block.getFieldValue('PIN');
-  const value   = block.getFieldValue('VALUE');
-  const timeout = block.getFieldValue('TIMEOUT');
-  return ['pulseIn(' + pin + ', ' + value + ', ' + timeout + ')', cppGenerator.ORDER_ATOMIC];
+cppGenerator.forBlock['procedures_defreturn'] = function(block) {
+  const name = block.getFieldValue('NAME') || 'miFuncion';
+  const body = cppGenerator.statementToCode(block, 'STACK') || '  //\n';
+  const retVal = cppGenerator.valueToCode(block, 'RETURN', cppGenerator.ORDER_NONE) || '0';
+
+  let params = [];
+  try {
+    const model = block.getProcedureModel?.();
+    if (model) {
+      const procParams = model.getParameters?.() || [];
+      params = procParams.map(p => {
+        const pName = p.getName?.() || 'p';
+        const types = p.getTypes?.() || [];
+        const cppType = (types[0]) || 'int';
+        return cppType + ' ' + pName;
+      });
+    }
+  } catch (_) { /* sin modelo, sin params */ }
+
+  cppGenerator._procedureDefs = cppGenerator._procedureDefs || [];
+  cppGenerator._procedureDefs.push({
+    name,
+    params: params.join(', '),
+    body: body + '  return ' + retVal + ';\n',
+    returnType: 'int'
+  });
+  return '';
 };
 
-// ── attach_interrupt ──────────────────────────
-// Genera attachInterrupt() donde se coloca + guarda ISR para emitir como global
-cppGenerator._isrBodies = [];
-
-cppGenerator.forBlock['attach_interrupt'] = function(block) {
-  const pin  = block.getFieldValue('PIN');
-  const mode = block.getFieldValue('MODE');
-  const body = cppGenerator.statementToCode(block, 'BODY') || '  // sin código\n';
-  const isrName = 'isr_pin' + pin;
-
-  // Guardar ISR para emitir en scope global
-  cppGenerator._isrBodies.push({ name: isrName, pin: pin, body: body });
-
-  return 'attachInterrupt(digitalPinToInterrupt(' + pin + '), ' + isrName + ', ' + mode + ');\n';
-};
-
-// ── lcd_create ─────────────────────────────────
-cppGenerator._lcdInstances = [];
-cppGenerator.forBlock['lcd_create'] = function(block) {
-  const name = block.getFieldValue('NAME') || 'lcd';
-  const rs = block.getFieldValue('RS');
-  const en = block.getFieldValue('EN');
-  const d4 = block.getFieldValue('D4');
-  const d5 = block.getFieldValue('D5');
-  const d6 = block.getFieldValue('D6');
-  const d7 = block.getFieldValue('D7');
-  const cols = block.getFieldValue('COLS');
-  const rows = block.getFieldValue('ROWS');
-  cppGenerator._lcdInstances.push({ name, rs, en, d4, d5, d6, d7, cols, rows });
-  return name + '.begin(' + cols + ', ' + rows + ');\n';
-};
-
-// ── lcd_print ──────────────────────────────────
-cppGenerator.forBlock['lcd_print'] = function(block) {
-  const name = block.getFieldValue('NAME') || 'lcd';
-  const text = cppGenerator.valueToCode(block, 'TEXT', cppGenerator.ORDER_NONE) || '""';
-  return name + '.print(' + text + ');\n';
-};
-
-// ── lcd_set_cursor ─────────────────────────────
-cppGenerator.forBlock['lcd_set_cursor'] = function(block) {
-  const name = block.getFieldValue('NAME') || 'lcd';
-  const col = block.getFieldValue('COL');
-  const row = block.getFieldValue('ROW');
-  return name + '.setCursor(' + col + ', ' + row + ');\n';
-};
-
-// ── lcd_clear ──────────────────────────────────
-cppGenerator.forBlock['lcd_clear'] = function(block) {
-  const name = block.getFieldValue('NAME') || 'lcd';
-  return name + '.clear();\n';
-};
-
-// ── lcd_i2c_create ────────────────────────────
-cppGenerator._lcdI2cInstances = [];
-cppGenerator.forBlock['lcd_i2c_create'] = function(block) {
-  const name = block.getFieldValue('NAME') || 'lcd';
-  const addr = block.getFieldValue('ADDR');
-  const cols = block.getFieldValue('COLS');
-  const rows = block.getFieldValue('ROWS');
-  cppGenerator._lcdI2cInstances.push({ name, addr, cols, rows });
-  return name + '.init();\n  ' + name + '.backlight();\n';
-};
-
-// ── dht_create ─────────────────────────────────
-cppGenerator._dhtInstances = [];
-cppGenerator.forBlock['dht_create'] = function(block) {
-  const name = block.getFieldValue('NAME') || 'dht';
-  const pin  = block.getFieldValue('PIN');
-  const type = block.getFieldValue('TYPE');
-  cppGenerator._dhtInstances.push({ name, pin, type });
-  return name + '.begin();\n';
-};
-
-// ── dht_temp ───────────────────────────────────
-cppGenerator.forBlock['dht_temp'] = function(block) {
-  const name = block.getFieldValue('NAME') || 'dht';
-  return [name + '.readTemperature()', cppGenerator.ORDER_ATOMIC];
-};
-
-// ── dht_humidity ───────────────────────────────
-cppGenerator.forBlock['dht_humidity'] = function(block) {
-  const name = block.getFieldValue('NAME') || 'dht';
-  return [name + '.readHumidity()', cppGenerator.ORDER_ATOMIC];
-};
-
-// ── ultrasonic_create ──────────────────────────
-cppGenerator._usInstances = [];
-cppGenerator.forBlock['ultrasonic_create'] = function(block) {
-  const name = block.getFieldValue('NAME') || 'us';
-  const trig = block.getFieldValue('TRIG');
-  const echo = block.getFieldValue('ECHO');
-  cppGenerator._usInstances.push({ name, trig, echo });
-  return 'pinMode(' + trig + ', OUTPUT);\n' +
-         '  pinMode(' + echo + ', INPUT);\n';
-};
-
-// ── ultrasonic_read ────────────────────────────
-cppGenerator.forBlock['ultrasonic_read'] = function(block) {
-  const name = block.getFieldValue('NAME') || 'us';
-  // Buscar la instancia para obtener trig/echo
-  const inst = cppGenerator._usInstances.find(i => i.name === name);
-  if (!inst) return ['0', cppGenerator.ORDER_ATOMIC];
-  return [name + '_read()', cppGenerator.ORDER_ATOMIC];
-};
-
-// ── stepper_create ─────────────────────────────
-cppGenerator._stepperInstances = [];
-cppGenerator.forBlock['stepper_create'] = function(block) {
-  const name  = block.getFieldValue('NAME') || 'motor';
-  const steps = block.getFieldValue('STEPS');
-  const p1 = block.getFieldValue('P1');
-  const p2 = block.getFieldValue('P2');
-  const p3 = block.getFieldValue('P3');
-  const p4 = block.getFieldValue('P4');
-  cppGenerator._stepperInstances.push({ name, steps, p1, p2, p3, p4 });
-  return '';  // constructor va global, nada que emitir aquí
-};
-
-// ── stepper_speed ──────────────────────────────
-cppGenerator.forBlock['stepper_speed'] = function(block) {
-  const name = block.getFieldValue('NAME') || 'motor';
-  const rpm  = block.getFieldValue('RPM');
-  return name + '.setSpeed(' + rpm + ');\n';
-};
-
-// ── stepper_step ───────────────────────────────
-cppGenerator.forBlock['stepper_step'] = function(block) {
-  const name  = block.getFieldValue('NAME') || 'motor';
-  const count = block.getFieldValue('COUNT');
-  return name + '.step(' + count + ');\n';
-};
-
-// ── variable_declare ───────────────────────────
-cppGenerator.forBlock['variable_declare'] = function(block) {
-  const name  = block.getFieldValue('NAME') || 'a';
-  const type  = block.getFieldValue('TYPE') || 'int';
-  const value = cppGenerator.valueToCode(block, 'VALUE', cppGenerator.ORDER_NONE);
-  if (value) {
-    return type + ' ' + name + ' = ' + value + ';\n';
-  }
-  return type + ' ' + name + ' {};\n';
-};
-
-// ── variable_set ───────────────────────────────
-cppGenerator.forBlock['variable_set'] = function(block) {
-  const name  = block.getFieldValue('NAME') || 'a';
-  const value = cppGenerator.valueToCode(block, 'VALUE', cppGenerator.ORDER_NONE);
-  return name + ' = ' + (value || '0') + ';\n';
-};
-
-// ── variable_get ───────────────────────────────
-cppGenerator.forBlock['variable_get'] = function(block) {
-  const name = block.getFieldValue('NAME') || 'a';
-  return [name, cppGenerator.ORDER_ATOMIC];
+cppGenerator.forBlock['procedures_callnoreturn'] = function(block) {
+  const name = block.getFieldValue('NAME') || 'miFuncion';
+  let args = [];
+  try {
+    const model = block.getProcedureModel?.();
+    if (model) {
+      const procParams = model.getParameters?.() || [];
+      args = procParams.map((_, i) => {
+        return cppGenerator.valueToCode(block, 'ARG' + i, cppGenerator.ORDER_NONE) || '0';
+      });
+    }
+  } catch (_) { /* sin modelo, sin args */ }
+  return name + '(' + args.join(', ') + ');\n';
 };
 
 // ── Funciones (procedures) ─────────────────────
@@ -814,63 +583,7 @@ cppGenerator.forBlock['procedures_callreturn'] = function(block) {
   return [name + '(' + args.join(', ') + ')', cppGenerator.ORDER_ATOMIC];
 };
 
-// ═══════════════════════════════════════════════
-//  GENERADORES DE ARRAYS
-// ═══════════════════════════════════════════════
 
-// ── array_declare ────────────────────────────
-cppGenerator.forBlock['array_declare'] = function(block) {
-  const type = block.getFieldValue('TYPE') || 'int';
-  const name = block.getFieldValue('NAME') || 'arr';
-  const raw = block.getFieldValue('VALUES') || '';
-  const vals = raw.split(',').map(v => v.trim()).filter(v => v);
-  const joined = vals.join(', ');
-  return type + ' ' + name + '[] = {' + joined + '};\n';
-};
-
-// ── array_get ────────────────────────────────
-cppGenerator.forBlock['array_get'] = function(block) {
-  const name = block.getFieldValue('NAME') || 'arr';
-  const idx = cppGenerator.valueToCode(block, 'INDEX',
-    cppGenerator.ORDER_ATOMIC) || '0';
-  return [name + '[' + idx + ']', cppGenerator.ORDER_ATOMIC];
-};
-
-// ── array_set ────────────────────────────────
-cppGenerator.forBlock['array_set'] = function(block) {
-  const name = block.getFieldValue('NAME') || 'arr';
-  const idx  = cppGenerator.valueToCode(block, 'INDEX',
-    cppGenerator.ORDER_ATOMIC) || '0';
-  const val  = cppGenerator.valueToCode(block, 'VALUE',
-    cppGenerator.ORDER_ASSIGNMENT) || '0';
-  return name + '[' + idx + '] = ' + val + ';\n';
-};
-
-// ── array_length ─────────────────────────────
-cppGenerator.forBlock['array_length'] = function(block) {
-  const name = block.getFieldValue('NAME') || 'arr';
-  return ['(sizeof(' + name + ') / sizeof(' + name + '[0]))',
-    cppGenerator.ORDER_ATOMIC];
-};
-
-// ═══════════════════════════════════════════════
-//  MÉTODO PRINCIPAL: workspaceToCode
-//  Junta setup() + loop() → sketch completo
-// ═══════════════════════════════════════════════
-
-// ── include_header ───────────────────────────
-// Los #include de .h del proyecto se recolectan en generateArduinoCode.
-// Este generador no produce salida directa; el bloque se ignora en el flujo
-// normal y se recolecta vía workspace.getAllBlocks().
-cppGenerator.forBlock['include_header'] = function(_block) {
-  return '';
-};
-
-/**
- * Genera el sketch completo de Arduino desde el workspace.
- * Detecta bloques arduino_setup y arduino_loop automáticamente.
- * Bloques fuera de setup/loop van como declaraciones globales.
- */
 export function generateArduinoCode(workspace) {
   let setupBody = '';
   let loopBody = '';

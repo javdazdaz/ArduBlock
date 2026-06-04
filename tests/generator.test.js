@@ -30,6 +30,7 @@ vi.mock('blockly', () => {
       this.getName = (n) => n;
       this.safeName_ = (n) => n;
     },
+    Msg: {},
   };
 });
 

@@ -18,20 +18,27 @@ const messages = {
   es: {
     // ── Categorías del toolbox ──
     CAT_ARDUINO: 'Arduino',
-    CAT_PINES: 'Pines',
+    CAT_DIGITAL: 'Digital',
+    CAT_ANALOGA: 'Analógica',
+    CAT_AVANZADA: 'Avanzada',
+    CAT_CONDICIONES: 'Condiciones',
+    CAT_ARREGLOS: 'Arreglos',
+    CAT_FUNCIONES: 'Funciones',
+
+    CAT_DIGITAL: 'Pines',
     CAT_TIEMPO: 'Tiempo',
-    CAT_SONIDO: 'Sonido',
+    CAT_AVANZADA: 'Sonido',
     CAT_LCD: 'Pantalla LCD',
     CAT_SENSORES: 'Sensores',
     CAT_MOTOR: 'Motor',
     CAT_SERVO: 'Servo',
     CAT_SERIAL: 'Serial',
-    CAT_LOGICA: 'Lógica',
+    CAT_CONDICIONES: 'Lógica',
     CAT_BUCLES: 'Bucles',
     CAT_MATEMATICAS: 'Matemáticas',
     CAT_VARIABLES: 'Variables',
-    CAT_FUNCTIONS: 'Funciones',
-    CAT_ARRAYS: 'Arreglos',
+    CAT_FUNCIONES: 'Funciones',
+    CAT_ARREGLOS: 'Arreglos',
     CAT_TEXTO: 'Texto',
     CAT_BUSCAR: 'Buscar',
     // ── Etiquetas de bloques (Blockly.Msg) ──
@@ -244,20 +251,34 @@ const messages = {
   en: {
     // ── Toolbox categories ──
     CAT_ARDUINO: 'Arduino',
-    CAT_PINES: 'Pins',
+    CAT_DIGITAL: 'Digital',
+    CAT_ANALOGA: 'Analog',
+    CAT_AVANZADA: 'Advanced',
+    CAT_CONDICIONES: 'Conditions',
+    CAT_ARREGLOS: 'Arrays',
+    CAT_FUNCIONES: 'Functions',
+
+    CAT_DIGITAL: 'Digital',
+    CAT_ANALOGA: 'Analógica',
+    CAT_AVANZADA: 'Avanzada',
+    CAT_CONDICIONES: 'Condiciones',
+    CAT_ARREGLOS: 'Arreglos',
+    CAT_FUNCIONES: 'Funciones',
+
+    CAT_DIGITAL: 'Pins',
     CAT_TIEMPO: 'Time',
-    CAT_SONIDO: 'Sound',
+    CAT_AVANZADA: 'Sound',
     CAT_LCD: 'LCD Display',
     CAT_SENSORES: 'Sensors',
     CAT_MOTOR: 'Motor',
     CAT_SERVO: 'Servo',
     CAT_SERIAL: 'Serial',
-    CAT_LOGICA: 'Logic',
+    CAT_CONDICIONES: 'Logic',
     CAT_BUCLES: 'Loops',
     CAT_MATEMATICAS: 'Math',
     CAT_VARIABLES: 'Variables',
-    CAT_FUNCTIONS: 'Functions',
-    CAT_ARRAYS: 'Arrays',
+    CAT_FUNCIONES: 'Functions',
+    CAT_ARREGLOS: 'Arrays',
     CAT_TEXTO: 'Text',
     CAT_BUSCAR: 'Search',
     // ── Block labels ──
@@ -520,3 +541,5 @@ export function applyDOMLanguage() {
     if (langMsgs[key]) el.placeholder = langMsgs[key];
   });
 }
+// Side-effect: inicializar idioma al importar este módulo
+initLanguage();
