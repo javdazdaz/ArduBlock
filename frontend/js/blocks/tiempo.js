@@ -13,7 +13,7 @@ export const blocks = [
     ],
     "previousStatement": null,
     "nextStatement": null,
-    "colour": 290,
+    "colour": 270,
     "tooltip": Blockly.Msg.TOOLTIP_DELAY_MS,
     "helpUrl": ""
   },
@@ -34,7 +34,7 @@ export const blocks = [
     ],
     "previousStatement": null,
     "nextStatement": null,
-    "colour": 290,
+    "colour": 270,
     "tooltip": "Nivel Básico. Elige un tiempo de espera de la lista. En Intermedio puedes escribir cualquier valor.",
     "helpUrl": ""
   },
@@ -46,7 +46,7 @@ export const blocks = [
     ],
     "previousStatement": null,
     "nextStatement": null,
-    "colour": 290,
+    "colour": 270,
     "tooltip": "Nivel Avanzado. El tiempo de espera puede ser una variable o expresión. Permite delays dinámicos.",
     "helpUrl": ""
   },
@@ -54,7 +54,7 @@ export const blocks = [
     "type": "millis",
     "message0": Blockly.Msg.MSG_MILLIS,
     "output": "Number",
-    "colour": 290,
+    "colour": 270,
     "tooltip": Blockly.Msg.TOOLTIP_MILLIS,
     "helpUrl": ""
   }

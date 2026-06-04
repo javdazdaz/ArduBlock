@@ -1,0 +1,208 @@
+{
+  "blocks": {
+    "languageVersion": 0,
+    "blocks": [
+      {
+        "type": "variable_declare",
+        "id": "fd_g1",
+        "fields": {
+          "NAME": "ledPin",
+          "TYPE": "int"
+        },
+        "inputs": {
+          "VALUE": {
+            "block": {
+              "type": "math_number",
+              "id": "fd_n2",
+              "fields": {
+                "NUM": 9
+              }
+            }
+          }
+        },
+        "x": 20,
+        "y": 240
+      },
+      {
+        "type": "arduino_setup",
+        "id": "fd_s3",
+        "x": 20,
+        "y": 20,
+        "inputs": {
+          "BODY": {
+            "block": {
+              "type": "pin_mode",
+              "id": "fd_pm4",
+              "fields": {
+                "PIN": 9,
+                "MODE": "OUTPUT"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "arduino_loop",
+        "id": "fd_l5",
+        "x": 20,
+        "y": 160,
+        "inputs": {
+          "BODY": {
+            "block": {
+              "type": "arduino_for_index",
+              "id": "fd_f16",
+              "fields": {
+                "VAR": "fadeValue"
+              },
+              "inputs": {
+                "FROM": {
+                  "block": {
+                    "type": "math_number",
+                    "id": "fd_nf7",
+                    "fields": {
+                      "NUM": 0
+                    }
+                  }
+                },
+                "TO": {
+                  "block": {
+                    "type": "math_number",
+                    "id": "fd_nt8",
+                    "fields": {
+                      "NUM": 255
+                    }
+                  }
+                },
+                "BY": {
+                  "block": {
+                    "type": "math_number",
+                    "id": "fd_nb9",
+                    "fields": {
+                      "NUM": 5
+                    }
+                  }
+                },
+                "DO": {
+                  "block": {
+                    "type": "analog_write",
+                    "id": "fd_aw110",
+                    "fields": {
+                      "PIN": 9
+                    },
+                    "inputs": {
+                      "VALUE": {
+                        "block": {
+                          "type": "variable_get",
+                          "id": "fd_vg111",
+                          "fields": {
+                            "NAME": "fadeValue"
+                          }
+                        }
+                      }
+                    },
+                    "next": {
+                      "block": {
+                        "type": "delay_ms",
+                        "id": "fd_d112",
+                        "fields": {
+                          "DELAY": 30
+                        },
+                        "next": {
+                          "block": {
+                            "type": "arduino_for_index",
+                            "id": "fd_f213",
+                            "fields": {
+                              "VAR": "i"
+                            },
+                            "inputs": {
+                              "FROM": {
+                                "block": {
+                                  "type": "math_number",
+                                  "id": "fd_nf214",
+                                  "fields": {
+                                    "NUM": 0
+                                  }
+                                }
+                              },
+                              "TO": {
+                                "block": {
+                                  "type": "math_number",
+                                  "id": "fd_nt215",
+                                  "fields": {
+                                    "NUM": 255
+                                  }
+                                }
+                              },
+                              "BY": {
+                                "block": {
+                                  "type": "math_number",
+                                  "id": "fd_nb216",
+                                  "fields": {
+                                    "NUM": 5
+                                  }
+                                }
+                              },
+                              "DO": {
+                                "block": {
+                                  "type": "analog_write",
+                                  "id": "fd_aw217",
+                                  "fields": {
+                                    "PIN": 9
+                                  },
+                                  "inputs": {
+                                    "VALUE": {
+                                      "block": {
+                                        "type": "math_arithmetic",
+                                        "id": "fd_ma18",
+                                        "fields": {
+                                          "OP": "MINUS"
+                                        },
+                                        "inputs": {
+                                          "A": {
+                                            "block": {
+                                              "type": "math_number",
+                                              "id": "fd_n25519",
+                                              "fields": {
+                                                "NUM": 255
+                                              }
+                                            }
+                                          },
+                                          "B": {
+                                            "block": {
+                                              "type": "variable_get",
+                                              "id": "fd_vgi20",
+                                              "fields": {
+                                                "NAME": "i"
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  },
+                                  "next": {
+                                    "block": {
+                                      "type": "delay_ms",
+                                      "id": "fd_d221",
+                                      "fields": {
+                                        "DELAY": 30
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}

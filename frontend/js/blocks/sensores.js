@@ -15,7 +15,7 @@ export const blocks = [
     ],
     "previousStatement": null,
     "nextStatement": null,
-    "colour": 100,
+    "colour": 80,
     "tooltip": Blockly.Msg.TOOLTIP_DHT_CREATE,
     "helpUrl": ""
   },
@@ -26,7 +26,7 @@ export const blocks = [
       { "type": "field_input", "name": "NAME", "text": "dht" }
     ],
     "output": "Number",
-    "colour": 100,
+    "colour": 80,
     "tooltip": Blockly.Msg.TOOLTIP_DHT_TEMP,
     "helpUrl": ""
   },
@@ -37,7 +37,7 @@ export const blocks = [
       { "type": "field_input", "name": "NAME", "text": "dht" }
     ],
     "output": "Number",
-    "colour": 100,
+    "colour": 80,
     "tooltip": Blockly.Msg.TOOLTIP_DHT_HUMIDITY,
     "helpUrl": ""
   },

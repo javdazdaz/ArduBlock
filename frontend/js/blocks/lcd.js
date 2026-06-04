@@ -22,7 +22,7 @@ export const blocks = [
     ],
     "previousStatement": null,
     "nextStatement": null,
-    "colour": 180,
+    "colour": 340,
     "tooltip": Blockly.Msg.TOOLTIP_LCD_CREATE,
     "helpUrl": ""
   },
@@ -35,7 +35,7 @@ export const blocks = [
     ],
     "previousStatement": null,
     "nextStatement": null,
-    "colour": 180,
+    "colour": 340,
     "tooltip": Blockly.Msg.TOOLTIP_LCD_PRINT,
     "helpUrl": ""
   },
@@ -49,7 +49,7 @@ export const blocks = [
     ],
     "previousStatement": null,
     "nextStatement": null,
-    "colour": 180,
+    "colour": 340,
     "tooltip": Blockly.Msg.TOOLTIP_LCD_SET_CURSOR,
     "helpUrl": ""
   },
@@ -61,7 +61,7 @@ export const blocks = [
     ],
     "previousStatement": null,
     "nextStatement": null,
-    "colour": 180,
+    "colour": 340,
     "tooltip": Blockly.Msg.TOOLTIP_LCD_CLEAR,
     "helpUrl": ""
   },
@@ -76,7 +76,7 @@ export const blocks = [
     ],
     "previousStatement": null,
     "nextStatement": null,
-    "colour": 180,
+    "colour": 340,
     "tooltip": Blockly.Msg.TOOLTIP_LCD_I2C_CREATE,
     "helpUrl": ""
   }

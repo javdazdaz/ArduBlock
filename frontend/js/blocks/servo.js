@@ -14,7 +14,7 @@ export const blocks = [
     ],
     "previousStatement": null,
     "nextStatement": null,
-    "colour": 40,
+    "colour": 300,
     "tooltip": Blockly.Msg.TOOLTIP_SERVO_CREATE,
     "helpUrl": ""
   },
@@ -27,7 +27,7 @@ export const blocks = [
     ],
     "previousStatement": null,
     "nextStatement": null,
-    "colour": 40,
+    "colour": 300,
     "tooltip": Blockly.Msg.TOOLTIP_SERVO_WRITE,
     "helpUrl": ""
   },
@@ -40,7 +40,7 @@ export const blocks = [
     ],
     "previousStatement": null,
     "nextStatement": null,
-    "colour": 40,
+    "colour": 300,
     "tooltip": Blockly.Msg.TOOLTIP_SERVO_WRITE_US,
     "helpUrl": ""
   }

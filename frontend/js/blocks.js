@@ -25,6 +25,49 @@ unregisterProcedureBlocks();
 Blockly.common.defineBlocks(procBlocks);
 registerProcedureSerializer();
 
+// ─── App Inventor: paleta de colores compartida ───
+// Todos los bloques built-in de Blockly que App Inventor también
+// usa heredan sus colores del tema (main.js → setBlockStyle para
+// los 7 estilos: loop, logic, math, text, list, variable, procedure).
+// Solo redefinimos controls_if y sus hijos porque usan
+// style:"logic_blocks" built-in pero deben ir en Control (ámbar).
+Blockly.common.defineBlocksWithJsonArray([
+  {
+    type: 'controls_if',
+    message0: '%{BKY_CONTROLS_IF_MSG_IF} %1',
+    args0: [{ type: 'input_value', name: 'IF0', check: 'Boolean' }],
+    message1: '%{BKY_CONTROLS_IF_MSG_THEN} %1',
+    args1: [{ type: 'input_statement', name: 'DO0' }],
+    previousStatement: null, nextStatement: null,
+    style: 'loop_blocks',
+    helpUrl: '%{BKY_CONTROLS_IF_HELPURL}',
+    suppressPrefixSuffix: true,
+    mutator: 'controls_if_mutator',
+    extensions: ['controls_if_tooltip']
+  },
+  {
+    type: 'controls_if_if',
+    message0: '%{BKY_CONTROLS_IF_IF_TITLE_IF}',
+    nextStatement: null, enableContextMenu: false,
+    style: 'loop_blocks',
+    tooltip: '%{BKY_CONTROLS_IF_IF_TOOLTIP}'
+  },
+  {
+    type: 'controls_if_elseif',
+    message0: '%{BKY_CONTROLS_IF_ELSEIF_TITLE_ELSEIF}',
+    previousStatement: null, nextStatement: null, enableContextMenu: false,
+    style: 'loop_blocks',
+    tooltip: '%{BKY_CONTROLS_IF_ELSEIF_TOOLTIP}'
+  },
+  {
+    type: 'controls_if_else',
+    message0: '%{BKY_CONTROLS_IF_ELSE_TITLE_ELSE}',
+    previousStatement: null, enableContextMenu: false,
+    style: 'loop_blocks',
+    tooltip: '%{BKY_CONTROLS_IF_ELSE_TOOLTIP}'
+  }
+]);
+
 // ═══ Tipado de parámetros en procedimientos ═══
 // ObservableParameterModel no soporta tipos: getTypes() → [],
 // setTypes() lanza error. Implementamos TypedParameterModel
@@ -233,16 +276,32 @@ export function buildToolboxForBoard(fqbn, level) {
     const toolbox = {
     'kind': 'categoryToolbox',
     'contents': [
-      // ═══════════ ESTRUCTURA ═══════════════════
-      { 'kind': 'category', 'name': '%{BKY_CAT_ARDUINO}', 'colour': '230', 'level': 1,
+      // ── SECCIÓN 1: ESTRUCTURA (Arduino Reference) ──
+      { 'kind': 'category', 'name': '%{BKY_CAT_SKETCH}', 'colour': '200', 'level': 1,
         'contents': [
           { 'kind': 'block', 'type': 'arduino_setup', 'level': 1 },
           { 'kind': 'block', 'type': 'arduino_loop', 'level': 1 },
           { 'kind': 'block', 'type': 'include_header', 'level': 3 }
         ]},
+      { 'kind': 'category', 'name': '%{BKY_CAT_CONTROL}', 'colour': '#cfac4b', 'level': 1,
+        'contents': [
+          { 'kind': 'block', 'type': 'controls_if', 'level': 2 },
+          { 'kind': 'block', 'type': 'controls_repeat_ext', 'level': 2 },
+          { 'kind': 'block', 'type': 'controls_whileUntil', 'level': 2 },
+          { 'kind': 'block', 'type': 'arduino_for_index', 'level': 3 },
+          { 'kind': 'block', 'type': 'controls_flow_statements', 'level': 3 }
+        ]},
+      { 'kind': 'category', 'name': '%{BKY_CAT_LOGICA}', 'colour': '#88b652', 'level': 2,
+        'contents': [
+          { 'kind': 'block', 'type': 'logic_compare', 'level': 2 },
+          { 'kind': 'block', 'type': 'logic_boolean', 'level': 2 },
+          { 'kind': 'block', 'type': 'logic_operation', 'level': 3 },
+          { 'kind': 'block', 'type': 'logic_negate', 'level': 3 },
+          { 'kind': 'block', 'type': 'logic_ternary', 'level': 3 }
+        ]},
       { 'kind': 'sep' },
-      // ═══════════ ENTRADA / SALIDA ══════════════
-      { 'kind': 'category', 'name': '%{BKY_CAT_DIGITAL}', 'colour': '190', 'level': 1,
+      // ── SECCIÓN 2: FUNCIONES (Arduino Reference) ──
+      { 'kind': 'category', 'name': '%{BKY_CAT_DIGITAL}', 'colour': '60', 'level': 1,
         'contents': [
           { 'kind': 'block', 'type': 'pin_mode_basic', 'level': 1 },
           { 'kind': 'block', 'type': 'pin_mode', 'level': 2 },
@@ -254,14 +313,14 @@ export function buildToolboxForBoard(fqbn, level) {
           { 'kind': 'block', 'type': 'digital_read', 'level': 2 },
           { 'kind': 'block', 'type': 'digital_read_advanced', 'level': 3 }
         ]},
-      { 'kind': 'category', 'name': '%{BKY_CAT_ANALOGA}', 'colour': '160', 'level': 2,
+      { 'kind': 'category', 'name': '%{BKY_CAT_ANALOGICO}', 'colour': '40', 'level': 2,
         'contents': [
           { 'kind': 'block', 'type': 'analog_write', 'level': 2 },
           { 'kind': 'block', 'type': 'analog_read_basic', 'level': 2 },
           { 'kind': 'block', 'type': 'analog_read', 'level': 2 },
           { 'kind': 'block', 'type': 'analog_read_advanced', 'level': 3 }
         ]},
-      { 'kind': 'category', 'name': '%{BKY_CAT_AVANZADA}', 'colour': '260', 'level': 2,
+      { 'kind': 'category', 'name': '%{BKY_CAT_AVANZADO}', 'colour': '180', 'level': 2,
         'contents': [
           { 'kind': 'block', 'type': 'tone_output_basic', 'level': 2 },
           { 'kind': 'block', 'type': 'tone_output', 'level': 2 },
@@ -271,32 +330,14 @@ export function buildToolboxForBoard(fqbn, level) {
           { 'kind': 'block', 'type': 'pulse_in', 'level': 2 },
           { 'kind': 'block', 'type': 'attach_interrupt', 'level': 3 }
         ]},
-      { 'kind': 'sep' },
-      // ═══════════ CONTROL ═══════════════════════
-      { 'kind': 'category', 'name': '%{BKY_CAT_TIEMPO}', 'colour': '290', 'level': 1,
+      { 'kind': 'category', 'name': '%{BKY_CAT_TIEMPO}', 'colour': '270', 'level': 1,
         'contents': [
           { 'kind': 'block', 'type': 'delay_ms_basic', 'level': 1 },
           { 'kind': 'block', 'type': 'delay_ms', 'level': 2 },
           { 'kind': 'block', 'type': 'delay_ms_advanced', 'level': 3 },
           { 'kind': 'block', 'type': 'millis', 'level': 2 }
         ]},
-      { 'kind': 'category', 'name': '%{BKY_CAT_CONDICIONES}', 'colour': '210', 'level': 2,
-        'contents': [
-          { 'kind': 'block', 'type': 'controls_if', 'level': 2 },
-          { 'kind': 'block', 'type': 'logic_compare', 'level': 2 },
-          { 'kind': 'block', 'type': 'logic_boolean', 'level': 2 },
-          { 'kind': 'block', 'type': 'logic_operation', 'level': 3 },
-          { 'kind': 'block', 'type': 'logic_negate', 'level': 3 }
-        ]},
-      { 'kind': 'category', 'name': '%{BKY_CAT_BUCLES}', 'colour': '120', 'level': 2,
-        'contents': [
-          { 'kind': 'block', 'type': 'controls_repeat_ext', 'level': 2 },
-          { 'kind': 'block', 'type': 'controls_whileUntil', 'level': 2 },
-          { 'kind': 'block', 'type': 'arduino_for_index', 'level': 3 }
-        ]},
-      { 'kind': 'sep' },
-      // ═══════════ DATOS ═════════════════════════
-      { 'kind': 'category', 'name': '%{BKY_CAT_MATEMATICAS}', 'colour': '230', 'level': 1,
+      { 'kind': 'category', 'name': '%{BKY_CAT_MATEMATICAS}', 'colour': '#4f86c2', 'level': 1,
         'contents': [
           { 'kind': 'block', 'type': 'math_number', 'level': 1 },
           { 'kind': 'block', 'type': 'math_arithmetic', 'level': 2 },
@@ -307,30 +348,7 @@ export function buildToolboxForBoard(fqbn, level) {
           { 'kind': 'block', 'type': 'map_value', 'level': 3 },
           { 'kind': 'block', 'type': 'math_number_property', 'level': 3 }
         ]},
-      { 'kind': 'category', 'name': '%{BKY_CAT_VARIABLES}', 'colour': '330', 'level': 3,
-        'contents': [
-          { 'kind': 'block', 'type': 'variable_declare', 'level': 3 },
-          { 'kind': 'block', 'type': 'variable_set', 'level': 3 },
-          { 'kind': 'block', 'type': 'variable_get', 'level': 3 }
-        ]},
-      { 'kind': 'category', 'name': '%{BKY_CAT_ARREGLOS}', 'colour': '330', 'level': 3,
-        'contents': [
-          { 'kind': 'block', 'type': 'array_declare', 'level': 3 },
-          { 'kind': 'block', 'type': 'array_get', 'level': 3 },
-          { 'kind': 'block', 'type': 'array_set', 'level': 3 },
-          { 'kind': 'block', 'type': 'array_length', 'level': 3 }
-        ]},
-      { 'kind': 'category', 'name': '%{BKY_CAT_TEXTO}', 'colour': '160', 'level': 3,
-        'contents': [
-          { 'kind': 'block', 'type': 'text', 'level': 3 },
-          { 'kind': 'block', 'type': 'text_join', 'level': 3 },
-          { 'kind': 'block', 'type': 'text_print', 'level': 3 },
-          { 'kind': 'block', 'type': 'text_length', 'level': 3 }
-        ]},
-      { 'kind': 'category', 'name': '%{BKY_CAT_FUNCIONES}', 'colour': '290', 'custom': 'PROCEDURE', 'level': 3 },
-      { 'kind': 'sep' },
-      // ═══════════ COMUNICACIÓN ══════════════════
-      { 'kind': 'category', 'name': '%{BKY_CAT_SERIAL}', 'colour': '120', 'level': 1,
+      { 'kind': 'category', 'name': '%{BKY_CAT_SERIAL}', 'colour': '20', 'level': 1,
         'contents': [
           { 'kind': 'block', 'type': 'serial_begin', 'level': 2 },
           { 'kind': 'block', 'type': 'serial_print', 'level': 2 },
@@ -343,16 +361,31 @@ export function buildToolboxForBoard(fqbn, level) {
           { 'kind': 'block', 'type': 'serial_write', 'level': 3 }
         ]},
       { 'kind': 'sep' },
-      // ═══════════ COMPONENTES ═══════════════════
-      { 'kind': 'category', 'name': '%{BKY_CAT_LCD}', 'colour': '180', 'level': 3,
+      // ── SECCIÓN 3: VARIABLES (Arduino Reference) ──
+      { 'kind': 'category', 'name': '%{BKY_CAT_VARIABLES}', 'colour': '#db743a', 'level': 3,
         'contents': [
-          { 'kind': 'block', 'type': 'lcd_create', 'level': 3 },
-          { 'kind': 'block', 'type': 'lcd_i2c_create', 'level': 3 },
-          { 'kind': 'block', 'type': 'lcd_print', 'level': 3 },
-          { 'kind': 'block', 'type': 'lcd_set_cursor', 'level': 3 },
-          { 'kind': 'block', 'type': 'lcd_clear', 'level': 3 }
+          { 'kind': 'block', 'type': 'variable_declare', 'level': 3 },
+          { 'kind': 'block', 'type': 'variable_set', 'level': 3 },
+          { 'kind': 'block', 'type': 'variable_get', 'level': 3 }
         ]},
-      { 'kind': 'category', 'name': '%{BKY_CAT_SENSORES}', 'colour': '100', 'level': 2,
+      { 'kind': 'category', 'name': '%{BKY_CAT_ARREGLOS}', 'colour': '#58b5dc', 'level': 3,
+        'contents': [
+          { 'kind': 'block', 'type': 'array_declare', 'level': 3 },
+          { 'kind': 'block', 'type': 'array_get', 'level': 3 },
+          { 'kind': 'block', 'type': 'array_set', 'level': 3 },
+          { 'kind': 'block', 'type': 'array_length', 'level': 3 }
+        ]},
+      { 'kind': 'category', 'name': '%{BKY_CAT_TEXTO}', 'colour': '#c24471', 'level': 3,
+        'contents': [
+          { 'kind': 'block', 'type': 'text', 'level': 3 },
+          { 'kind': 'block', 'type': 'text_join', 'level': 3 },
+          { 'kind': 'block', 'type': 'text_print', 'level': 3 },
+          { 'kind': 'block', 'type': 'text_length', 'level': 3 }
+        ]},
+      { 'kind': 'category', 'name': '%{BKY_CAT_FUNCIONES}', 'colour': '#8f6997', 'custom': 'PROCEDURE', 'level': 3 },
+      { 'kind': 'sep' },
+      // ── SECCIÓN 4: COMPONENTES ──
+      { 'kind': 'category', 'name': '%{BKY_CAT_SENSORES}', 'colour': '80', 'level': 2,
         'contents': [
           { 'kind': 'block', 'type': 'dht_create', 'level': 3 },
           { 'kind': 'block', 'type': 'dht_temp', 'level': 3 },
@@ -360,7 +393,15 @@ export function buildToolboxForBoard(fqbn, level) {
           { 'kind': 'block', 'type': 'ultrasonic_create', 'level': 2 },
           { 'kind': 'block', 'type': 'ultrasonic_read', 'level': 2 }
         ]},
-      { 'kind': 'category', 'name': '%{BKY_CAT_SERVO}', 'colour': '40', 'level': 2,
+      { 'kind': 'category', 'name': '%{BKY_CAT_PANTALLA}', 'colour': '340', 'level': 3,
+        'contents': [
+          { 'kind': 'block', 'type': 'lcd_create', 'level': 3 },
+          { 'kind': 'block', 'type': 'lcd_i2c_create', 'level': 3 },
+          { 'kind': 'block', 'type': 'lcd_print', 'level': 3 },
+          { 'kind': 'block', 'type': 'lcd_set_cursor', 'level': 3 },
+          { 'kind': 'block', 'type': 'lcd_clear', 'level': 3 }
+        ]},
+      { 'kind': 'category', 'name': '%{BKY_CAT_SERVO}', 'colour': '300', 'level': 2,
         'contents': [
           { 'kind': 'block', 'type': 'servo_create', 'level': 2 },
           { 'kind': 'block', 'type': 'servo_write', 'level': 2 },
@@ -409,3 +450,4 @@ export function buildToolboxForBoard(fqbn, level) {
 
 // Dummy export para evitar que Vite haga tree-shaking del side-effect
 export const _arduinoBlocksDefined = true;
+

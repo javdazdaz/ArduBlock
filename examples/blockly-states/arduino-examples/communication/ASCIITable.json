@@ -1,0 +1,238 @@
+{
+  "blocks": {
+    "languageVersion": 0,
+    "blocks": [
+      {
+        "type": "variable_declare",
+        "id": "at_g1",
+        "fields": {
+          "NAME": "thisByte",
+          "TYPE": "int"
+        },
+        "inputs": {
+          "VALUE": {
+            "block": {
+              "type": "math_number",
+              "id": "at_n2",
+              "fields": {
+                "NUM": 33
+              }
+            }
+          }
+        },
+        "x": 20,
+        "y": 240
+      },
+      {
+        "type": "arduino_setup",
+        "id": "at_s3",
+        "x": 20,
+        "y": 20,
+        "inputs": {
+          "BODY": {
+            "block": {
+              "type": "serial_begin",
+              "id": "at_sb4",
+              "fields": {
+                "BAUD": 9600
+              },
+              "next": {
+                "block": {
+                  "type": "serial_println",
+                  "id": "at_sp5",
+                  "inputs": {
+                    "TEXT": {
+                      "block": {
+                        "type": "text",
+                        "id": "at_tx6",
+                        "fields": {
+                          "TEXT": "ASCII Table ~ Character Map"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "arduino_loop",
+        "id": "at_l7",
+        "x": 20,
+        "y": 160,
+        "inputs": {
+          "BODY": {
+            "block": {
+              "type": "serial_write",
+              "id": "at_sw8",
+              "inputs": {
+                "VALUE": {
+                  "block": {
+                    "type": "variable_get",
+                    "id": "at_vg19",
+                    "fields": {
+                      "NAME": "thisByte"
+                    }
+                  }
+                }
+              },
+              "next": {
+                "block": {
+                  "type": "serial_print",
+                  "id": "at_sp110",
+                  "inputs": {
+                    "TEXT": {
+                      "block": {
+                        "type": "text",
+                        "id": "at_tx111",
+                        "fields": {
+                          "TEXT": ", dec: "
+                        }
+                      }
+                    }
+                  },
+                  "next": {
+                    "block": {
+                      "type": "serial_print",
+                      "id": "at_sp212",
+                      "inputs": {
+                        "TEXT": {
+                          "block": {
+                            "type": "variable_get",
+                            "id": "at_vg213",
+                            "fields": {
+                              "NAME": "thisByte"
+                            }
+                          }
+                        }
+                      },
+                      "next": {
+                        "block": {
+                          "type": "serial_println",
+                          "id": "at_spl14",
+                          "inputs": {
+                            "TEXT": {
+                              "block": {
+                                "type": "text",
+                                "id": "at_tx215",
+                                "fields": {
+                                  "TEXT": ""
+                                }
+                              }
+                            }
+                          },
+                          "next": {
+                            "block": {
+                              "type": "controls_if",
+                              "id": "at_if16",
+                              "extraState": {
+                                "hasElse": true
+                              },
+                              "inputs": {
+                                "IF0": {
+                                  "block": {
+                                    "type": "logic_compare",
+                                    "id": "at_cmp17",
+                                    "fields": {
+                                      "OP": "EQ"
+                                    },
+                                    "inputs": {
+                                      "A": {
+                                        "block": {
+                                          "type": "variable_get",
+                                          "id": "at_vg318",
+                                          "fields": {
+                                            "NAME": "thisByte"
+                                          }
+                                        }
+                                      },
+                                      "B": {
+                                        "block": {
+                                          "type": "math_number",
+                                          "id": "at_n12619",
+                                          "fields": {
+                                            "NUM": 126
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                },
+                                "DO0": {
+                                  "block": {
+                                    "type": "controls_whileUntil",
+                                    "id": "at_wl20",
+                                    "fields": {
+                                      "MODE": "WHILE"
+                                    },
+                                    "inputs": {
+                                      "BOOL": {
+                                        "block": {
+                                          "type": "logic_boolean",
+                                          "id": "at_lb21",
+                                          "fields": {
+                                            "BOOL": "TRUE"
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                },
+                                "ELSE": {
+                                  "block": {
+                                    "type": "variable_set",
+                                    "id": "at_vs22",
+                                    "fields": {
+                                      "NAME": "thisByte"
+                                    },
+                                    "inputs": {
+                                      "VALUE": {
+                                        "block": {
+                                          "type": "math_arithmetic",
+                                          "id": "at_ma23",
+                                          "fields": {
+                                            "OP": "ADD"
+                                          },
+                                          "inputs": {
+                                            "A": {
+                                              "block": {
+                                                "type": "variable_get",
+                                                "id": "at_vg424",
+                                                "fields": {
+                                                  "NAME": "thisByte"
+                                                }
+                                              }
+                                            },
+                                            "B": {
+                                              "block": {
+                                                "type": "math_number",
+                                                "id": "at_n125",
+                                                "fields": {
+                                                  "NUM": 1
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}

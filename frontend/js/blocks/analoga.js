@@ -14,7 +14,7 @@ export const blocks = [
     ],
     "previousStatement": null,
     "nextStatement": null,
-    "colour": 160,
+    "colour": 40,
     "tooltip": Blockly.Msg.TOOLTIP_ANALOG_WRITE,
     "helpUrl": ""
   },
@@ -25,7 +25,7 @@ export const blocks = [
       { "type": "field_number", "name": "PIN", "value": 0, "min": 0, "max": 15 }
     ],
     "output": "Number",
-    "colour": 160,
+    "colour": 40,
     "tooltip": Blockly.Msg.TOOLTIP_ANALOG_READ,
     "helpUrl": ""
   },
@@ -43,7 +43,7 @@ export const blocks = [
       }
     ],
     "output": "Number",
-    "colour": 160,
+    "colour": 40,
     "tooltip": "Nivel Básico. Elige el pin analógico de una lista. En Intermedio puedes escribir el número.",
     "helpUrl": ""
   },
@@ -54,7 +54,7 @@ export const blocks = [
       { "type": "input_value", "name": "PIN", "check": "Number" }
     ],
     "output": "Number",
-    "colour": 160,
+    "colour": 40,
     "tooltip": "Nivel Avanzado. El pin analógico puede ser una variable. Permite leer sensores en pines dinámicos.",
     "helpUrl": ""
   }

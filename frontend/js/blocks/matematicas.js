@@ -16,7 +16,7 @@ export const blocks = [
       { "type": "field_number", "name": "TO_HIGH", "value": 255 }
     ],
     "output": "Number",
-    "colour": 230,
+    "style": "math_blocks",
     "tooltip": Blockly.Msg.TOOLTIP_MAP_VALUE,
     "helpUrl": ""
   }

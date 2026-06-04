@@ -20,7 +20,7 @@ export const blocks = [
     ],
     "previousStatement": null,
     "nextStatement": null,
-    "colour": 190,
+    "colour": 60,
     "tooltip": Blockly.Msg.TOOLTIP_PIN_MODE,
     "helpUrl": ""
   },
@@ -47,7 +47,7 @@ export const blocks = [
     ],
     "previousStatement": null,
     "nextStatement": null,
-    "colour": 190,
+    "colour": 60,
     "tooltip": "Nivel Básico. Elige el pin de una lista. En Intermedio puedes escribir el número y en Avanzado usar una variable.",
     "helpUrl": ""
   },
@@ -66,7 +66,7 @@ export const blocks = [
     ],
     "previousStatement": null,
     "nextStatement": null,
-    "colour": 190,
+    "colour": 60,
     "tooltip": "Nivel Avanzado. El pin puede ser una variable o expresión matemática. Permite controlar pines dinámicamente desde un bucle o arreglo.",
     "helpUrl": ""
   },
@@ -84,7 +84,7 @@ export const blocks = [
     ],
     "previousStatement": null,
     "nextStatement": null,
-    "colour": 190,
+    "colour": 60,
     "tooltip": Blockly.Msg.TOOLTIP_DIGITAL_WRITE,
     "helpUrl": ""
   },
@@ -110,7 +110,7 @@ export const blocks = [
     ],
     "previousStatement": null,
     "nextStatement": null,
-    "colour": 190,
+    "colour": 60,
     "tooltip": "Nivel Básico. Elige el pin de una lista. En Intermedio puedes escribir el número y en Avanzado usar una variable.",
     "helpUrl": ""
   },
@@ -128,7 +128,7 @@ export const blocks = [
     ],
     "previousStatement": null,
     "nextStatement": null,
-    "colour": 190,
+    "colour": 60,
     "tooltip": "Nivel Avanzado. El pin puede ser una variable o expresión matemática. Permite controlar pines dinámicamente desde un bucle o arreglo.",
     "helpUrl": ""
   },
@@ -139,7 +139,7 @@ export const blocks = [
       { "type": "field_number", "name": "PIN", "value": 2, "min": 0, "max": 54 }
     ],
     "output": "Number",
-    "colour": 190,
+    "colour": 60,
     "tooltip": Blockly.Msg.TOOLTIP_DIGITAL_READ,
     "helpUrl": ""
   },
@@ -158,7 +158,7 @@ export const blocks = [
       }
     ],
     "output": "Boolean",
-    "colour": 190,
+    "colour": 60,
     "tooltip": "Nivel Básico. Elige el pin de una lista. En Intermedio puedes escribir el número y en Avanzado usar una variable.",
     "helpUrl": ""
   },
@@ -169,7 +169,7 @@ export const blocks = [
       { "type": "input_value", "name": "PIN", "check": "Number" }
     ],
     "output": "Boolean",
-    "colour": 190,
+    "colour": 60,
     "tooltip": "Nivel Avanzado. El pin puede ser una variable o expresión. Permite leer pines dinámicamente desde un bucle.",
     "helpUrl": ""
   }

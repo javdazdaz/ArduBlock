@@ -28,7 +28,7 @@ export const blocks = [
     ],
     "previousStatement": null,
     "nextStatement": null,
-    "colour": 330,
+    "style": "variable_blocks",
     "tooltip": Blockly.Msg.TOOLTIP_VARIABLE_DECLARE,
     "helpUrl": ""
   },
@@ -41,7 +41,7 @@ export const blocks = [
     ],
     "previousStatement": null,
     "nextStatement": null,
-    "colour": 330,
+    "style": "variable_blocks",
     "tooltip": Blockly.Msg.TOOLTIP_VARIABLE_SET,
     "helpUrl": ""
   },
@@ -52,7 +52,7 @@ export const blocks = [
       { "type": "field_input", "name": "NAME", "text": "a" }
     ],
     "output": ["Number", "String", "Boolean"],
-    "colour": 330,
+    "style": "variable_blocks",
     "tooltip": Blockly.Msg.TOOLTIP_VARIABLE_GET,
     "helpUrl": ""
   }

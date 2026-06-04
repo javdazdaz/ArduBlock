@@ -14,7 +14,7 @@ export const blocks = [
     ],
     "previousStatement": null,
     "nextStatement": null,
-    "colour": 260,
+    "colour": 180,
     "tooltip": Blockly.Msg.TOOLTIP_TONE_OUTPUT,
     "helpUrl": ""
   },
@@ -44,7 +44,7 @@ export const blocks = [
     ],
     "previousStatement": null,
     "nextStatement": null,
-    "colour": 260,
+    "colour": 180,
     "tooltip": "Nivel Básico. Elige el pin y la frecuencia musical de listas. En Intermedio puedes escribir valores numéricos.",
     "helpUrl": ""
   },
@@ -57,7 +57,7 @@ export const blocks = [
     ],
     "previousStatement": null,
     "nextStatement": null,
-    "colour": 260,
+    "colour": 180,
     "tooltip": "Nivel Avanzado. El pin y la frecuencia pueden ser variables o expresiones. Permite melodías dinámicas desde arreglos.",
     "helpUrl": ""
   },
@@ -73,7 +73,7 @@ export const blocks = [
     ],
     "previousStatement": null,
     "nextStatement": null,
-    "colour": 260,
+    "colour": 180,
     "tooltip": Blockly.Msg.TOOLTIP_TONE_DURATION,
     "helpUrl": ""
   },
@@ -85,7 +85,7 @@ export const blocks = [
     ],
     "previousStatement": null,
     "nextStatement": null,
-    "colour": 260,
+    "colour": 180,
     "tooltip": Blockly.Msg.TOOLTIP_NO_TONE_OUTPUT,
     "helpUrl": ""
   },
@@ -98,7 +98,7 @@ export const blocks = [
       { "type": "field_number", "name": "TIMEOUT", "value": 1000000, "min": 1 }
     ],
     "output": "Number",
-    "colour": 190,
+    "colour": 180,
     "tooltip": Blockly.Msg.TOOLTIP_PULSE_IN,
     "helpUrl": ""
   },
@@ -115,7 +115,7 @@ export const blocks = [
     ],
     "previousStatement": null,
     "nextStatement": null,
-    "colour": 190,
+    "colour": 180,
     "tooltip": Blockly.Msg.TOOLTIP_ATTACH_INTERRUPT,
     "helpUrl": ""
   }

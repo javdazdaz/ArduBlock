@@ -23,7 +23,7 @@ export const blocks = [
     ],
     "previousStatement": null,
     "nextStatement": null,
-    "colour": 330,
+    "style": "list_blocks",
     "tooltip": Blockly.Msg.TOOLTIP_ARRAY_DECLARE,
     "helpUrl": ""
   },
@@ -35,7 +35,7 @@ export const blocks = [
       { "type": "input_value", "name": "INDEX", "check": "Number" }
     ],
     "output": ["Number", "String", "Boolean"],
-    "colour": 330,
+    "style": "list_blocks",
     "tooltip": Blockly.Msg.TOOLTIP_ARRAY_GET,
     "helpUrl": ""
   },
@@ -49,7 +49,7 @@ export const blocks = [
     ],
     "previousStatement": null,
     "nextStatement": null,
-    "colour": 330,
+    "style": "list_blocks",
     "tooltip": Blockly.Msg.TOOLTIP_ARRAY_SET,
     "helpUrl": ""
   },
@@ -60,7 +60,7 @@ export const blocks = [
       { "type": "field_input", "name": "NAME", "text": "arr" }
     ],
     "output": "Number",
-    "colour": 330,
+    "style": "list_blocks",
     "tooltip": Blockly.Msg.TOOLTIP_ARRAY_LENGTH,
     "helpUrl": ""
   }

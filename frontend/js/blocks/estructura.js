@@ -12,7 +12,7 @@ export const blocks = [
       { "type": "input_dummy" },
       { "type": "input_statement", "name": "BODY" }
     ],
-    "colour": 230,   // amarillo/naranja
+    "colour": 200,   // azul grisáceo
     "tooltip": Blockly.Msg.TOOLTIP_ARDUINO_SETUP,
     "helpUrl": ""
   },
@@ -23,7 +23,7 @@ export const blocks = [
       { "type": "input_dummy" },
       { "type": "input_statement", "name": "BODY" }
     ],
-    "colour": 230,
+    "colour": 200,
     "tooltip": Blockly.Msg.TOOLTIP_ARDUINO_LOOP,
     "helpUrl": ""
   },
@@ -33,7 +33,7 @@ export const blocks = [
     "args0": [
       { "type": "field_input", "name": "FILE", "text": "config.h" }
     ],
-    "colour": 230,
+    "colour": 200,
     "tooltip": Blockly.Msg.TOOLTIP_INCLUDE_HEADER,
     "helpUrl": ""
   }

@@ -21,7 +21,7 @@ export const blocks = [
     ],
     "previousStatement": null,
     "nextStatement": null,
-    "colour": 120,
+    "colour": 20,
     "tooltip": Blockly.Msg.TOOLTIP_SERIAL_BEGIN,
     "helpUrl": ""
   },
@@ -33,7 +33,7 @@ export const blocks = [
     ],
     "previousStatement": null,
     "nextStatement": null,
-    "colour": 120,
+    "colour": 20,
     "tooltip": Blockly.Msg.TOOLTIP_SERIAL_PRINT,
     "helpUrl": ""
   },
@@ -45,7 +45,7 @@ export const blocks = [
     ],
     "previousStatement": null,
     "nextStatement": null,
-    "colour": 120,
+    "colour": 20,
     "tooltip": Blockly.Msg.TOOLTIP_SERIAL_PRINTLN,
     "helpUrl": ""
   },
@@ -54,7 +54,7 @@ export const blocks = [
     "message0": Blockly.Msg.MSG_SERIAL_AVAILABLE,
     "args0": [],
     "output": "Number",
-    "colour": 120,
+    "colour": 20,
     "tooltip": Blockly.Msg.TOOLTIP_SERIAL_AVAILABLE,
     "helpUrl": ""
   },
@@ -63,7 +63,7 @@ export const blocks = [
     "message0": Blockly.Msg.MSG_SERIAL_READ,
     "args0": [],
     "output": "Number",
-    "colour": 120,
+    "colour": 20,
     "tooltip": Blockly.Msg.TOOLTIP_SERIAL_READ,
     "helpUrl": ""
   },
@@ -72,7 +72,7 @@ export const blocks = [
     "message0": Blockly.Msg.MSG_SERIAL_PARSE_INT,
     "args0": [],
     "output": "Number",
-    "colour": 120,
+    "colour": 20,
     "tooltip": Blockly.Msg.TOOLTIP_SERIAL_PARSE_INT,
     "helpUrl": ""
   },
@@ -81,7 +81,7 @@ export const blocks = [
     "message0": Blockly.Msg.MSG_SERIAL_PARSE_FLOAT,
     "args0": [],
     "output": "Number",
-    "colour": 120,
+    "colour": 20,
     "tooltip": Blockly.Msg.TOOLTIP_SERIAL_PARSE_FLOAT,
     "helpUrl": ""
   },
@@ -90,7 +90,7 @@ export const blocks = [
     "message0": Blockly.Msg.MSG_SERIAL_READ_STRING,
     "args0": [],
     "output": "String",
-    "colour": 120,
+    "colour": 20,
     "tooltip": Blockly.Msg.TOOLTIP_SERIAL_READ_STRING,
     "helpUrl": ""
   },
@@ -102,7 +102,7 @@ export const blocks = [
     ],
     "previousStatement": null,
     "nextStatement": null,
-    "colour": 120,
+    "colour": 20,
     "tooltip": Blockly.Msg.TOOLTIP_SERIAL_WRITE,
     "helpUrl": ""
   }

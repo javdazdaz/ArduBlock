@@ -17,29 +17,27 @@ import * as Blockly from 'blockly';
 const messages = {
   es: {
     // ── Categorías del toolbox ──
-    CAT_ARDUINO: 'Arduino',
+    // Sección 1: Estructura
+    CAT_SKETCH: 'Sketch',
+    CAT_CONTROL: 'Control',
+    CAT_LOGICA: 'Lógica',
+    // Sección 2: Funciones
     CAT_DIGITAL: 'Digital',
-    CAT_ANALOGA: 'Analógica',
-    CAT_AVANZADA: 'Avanzada',
-    CAT_CONDICIONES: 'Condiciones',
-    CAT_ARREGLOS: 'Arreglos',
-    CAT_FUNCIONES: 'Funciones',
-
-    CAT_DIGITAL: 'Pines',
+    CAT_ANALOGICO: 'Analógico',
+    CAT_AVANZADO: 'Avanzado',
     CAT_TIEMPO: 'Tiempo',
-    CAT_AVANZADA: 'Sonido',
-    CAT_LCD: 'Pantalla LCD',
-    CAT_SENSORES: 'Sensores',
-    CAT_MOTOR: 'Motor',
-    CAT_SERVO: 'Servo',
-    CAT_SERIAL: 'Serial',
-    CAT_CONDICIONES: 'Lógica',
-    CAT_BUCLES: 'Bucles',
     CAT_MATEMATICAS: 'Matemáticas',
+    CAT_SERIAL: 'Serial',
+    // Sección 3: Variables
     CAT_VARIABLES: 'Variables',
-    CAT_FUNCIONES: 'Funciones',
     CAT_ARREGLOS: 'Arreglos',
     CAT_TEXTO: 'Texto',
+    CAT_FUNCIONES: 'Funciones',
+    // Sección 4: Componentes
+    CAT_SENSORES: 'Sensores',
+    CAT_PANTALLA: 'Pantalla',
+    CAT_SERVO: 'Servo',
+    CAT_MOTOR: 'Motor',
     CAT_BUSCAR: 'Buscar',
     // ── Etiquetas de bloques (Blockly.Msg) ──
     ARD_SETUP: 'al iniciar (setup)',
@@ -250,36 +248,27 @@ const messages = {
 
   en: {
     // ── Toolbox categories ──
-    CAT_ARDUINO: 'Arduino',
+    // Section 1: Structure
+    CAT_SKETCH: 'Sketch',
+    CAT_CONTROL: 'Control',
+    CAT_LOGICA: 'Logic',
+    // Section 2: Functions
     CAT_DIGITAL: 'Digital',
-    CAT_ANALOGA: 'Analog',
-    CAT_AVANZADA: 'Advanced',
-    CAT_CONDICIONES: 'Conditions',
-    CAT_ARREGLOS: 'Arrays',
-    CAT_FUNCIONES: 'Functions',
-
-    CAT_DIGITAL: 'Digital',
-    CAT_ANALOGA: 'Analógica',
-    CAT_AVANZADA: 'Avanzada',
-    CAT_CONDICIONES: 'Condiciones',
-    CAT_ARREGLOS: 'Arreglos',
-    CAT_FUNCIONES: 'Funciones',
-
-    CAT_DIGITAL: 'Pins',
+    CAT_ANALOGICO: 'Analog',
+    CAT_AVANZADO: 'Advanced',
     CAT_TIEMPO: 'Time',
-    CAT_AVANZADA: 'Sound',
-    CAT_LCD: 'LCD Display',
-    CAT_SENSORES: 'Sensors',
-    CAT_MOTOR: 'Motor',
-    CAT_SERVO: 'Servo',
-    CAT_SERIAL: 'Serial',
-    CAT_CONDICIONES: 'Logic',
-    CAT_BUCLES: 'Loops',
     CAT_MATEMATICAS: 'Math',
+    CAT_SERIAL: 'Serial',
+    // Section 3: Variables
     CAT_VARIABLES: 'Variables',
-    CAT_FUNCIONES: 'Functions',
     CAT_ARREGLOS: 'Arrays',
     CAT_TEXTO: 'Text',
+    CAT_FUNCIONES: 'Functions',
+    // Section 4: Components
+    CAT_SENSORES: 'Sensors',
+    CAT_PANTALLA: 'Display',
+    CAT_SERVO: 'Servo',
+    CAT_MOTOR: 'Motor',
     CAT_BUSCAR: 'Search',
     // ── Block labels ──
     ARD_SETUP: 'on start (setup)',

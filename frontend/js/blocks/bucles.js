@@ -24,7 +24,7 @@ export const blocks = [
     ],
     "previousStatement": null,
     "nextStatement": null,
-    "colour": 120,
+    "style": "loop_blocks",
     "tooltip": Blockly.Msg.TOOLTIP_FOR_INDEX,
     "helpUrl": ""
   }
