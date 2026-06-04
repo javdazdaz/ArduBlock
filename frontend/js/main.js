@@ -404,5 +404,8 @@ workspace.addChangeListener((event) => {
   }
 });
 
+// Exponer para el hook del validador (que limpia warnings en cada cambio)
+window._applyLevelProtection = () => applyLevelProtection(getSetting('level'));
+
 // ═══ Aplicar idioma al DOM ═══════════════════
 applyDOMLanguage();

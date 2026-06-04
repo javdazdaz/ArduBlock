@@ -461,6 +461,12 @@ function updateStatusPanel(warnings) {
   }
 
   statusEl.innerHTML = html;
+
+  // Hook: re-aplicar protección de nivel después de cada validación,
+  // ya que applyWarnings hace setWarningText(null) global.
+  if (typeof window._applyLevelProtection === 'function') {
+    window._applyLevelProtection();
+  }
 }
 
 // ═══════════════════════════════════════════════
