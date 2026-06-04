@@ -105,6 +105,20 @@ cppGenerator.forBlock['pin_mode'] = function(block) {
   const mode = block.getFieldValue('MODE');
   return 'pinMode(' + pin + ', ' + mode + ');\n';
 };
+// ── pin_mode_basic (N1) ──────────────────────
+cppGenerator.forBlock['pin_mode_basic'] = function(block) {
+  const pin  = block.getFieldValue('PIN');
+  const mode = block.getFieldValue('MODE');
+  return 'pinMode(' + pin + ', ' + mode + ');\n';
+};
+
+// ── pin_mode_advanced (N3) ───────────────────
+cppGenerator.forBlock['pin_mode_advanced'] = function(block) {
+  const pin  = cppGenerator.valueToCode(block, 'PIN', cppGenerator.ORDER_ATOMIC) || '0';
+  const mode = block.getFieldValue('MODE');
+  return 'pinMode(' + pin + ', ' + mode + ');\n';
+};
+
 
 // ── digital_write ────────────────────────────
 cppGenerator.forBlock['digital_write'] = function(block) {

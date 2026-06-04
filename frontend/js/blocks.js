@@ -357,6 +357,56 @@ Blockly.common.defineBlocksWithJsonArray([
     "helpUrl": ""
   },
 
+  // ═══ pinMode — Variante Básico (N1): dropdown de pines ═══
+  {
+    "type": "pin_mode_basic",
+    "message0": Blockly.Msg.MSG_PIN_MODE,
+    "args0": [
+      { "type": "field_dropdown", "name": "PIN",
+        "options": [
+          ["2", "2"], ["3", "3"], ["4", "4"], ["5", "5"],
+          ["6", "6"], ["7", "7"], ["8", "8"], ["9", "9"],
+          ["10", "10"], ["11", "11"], ["12", "12"], ["13", "13"],
+          ["A0", "A0"], ["A1", "A1"], ["A2", "A2"],
+          ["A3", "A3"], ["A4", "A4"], ["A5", "A5"]
+        ]
+      },
+      { "type": "field_dropdown", "name": "MODE",
+        "options": [
+          ["ENTRADA", "INPUT"],
+          ["SALIDA", "OUTPUT"],
+          ["ENTRADA_PULLUP", "INPUT_PULLUP"]
+        ]
+      }
+    ],
+    "previousStatement": null,
+    "nextStatement": null,
+    "colour": 190,
+    "tooltip": "Nivel Básico. Elige el pin de una lista. En Intermedio puedes escribir el número y en Avanzado usar una variable.",
+    "helpUrl": ""
+  },
+
+  // ═══ pinMode — Variante Avanzado (N3): input_value para variables ═══
+  {
+    "type": "pin_mode_advanced",
+    "message0": Blockly.Msg.MSG_PIN_MODE,
+    "args0": [
+      { "type": "input_value", "name": "PIN", "check": "Number" },
+      { "type": "field_dropdown", "name": "MODE",
+        "options": [
+          ["ENTRADA", "INPUT"],
+          ["SALIDA", "OUTPUT"],
+          ["ENTRADA_PULLUP", "INPUT_PULLUP"]
+        ]
+      }
+    ],
+    "previousStatement": null,
+    "nextStatement": null,
+    "colour": 190,
+    "tooltip": "Nivel Avanzado. El pin puede ser una variable o expresión matemática. Permite controlar pines dinámicamente desde un bucle o arreglo.",
+    "helpUrl": ""
+  },
+
   // ═══ digitalWrite ═══════════════════════════
   {
     "type": "digital_write",
@@ -1040,6 +1090,114 @@ Blockly.common.defineBlocksWithJsonArray([
 // ═══ Toolbox dinámico por placa ═════════════════
 import { getBoardConfig, getDefaultFqbn } from './board.js';
 
+// ═══ Mapa de niveles por bloque ═══════════════
+// Usado por la protección de nivel: detecta si un bloque
+// cargado requiere un nivel superior al actual.
+// key = block type, value = nivel mínimo (1,2,3)
+function _buildBlockLevelMap(toolboxContents) {
+  const map = {};
+  function walk(items) {
+    for (const item of items) {
+      if (item.level && item.type) {
+        // Bloque con nivel explícito: guardar el mínimo
+        if (!map[item.type] || item.level < map[item.type]) {
+          map[item.type] = item.level;
+        }
+      }
+      if (item.contents) walk(item.contents);
+    }
+  }
+  walk(toolboxContents);
+  return map;
+}
+
+// Precomputamos el mapa con toolbox completo (nivel 3)
+const _FULL_TOOLBOX_TEMPLATE = [
+  { kind: 'block', type: 'arduino_setup', level: 1 },
+  { kind: 'block', type: 'arduino_loop', level: 1 },
+  { kind: 'block', type: 'include_header', level: 3 },
+  { kind: 'block', type: 'pin_mode_basic', level: 1 },
+  { kind: 'block', type: 'pin_mode', level: 2 },
+  { kind: 'block', type: 'pin_mode_advanced', level: 3 },
+  { kind: 'block', type: 'digital_write', level: 1 },
+  { kind: 'block', type: 'digital_read', level: 1 },
+  { kind: 'block', type: 'analog_write', level: 2 },
+  { kind: 'block', type: 'analog_read', level: 2 },
+  { kind: 'block', type: 'pulse_in', level: 2 },
+  { kind: 'block', type: 'attach_interrupt', level: 3 },
+  { kind: 'block', type: 'delay_ms', level: 1 },
+  { kind: 'block', type: 'millis', level: 2 },
+  { kind: 'block', type: 'tone_output', level: 2 },
+  { kind: 'block', type: 'tone_duration', level: 2 },
+  { kind: 'block', type: 'no_tone_output', level: 2 },
+  { kind: 'block', type: 'lcd_create', level: 3 },
+  { kind: 'block', type: 'lcd_i2c_create', level: 3 },
+  { kind: 'block', type: 'lcd_print', level: 3 },
+  { kind: 'block', type: 'lcd_set_cursor', level: 3 },
+  { kind: 'block', type: 'lcd_clear', level: 3 },
+  { kind: 'block', type: 'dht_create', level: 3 },
+  { kind: 'block', type: 'dht_temp', level: 3 },
+  { kind: 'block', type: 'dht_humidity', level: 3 },
+  { kind: 'block', type: 'ultrasonic_create', level: 2 },
+  { kind: 'block', type: 'ultrasonic_read', level: 2 },
+  { kind: 'block', type: 'stepper_create', level: 3 },
+  { kind: 'block', type: 'stepper_speed', level: 3 },
+  { kind: 'block', type: 'stepper_step', level: 3 },
+  { kind: 'block', type: 'servo_create', level: 2 },
+  { kind: 'block', type: 'servo_write', level: 2 },
+  { kind: 'block', type: 'servo_write_us', level: 3 },
+  { kind: 'block', type: 'serial_begin', level: 2 },
+  { kind: 'block', type: 'serial_print', level: 2 },
+  { kind: 'block', type: 'serial_println', level: 1 },
+  { kind: 'block', type: 'serial_available', level: 3 },
+  { kind: 'block', type: 'serial_read', level: 3 },
+  { kind: 'block', type: 'serial_parse_int', level: 3 },
+  { kind: 'block', type: 'serial_parse_float', level: 3 },
+  { kind: 'block', type: 'serial_read_string', level: 3 },
+  { kind: 'block', type: 'serial_write', level: 3 },
+  { kind: 'block', type: 'controls_if', level: 2 },
+  { kind: 'block', type: 'logic_compare', level: 2 },
+  { kind: 'block', type: 'logic_operation', level: 3 },
+  { kind: 'block', type: 'logic_negate', level: 3 },
+  { kind: 'block', type: 'logic_boolean', level: 2 },
+  { kind: 'block', type: 'controls_repeat_ext', level: 2 },
+  { kind: 'block', type: 'controls_whileUntil', level: 2 },
+  { kind: 'block', type: 'arduino_for_index', level: 3 },
+  { kind: 'block', type: 'controls_for', level: 3 },
+  { kind: 'block', type: 'math_number', level: 1 },
+  { kind: 'block', type: 'math_arithmetic', level: 2 },
+  { kind: 'block', type: 'math_single', level: 2 },
+  { kind: 'block', type: 'math_modulo', level: 3 },
+  { kind: 'block', type: 'math_random_int', level: 2 },
+  { kind: 'block', type: 'math_constrain', level: 3 },
+  { kind: 'block', type: 'map_value', level: 3 },
+  { kind: 'block', type: 'math_number_property', level: 3 },
+  { kind: 'block', type: 'variable_declare', level: 3 },
+  { kind: 'block', type: 'variable_set', level: 3 },
+  { kind: 'block', type: 'variable_get', level: 3 },
+  { kind: 'block', type: 'array_declare', level: 3 },
+  { kind: 'block', type: 'array_get', level: 3 },
+  { kind: 'block', type: 'array_set', level: 3 },
+  { kind: 'block', type: 'array_length', level: 3 },
+  { kind: 'block', type: 'text', level: 3 },
+  { kind: 'block', type: 'text_join', level: 3 },
+  { kind: 'block', type: 'text_print', level: 3 },
+  { kind: 'block', type: 'text_length', level: 3 },
+  { kind: 'block', type: 'procedures_defnoreturn', level: 3 },
+  { kind: 'block', type: 'procedures_defreturn', level: 3 },
+  { kind: 'block', type: 'procedures_callnoreturn', level: 3 },
+  { kind: 'block', type: 'procedures_callreturn', level: 3 },
+  { kind: 'block', type: 'procedures_ifreturn', level: 3 },
+  { kind: 'block', type: 'logic_ternary', level: 3 },
+  { kind: 'block', type: 'controls_flow_statements', level: 3 },
+];
+
+export const BLOCK_LEVELS = _buildBlockLevelMap(_FULL_TOOLBOX_TEMPLATE);
+
+export function getBlockLevel(blockType) {
+  return BLOCK_LEVELS[blockType] || 3; // desconocidos → nivel 3
+}
+
 export function buildToolboxForBoard(fqbn, level) {
   const board = getBoardConfig(fqbn || getDefaultFqbn());
   // Por ahora el toolbox es idéntico para todas las placas.
@@ -1059,7 +1217,9 @@ export function buildToolboxForBoard(fqbn, level) {
         ]},
       { 'kind': 'category', 'name': '%{BKY_CAT_PINES}', 'colour': '190', 'level': 1,
         'contents': [
-          { 'kind': 'block', 'type': 'pin_mode', 'level': 1 },
+          { 'kind': 'block', 'type': 'pin_mode_basic', 'level': 1 },
+          { 'kind': 'block', 'type': 'pin_mode', 'level': 2 },
+          { 'kind': 'block', 'type': 'pin_mode_advanced', 'level': 3 },
           { 'kind': 'block', 'type': 'digital_write', 'level': 1 },
           { 'kind': 'block', 'type': 'digital_read', 'level': 1 },
           { 'kind': 'block', 'type': 'analog_write', 'level': 2 },

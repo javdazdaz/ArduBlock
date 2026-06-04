@@ -89,7 +89,7 @@ import { initTabManager, getTabs, loadTabs, setSketchName, setInoContent, getIno
 import { t, applyDOMLanguage } from './i18n.js';
 
 // ═══ Toolbox ══════════════════════════════════
-import { buildToolboxForBoard } from './blocks.js';
+import { buildToolboxForBoard, getBlockLevel } from './blocks.js';
 
 const toolbox = buildToolboxForBoard(getSetting('board'), getSetting('level'));
 
@@ -308,6 +308,9 @@ if (levelSelector) {
       window._rebuildToolbox(getSetting('board'), level);
     }
 
+    // Aplicar protección de nivel a los bloques cargados
+    applyLevelProtection(level);
+
     showToast(`Nivel: ${levelSelector.options[levelSelector.selectedIndex]?.text || level}`);
   });
 }
@@ -367,6 +370,39 @@ window.updateCode = updateCode;  // para que tab-manager refresque el .ino
 
 // ═══ Validación pedagógica ═══════════════════
 initValidator(workspace);
+
+// ═══ Protección de nivel ══════════════════════
+// Recorre todos los bloques y muestra advertencia si
+// requieren un nivel superior al actual. No deshabilita.
+export function applyLevelProtection(currentLevel) {
+  const allBlocks = workspace.getAllBlocks(false);
+  const levelNames = { 1: 'Básico', 2: 'Intermedio', 3: 'Avanzado' };
+
+  for (const block of allBlocks) {
+    const requiredLevel = getBlockLevel(block.type);
+    if (requiredLevel > currentLevel) {
+      block.setWarningText(
+        `⚠ Este bloque es de nivel ${levelNames[requiredLevel]}. ` +
+        `Cambia a ese nivel en el selector para verlo en la toolbox.`
+      );
+    } else {
+      block.setWarningText(null);
+    }
+  }
+}
+
+// Aplicar protección al cargar y cada vez que se cargue
+// un proyecto (Blockly.serialization.workspaces.load dispara
+// eventos que terminan en este estado)
+applyLevelProtection(getSetting('level'));
+
+// Hook: después de cargar workspace (proyectos/ejemplos),
+// re-aplicar protección. Usamos un listener genérico.
+workspace.addChangeListener((event) => {
+  if (event.type === Blockly.Events.FINISHED_LOADING) {
+    applyLevelProtection(getSetting('level'));
+  }
+});
 
 // ═══ Aplicar idioma al DOM ═══════════════════
 applyDOMLanguage();
