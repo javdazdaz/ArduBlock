@@ -427,6 +427,54 @@ Blockly.common.defineBlocksWithJsonArray([
     "helpUrl": ""
   },
 
+  // ═══ digitalWrite — Variante Básico (N1): dropdown de pines ═══
+  {
+    "type": "digital_write_basic",
+    "message0": Blockly.Msg.MSG_DIGITAL_WRITE,
+    "args0": [
+      { "type": "field_dropdown", "name": "PIN",
+        "options": [
+          ["2", "2"], ["3", "3"], ["4", "4"], ["5", "5"],
+          ["6", "6"], ["7", "7"], ["8", "8"], ["9", "9"],
+          ["10", "10"], ["11", "11"], ["12", "12"], ["13", "13"],
+          ["A0", "A0"], ["A1", "A1"], ["A2", "A2"],
+          ["A3", "A3"], ["A4", "A4"], ["A5", "A5"]
+        ]
+      },
+      { "type": "field_dropdown", "name": "VALUE",
+        "options": [
+          ["HIGH", "HIGH"],
+          ["LOW", "LOW"]
+        ]
+      }
+    ],
+    "previousStatement": null,
+    "nextStatement": null,
+    "colour": 190,
+    "tooltip": "Nivel Básico. Elige el pin de una lista. En Intermedio puedes escribir el número y en Avanzado usar una variable.",
+    "helpUrl": ""
+  },
+
+  // ═══ digitalWrite — Variante Avanzado (N3): input_value para variables ═══
+  {
+    "type": "digital_write_advanced",
+    "message0": Blockly.Msg.MSG_DIGITAL_WRITE,
+    "args0": [
+      { "type": "input_value", "name": "PIN", "check": "Number" },
+      { "type": "field_dropdown", "name": "VALUE",
+        "options": [
+          ["HIGH", "HIGH"],
+          ["LOW", "LOW"]
+        ]
+      }
+    ],
+    "previousStatement": null,
+    "nextStatement": null,
+    "colour": 190,
+    "tooltip": "Nivel Avanzado. El pin puede ser una variable o expresión matemática. Permite controlar pines dinámicamente desde un bucle o arreglo.",
+    "helpUrl": ""
+  },
+
   // ═══ digitalRead ════════════════════════════
   {
     "type": "digital_read",
@@ -437,6 +485,40 @@ Blockly.common.defineBlocksWithJsonArray([
     "output": "Number",
     "colour": 190,
     "tooltip": Blockly.Msg.TOOLTIP_DIGITAL_READ,
+    "helpUrl": ""
+  },
+
+  // ═══ digitalRead — Variante Básico (N1): dropdown de pines ═══
+  {
+    "type": "digital_read_basic",
+    "message0": Blockly.Msg.MSG_DIGITAL_READ,
+    "args0": [
+      { "type": "field_dropdown", "name": "PIN",
+        "options": [
+          ["2", "2"], ["3", "3"], ["4", "4"], ["5", "5"],
+          ["6", "6"], ["7", "7"], ["8", "8"], ["9", "9"],
+          ["10", "10"], ["11", "11"], ["12", "12"], ["13", "13"],
+          ["A0", "A0"], ["A1", "A1"], ["A2", "A2"],
+          ["A3", "A3"], ["A4", "A4"], ["A5", "A5"]
+        ]
+      }
+    ],
+    "output": "Boolean",
+    "colour": 190,
+    "tooltip": "Nivel Básico. Elige el pin de una lista. En Intermedio puedes escribir el número y en Avanzado usar una variable.",
+    "helpUrl": ""
+  },
+
+  // ═══ digitalRead — Variante Avanzado (N3): input_value para variables ═══
+  {
+    "type": "digital_read_advanced",
+    "message0": Blockly.Msg.MSG_DIGITAL_READ,
+    "args0": [
+      { "type": "input_value", "name": "PIN", "check": "Number" }
+    ],
+    "output": "Boolean",
+    "colour": 190,
+    "tooltip": "Nivel Avanzado. El pin puede ser una variable o expresión. Permite leer pines dinámicamente desde un bucle.",
     "helpUrl": ""
   },
 
@@ -468,6 +550,39 @@ Blockly.common.defineBlocksWithJsonArray([
     "helpUrl": ""
   },
 
+  // ═══ analogRead — Variante Básico (N1): dropdown A0-A15 ═══
+  {
+    "type": "analog_read_basic",
+    "message0": Blockly.Msg.MSG_ANALOG_READ,
+    "args0": [
+      { "type": "field_dropdown", "name": "PIN",
+        "options": [
+          ["A0", "0"], ["A1", "1"], ["A2", "2"], ["A3", "3"],
+          ["A4", "4"], ["A5", "5"], ["A6", "6"], ["A7", "7"],
+          ["A8", "8"], ["A9", "9"], ["A10", "10"], ["A11", "11"],
+          ["A12", "12"], ["A13", "13"], ["A14", "14"], ["A15", "15"]
+        ]
+      }
+    ],
+    "output": "Number",
+    "colour": 160,
+    "tooltip": "Nivel Básico. Elige el pin analógico de una lista. En Intermedio puedes escribir el número.",
+    "helpUrl": ""
+  },
+
+  // ═══ analogRead — Variante Avanzado (N3): input_value para variables ═══
+  {
+    "type": "analog_read_advanced",
+    "message0": Blockly.Msg.MSG_ANALOG_READ,
+    "args0": [
+      { "type": "input_value", "name": "PIN", "check": "Number" }
+    ],
+    "output": "Number",
+    "colour": 160,
+    "tooltip": "Nivel Avanzado. El pin analógico puede ser una variable. Permite leer sensores en pines dinámicos.",
+    "helpUrl": ""
+  },
+
   // ═══ delay ══════════════════════════════════
   {
     "type": "delay_ms",
@@ -479,6 +594,43 @@ Blockly.common.defineBlocksWithJsonArray([
     "nextStatement": null,
     "colour": 290,
     "tooltip": Blockly.Msg.TOOLTIP_DELAY_MS,
+    "helpUrl": ""
+  },
+
+  // ═══ delay — Variante Básico (N1): dropdown de tiempos ═══
+  {
+    "type": "delay_ms_basic",
+    "message0": Blockly.Msg.MSG_DELAY_MS,
+    "args0": [
+      { "type": "field_dropdown", "name": "MS",
+        "options": [
+          ["100 ms", "100"],
+          ["250 ms", "250"],
+          ["500 ms", "500"],
+          ["1000 ms (1 s)", "1000"],
+          ["2000 ms (2 s)", "2000"],
+          ["5000 ms (5 s)", "5000"]
+        ]
+      }
+    ],
+    "previousStatement": null,
+    "nextStatement": null,
+    "colour": 290,
+    "tooltip": "Nivel Básico. Elige un tiempo de espera de la lista. En Intermedio puedes escribir cualquier valor.",
+    "helpUrl": ""
+  },
+
+  // ═══ delay — Variante Avanzado (N3): input_value para variables ═══
+  {
+    "type": "delay_ms_advanced",
+    "message0": Blockly.Msg.MSG_DELAY_MS,
+    "args0": [
+      { "type": "input_value", "name": "MS", "check": "Number" }
+    ],
+    "previousStatement": null,
+    "nextStatement": null,
+    "colour": 290,
+    "tooltip": "Nivel Avanzado. El tiempo de espera puede ser una variable o expresión. Permite delays dinámicos.",
     "helpUrl": ""
   },
 
@@ -668,6 +820,53 @@ Blockly.common.defineBlocksWithJsonArray([
     "nextStatement": null,
     "colour": 260,
     "tooltip": Blockly.Msg.TOOLTIP_TONE_OUTPUT,
+    "helpUrl": ""
+  },
+
+  // ═══ tone_output — Variante Básico (N1): dropdown pin + frecuencias ═══
+  {
+    "type": "tone_output_basic",
+    "message0": Blockly.Msg.MSG_TONE_OUTPUT,
+    "args0": [
+      { "type": "field_dropdown", "name": "PIN",
+        "options": [
+          ["2", "2"], ["3", "3"], ["4", "4"], ["5", "5"],
+          ["6", "6"], ["7", "7"], ["8", "8"], ["9", "9"],
+          ["10", "10"], ["11", "11"], ["12", "12"], ["13", "13"]
+        ]
+      },
+      { "type": "field_dropdown", "name": "FREQ",
+        "options": [
+          ["DO 262 Hz", "262"],
+          ["RE 294 Hz", "294"],
+          ["MI 330 Hz", "330"],
+          ["FA 349 Hz", "349"],
+          ["SOL 392 Hz", "392"],
+          ["LA 440 Hz", "440"],
+          ["SI 494 Hz", "494"],
+          ["DO 523 Hz", "523"]
+        ]
+      }
+    ],
+    "previousStatement": null,
+    "nextStatement": null,
+    "colour": 260,
+    "tooltip": "Nivel Básico. Elige el pin y la frecuencia musical de listas. En Intermedio puedes escribir valores numéricos.",
+    "helpUrl": ""
+  },
+
+  // ═══ tone_output — Variante Avanzado (N3): input_value pin + frecuencia ═══
+  {
+    "type": "tone_output_advanced",
+    "message0": Blockly.Msg.MSG_TONE_OUTPUT,
+    "args0": [
+      { "type": "input_value", "name": "PIN", "check": "Number" },
+      { "type": "input_value", "name": "FREQ", "check": "Number" }
+    ],
+    "previousStatement": null,
+    "nextStatement": null,
+    "colour": 260,
+    "tooltip": "Nivel Avanzado. El pin y la frecuencia pueden ser variables o expresiones. Permite melodías dinámicas desde arreglos.",
     "helpUrl": ""
   },
 
@@ -1119,15 +1318,25 @@ const _FULL_TOOLBOX_TEMPLATE = [
   { kind: 'block', type: 'pin_mode_basic', level: 1 },
   { kind: 'block', type: 'pin_mode', level: 2 },
   { kind: 'block', type: 'pin_mode_advanced', level: 3 },
-  { kind: 'block', type: 'digital_write', level: 1 },
-  { kind: 'block', type: 'digital_read', level: 1 },
+  { kind: 'block', type: 'digital_write_basic', level: 1 },
+  { kind: 'block', type: 'digital_write', level: 2 },
+  { kind: 'block', type: 'digital_write_advanced', level: 3 },
+  { kind: 'block', type: 'digital_read_basic', level: 1 },
+  { kind: 'block', type: 'digital_read', level: 2 },
+  { kind: 'block', type: 'digital_read_advanced', level: 3 },
   { kind: 'block', type: 'analog_write', level: 2 },
+  { kind: 'block', type: 'analog_read_basic', level: 2 },
   { kind: 'block', type: 'analog_read', level: 2 },
+  { kind: 'block', type: 'analog_read_advanced', level: 3 },
   { kind: 'block', type: 'pulse_in', level: 2 },
   { kind: 'block', type: 'attach_interrupt', level: 3 },
-  { kind: 'block', type: 'delay_ms', level: 1 },
+  { kind: 'block', type: 'delay_ms_basic', level: 1 },
+  { kind: 'block', type: 'delay_ms', level: 2 },
+  { kind: 'block', type: 'delay_ms_advanced', level: 3 },
   { kind: 'block', type: 'millis', level: 2 },
+  { kind: 'block', type: 'tone_output_basic', level: 2 },
   { kind: 'block', type: 'tone_output', level: 2 },
+  { kind: 'block', type: 'tone_output_advanced', level: 3 },
   { kind: 'block', type: 'tone_duration', level: 2 },
   { kind: 'block', type: 'no_tone_output', level: 2 },
   { kind: 'block', type: 'lcd_create', level: 3 },
@@ -1220,21 +1429,31 @@ export function buildToolboxForBoard(fqbn, level) {
           { 'kind': 'block', 'type': 'pin_mode_basic', 'level': 1 },
           { 'kind': 'block', 'type': 'pin_mode', 'level': 2 },
           { 'kind': 'block', 'type': 'pin_mode_advanced', 'level': 3 },
-          { 'kind': 'block', 'type': 'digital_write', 'level': 1 },
-          { 'kind': 'block', 'type': 'digital_read', 'level': 1 },
+          { 'kind': 'block', 'type': 'digital_write_basic', 'level': 1 },
+          { 'kind': 'block', 'type': 'digital_write', 'level': 2 },
+          { 'kind': 'block', 'type': 'digital_write_advanced', 'level': 3 },
+          { 'kind': 'block', 'type': 'digital_read_basic', 'level': 1 },
+          { 'kind': 'block', 'type': 'digital_read', 'level': 2 },
+          { 'kind': 'block', 'type': 'digital_read_advanced', 'level': 3 },
           { 'kind': 'block', 'type': 'analog_write', 'level': 2 },
+          { 'kind': 'block', 'type': 'analog_read_basic', 'level': 2 },
           { 'kind': 'block', 'type': 'analog_read', 'level': 2 },
+          { 'kind': 'block', 'type': 'analog_read_advanced', 'level': 3 },
           { 'kind': 'block', 'type': 'pulse_in', 'level': 2 },
           { 'kind': 'block', 'type': 'attach_interrupt', 'level': 3 }
         ]},
       { 'kind': 'category', 'name': '%{BKY_CAT_TIEMPO}', 'colour': '290', 'level': 1,
         'contents': [
-          { 'kind': 'block', 'type': 'delay_ms', 'level': 1 },
+          { 'kind': 'block', 'type': 'delay_ms_basic', 'level': 1 },
+          { 'kind': 'block', 'type': 'delay_ms', 'level': 2 },
+          { 'kind': 'block', 'type': 'delay_ms_advanced', 'level': 3 },
           { 'kind': 'block', 'type': 'millis', 'level': 2 }
         ]},
       { 'kind': 'category', 'name': '%{BKY_CAT_SONIDO}', 'colour': '260', 'level': 2,
         'contents': [
+          { 'kind': 'block', 'type': 'tone_output_basic', 'level': 2 },
           { 'kind': 'block', 'type': 'tone_output', 'level': 2 },
+          { 'kind': 'block', 'type': 'tone_output_advanced', 'level': 3 },
           { 'kind': 'block', 'type': 'tone_duration', 'level': 2 },
           { 'kind': 'block', 'type': 'no_tone_output', 'level': 2 }
         ]},

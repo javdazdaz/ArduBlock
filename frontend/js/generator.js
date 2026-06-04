@@ -146,6 +146,70 @@ cppGenerator.forBlock['analog_read'] = function(block) {
   return ['analogRead(A' + pin + ')', cppGenerator.ORDER_ATOMIC];
 };
 
+// ── digital_write_basic (N1) ──────────────────
+cppGenerator.forBlock['digital_write_basic'] = function(block) {
+  const pin   = block.getFieldValue('PIN');
+  const value = block.getFieldValue('VALUE');
+  return 'digitalWrite(' + pin + ', ' + value + ');\n';
+};
+
+// ── digital_write_advanced (N3) ───────────────
+cppGenerator.forBlock['digital_write_advanced'] = function(block) {
+  const pin   = cppGenerator.valueToCode(block, 'PIN', cppGenerator.ORDER_ATOMIC) || '0';
+  const value = block.getFieldValue('VALUE');
+  return 'digitalWrite(' + pin + ', ' + value + ');\n';
+};
+
+// ── digital_read_basic (N1) ───────────────────
+cppGenerator.forBlock['digital_read_basic'] = function(block) {
+  const pin = block.getFieldValue('PIN');
+  return ['digitalRead(' + pin + ')', cppGenerator.ORDER_ATOMIC];
+};
+
+// ── digital_read_advanced (N3) ────────────────
+cppGenerator.forBlock['digital_read_advanced'] = function(block) {
+  const pin = cppGenerator.valueToCode(block, 'PIN', cppGenerator.ORDER_ATOMIC) || '0';
+  return ['digitalRead(' + pin + ')', cppGenerator.ORDER_ATOMIC];
+};
+
+// ── analog_read_basic (N1) ────────────────────
+cppGenerator.forBlock['analog_read_basic'] = function(block) {
+  const pin = block.getFieldValue('PIN');
+  return ['analogRead(A' + pin + ')', cppGenerator.ORDER_ATOMIC];
+};
+
+// ── analog_read_advanced (N3) ─────────────────
+cppGenerator.forBlock['analog_read_advanced'] = function(block) {
+  const pin = cppGenerator.valueToCode(block, 'PIN', cppGenerator.ORDER_ATOMIC) || '0';
+  return ['analogRead(A' + pin + ')', cppGenerator.ORDER_ATOMIC];
+};
+
+// ── delay_ms_basic (N1) ───────────────────────
+cppGenerator.forBlock['delay_ms_basic'] = function(block) {
+  const ms = block.getFieldValue('MS');
+  return 'delay(' + ms + ');\n';
+};
+
+// ── delay_ms_advanced (N3) ────────────────────
+cppGenerator.forBlock['delay_ms_advanced'] = function(block) {
+  const ms = cppGenerator.valueToCode(block, 'MS', cppGenerator.ORDER_ATOMIC) || '0';
+  return 'delay(' + ms + ');\n';
+};
+
+// ── tone_output_basic (N1) ────────────────────
+cppGenerator.forBlock['tone_output_basic'] = function(block) {
+  const pin  = block.getFieldValue('PIN');
+  const freq = block.getFieldValue('FREQ');
+  return 'tone(' + pin + ', ' + freq + ');\n';
+};
+
+// ── tone_output_advanced (N3) ─────────────────
+cppGenerator.forBlock['tone_output_advanced'] = function(block) {
+  const pin  = cppGenerator.valueToCode(block, 'PIN', cppGenerator.ORDER_ATOMIC) || '0';
+  const freq = cppGenerator.valueToCode(block, 'FREQ', cppGenerator.ORDER_ATOMIC) || '440';
+  return 'tone(' + pin + ', ' + freq + ');\n';
+};
+
 // ── delay_ms ─────────────────────────────────
 cppGenerator.forBlock['delay_ms'] = function(block) {
   const ms = block.getFieldValue('MS');
