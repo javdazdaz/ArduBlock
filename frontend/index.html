@@ -8,8 +8,11 @@
 </head>
 <body>
   <header>
-    <h1 data-i18n="app_title">⚡ ArduBlock</h1>
-    <span class="subtitle" data-i18n="app_subtitle">Programación visual para Arduino — C++</span>
+    <button id="btn-hamburger" class="hamburger-btn" title="Menú" aria-label="Abrir menú">☰</button>
+    <div class="header-brand">
+      <h1 data-i18n="app_title">⚡ ArduBlock</h1>
+      <span class="subtitle" data-i18n="app_subtitle">Programación visual para Arduino — C++</span>
+    </div>
     <div class="toolbar">
       <div class="project-bar">
         <input type="text" id="project-name" data-i18n-placeholder="project_placeholder" placeholder="nombre-proyecto" maxlength="30" spellcheck="false">
@@ -19,11 +22,22 @@
         <div id="project-list" class="project-dropdown hidden"></div>
       </div>
       <button id="btn-copy" class="btn-secondary" data-i18n="btn_copy">📋 Copiar</button>
-      <button id="btn-new" class="btn-primary" data-i18n="btn_new">📄 Nuevo</button>
-      <button id="btn-examples" class="btn-secondary" data-i18n="btn_examples">📚 Ejemplos</button>
-      <button id="btn-settings" class="btn-secondary">⚙</button>
+      <button id="btn-new" class="btn-primary" data-i18n="btn_new" style="display:none">📄 Nuevo</button>
+      <button id="btn-examples" class="btn-secondary" data-i18n="btn_examples" style="display:none">📚 Ejemplos</button>
+      <button id="btn-settings" class="btn-secondary" style="display:none">⚙</button>
     </div>
   </header>
+
+  <!-- Menú hamburguesa (fuera del header para evitar clipping por overflow-x) -->
+  <nav id="hamburger-menu" class="hamburger-menu hidden" role="menu">
+    <button id="hmenu-new" class="hmenu-item" role="menuitem">📄 <span data-i18n="hmenu_new">Nuevo proyecto</span></button>
+    <button id="hmenu-open" class="hmenu-item" role="menuitem">📂 <span data-i18n="hmenu_open">Abrir proyecto</span></button>
+    <hr class="hmenu-divider">
+    <button id="hmenu-examples" class="hmenu-item" role="menuitem">📚 <span data-i18n="hmenu_examples">Ejemplos</span></button>
+    <button id="hmenu-export" class="hmenu-item" role="menuitem">📦 <span data-i18n="hmenu_export">Exportar sketch</span></button>
+    <hr class="hmenu-divider">
+    <button id="hmenu-settings" class="hmenu-item" role="menuitem">⚙ <span data-i18n="hmenu_settings">Configuración</span></button>
+  </nav>
 
   <main>
     <section id="editor-panel">
@@ -60,7 +74,7 @@
         </select>
         <button id="btn-console-toggle" class="arduino-btn console" data-i18n="btn_console" title="Abrir/cerrar monitor serial">🔌 Consola</button>
         <button id="btn-upload" class="arduino-btn upload" data-i18n="btn_upload" title="Compilar y subir al Arduino">⚡ Subir</button>
-        <button id="btn-export" class="arduino-btn export" data-i18n="btn_export" title="Exportar sketch como .zip">📦 Exportar</button>
+        <button id="btn-export" class="arduino-btn export" data-i18n="btn_export" title="Exportar sketch como .zip" style="display:none">📦 Exportar</button>
       </div>
 
       <!-- Código .ino (readonly, generado por bloques) -->

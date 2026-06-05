@@ -171,6 +171,12 @@ const messages = {
     btn_console: '🔌 Consola',
     btn_upload: '⚡ Subir',
     btn_export: '📦 Exportar',
+    // ── Menú hamburguesa ──
+    hmenu_new: 'Nuevo proyecto',
+    hmenu_open: 'Abrir proyecto',
+    hmenu_examples: 'Ejemplos',
+    hmenu_export: 'Exportar sketch',
+    hmenu_settings: 'Configuración',
     // ── Panel de código ──
     panel_code: 'Código C++',
     panel_lines: 'líneas',
@@ -403,6 +409,12 @@ const messages = {
     btn_console: '🔌 Console',
     btn_upload: '⚡ Upload',
     btn_export: '📦 Export',
+    // ── Hamburger menu ──
+    hmenu_new: 'New project',
+    hmenu_open: 'Open project',
+    hmenu_examples: 'Examples',
+    hmenu_export: 'Export sketch',
+    hmenu_settings: 'Settings',
     // ── Code panel ──
     panel_code: 'C++ Code',
     panel_lines: 'lines',

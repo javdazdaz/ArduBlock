@@ -170,6 +170,59 @@ document.getElementById('btn-copy').addEventListener('click', async () => {
 
 document.getElementById('btn-export').addEventListener('click', exportSketch);
 
+// ═══ Menú hamburguesa ══════════════════════════
+
+const hamburgerBtn  = document.getElementById('btn-hamburger');
+const hamburgerMenu = document.getElementById('hamburger-menu');
+
+// Toggle menú
+hamburgerBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  const isHidden = hamburgerMenu.classList.contains('hidden');
+  if (isHidden) {
+    const rect = hamburgerBtn.getBoundingClientRect();
+    hamburgerMenu.style.top = (rect.bottom + 4) + 'px';
+    hamburgerMenu.style.left = rect.left + 'px';
+  }
+  hamburgerMenu.classList.toggle('hidden');
+});
+
+// Cerrar menú al clickear afuera
+document.addEventListener('click', (e) => {
+  if (!hamburgerMenu.classList.contains('hidden') &&
+      !hamburgerMenu.contains(e.target) &&
+      e.target !== hamburgerBtn) {
+    hamburgerMenu.classList.add('hidden');
+  }
+});
+
+// Cerrar menú con Escape
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') hamburgerMenu.classList.add('hidden');
+});
+
+// Items del menú → disparan los botones originales
+document.getElementById('hmenu-new').addEventListener('click', () => {
+  hamburgerMenu.classList.add('hidden');
+  document.getElementById('btn-new').click();
+});
+document.getElementById('hmenu-open').addEventListener('click', () => {
+  hamburgerMenu.classList.add('hidden');
+  document.getElementById('btn-load').click();
+});
+document.getElementById('hmenu-examples').addEventListener('click', () => {
+  hamburgerMenu.classList.add('hidden');
+  document.getElementById('btn-examples').click();
+});
+document.getElementById('hmenu-export').addEventListener('click', () => {
+  hamburgerMenu.classList.add('hidden');
+  document.getElementById('btn-export').click();
+});
+document.getElementById('hmenu-settings').addEventListener('click', () => {
+  hamburgerMenu.classList.add('hidden');
+  document.getElementById('btn-settings').click();
+});
+
 document.getElementById('btn-new').addEventListener('click', () => {
   workspace.clear();
   Blockly.serialization.workspaces.load(getDefaultState(), workspace);
