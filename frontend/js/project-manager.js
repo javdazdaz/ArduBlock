@@ -99,7 +99,9 @@ export function saveProject(name) {
 
   const state = Blockly.serialization.workspaces.save(workspace);
   const tabs = window._tabManager ? window._tabManager.getTabs() : [];
+  const activityMeta = window._activityMeta ? window._activityMeta() : null;
   const record = { name, saved: Date.now(), state, tabs };
+  if (activityMeta) record.activityMeta = activityMeta;
   try {
     localStorage.setItem(lsKey(name), JSON.stringify(record));
     localStorage.setItem(LAST_KEY, name);
@@ -125,6 +127,12 @@ export function loadProject(name) {
     // Restaurar tabs .h del proyecto
     if (window._tabManager && record.tabs) {
       window._tabManager.loadTabs(record.tabs, displayName);
+    }
+
+    // Restaurar metadatos de actividad
+    if (window._clearActivityMeta) window._clearActivityMeta();
+    if (record.activityMeta && window._applyActivityMeta) {
+      window._applyActivityMeta(record.activityMeta);
     }
 
     localStorage.setItem(LAST_KEY, record.name);

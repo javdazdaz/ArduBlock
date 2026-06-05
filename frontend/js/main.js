@@ -88,6 +88,7 @@ import { initResize }   from './resize.js';
 import { exportSketch } from './download.js';
 import { initTabManager, getTabs, loadTabs, setSketchName, setInoContent, getInoContent, setCodeTheme } from './tab-manager.js';
 import { t, applyDOMLanguage } from './i18n.js';
+import { initActivityProtection, getActivityMeta, applyActivityMeta, clearActivityMeta, isActivityLoaded } from './activity-protection.js';
 
 // ═══ Toolbox ══════════════════════════════════
 import { buildToolboxForBoard, getBlockLevel } from './blocks.js';
@@ -229,6 +230,7 @@ document.getElementById('btn-new').addEventListener('click', () => {
   projectInput.value = '';
   window._exampleComment = null;
   if (window._tabManager) window._tabManager.loadTabs([]);
+  if (window._clearActivityMeta) window._clearActivityMeta();
   showToast('Proyecto nuevo');
 });
 
@@ -413,6 +415,24 @@ window._tabManager = { getTabs, loadTabs, setSketchName, setInoContent, getInoCo
 window.updateCode = updateCode;  // para que tab-manager refresque el .ino
 window._showToast = showToast;   // para download.js y otros módulos
 
+// Activity protection: bloques protegidos + placeholders (backend)
+initActivityProtection(workspace);
+
+const activityBadge = document.getElementById('activity-badge');
+const _origApply = (meta) => applyActivityMeta(workspace, meta);
+const _origClear = () => clearActivityMeta();
+
+window._activityMeta = () => getActivityMeta();
+window._applyActivityMeta = (meta) => {
+  _origApply(meta);
+  activityBadge.classList.toggle('hidden', !isActivityLoaded());
+};
+window._clearActivityMeta = () => {
+  _origClear();
+  activityBadge.classList.add('hidden');
+};
+window._isActivityLoaded = isActivityLoaded;
+
 // ═══ Carga inicial del workspace ══════════════
 (function initWorkspace() {
   const lastName = localStorage.getItem(LAST_KEY);
@@ -429,6 +449,11 @@ window._showToast = showToast;   // para download.js y otros módulos
         // Restaurar tabs .h del último proyecto
         if (window._tabManager) {
           window._tabManager.loadTabs(record.tabs || [], displayName);
+        }
+
+        // Restaurar metadatos de actividad
+        if (record.activityMeta && window._applyActivityMeta) {
+          window._applyActivityMeta(record.activityMeta);
         }
 
         return;

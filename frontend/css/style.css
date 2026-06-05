@@ -134,6 +134,16 @@ header .subtitle {
 
 .btn-save { background: #27ae60; color: #fff; }
 
+/* ── Activity badge ───────────────────────────── */
+.activity-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 1.5rem; height: 1.5rem;
+  background: #3498db; border-radius: 50%;
+  font-size: 0.7rem; flex-shrink: 0;
+  cursor: help;
+}
+.activity-badge.hidden { display: none; }
+
 /* ── Hamburger menu dropdown ──────────────────── */
 .hamburger-menu {
   position: fixed;
