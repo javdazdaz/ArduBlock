@@ -19,6 +19,11 @@ export default [
         getComputedStyle: 'readonly',
         prompt: 'readonly',
         alert: 'readonly',
+        TextEncoder: 'readonly',
+        Blob: 'readonly',
+        URL: 'readonly',
+        Uint8Array: 'readonly',
+        DataView: 'readonly',
       },
     },
     rules: {

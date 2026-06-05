@@ -290,6 +290,7 @@ main {
 .arduino-btn.upload { background: #e67e22; color: #fff; }
 .arduino-btn.console { background: #2c3e50; color: #ccc; }
 .arduino-btn.console.active { background: #27ae60; color: #fff; }
+.arduino-btn.export { background: #2980b9; color: #fff; }
 .arduino-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
 /* ── Code Panel ───────────────────────────────── */

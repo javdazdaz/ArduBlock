@@ -170,6 +170,7 @@ const messages = {
     // ── Toolbar Arduino ──
     btn_console: '🔌 Consola',
     btn_upload: '⚡ Subir',
+    btn_export: '📦 Exportar',
     // ── Panel de código ──
     panel_code: 'Código C++',
     panel_lines: 'líneas',
@@ -401,6 +402,7 @@ const messages = {
     // ── Arduino toolbar ──
     btn_console: '🔌 Console',
     btn_upload: '⚡ Upload',
+    btn_export: '📦 Export',
     // ── Code panel ──
     panel_code: 'C++ Code',
     panel_lines: 'lines',

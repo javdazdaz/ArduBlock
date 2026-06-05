@@ -83,8 +83,9 @@ import { initProjectManager, lsKey, isWorkspaceDirty } from './project-manager.j
 import { initSettings, getSetting } from './settings.js';
 import { initSerial }        from './serial.js';
 import { initUpload }         from './upload.js';
-import { initExamples }       from './examples.js';
-import { initResize }         from './resize.js';
+import { initExamples }  from './examples.js';
+import { initResize }   from './resize.js';
+import { exportSketch } from './download.js';
 import { initTabManager, getTabs, loadTabs, setSketchName, setInoContent, getInoContent, setCodeTheme } from './tab-manager.js';
 import { t, applyDOMLanguage } from './i18n.js';
 
@@ -166,6 +167,8 @@ document.getElementById('btn-copy').addEventListener('click', async () => {
     showToast(t('toast_copied'));
   }
 });
+
+document.getElementById('btn-export').addEventListener('click', exportSketch);
 
 document.getElementById('btn-new').addEventListener('click', () => {
   workspace.clear();
@@ -355,6 +358,7 @@ initResize({
 initTabManager();
 window._tabManager = { getTabs, loadTabs, setSketchName, setInoContent, getInoContent, setCodeTheme };
 window.updateCode = updateCode;  // para que tab-manager refresque el .ino
+window._showToast = showToast;   // para download.js y otros módulos
 
 // ═══ Carga inicial del workspace ══════════════
 (function initWorkspace() {

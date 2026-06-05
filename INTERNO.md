@@ -1,6 +1,6 @@
 # Registro de Commits — ArduBlock
 
-Última actualización: 2026-06-04 (sesión noche)
+Última actualización: 2026-06-05 (revisión de roadmap)
 
 ## ✅ Paleta App Inventor — Colores de bloques compartidos
 
@@ -263,8 +263,6 @@ Esfuerzo: [S] <30 min (1 campo/bloque) · [M] 1-2 h (bloque nuevo + generador) �
 
 #### Math
 - [ ] [S] `randomSeed(seed)` — semilla para random (statement, solo setup)
-- [ ] `abs(x)` — valor absoluto (cubierto por math_single)
-- [ ] `sq(x)`, `pow(base, exp)` — potencia (cubierto por math_arithmetic)
 
 #### Bits & Bytes
 - [ ] [S] `bitRead(x, n)` — leer bit n de x (expresión)
@@ -299,27 +297,35 @@ Prioridad: 🔴 bloqueante para clase → 🟡 primera semana → 🟢 experienc
 
 #### 🔴 Bloqueantes — sin esto no hay clase
 - [x] **Fix: `pow10()` no existe en AVR** — ✅ RESUELTO (commit actual) — `math_single POW10` genera error de compilación en UNO/Nano/Mega. Fix: 1 línea en generador. Afecta: alumno
-- [ ] **Exportar sketch como .ino** — descarga del código generado con los .h incluidos. Sin export no hay "entrega". Afecta: docente corrigiendo
+- [ ] **Exportar sketch como .ino** — descarga del código generado como `.zip` con `sketch.ino` + tabs `.h`. Incluye comentario de metadatos (placa, nivel, fecha) en el .ino. Usa el nombre del proyecto guardado en localStorage, con prompt de confirmación. Sin export no hay "entrega". Afecta: docente corrigiendo
 - [ ] **Tests de generador C++** — validar que cada bloque produce código sintácticamente correcto. 86 bloques, 0 tests. Cada refactor es a ciegas. Afecta: docente
-- [ ] **Sistema de Actividades** — formato `.ardublock-actividad`, placeholders, protección de bloques, validación de completitud. Sin esto el docente no puede entregar workspaces semi-completos. Afecta: docente preparando clase
+- [ ] **Sistema de Actividades** — formato `.ardublock-actividad` con 3 capacidades incrementales:
+  1. **Placeholders**: bloques sombra bloqueados (no borrables) que el alumno debe reemplazar con su implementación
+  2. **Protección de bloques**: bloques fijos (no movibles, no borrables) en zonas designadas del workspace, para entregar workspaces semi-completos
+  3. **Validación de completitud**: verificar que todos los placeholders fueron reemplazados y que el workspace compila
+  El MVP mínimo para clase necesita (1) y (2). (3) puede ser post-MVP. Afecta: docente preparando clase
 
 #### 🟡 Primera semana — los alumnos lo van a pedir
-- [ ] **Undo/Redo global** — el historial de Blockly no cubre cambios de tabs .h ni selección de placa. Afecta: alumno que borra sin querer
+- [ ] **Undo/Redo en tabs .h** — el undo de Blockly ya funciona para bloques, falta solo el historial de CodeMirror en tabs editables. Primer paso acotado. El undo global (bloques + tabs + placa) es post-MVP. Afecta: alumno que borra código sin querer
 - [x] **Validación: Serial.print sin begin** — ✅ RESUELTO (commit actual) — el código compila pero no imprime nada. Frustrante. Afecta: alumno que no ve output
 - [ ] **Menú hamburguesa** — botón ☰ a la izquierda del logo en la toolbar, con opciones: Nuevo, Abrir, Guardar, Exportar, Configuración. Sin esto la UI no tiene navegación clara. Afecta: todos
-- [ ] **Bloques DC Motor** — `avanzar`, `retroceder`, `girarIzq`, `girarDer`, `detener`, `setSpeed` para shield AFMotor/L293D. Sin esto el currículum entero no funciona. Afecta: todos los alumnos
+- [ ] **Tooltips en bloques _advanced** — los tooltips actuales no mencionan que aceptan variables/expresiones en lugar de valores fijos. El alumno avanzado no descubre la capacidad. Afecta: alumno avanzado
 - [x] **Fix: generador duplicado `arduino_for_index`** — ✅ RESUELTO (commit actual) — código muerto en `generator.js`, el de `bucles.js` lo pisa. Afecta: developer (no visible al alumno)
 
 #### 🟢 Experiencia — dolor acumulativo
+- [ ] **Bloques DC Motor** — `avanzar`, `retroceder`, `girarIzq`, `girarDer`, `detener`, `setSpeed` para shield AFMotor/L293D. Esfuerzo [L] por la librería completa (6 bloques + generadores + tests). Sin esto el currículum de robótica no funciona, pero requiere ~1 semana dedicada. Afecta: todos los alumnos
 - [ ] **Dark mode completo** — toolbar, modales, panel de ejemplos (CodeMirror ya tiene tema oscuro). Afecta: clase con proyector
 - [ ] **`beforeunload` al cerrar** — confirmación si hay cambios no guardados. Afecta: alumno que cierra sin querer
 - [ ] **Bloques progresivos faltantes** — `analogWrite_basic`, `pulseIn_basic`. Afecta: alumno avanzado
 - [ ] **Advertencia `text_join`** — `String()` fragmenta heap en AVR. Con 4-5 concat puede crashear en UNO (2KB RAM). Afecta: alumno en UNO
+- [ ] **Accesibilidad: navegación por teclado en toolbox** — sin esto, alumnos con dificultades motrices no pueden usar la herramienta. Incluye atajo de teclado visible para toolbox search (`@blockly/toolbox-search` ya instalado). Afecta: inclusión
 
 #### ⬜ Post-MVP — sin urgencia de aula
 - [ ] **Importar .ino existente** — parseo inverso: C++ → bloques (alcance limitado, solo patrones reconocibles)
 - [ ] **Monitor Serial: gráfico** — plotter básico de valores numéricos
 - [ ] **CI/CD** — GitHub Actions para lint + tests + build en cada push
+- [ ] **PWA / offline** — service worker para cachear la app (Vite + workbox). En aula sin WiFi o con red lenta, cargar ~2 MB de Blockly cada vez es un problema. Esfuerzo [M]
+- [ ] **Reevaluar ejemplos no convertibles** — tras agregar librerías (Wire, SPI, WiFi), varios de los 52 sketches documentados como "no viables" se vuelven convertibles automáticamente
 
 
 
@@ -334,21 +340,25 @@ detalles de implementación. Esta tabla es solo un resumen rápido de a quién a
 | # | Prioridad | Qué | A quién afecta |
 |---|-----------|-----|----------------|
 | 1 | ✅ | `pow10()` no existe en AVR → error de compilación | Alumno con UNO/Nano/Mega |
-| 2 | 🔴 | Exportar sketch como .ino | Docente corrigiendo |
+| 2 | 🔴 | Exportar sketch como .ino (zip con .ino + .h, metadatos) | Docente corrigiendo |
 | 3 | 🔴 | Tests del generador C++ (86 bloques, 0 tests) | Docente cuando algo falla |
-| 4 | 🔴 | Sistema de Actividades (placeholders, protección de bloques) | Docente preparando clase |
-| 5 | 🟡 | Undo/Redo global (tabs .h, selector placa) | Alumno que borra sin querer |
+| 4 | 🔴 | Sistema de Actividades: placeholders + protección de bloques (MVP) | Docente preparando clase |
+| 5 | 🟡 | Undo/Redo en tabs .h (CodeMirror, primer paso acotado) | Alumno que borra código sin querer |
 | 6 | ✅ | Validación: Serial.print sin begin | Alumno que no ve output |
 | 7 | 🟡 | Menú hamburguesa ☰ (Nuevo, Abrir, Guardar, Exportar) | Todos |
-| 8 | 🟡 | Bloques DC Motor (6 bloques para shield AFMotor/L293D) | Todos los alumnos |
+| 8 | 🟡 | Tooltips en bloques _advanced (mencionar que aceptan variables) | Alumno avanzado |
 | 9 | ✅ | Fix: generador duplicado `arduino_for_index` | Developer |
-| 10 | 🟢 | Dark mode completo (toolbar, modales, panel ejemplos) | Clase con proyector |
-| 11 | 🟢 | `beforeunload` al cerrar (confirmación cambios no guardados) | Alumno que cierra sin querer |
-| 12 | 🟢 | Bloques progresivos faltantes (`analogWrite_basic`, `pulseIn_basic`) | Alumno avanzado |
-| 13 | 🟢 | Advertencia `text_join` (fragmentación heap en AVR) | Alumno en UNO |
-| 14 | ⬜ | Importar .ino existente (C++ → bloques) | Alumno/Docente |
-| 15 | ⬜ | Monitor Serial: gráfico (plotter numérico) | Alumno |
-| 16 | ⬜ | CI/CD (GitHub Actions: lint + tests + build) | Developer |
+| 10 | 🟢 | Bloques DC Motor (6 bloques, shield AFMotor/L293D, esfuerzo [L]) | Todos los alumnos |
+| 11 | 🟢 | Dark mode completo (toolbar, modales, panel ejemplos) | Clase con proyector |
+| 12 | 🟢 | `beforeunload` al cerrar (confirmación cambios no guardados) | Alumno que cierra sin querer |
+| 13 | 🟢 | Bloques progresivos faltantes (`analogWrite_basic`, `pulseIn_basic`) | Alumno avanzado |
+| 14 | 🟢 | Advertencia `text_join` (fragmentación heap en AVR) | Alumno en UNO |
+| 15 | 🟢 | Accesibilidad: navegación por teclado en toolbox + atajo search | Inclusión |
+| 16 | ⬜ | Importar .ino existente (C++ → bloques) | Alumno/Docente |
+| 17 | ⬜ | Monitor Serial: gráfico (plotter numérico) | Alumno |
+| 18 | ⬜ | CI/CD (GitHub Actions: lint + tests + build) | Developer |
+| 19 | ⬜ | PWA / offline (service worker, Vite + workbox) | Todos (aula sin WiFi) |
+| 20 | ⬜ | Reevaluar ejemplos no convertibles tras nuevas librerías | Docente |
 
 ### ✅ Lo que ya está sólido para MVP
 
@@ -358,7 +368,7 @@ detalles de implementación. Esta tabla es solo un resumen rápido de a quién a
 - Ejemplos por categoría (Basics, Digital, Analog, Communication)
 - i18n español ↔ inglés completo
 - Tooltips en todos los bloques
-- ~80 bloques con generador C++ (solo 1 bug conocido: pow10)
+- ~80 bloques con generador C++ (bugs conocidos resueltos en commit `44ec16a`)
 
 ## Setup Rápido de Desarrollo
 
@@ -466,6 +476,61 @@ rules.push({
 Si el bloque corresponde a una función Arduino, verificar que esté documentada en `arduino-language-reference`.
 
 ---
+
+## Bloques _advanced — 2026-06-04
+
+18 variantes avanzadas implementadas (commit 550b5c2). Cada bloque `_advanced` reemplaza `field_number`/`field_dropdown` por `input_value` con `check: "Number"`, permitiendo usar variables y expresiones en lugar de valores fijos. Aparecen en el toolbox con `level: 3`.
+
+### Patrón _advanced
+
+**Definición:**
+```json
+{
+    "type": "X_advanced",
+    "message0": "mismo Blockly.Msg que intermedio",
+    "args0": [
+      { "type": "input_value", "name": "PIN", "check": "Number" },
+      // field_dropdown se conserva para opciones semánticas (MODE, VALUE, TYPE)
+      { "type": "field_dropdown", "name": "MODE", "options": [...] }
+    ],
+    "colour": MISMO_COLOR_QUE_INTERMEDIO,
+    "tooltip": "Nivel Avanzado. X puede ser variable o expresión...",
+    ...
+}
+```
+
+**Generador:**
+```js
+cppGenerator.forBlock['X_advanced'] = function(block) {
+  const pin = cppGenerator.valueToCode(block, 'PIN', cppGenerator.ORDER_ATOMIC) || 'default';
+  const mode = block.getFieldValue('MODE'); // dropdown se lee igual
+  return 'funcion(' + pin + ', ' + mode + ');\n';
+};
+```
+
+**Toolbox (blocks.js):** `{ 'kind': 'block', 'type': 'X_advanced', 'level': 3 }`
+
+### Bloques implementados
+
+| Categoría | Archivo | Bloques _advanced |
+|-----------|---------|-------------------|
+| Digital | digital.js | pin_mode, digital_write, digital_read (ya existían) |
+| Analógico | analoga.js | analog_read (existente), analog_write |
+| Serial | serial.js | serial_begin |
+| Tiempo | tiempo.js | delay_ms (existente) |
+| Avanzada | avanzada.js | tone_output (existente), tone_duration, no_tone_output, pulse_in, attach_interrupt |
+| Sensores | sensores.js | dht_create, ultrasonic_create |
+| LCD | lcd.js | lcd_create, lcd_i2c_create, lcd_set_cursor |
+| Servo | servo.js | servo_create, servo_write, servo_write_us |
+| Motor | motor.js | stepper_create, stepper_speed, stepper_step |
+| Matemáticas | matematicas.js | map_value |
+
+**Total: 24 bloques _advanced** (6 existentes + 18 nuevos). 35 bloques Arduino restantes no tienen versión avanzada (value blocks sin parámetros numéricos o estructurales como setup/loop/millis).
+
+### Bloques que NO necesitan _advanced
+
+No tienen parámetros numéricos que puedan ser variables: arduino_setup, arduino_loop, include_header, millis, serial_available, serial_read, serial_parse_int, serial_parse_float, serial_read_string, serial_print, serial_println, serial_write, lcd_print, lcd_clear, dht_temp, dht_humidity, ultrasonic_read.
+
 
 ## Referencias (Skills de Hermes)
 
