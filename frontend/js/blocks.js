@@ -21,9 +21,13 @@ initLanguage();
 registerFieldAngle();
 
 // Reemplazar bloques de procedimientos built-in por los shareables
-unregisterProcedureBlocks();
+try { unregisterProcedureBlocks(); } catch(e) {
+  console.warn('[ArduBlock] unregisterProcedureBlocks:', e.message);
+}
 Blockly.common.defineBlocks(procBlocks);
-registerProcedureSerializer();
+try { registerProcedureSerializer(); } catch(e) {
+  console.warn('[ArduBlock] registerProcedureSerializer:', e.message);
+}
 
 // ─── App Inventor: paleta de colores compartida ───
 // Todos los bloques built-in de Blockly que App Inventor también
@@ -31,6 +35,10 @@ registerProcedureSerializer();
 // los 7 estilos: loop, logic, math, text, list, variable, procedure).
 // Solo redefinimos controls_if y sus hijos porque usan
 // style:"logic_blocks" built-in pero deben ir en Control (ámbar).
+// Borramos las definiciones built-in antes para evitar el warning
+// "Block definition X overwrites previous definition".
+['controls_if', 'controls_if_if', 'controls_if_elseif', 'controls_if_else']
+  .forEach(t => delete Blockly.Blocks[t]);
 Blockly.common.defineBlocksWithJsonArray([
   {
     type: 'controls_if',
