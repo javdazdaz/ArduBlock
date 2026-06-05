@@ -116,6 +116,8 @@ export function applySettings(s) {
   const uiFont = s.fontUi + 'px';
   document.querySelector('header').style.fontSize = uiFont;
   document.querySelector('.arduino-toolbar') && (document.querySelector('.arduino-toolbar').style.fontSize = uiFont);
+  const hamburgerMenu = document.getElementById('hamburger-menu');
+  if (hamburgerMenu) hamburgerMenu.style.fontSize = uiFont;
   const codeFont = s.fontCode + 'px';
   document.getElementById('code-view-ino').style.fontSize = codeFont;
   document.getElementById('code-edit-h').style.fontSize = codeFont;
@@ -140,7 +142,7 @@ export function applySettings(s) {
   Blockly.serialization.workspaces.load(state, workspace);
 
   const toolboxFont = s.fontToolbox + 'px';
-  document.querySelectorAll('.blocklyToolboxCategoryLabel, .blocklyTreeRow, .blocklyTreeLabel').forEach(el => {
+  document.querySelectorAll('.blocklyToolboxCategoryLabel, .blocklyToolboxCategory').forEach(el => {
     el.style.fontSize = toolboxFont;
   });
 }
