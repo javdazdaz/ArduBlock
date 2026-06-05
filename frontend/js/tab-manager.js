@@ -297,8 +297,10 @@ export function loadTabs(tabData, sketchName = null) {
  */
 export function setSketchName(name) {
   if (!tabs || !tabs.length) return;
+  const oldName = tabs[0].filename;
   tabs[0].filename = name;
-  if (activeFilename === tabs[0].filename || activeFilename === 'sketch.ino') {
+  // Actualizar activeFilename si apuntaba al tab del sketch
+  if (activeFilename === oldName || activeFilename === 'sketch.ino') {
     activeFilename = name;
   }
   _renderTabs();
@@ -342,22 +344,27 @@ export function setCodeTheme(isDark) {
 
 function _showActiveTab() {
   const tab = tabs.find(t => t.filename === activeFilename);
-  if (tab && tab.readonly) {
+  // Si no encuentra el tab, mostrar el .ino por defecto
+  if (!tab) {
+    inoContainer.style.display = '';
+    hContainer.style.display = 'none';
+    if (typeof window.updateCode === 'function') window.updateCode();
+    return;
+  }
+  if (tab.readonly) {
     inoContainer.style.display = '';
     hContainer.style.display = 'none';
     if (typeof window.updateCode === 'function') window.updateCode();
   } else {
     inoContainer.style.display = 'none';
     hContainer.style.display = '';
-    if (tab) {
-      hView.dispatch({
-        changes: {
-          from: 0,
-          to: hView.state.doc.length,
-          insert: tab.content
-        }
-      });
-    }
+    hView.dispatch({
+      changes: {
+        from: 0,
+        to: hView.state.doc.length,
+        insert: tab.content
+      }
+    });
     hView.focus();
     _updateLineCount();
   }
