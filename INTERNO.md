@@ -1,6 +1,6 @@
 # Registro de Commits — ArduBlock
 
-Última actualización: 2026-06-05 (menú hamburguesa)
+Última actualización: 2026-06-05 (tests generador)
 
 ## ✅ Paleta App Inventor — Colores de bloques compartidos
 
@@ -34,6 +34,8 @@ Commits ordenados del más reciente al más antiguo.
 
 | Fecha | Hash | Descripción |
 |-------|------|-------------|
+| 2026-06-05 | `10e68c9` | test: 53 tests de generadores C++ cubriendo 14 categorías (Digital a Motor) |
+| 2026-06-05 | `732fae3` | fix: menú hamburguesa y toolbox escalan con fontUi/fontToolbox — em dinámico |
 | 2026-06-05 | `a8cdd6c` | feat: menú hamburguesa ☰ con Nuevo, Abrir, Ejemplos, Exportar, Configuración |
 | 2026-06-05 | `de3dcf9` | feat: exportar sketch como .zip con metadatos (placa, nivel, fecha) y tabs .h |
 | 2026-06-04 | `44ec16a` | fix: pow10 para AVR, elimina generador duplicado, validación R9 Serial sin begin |
@@ -75,16 +77,16 @@ Commits ordenados del más reciente al más antiguo.
 ## Resumen por categoría
 
 - **feat**: 10 commits (selector de placa, navegación ejemplos, Serial avanzados, tabs .h, CodeMirror 6, selector de nivel, pin_mode progresivo, exportar sketch, menú hamburguesa)
-- **fix**: 8 commits (ESLint, catch vacíos, rate limiting, doble coma, serialización, imports)
+- **fix**: 9 commits (ESLint, catch vacíos, rate limiting, doble coma, serialización, imports, escalado UI menú/toolbox)
 - **refactor**: 3 commits (states JSON, extracción blockly-states, modularización bloques en 14 archivos)
 - **docs**: 3 commits (roadmap, validación R1-R7, README instalación)
 - **ejemplos**: 6 commits (conversión Basics, Digital, Communication, clasificación)
-- **tests**: 1 commit (cobertura 5→32 tests)
+- **tests**: 2 commits (cobertura 5→32 tests, +53 tests generador → 90 total)
 - **chore**: 1 commit (vite + vitest)
 - **plugins**: 1 commit (fixed-edges, shareable-procedures)
 - **procedures**: 1 commit (parámetros tipados)
 
-Total: 35 commits entre 2026-05-31 y 2026-06-05.
+Total: 36 commits entre 2026-05-31 y 2026-06-05.
 
 ---
 
@@ -208,8 +210,9 @@ Contexto educativo: profesores y estudiantes son hispanohablantes. El inglés es
 - Placas ARM (Due, Zero, MKR): dependencias documentadas en `board.js` pero no probadas físicamente
 
 ### Cobertura de tests
-- 32 tests (commit `148e548`), enfocados en variables + validación
-- Sin tests para: generador C++, serialización de ejemplos, upload pipeline, serial monitor
+- 90 tests (commit `10e68c9`): 17 validación + 53 generadores + 15 integración + 5 tema
+- Generadores: 14 de 17 categorías cubiertas. Faltan ~36 bloques (_advanced/_basic y bloques raros)
+- Sin tests para: upload pipeline (requiere Flask), serial monitor (requiere WebSocket)
 - Tests corren con Vitest + jsdom (para DOM de Blockly)
 
 ### Deuda de código
@@ -300,7 +303,7 @@ Prioridad: 🔴 bloqueante para clase → 🟡 primera semana → 🟢 experienc
 #### 🔴 Bloqueantes — sin esto no hay clase
 - [x] **Fix: `pow10()` no existe en AVR** — ✅ RESUELTO (commit actual) — `math_single POW10` genera error de compilación en UNO/Nano/Mega. Fix: 1 línea en generador. Afecta: alumno
 - [x] **Exportar sketch como .ino** — ✅ RESUELTO (`de3dcf9`) — descarga .zip con sketch.ino + .h, metadatos (placa/nivel/fecha)
-- [ ] **Tests de generador C++** — validar que cada bloque produce código sintácticamente correcto. 86 bloques, 0 tests. Cada refactor es a ciegas. Afecta: docente
+- [x] **Tests de generador C++** — 🟢 INICIADO (`10e68c9`) — 53 tests cubriendo 14 categorías (Digital, Tiempo, Serial, Analógico, Matemáticas, Control, Lógica, Texto, Servo, LCD, Arrays, Sensores, Motor, Avanzado). Suite total: 90 tests. Faltan ~36 bloques (variantes _advanced/_basic y bloques menos usados: logic_negate, logic_ternary, math_constrain, etc.)
 - [ ] **Sistema de Actividades** — formato `.ardublock-actividad` con 3 capacidades incrementales:
   1. **Placeholders**: bloques sombra bloqueados (no borrables) que el alumno debe reemplazar con su implementación
   2. **Protección de bloques**: bloques fijos (no movibles, no borrables) en zonas designadas del workspace, para entregar workspaces semi-completos
@@ -343,7 +346,7 @@ detalles de implementación. Esta tabla es solo un resumen rápido de a quién a
 |---|-----------|-----|----------------|
 | 1 | ✅ | `pow10()` no existe en AVR → error de compilación | Alumno con UNO/Nano/Mega |
 | 2 | ✅ | Exportar sketch como .ino (zip con .ino + .h, metadatos) | Docente corrigiendo |
-| 3 | 🔴 | Tests del generador C++ (86 bloques, 0 tests) | Docente cuando algo falla |
+| 3 | 🟢 | Tests del generador C++ (53 tests, 14 categorías, suite 90 total) | Docente cuando algo falla |
 | 4 | 🔴 | Sistema de Actividades: placeholders + protección de bloques (MVP) | Docente preparando clase |
 | 5 | 🟡 | Undo/Redo en tabs .h (CodeMirror, primer paso acotado) | Alumno que borra código sin querer |
 | 6 | ✅ | Validación: Serial.print sin begin | Alumno que no ve output |
@@ -371,6 +374,7 @@ detalles de implementación. Esta tabla es solo un resumen rápido de a quién a
 - i18n español ↔ inglés completo
 - Tooltips en todos los bloques
 - ~80 bloques con generador C++ (bugs conocidos resueltos en commit `44ec16a`)
+- 90 tests: validación R1-R7 (17) + generadores (53) + integración (15) + tema (5)
 
 ## Setup Rápido de Desarrollo
 
