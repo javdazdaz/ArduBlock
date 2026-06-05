@@ -1,6 +1,6 @@
 # Registro de Commits — ArduBlock
 
-Última actualización: 2026-06-05 (revisión de roadmap)
+Última actualización: 2026-06-05 (menú hamburguesa)
 
 ## ✅ Paleta App Inventor — Colores de bloques compartidos
 
@@ -34,6 +34,8 @@ Commits ordenados del más reciente al más antiguo.
 
 | Fecha | Hash | Descripción |
 |-------|------|-------------|
+| 2026-06-05 | `a8cdd6c` | feat: menú hamburguesa ☰ con Nuevo, Abrir, Ejemplos, Exportar, Configuración |
+| 2026-06-05 | `de3dcf9` | feat: exportar sketch como .zip con metadatos (placa, nivel, fecha) y tabs .h |
 | 2026-06-04 | `44ec16a` | fix: pow10 para AVR, elimina generador duplicado, validación R9 Serial sin begin |
 | 2026-06-04 | `46008a9` | pin_mode progresivo: variantes Básico y Avanzado + protección de nivel |
 | 2026-06-04 | `47fbeff` | Selector de nivel Básico/Intermedio/Avanzado con filtro de toolbox |
@@ -72,7 +74,7 @@ Commits ordenados del más reciente al más antiguo.
 
 ## Resumen por categoría
 
-- **feat**: 8 commits (selector de placa, navegación ejemplos, Serial avanzados, tabs .h, CodeMirror 6, selector de nivel, pin_mode progresivo)
+- **feat**: 10 commits (selector de placa, navegación ejemplos, Serial avanzados, tabs .h, CodeMirror 6, selector de nivel, pin_mode progresivo, exportar sketch, menú hamburguesa)
 - **fix**: 8 commits (ESLint, catch vacíos, rate limiting, doble coma, serialización, imports)
 - **refactor**: 3 commits (states JSON, extracción blockly-states, modularización bloques en 14 archivos)
 - **docs**: 3 commits (roadmap, validación R1-R7, README instalación)
@@ -82,7 +84,7 @@ Commits ordenados del más reciente al más antiguo.
 - **plugins**: 1 commit (fixed-edges, shareable-procedures)
 - **procedures**: 1 commit (parámetros tipados)
 
-Total: 33 commits entre 2026-05-31 y 2026-06-04.
+Total: 35 commits entre 2026-05-31 y 2026-06-05.
 
 ---
 
@@ -297,7 +299,7 @@ Prioridad: 🔴 bloqueante para clase → 🟡 primera semana → 🟢 experienc
 
 #### 🔴 Bloqueantes — sin esto no hay clase
 - [x] **Fix: `pow10()` no existe en AVR** — ✅ RESUELTO (commit actual) — `math_single POW10` genera error de compilación en UNO/Nano/Mega. Fix: 1 línea en generador. Afecta: alumno
-- [ ] **Exportar sketch como .ino** — descarga del código generado como `.zip` con `sketch.ino` + tabs `.h`. Incluye comentario de metadatos (placa, nivel, fecha) en el .ino. Usa el nombre del proyecto guardado en localStorage, con prompt de confirmación. Sin export no hay "entrega". Afecta: docente corrigiendo
+- [x] **Exportar sketch como .ino** — ✅ RESUELTO (`de3dcf9`) — descarga .zip con sketch.ino + .h, metadatos (placa/nivel/fecha)
 - [ ] **Tests de generador C++** — validar que cada bloque produce código sintácticamente correcto. 86 bloques, 0 tests. Cada refactor es a ciegas. Afecta: docente
 - [ ] **Sistema de Actividades** — formato `.ardublock-actividad` con 3 capacidades incrementales:
   1. **Placeholders**: bloques sombra bloqueados (no borrables) que el alumno debe reemplazar con su implementación
@@ -308,7 +310,7 @@ Prioridad: 🔴 bloqueante para clase → 🟡 primera semana → 🟢 experienc
 #### 🟡 Primera semana — los alumnos lo van a pedir
 - [ ] **Undo/Redo en tabs .h** — el undo de Blockly ya funciona para bloques, falta solo el historial de CodeMirror en tabs editables. Primer paso acotado. El undo global (bloques + tabs + placa) es post-MVP. Afecta: alumno que borra código sin querer
 - [x] **Validación: Serial.print sin begin** — ✅ RESUELTO (commit actual) — el código compila pero no imprime nada. Frustrante. Afecta: alumno que no ve output
-- [ ] **Menú hamburguesa** — botón ☰ a la izquierda del logo en la toolbar, con opciones: Nuevo, Abrir, Guardar, Exportar, Configuración. Sin esto la UI no tiene navegación clara. Afecta: todos
+- [x] **Menú hamburguesa** — ✅ RESUELTO (`a8cdd6c`) — botón ☰ a la izquierda del logo con Nuevo, Abrir, Ejemplos, Exportar, Configuración
 - [ ] **Tooltips en bloques _advanced** — los tooltips actuales no mencionan que aceptan variables/expresiones en lugar de valores fijos. El alumno avanzado no descubre la capacidad. Afecta: alumno avanzado
 - [x] **Fix: generador duplicado `arduino_for_index`** — ✅ RESUELTO (commit actual) — código muerto en `generator.js`, el de `bucles.js` lo pisa. Afecta: developer (no visible al alumno)
 
@@ -340,12 +342,12 @@ detalles de implementación. Esta tabla es solo un resumen rápido de a quién a
 | # | Prioridad | Qué | A quién afecta |
 |---|-----------|-----|----------------|
 | 1 | ✅ | `pow10()` no existe en AVR → error de compilación | Alumno con UNO/Nano/Mega |
-| 2 | 🔴 | Exportar sketch como .ino (zip con .ino + .h, metadatos) | Docente corrigiendo |
+| 2 | ✅ | Exportar sketch como .ino (zip con .ino + .h, metadatos) | Docente corrigiendo |
 | 3 | 🔴 | Tests del generador C++ (86 bloques, 0 tests) | Docente cuando algo falla |
 | 4 | 🔴 | Sistema de Actividades: placeholders + protección de bloques (MVP) | Docente preparando clase |
 | 5 | 🟡 | Undo/Redo en tabs .h (CodeMirror, primer paso acotado) | Alumno que borra código sin querer |
 | 6 | ✅ | Validación: Serial.print sin begin | Alumno que no ve output |
-| 7 | 🟡 | Menú hamburguesa ☰ (Nuevo, Abrir, Guardar, Exportar) | Todos |
+| 7 | ✅ | Menú hamburguesa ☰ (Nuevo, Abrir, Ejemplos, Exportar, Configuración) | Todos |
 | 8 | 🟡 | Tooltips en bloques _advanced (mencionar que aceptan variables) | Alumno avanzado |
 | 9 | ✅ | Fix: generador duplicado `arduino_for_index` | Developer |
 | 10 | 🟢 | Bloques DC Motor (6 bloques, shield AFMotor/L293D, esfuerzo [L]) | Todos los alumnos |
