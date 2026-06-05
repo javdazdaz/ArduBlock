@@ -46,6 +46,7 @@ import { registerGenerators as regMatematicas } from './blocks/matematicas.js';
 import { registerGenerators as regVariables }  from './blocks/variables.js';
 import { registerGenerators as regArrays }     from './blocks/arrays.js';
 import { registerGenerators as regBucles }     from './blocks/bucles.js';
+import { registerGenerators as regAfmotor }    from './blocks/afmotor.js';
 
 regEstructura(cppGenerator);
 regDigital(cppGenerator);
@@ -61,6 +62,7 @@ regMatematicas(cppGenerator);
 regVariables(cppGenerator);
 regArrays(cppGenerator);
 regBucles(cppGenerator);
+regAfmotor(cppGenerator);
 
 // ═══ Generadores built-in de Blockly ═══════════
 
@@ -423,6 +425,8 @@ export function generateArduinoCode(workspace) {
   cppGenerator._dhtInstances = [];
   cppGenerator._usInstances = [];
   cppGenerator._stepperInstances = [];
+  cppGenerator._afmotorDcInstances = [];
+  cppGenerator._afmotorStepperInstances = [];
   cppGenerator._needsIsPrime = false;
 
   const topBlocks = workspace.getTopBlocks(true);
@@ -537,6 +541,22 @@ export function generateArduinoCode(workspace) {
     sketch += '#include <Stepper.h>\n';
     for (const inst of cppGenerator._stepperInstances) {
       sketch += 'Stepper ' + inst.name + '(' + inst.steps + ', ' + inst.p1 + ', ' + inst.p2 + ', ' + inst.p3 + ', ' + inst.p4 + ');\n';
+    }
+    sketch += '\n';
+  }
+
+  // ── AFMotor DC ──
+  if (cppGenerator._afmotorDcInstances.length > 0) {
+    for (const inst of cppGenerator._afmotorDcInstances) {
+      sketch += 'AF_DCMotor ' + inst.name + '(' + inst.channel + ');\n';
+    }
+    sketch += '\n';
+  }
+
+  // ── AFMotor Stepper ──
+  if (cppGenerator._afmotorStepperInstances.length > 0) {
+    for (const inst of cppGenerator._afmotorStepperInstances) {
+      sketch += 'AF_Stepper ' + inst.name + '(' + inst.steps + ', ' + inst.channel + ');\n';
     }
     sketch += '\n';
   }

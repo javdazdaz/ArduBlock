@@ -130,6 +130,7 @@ import { blocks as matematicasBlocks } from './blocks/matematicas.js';
 import { blocks as variablesBlocks }  from './blocks/variables.js';
 import { blocks as arraysBlocks }     from './blocks/arrays.js';
 import { blocks as buclesBlocks }     from './blocks/bucles.js';
+import { blocks as afmotorBlocks }    from './blocks/afmotor.js';
 
 // ═══ Registrar todos los bloques ═══════════════
 
@@ -148,6 +149,7 @@ const allBlocks = [
   ...variablesBlocks,
   ...arraysBlocks,
   ...buclesBlocks,
+  ...afmotorBlocks,
 ];
 
 Blockly.common.defineBlocksWithJsonArray(allBlocks);
@@ -443,6 +445,15 @@ export function buildToolboxForBoard(fqbn, level) {
           { 'kind': 'block', 'type': 'stepper_speed_advanced', 'level': 3 },
           { 'kind': 'block', 'type': 'stepper_step', 'level': 3 },
           { 'kind': 'block', 'type': 'stepper_step_advanced', 'level': 3 }
+        ]},
+      { 'kind': 'category', 'name': '%{BKY_CAT_AFMOTOR}', 'colour': '310', 'level': 3,
+        'contents': [
+          { 'kind': 'block', 'type': 'afmotor_dc_create', 'level': 3 },
+          { 'kind': 'block', 'type': 'afmotor_dc_speed', 'level': 3 },
+          { 'kind': 'block', 'type': 'afmotor_dc_run', 'level': 3 },
+          { 'kind': 'block', 'type': 'afmotor_stepper_create', 'level': 3 },
+          { 'kind': 'block', 'type': 'afmotor_stepper_speed', 'level': 3 },
+          { 'kind': 'block', 'type': 'afmotor_stepper_step', 'level': 3 }
         ]},
       { 'kind': 'search', 'name': '%{BKY_CAT_BUSCAR}', 'contents': [] }
     ]
