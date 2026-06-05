@@ -121,7 +121,7 @@ function validateWorkspace(workspace) {
     if (block.type === 'include_header') continue; // va suelto, los recolecta el generador
     const statementTypes = [
       'pin_mode', 'digital_write', 'analog_write',
-      'delay_ms', 'serial_print', 'serial_println',
+      'delay_ms', 'serial_print', 'serial_println', 'serial_write',
       'tone_output', 'tone_duration', 'no_tone_output',
       'servo_write', 'servo_write_us', 'attach_interrupt',
       'lcd_print', 'lcd_set_cursor', 'lcd_clear',
@@ -340,6 +340,29 @@ function validateWorkspace(workspace) {
     }
   }
 
+  // ═══ R9: Serial.print sin Serial.begin() ═══════
+  const serialBeginCount = findAllBlocksOfType(workspace, 'serial_begin').length;
+  if (serialBeginCount === 0) {
+    const serialOutputTypes = [
+      'serial_print', 'serial_println', 'serial_write',
+      'serial_read', 'serial_available',
+      'serial_parseInt', 'serial_parseFloat', 'serial_readString'
+    ];
+    const serialOutputBlocks = [];
+    for (const type of serialOutputTypes) {
+      serialOutputBlocks.push(...findAllBlocksOfType(workspace, type));
+    }
+    if (serialOutputBlocks.length > 0) {
+      const labels = [...new Set(serialOutputBlocks.map(b => getBlockLabel(b)))].join(', ');
+      warnings.push({
+        type: 'serial_without_begin',
+        severity: 'warning',
+        message: `Hay bloques de Serial (${labels}) pero no se encontró "iniciar Serial" en setup(). El código compilará pero no verás output en el Monitor Serial.`,
+        blocks: serialOutputBlocks
+      });
+    }
+  }
+
   return warnings;
 }
 
@@ -358,6 +381,12 @@ function getBlockLabel(block) {
     'serial_begin': 'iniciar Serial',
     'serial_print': 'enviar por Serial',
     'serial_println': 'enviar por Serial (salto)',
+    'serial_write': 'escribir byte Serial',
+    'serial_read': 'leer byte Serial',
+    'serial_available': 'bytes disponibles Serial',
+    'serial_parseInt': 'leer entero Serial',
+    'serial_parseFloat': 'leer decimal Serial',
+    'serial_readString': 'leer texto Serial',
     'servo_create': 'crear servo',
     'servo_write': 'mover servo',
     'servo_write_us': 'mover servo (μs)',

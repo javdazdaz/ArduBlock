@@ -210,9 +210,21 @@ Contexto educativo: profesores y estudiantes son hispanohablantes. El inglés es
 - Tests corren con Vitest + jsdom (para DOM de Blockly)
 
 ### Deuda de código
-- `catch` vacíos reemplazados por `console.warn` en `9924b3e`. Pueden quedar casos sin revisar
-- `blocks.js` (1172 LOC) y `generator.js` (1002 LOC) son archivos grandes que se beneficiarían de particionar por categoría
-- Rate limiting global con exención puntual para `serial_read` — patrón frágil si se agregan más endpoints
+- ~~`catch` vacíos~~ → RESUELTO (commit `9924b3e`, 0 restantes en JS y Python)
+- ~~Rate limiting global~~ → RESUELTO (ya no existe en el código)
+- ~~`blocks.js` y `generator.js` monolíticos~~ → RESUELTO (modularizados en 14 archivos de categoría)
+
+### 🔧 Correcciones pendientes en generadores C++
+
+Estos bugs están priorizados en [Próximos pasos](#-próximos-pasos). Aquí el detalle técnico.
+
+| # Roadmap | Prioridad | Bloque | Problema | Board afectada |
+|-----------|-----------|--------|----------|----------------|
+| 1 | 🔴 | `math_single` (POW10) | `pow10()` no existe en AVR — genera error de compilación | UNO, Nano, Mega |
+| 9 | 🟡 | `arduino_for_index` | Generador duplicado en `generator.js` (código muerto, el de `bucles.js` pisa) | Todas |
+| 6 | 🟡 | `text_print` / `serial_print` | Sin validación: si no hay `serial_begin`, imprime a la nada | Todas |
+| 13 | 🟢 | `text_join` | `String()` overhead — riesgo de fragmentación heap en AVR (UNO: 2KB RAM) | UNO, Nano, Mega |
+| — | 🟢 | `tone_output` | `tone()` configura el pin internamente pero no es explícito con `pinMode` | Todas |
 
 ---
 
@@ -234,60 +246,118 @@ Contexto educativo: profesores y estudiantes son hispanohablantes. El inglés es
 
 ### 📋 Bloques pendientes (por categoría Arduino)
 
+Esfuerzo: [S] <30 min (1 campo/bloque) · [M] 1-2 h (bloque nuevo + generador) · [L] días (librería completa, múltiples bloques + tests)
+
 #### Digital I/O
-- [ ] `digitalPinToInterrupt(pin)` — helper para attachInterrupt (expresión)
+- [ ] [S] `digitalPinToInterrupt(pin)` — helper para attachInterrupt (expresión)
 
 #### Analog I/O
-- [ ] `analogReference(type)` — DEFAULT/INTERNAL/EXTERNAL (statement, solo setup)
-- [ ] `analogWrite` — variante _basic con dropdown de pines
-- [ ] `analogRead` — variante _basic con dropdown A0-A15
+- [ ] [S] `analogReference(type)` — DEFAULT/INTERNAL/EXTERNAL (statement, solo setup)
+- [ ] [S] `analogWrite` — variante _basic con dropdown de pines
+- [ ] [S] `analogRead` — variante _basic con dropdown A0-A15
 
 #### Time
-- [ ] `micros()` — microsegundos desde inicio (expresión)
-- [ ] `delayMicroseconds(us)` — espera en microsegundos (statement)
+- [ ] [S] `micros()` — microsegundos desde inicio (expresión)
+- [ ] [S] `delayMicroseconds(us)` — espera en microsegundos (statement)
 
 #### Math
-- [ ] `randomSeed(seed)` — semilla para random (statement, solo setup)
+- [ ] [S] `randomSeed(seed)` — semilla para random (statement, solo setup)
 - [ ] `abs(x)` — valor absoluto (cubierto por math_single)
 - [ ] `sq(x)`, `pow(base, exp)` — potencia (cubierto por math_arithmetic)
 
 #### Bits & Bytes
-- [ ] `bitRead(x, n)` — leer bit n de x (expresión)
-- [ ] `bitWrite(x, n, b)` — escribir bit (statement)
-- [ ] `bitSet(x, n)` / `bitClear(x, n)` — poner/limpiar bit (statement)
-- [ ] `highByte(x)` / `lowByte(x)` — byte alto/bajo (expresión)
+- [ ] [S] `bitRead(x, n)` — leer bit n de x (expresión)
+- [ ] [S] `bitWrite(x, n, b)` — escribir bit (statement)
+- [ ] [S] `bitSet(x, n)` / `bitClear(x, n)` — poner/limpiar bit (statement)
+- [ ] [S] `highByte(x)` / `lowByte(x)` — byte alto/bajo (expresión)
 
 #### Communication — Serial
-- [ ] `Serial.end()` — cerrar comunicación serial
-- [ ] `Serial.flush()` — esperar a que se envíen todos los datos
-- [ ] `serial_print` — variante con formato (DEC/HEX/OCT/BIN) (pitfall conocido)
-- [ ] `serial_println` — variante con formato
+- [ ] [S] `Serial.end()` — cerrar comunicación serial
+- [ ] [S] `Serial.flush()` — esperar a que se envíen todos los datos
+- [ ] [M] `serial_print` — variante con formato (DEC/HEX/OCT/BIN) (pitfall conocido)
+- [ ] [M] `serial_println` — variante con formato
 
 #### Advanced I/O
-- [ ] `shiftOut(dataPin, clockPin, bitOrder, value)` — registro de desplazamiento
-- [ ] `shiftIn(dataPin, clockPin, bitOrder)` — leer registro de desplazamiento
-- [ ] `pulseIn` — variante _basic con dropdown de pin
+- [ ] [M] `shiftOut(dataPin, clockPin, bitOrder, value)` — registro de desplazamiento
+- [ ] [M] `shiftIn(dataPin, clockPin, bitOrder)` — leer registro de desplazamiento
+- [ ] [S] `pulseIn` — variante _basic con dropdown de pin
 
 #### Interrupts
-- [ ] `interrupts()` / `noInterrupts()` — habilitar/deshabilitar interrupciones
+- [ ] [S] `interrupts()` / `noInterrupts()` — habilitar/deshabilitar interrupciones
 
-#### Librerías externas (bloques nuevos)
+#### Librerías externas [L] — requieren diseño de API + múltiples bloques + tests
 - [ ] **EEPROM**: `eeprom_read(addr)`, `eeprom_write(addr, val)`, `eeprom_length()`
 - [ ] **Wire (I2C)**: `wire_begin()`, `wire_beginTransmission(addr)`, `wire_write(val)`, `wire_endTransmission()`, `wire_requestFrom(addr, n)`, `wire_read()`
 - [ ] **SPI**: `spi_begin()`, `spi_transfer(val)`, `spi_end()`
 - [ ] **SoftwareSerial**: `softserial_create(rx, tx)`, `softserial_begin(baud)`, `softserial_print/println`
 - [ ] **WiFi** (ESP32 / UNO R4): `wifi_connect(ssid, pass)`, `wifi_status()`, `wifi_localIP()`
 
-### 🔜 Próximos pasos (sin orden fijo)
-- [ ] **Dark mode completo** — toolbar, modales, panel de ejemplos (CodeMirror ya tiene tema oscuro)
-- [ ] **Undo/Redo global** — el historial de Blockly no cubre cambios de tabs .h ni selección de placa
-- [ ] **Exportar sketch como .ino** — descarga del código generado con los .h incluidos
+### 🔜 Próximos pasos
+
+Prioridad: 🔴 bloqueante para clase → 🟡 primera semana → 🟢 experiencia → ⬜ post-MVP
+
+#### 🔴 Bloqueantes — sin esto no hay clase
+- [ ] **Fix: `pow10()` no existe en AVR** — `math_single POW10` genera error de compilación en UNO/Nano/Mega. Fix: 1 línea en generador. Afecta: alumno
+- [ ] **Exportar sketch como .ino** — descarga del código generado con los .h incluidos. Sin export no hay "entrega". Afecta: docente corrigiendo
+- [ ] **Tests de generador C++** — validar que cada bloque produce código sintácticamente correcto. 86 bloques, 0 tests. Cada refactor es a ciegas. Afecta: docente
+- [ ] **Sistema de Actividades** — formato `.ardublock-actividad`, placeholders, protección de bloques, validación de completitud. Sin esto el docente no puede entregar workspaces semi-completos. Afecta: docente preparando clase
+
+#### 🟡 Primera semana — los alumnos lo van a pedir
+- [ ] **Undo/Redo global** — el historial de Blockly no cubre cambios de tabs .h ni selección de placa. Afecta: alumno que borra sin querer
+- [ ] **Validación: Serial.print sin begin** — el código compila pero no imprime nada. Frustrante. Afecta: alumno que no ve output
+- [ ] **Menú hamburguesa** — botón ☰ a la izquierda del logo en la toolbar, con opciones: Nuevo, Abrir, Guardar, Exportar, Configuración. Sin esto la UI no tiene navegación clara. Afecta: todos
+- [ ] **Bloques DC Motor** — `avanzar`, `retroceder`, `girarIzq`, `girarDer`, `detener`, `setSpeed` para shield AFMotor/L293D. Sin esto el currículum entero no funciona. Afecta: todos los alumnos
+- [ ] **Fix: generador duplicado `arduino_for_index`** — código muerto en `generator.js`, el de `bucles.js` lo pisa. Afecta: developer (no visible al alumno)
+
+#### 🟢 Experiencia — dolor acumulativo
+- [ ] **Dark mode completo** — toolbar, modales, panel de ejemplos (CodeMirror ya tiene tema oscuro). Afecta: clase con proyector
+- [ ] **`beforeunload` al cerrar** — confirmación si hay cambios no guardados. Afecta: alumno que cierra sin querer
+- [ ] **Bloques progresivos faltantes** — `analogWrite_basic`, `pulseIn_basic`. Afecta: alumno avanzado
+- [ ] **Advertencia `text_join`** — `String()` fragmenta heap en AVR. Con 4-5 concat puede crashear en UNO (2KB RAM). Afecta: alumno en UNO
+
+#### ⬜ Post-MVP — sin urgencia de aula
 - [ ] **Importar .ino existente** — parseo inverso: C++ → bloques (alcance limitado, solo patrones reconocibles)
 - [ ] **Monitor Serial: gráfico** — plotter básico de valores numéricos
-- [ ] **Tests de generador C++** — validar que cada bloque produce código sintácticamente correcto
 - [ ] **CI/CD** — GitHub Actions para lint + tests + build en cada push
 
+
+
 ---
+
+## 🎯 MVP de Aula — Lo que falta para usar en clase
+
+Análisis de brecha entre el estado actual y lo mínimo necesario para una clase real.
+Los ítems accionables están en [Próximos pasos](#-próximos-pasos) con prioridad y
+detalles de implementación. Esta tabla es solo un resumen rápido de a quién afecta.
+
+| # | Prioridad | Qué | A quién afecta |
+|---|-----------|-----|----------------|
+| 1 | 🔴 | `pow10()` no existe en AVR → error de compilación | Alumno con UNO/Nano/Mega |
+| 2 | 🔴 | Exportar sketch como .ino | Docente corrigiendo |
+| 3 | 🔴 | Tests del generador C++ (86 bloques, 0 tests) | Docente cuando algo falla |
+| 4 | 🔴 | Sistema de Actividades (placeholders, protección de bloques) | Docente preparando clase |
+| 5 | 🟡 | Undo/Redo global (tabs .h, selector placa) | Alumno que borra sin querer |
+| 6 | 🟡 | Validación: Serial.print sin begin | Alumno que no ve output |
+| 7 | 🟡 | Menú hamburguesa ☰ (Nuevo, Abrir, Guardar, Exportar) | Todos |
+| 8 | 🟡 | Bloques DC Motor (6 bloques para shield AFMotor/L293D) | Todos los alumnos |
+| 9 | 🟡 | Fix: generador duplicado `arduino_for_index` | Developer |
+| 10 | 🟢 | Dark mode completo (toolbar, modales, panel ejemplos) | Clase con proyector |
+| 11 | 🟢 | `beforeunload` al cerrar (confirmación cambios no guardados) | Alumno que cierra sin querer |
+| 12 | 🟢 | Bloques progresivos faltantes (`analogWrite_basic`, `pulseIn_basic`) | Alumno avanzado |
+| 13 | 🟢 | Advertencia `text_join` (fragmentación heap en AVR) | Alumno en UNO |
+| 14 | ⬜ | Importar .ino existente (C++ → bloques) | Alumno/Docente |
+| 15 | ⬜ | Monitor Serial: gráfico (plotter numérico) | Alumno |
+| 16 | ⬜ | CI/CD (GitHub Actions: lint + tests + build) | Developer |
+
+### ✅ Lo que ya está sólido para MVP
+
+- Validador R1-R7: setup/loop, pines, modos, rangos, huérfanos, servo, librerías
+- Upload: detecta placa, compila, muestra errores, reconecta Serial
+- Autosave cada 2s en localStorage
+- Ejemplos por categoría (Basics, Digital, Analog, Communication)
+- i18n español ↔ inglés completo
+- Tooltips en todos los bloques
+- ~80 bloques con generador C++ (solo 1 bug conocido: pow10)
 
 ## Setup Rápido de Desarrollo
 

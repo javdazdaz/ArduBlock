@@ -85,25 +85,6 @@ cppGenerator.forBlock['controls_for'] = function(block) {
   return code;
 };
 
-// ── arduino_for_index (custom, field_input) ──
-cppGenerator.forBlock['arduino_for_index'] = function(block) {
-  const varName = block.getFieldValue('VAR') || 'i';
-  const from = cppGenerator.valueToCode(block, 'FROM',
-    cppGenerator.ORDER_NONE) || '0';
-  const to = cppGenerator.valueToCode(block, 'TO',
-    cppGenerator.ORDER_NONE) || '10';
-  const by = cppGenerator.valueToCode(block, 'BY',
-    cppGenerator.ORDER_NONE) || '1';
-  const branch = cppGenerator.statementToCode(block, 'DO');
-
-  let code = 'for (int ' + varName + ' = ' + from + '; '
-           + varName + ' <= ' + to + '; '
-           + varName + ' += ' + by + ') {\n';
-  code += branch || '  //\n';
-  code += '}\n';
-  return code;
-};
-
 // ── math_number ──────────────────────────────
 cppGenerator.forBlock['math_number'] = function(block) {
   const num = Number(block.getFieldValue('NUM'));
@@ -328,6 +309,10 @@ cppGenerator.forBlock['math_single'] = function(block) {
     'SIN': 'sin', 'COS': 'cos', 'TAN': 'tan',
     'ASIN': 'asin', 'ACOS': 'acos', 'ATAN': 'atan'
   };
+  // pow10() no existe en AVR libc — usar pow(10.0, x)
+  if (op === 'POW10') {
+    return ['pow(10.0, ' + arg + ')', cppGenerator.ORDER_ATOMIC];
+  }
   const func = funcMap[op] || op.toLowerCase();
   if (func === '-') {
     return ['-' + arg, cppGenerator.ORDER_UNARY];
