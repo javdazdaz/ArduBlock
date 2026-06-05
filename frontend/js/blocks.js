@@ -327,6 +327,7 @@ export function buildToolboxForBoard(fqbn, level) {
         'contents': [
           { 'kind': 'block', 'type': 'analog_write_basic', 'level': 1 },
           { 'kind': 'block', 'type': 'analog_write', 'level': 2 },
+          { 'kind': 'block', 'type': 'analog_write_advanced', 'level': 3 },
           { 'kind': 'block', 'type': 'analog_read_basic', 'level': 2 },
           { 'kind': 'block', 'type': 'analog_read', 'level': 2 },
           { 'kind': 'block', 'type': 'analog_read_advanced', 'level': 3 }
@@ -337,10 +338,14 @@ export function buildToolboxForBoard(fqbn, level) {
           { 'kind': 'block', 'type': 'tone_output', 'level': 2 },
           { 'kind': 'block', 'type': 'tone_output_advanced', 'level': 3 },
           { 'kind': 'block', 'type': 'tone_duration', 'level': 2 },
+          { 'kind': 'block', 'type': 'tone_duration_advanced', 'level': 3 },
           { 'kind': 'block', 'type': 'no_tone_output', 'level': 2 },
+          { 'kind': 'block', 'type': 'no_tone_output_advanced', 'level': 3 },
           { 'kind': 'block', 'type': 'pulse_in_basic', 'level': 1 },
           { 'kind': 'block', 'type': 'pulse_in', 'level': 2 },
-          { 'kind': 'block', 'type': 'attach_interrupt', 'level': 3 }
+          { 'kind': 'block', 'type': 'pulse_in_advanced', 'level': 3 },
+          { 'kind': 'block', 'type': 'attach_interrupt', 'level': 3 },
+          { 'kind': 'block', 'type': 'attach_interrupt_advanced', 'level': 3 }
         ]},
       { 'kind': 'category', 'name': '%{BKY_CAT_TIEMPO}', 'colour': '270', 'level': 1,
         'contents': [
@@ -358,11 +363,13 @@ export function buildToolboxForBoard(fqbn, level) {
           { 'kind': 'block', 'type': 'math_modulo', 'level': 3 },
           { 'kind': 'block', 'type': 'math_constrain', 'level': 3 },
           { 'kind': 'block', 'type': 'map_value', 'level': 3 },
+          { 'kind': 'block', 'type': 'map_value_advanced', 'level': 3 },
           { 'kind': 'block', 'type': 'math_number_property', 'level': 3 }
         ]},
       { 'kind': 'category', 'name': '%{BKY_CAT_SERIAL}', 'colour': '20', 'level': 1,
         'contents': [
           { 'kind': 'block', 'type': 'serial_begin', 'level': 2 },
+          { 'kind': 'block', 'type': 'serial_begin_advanced', 'level': 3 },
           { 'kind': 'block', 'type': 'serial_print', 'level': 2 },
           { 'kind': 'block', 'type': 'serial_println', 'level': 1 },
           { 'kind': 'block', 'type': 'serial_available', 'level': 3 },
@@ -400,30 +407,41 @@ export function buildToolboxForBoard(fqbn, level) {
       { 'kind': 'category', 'name': '%{BKY_CAT_SENSORES}', 'colour': '80', 'level': 2,
         'contents': [
           { 'kind': 'block', 'type': 'dht_create', 'level': 3 },
+          { 'kind': 'block', 'type': 'dht_create_advanced', 'level': 3 },
           { 'kind': 'block', 'type': 'dht_temp', 'level': 3 },
           { 'kind': 'block', 'type': 'dht_humidity', 'level': 3 },
           { 'kind': 'block', 'type': 'ultrasonic_create', 'level': 2 },
+          { 'kind': 'block', 'type': 'ultrasonic_create_advanced', 'level': 3 },
           { 'kind': 'block', 'type': 'ultrasonic_read', 'level': 2 }
         ]},
       { 'kind': 'category', 'name': '%{BKY_CAT_PANTALLA}', 'colour': '340', 'level': 3,
         'contents': [
           { 'kind': 'block', 'type': 'lcd_create', 'level': 3 },
+          { 'kind': 'block', 'type': 'lcd_create_advanced', 'level': 3 },
           { 'kind': 'block', 'type': 'lcd_i2c_create', 'level': 3 },
+          { 'kind': 'block', 'type': 'lcd_i2c_create_advanced', 'level': 3 },
           { 'kind': 'block', 'type': 'lcd_print', 'level': 3 },
           { 'kind': 'block', 'type': 'lcd_set_cursor', 'level': 3 },
+          { 'kind': 'block', 'type': 'lcd_set_cursor_advanced', 'level': 3 },
           { 'kind': 'block', 'type': 'lcd_clear', 'level': 3 }
         ]},
       { 'kind': 'category', 'name': '%{BKY_CAT_SERVO}', 'colour': '300', 'level': 2,
         'contents': [
           { 'kind': 'block', 'type': 'servo_create', 'level': 2 },
+          { 'kind': 'block', 'type': 'servo_create_advanced', 'level': 3 },
           { 'kind': 'block', 'type': 'servo_write', 'level': 2 },
-          { 'kind': 'block', 'type': 'servo_write_us', 'level': 3 }
+          { 'kind': 'block', 'type': 'servo_write_advanced', 'level': 3 },
+          { 'kind': 'block', 'type': 'servo_write_us', 'level': 3 },
+          { 'kind': 'block', 'type': 'servo_write_us_advanced', 'level': 3 }
         ]},
       { 'kind': 'category', 'name': '%{BKY_CAT_MOTOR}', 'colour': '310', 'level': 3,
         'contents': [
           { 'kind': 'block', 'type': 'stepper_create', 'level': 3 },
+          { 'kind': 'block', 'type': 'stepper_create_advanced', 'level': 3 },
           { 'kind': 'block', 'type': 'stepper_speed', 'level': 3 },
-          { 'kind': 'block', 'type': 'stepper_step', 'level': 3 }
+          { 'kind': 'block', 'type': 'stepper_speed_advanced', 'level': 3 },
+          { 'kind': 'block', 'type': 'stepper_step', 'level': 3 },
+          { 'kind': 'block', 'type': 'stepper_step_advanced', 'level': 3 }
         ]},
       { 'kind': 'search', 'name': '%{BKY_CAT_BUSCAR}', 'contents': [] }
     ]

@@ -26,6 +26,18 @@ export const blocks = [
     "helpUrl": ""
   },
 {
+    "type": "serial_begin_advanced",
+    "message0": Blockly.Msg.MSG_SERIAL_BEGIN,
+    "args0": [
+      { "type": "input_value", "name": "BAUD", "check": "Number" }
+    ],
+    "previousStatement": null,
+    "nextStatement": null,
+    "colour": 20,
+    "tooltip": "Nivel Avanzado. El baud rate puede ser una variable o expresión. Permite cambiar la velocidad de comunicación dinámicamente.",
+    "helpUrl": ""
+  },
+{
     "type": "serial_print",
     "message0": Blockly.Msg.MSG_SERIAL_PRINT,
     "args0": [
@@ -112,6 +124,11 @@ export function registerGenerators(cppGenerator) {
 // ── serial_begin ─────────────────────────────
 cppGenerator.forBlock['serial_begin'] = function(block) {
   const baud = block.getFieldValue('BAUD');
+  return 'Serial.begin(' + baud + ');\n';
+};
+// ── serial_begin_advanced (N3) ──────────────
+cppGenerator.forBlock['serial_begin_advanced'] = function(block) {
+  const baud = cppGenerator.valueToCode(block, 'BAUD', cppGenerator.ORDER_ATOMIC) || '9600';
   return 'Serial.begin(' + baud + ');\n';
 };
 // ── serial_print ─────────────────────────────

@@ -19,6 +19,19 @@ export const blocks = [
     "helpUrl": ""
   },
 {
+    "type": "analog_write_advanced",
+    "message0": Blockly.Msg.MSG_ANALOG_WRITE,
+    "args0": [
+      { "type": "input_value", "name": "PIN", "check": "Number" },
+      { "type": "input_value", "name": "VALUE", "check": "Number" }
+    ],
+    "previousStatement": null,
+    "nextStatement": null,
+    "colour": 40,
+    "tooltip": "Nivel Avanzado. El pin y el valor PWM pueden ser variables o expresiones. Permite control PWM completamente dinámico.",
+    "helpUrl": ""
+  },
+{
     "type": "analog_write_basic",
     "message0": Blockly.Msg.MSG_ANALOG_WRITE,
     "args0": [
@@ -82,6 +95,12 @@ export function registerGenerators(cppGenerator) {
 // ── analog_write ─────────────────────────────
 cppGenerator.forBlock['analog_write'] = function(block) {
   const pin   = block.getFieldValue('PIN');
+  const value = cppGenerator.valueToCode(block, 'VALUE', cppGenerator.ORDER_ATOMIC) || '0';
+  return 'analogWrite(' + pin + ', ' + value + ');\n';
+};
+// ── analog_write_advanced (N3) ───────────────
+cppGenerator.forBlock['analog_write_advanced'] = function(block) {
+  const pin   = cppGenerator.valueToCode(block, 'PIN', cppGenerator.ORDER_ATOMIC) || '9';
   const value = cppGenerator.valueToCode(block, 'VALUE', cppGenerator.ORDER_ATOMIC) || '0';
   return 'analogWrite(' + pin + ', ' + value + ');\n';
 };
