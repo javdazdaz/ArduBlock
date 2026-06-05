@@ -291,6 +291,7 @@ export function buildToolboxForBoard(fqbn, level) {
         'contents': [
           { 'kind': 'block', 'type': 'arduino_setup', 'level': 1 },
           { 'kind': 'block', 'type': 'arduino_loop', 'level': 1 },
+          { 'kind': 'block', 'type': 'library_include', 'level': 3 },
           { 'kind': 'block', 'type': 'include_header', 'level': 3 }
         ]},
       { 'kind': 'category', 'name': '%{BKY_CAT_CONTROL}', 'colour': '#cfac4b', 'level': 1,

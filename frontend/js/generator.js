@@ -472,11 +472,14 @@ export function generateArduinoCode(workspace) {
   // ── Recolectar #include: bloque include_header + tabs .h del proyecto ──
   const userIncludes = [];
 
-  // 1. Bloques include_header del workspace
+  // 1. Bloques include_header y library_include del workspace
   for (const b of allBlocks) {
     if (b.type === 'include_header') {
       const file = (b.getFieldValue('FILE') || '').trim();
       if (file) userIncludes.push(file);
+    } else if (b.type === 'library_include') {
+      const lib = (b.getFieldValue('LIB') || '').trim();
+      if (lib) userIncludes.push(lib);
     }
   }
 

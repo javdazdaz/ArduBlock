@@ -36,6 +36,18 @@ export const blocks = [
     "colour": 200,
     "tooltip": Blockly.Msg.TOOLTIP_INCLUDE_HEADER,
     "helpUrl": ""
+  },
+{
+    "type": "library_include",
+    "message0": Blockly.Msg.MSG_LIBRARY_INCLUDE,
+    "args0": [
+      { "type": "field_dropdown", "name": "LIB", "options": [
+        ["AFMotor_R4.h", "AFMotor_R4.h"]
+      ]}
+    ],
+    "colour": 200,
+    "tooltip": Blockly.Msg.TOOLTIP_LIBRARY_INCLUDE,
+    "helpUrl": ""
   }
 ];
 
@@ -50,8 +62,14 @@ cppGenerator.forBlock['arduino_loop'] = function(block) {
   const body = cppGenerator.statementToCode(block, 'BODY');
   return body || '  // sin instrucciones\n';
 };
-// normal y se recolecta vía workspace.getAllBlocks().
+// ── include_header ───────────────────────────
+// Se recolecta en generateArduinoCode vía getAllBlocks()
 cppGenerator.forBlock['include_header'] = function(_block) {
+  return '';
+};
+// ── library_include ──────────────────────────
+// Se recolecta en generateArduinoCode vía getAllBlocks()
+cppGenerator.forBlock['library_include'] = function(_block) {
   return '';
 };
 }
