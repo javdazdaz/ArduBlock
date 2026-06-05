@@ -447,14 +447,7 @@ export function buildToolboxForBoard(fqbn, level) {
           { 'kind': 'block', 'type': 'stepper_step_advanced', 'level': 3 }
         ]},
       { 'kind': 'category', 'name': '%{BKY_CAT_AFMOTOR}', 'colour': '310', 'level': 3,
-        'contents': [
-          { 'kind': 'block', 'type': 'afmotor_dc_create', 'level': 3 },
-          { 'kind': 'block', 'type': 'afmotor_dc_speed', 'level': 3 },
-          { 'kind': 'block', 'type': 'afmotor_dc_run', 'level': 3 },
-          { 'kind': 'block', 'type': 'afmotor_stepper_create', 'level': 3 },
-          { 'kind': 'block', 'type': 'afmotor_stepper_speed', 'level': 3 },
-          { 'kind': 'block', 'type': 'afmotor_stepper_step', 'level': 3 }
-        ]},
+        'custom': 'CAT_AFMOTOR' },
       { 'kind': 'search', 'name': '%{BKY_CAT_BUSCAR}', 'contents': [] }
     ]
   };

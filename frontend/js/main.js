@@ -433,6 +433,33 @@ window._clearActivityMeta = () => {
 };
 window._isActivityLoaded = isActivityLoaded;
 
+// ═══ Toolbox dinámico: Motor AF solo si hay AFMotor_R4.h ═══
+workspace.registerToolboxCategoryCallback('CAT_AFMOTOR', function(_ws) {
+  const allBlocks = _ws.getAllBlocks(false);
+  const hasAfmotor = allBlocks.some(b =>
+    b.type === 'library_include' && b.getFieldValue('LIB') === 'AFMotor_R4.h'
+  );
+  if (!hasAfmotor) return [];
+
+  return [
+    { kind: 'block', type: 'afmotor_dc_create' },
+    { kind: 'block', type: 'afmotor_dc_speed' },
+    { kind: 'block', type: 'afmotor_dc_run' },
+    { kind: 'block', type: 'afmotor_stepper_create' },
+    { kind: 'block', type: 'afmotor_stepper_speed' },
+    { kind: 'block', type: 'afmotor_stepper_step' },
+  ];
+});
+
+// Refrescar toolbox cuando cambian los bloques
+workspace.addChangeListener((event) => {
+  if (event.type === Blockly.Events.BLOCK_CREATE ||
+      event.type === Blockly.Events.BLOCK_DELETE ||
+      event.type === Blockly.Events.BLOCK_CHANGE) {
+    workspace.refreshToolboxSelection();
+  }
+});
+
 // ═══ Carga inicial del workspace ══════════════
 (function initWorkspace() {
   const lastName = localStorage.getItem(LAST_KEY);
