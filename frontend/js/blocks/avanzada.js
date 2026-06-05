@@ -103,6 +103,25 @@ export const blocks = [
     "helpUrl": ""
   },
 {
+    "type": "pulse_in_basic",
+    "message0": Blockly.Msg.MSG_PULSE_IN,
+    "args0": [
+      { "type": "field_dropdown", "name": "PIN",
+        "options": [
+          ["2", "2"], ["3", "3"], ["4", "4"], ["5", "5"],
+          ["6", "6"], ["7", "7"], ["8", "8"], ["9", "9"],
+          ["10", "10"], ["11", "11"], ["12", "12"], ["13", "13"]
+        ]
+      },
+      { "type": "field_dropdown", "name": "VALUE", "options": [["HIGH", "HIGH"], ["LOW", "LOW"]] },
+      { "type": "field_number", "name": "TIMEOUT", "value": 1000000, "min": 1 }
+    ],
+    "output": "Number",
+    "colour": 180,
+    "tooltip": "Nivel Básico. Elige el pin de una lista. En Intermedio puedes escribir el número.",
+    "helpUrl": ""
+  },
+{
     "type": "attach_interrupt",
     "message0": Blockly.Msg.MSG_ATTACH_INTERRUPT,
     "args0": [
@@ -156,6 +175,13 @@ cppGenerator.forBlock['no_tone_output'] = function(block) {
 };
 // ── pulse_in (expression) ─────────────────────
 cppGenerator.forBlock['pulse_in'] = function(block) {
+  const pin     = block.getFieldValue('PIN');
+  const value   = block.getFieldValue('VALUE');
+  const timeout = block.getFieldValue('TIMEOUT');
+  return ['pulseIn(' + pin + ', ' + value + ', ' + timeout + ')', cppGenerator.ORDER_ATOMIC];
+};
+// ── pulse_in_basic (N1) ───────────────────────
+cppGenerator.forBlock['pulse_in_basic'] = function(block) {
   const pin     = block.getFieldValue('PIN');
   const value   = block.getFieldValue('VALUE');
   const timeout = block.getFieldValue('TIMEOUT');

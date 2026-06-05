@@ -179,10 +179,12 @@ const _FULL_TOOLBOX_TEMPLATE = [
   { kind: 'block', type: 'digital_read_basic', level: 1 },
   { kind: 'block', type: 'digital_read', level: 2 },
   { kind: 'block', type: 'digital_read_advanced', level: 3 },
+  { kind: 'block', type: 'analog_write_basic', level: 1 },
   { kind: 'block', type: 'analog_write', level: 2 },
   { kind: 'block', type: 'analog_read_basic', level: 2 },
   { kind: 'block', type: 'analog_read', level: 2 },
   { kind: 'block', type: 'analog_read_advanced', level: 3 },
+  { kind: 'block', type: 'pulse_in_basic', level: 1 },
   { kind: 'block', type: 'pulse_in', level: 2 },
   { kind: 'block', type: 'attach_interrupt', level: 3 },
   { kind: 'block', type: 'delay_ms_basic', level: 1 },
@@ -315,6 +317,7 @@ export function buildToolboxForBoard(fqbn, level) {
         ]},
       { 'kind': 'category', 'name': '%{BKY_CAT_ANALOGICO}', 'colour': '40', 'level': 2,
         'contents': [
+          { 'kind': 'block', 'type': 'analog_write_basic', 'level': 1 },
           { 'kind': 'block', 'type': 'analog_write', 'level': 2 },
           { 'kind': 'block', 'type': 'analog_read_basic', 'level': 2 },
           { 'kind': 'block', 'type': 'analog_read', 'level': 2 },
@@ -327,6 +330,7 @@ export function buildToolboxForBoard(fqbn, level) {
           { 'kind': 'block', 'type': 'tone_output_advanced', 'level': 3 },
           { 'kind': 'block', 'type': 'tone_duration', 'level': 2 },
           { 'kind': 'block', 'type': 'no_tone_output', 'level': 2 },
+          { 'kind': 'block', 'type': 'pulse_in_basic', 'level': 1 },
           { 'kind': 'block', 'type': 'pulse_in', 'level': 2 },
           { 'kind': 'block', 'type': 'attach_interrupt', 'level': 3 }
         ]},

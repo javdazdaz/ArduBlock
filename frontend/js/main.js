@@ -79,7 +79,7 @@ class FixedEdgesScrollMetricsManager extends ScrollMetricsManager {
 FixedEdgesScrollMetricsManager.setFixedEdges({ top: true, left: true });
 
 // Módulos de la aplicación
-import { initProjectManager, lsKey } from './project-manager.js';
+import { initProjectManager, lsKey, isWorkspaceDirty } from './project-manager.js';
 import { initSettings, getSetting } from './settings.js';
 import { initSerial }        from './serial.js';
 import { initUpload }         from './upload.js';
@@ -426,6 +426,13 @@ workspace.addChangeListener((event) => {
 
 // Exponer para el hook del validador (que limpia warnings en cada cambio)
 window._applyLevelProtection = () => applyLevelProtection(getSetting('level'));
+
+// ═══ beforeunload: confirmar cierre con cambios sin guardar ═══
+window.addEventListener('beforeunload', (e) => {
+  if (isWorkspaceDirty() && projectInput.value.trim()) {
+    e.preventDefault();
+  }
+});
 
 // ═══ Aplicar idioma al DOM ═══════════════════
 applyDOMLanguage();

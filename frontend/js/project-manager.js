@@ -9,6 +9,7 @@ import * as Blockly from 'blockly';
 
 let workspace, projectInput, projectList, showToast;
 let LS_PREFIX, LAST_KEY, autoSaveTimer;
+let workspaceDirty = false;   // cambios desde el último autosave
 
 export function cancelAutoSave() {
   clearTimeout(autoSaveTimer);
@@ -46,10 +47,11 @@ export function initProjectManager(deps) {
   // Auto-guardar con debounce 2s
   autoSaveTimer = null;
   workspace.addChangeListener(() => {
+    workspaceDirty = true;
     clearTimeout(autoSaveTimer);
     autoSaveTimer = setTimeout(() => {
       const name = projectInput.value.trim();
-      if (name) saveProject(name);
+      if (name) { saveProject(name); workspaceDirty = false; }
     }, 2000);
   });
 
@@ -61,6 +63,10 @@ export function initProjectManager(deps) {
       window._tabManager.setSketchName(withIno);
     }
   });
+}
+
+export function isWorkspaceDirty() {
+  return workspaceDirty;
 }
 
 export function getProjectName() {

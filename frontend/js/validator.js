@@ -363,6 +363,17 @@ function validateWorkspace(workspace) {
     }
   }
 
+  // ═══ R10: text_join excesivo → fragmentación heap en AVR ═══
+  const textJoinBlocks = findAllBlocksOfType(workspace, 'text_join');
+  if (textJoinBlocks.length >= 3) {
+    warnings.push({
+      type: 'text_join_heap',
+      severity: 'warning',
+      message: `${textJoinBlocks.length} bloques "unir texto" detectados. En placas AVR (UNO, Nano, Mega) con solo 2KB de RAM, muchas concatenaciones con String() pueden fragmentar la memoria y crashear el programa. Considera usar menos concatenaciones.`,
+      blocks: textJoinBlocks
+    });
+  }
+
   return warnings;
 }
 

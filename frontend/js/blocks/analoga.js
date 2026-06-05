@@ -19,6 +19,24 @@ export const blocks = [
     "helpUrl": ""
   },
 {
+    "type": "analog_write_basic",
+    "message0": Blockly.Msg.MSG_ANALOG_WRITE,
+    "args0": [
+      { "type": "field_dropdown", "name": "PIN",
+        "options": [
+          ["3", "3"], ["5", "5"], ["6", "6"], ["9", "9"],
+          ["10", "10"], ["11", "11"]
+        ]
+      },
+      { "type": "input_value", "name": "VALUE", "check": "Number" }
+    ],
+    "previousStatement": null,
+    "nextStatement": null,
+    "colour": 40,
+    "tooltip": "Nivel Básico. Elige el pin PWM de una lista (solo los pines con ~). En Intermedio puedes escribir el número.",
+    "helpUrl": ""
+  },
+{
     "type": "analog_read",
     "message0": Blockly.Msg.MSG_ANALOG_READ,
     "args0": [
@@ -63,6 +81,12 @@ export const blocks = [
 export function registerGenerators(cppGenerator) {
 // ── analog_write ─────────────────────────────
 cppGenerator.forBlock['analog_write'] = function(block) {
+  const pin   = block.getFieldValue('PIN');
+  const value = cppGenerator.valueToCode(block, 'VALUE', cppGenerator.ORDER_ATOMIC) || '0';
+  return 'analogWrite(' + pin + ', ' + value + ');\n';
+};
+// ── analog_write_basic (N1) ───────────────────
+cppGenerator.forBlock['analog_write_basic'] = function(block) {
   const pin   = block.getFieldValue('PIN');
   const value = cppGenerator.valueToCode(block, 'VALUE', cppGenerator.ORDER_ATOMIC) || '0';
   return 'analogWrite(' + pin + ', ' + value + ');\n';
