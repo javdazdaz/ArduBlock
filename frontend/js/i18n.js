@@ -39,6 +39,7 @@ const messages = {
     CAT_SERVO: 'Servo',
     CAT_MOTOR: 'Motor',
     CAT_BUSCAR: 'Buscar',
+    WORKSPACE_SEARCH: 'Buscar bloque (Ctrl+K)…',
     // ── Etiquetas de bloques (Blockly.Msg) ──
     ARD_SETUP: 'al iniciar (setup)',
     ARD_LOOP: 'repetir siempre (loop)',

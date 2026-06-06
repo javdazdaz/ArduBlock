@@ -41,6 +41,7 @@ backend/projects/
 
 # ── Documentación interna ────────────────────────
 docs/
+INTERNO.md
 
 # ── Misc ─────────────────────────────────────────
 *.bak

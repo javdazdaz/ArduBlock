@@ -213,6 +213,10 @@ function pushState(state) {
 
   pruneOldNodes();
   saveTree();
+
+  // Actualizar estado de botones (pueden habilitarse al haber undo disponible)
+  if (window._updateUndoRedoButtons) window._updateUndoRedoButtons();
+
   return id;
 }
 
