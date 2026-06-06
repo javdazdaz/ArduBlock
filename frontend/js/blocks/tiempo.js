@@ -57,6 +57,18 @@ export const blocks = [
     "colour": 270,
     "tooltip": Blockly.Msg.TOOLTIP_MILLIS,
     "helpUrl": ""
+  },
+{
+    "type": "delay_microseconds",
+    "message0": Blockly.Msg.MSG_DELAY_US,
+    "args0": [
+      { "type": "field_number", "name": "US", "value": 10, "min": 0 }
+    ],
+    "previousStatement": null,
+    "nextStatement": null,
+    "colour": 270,
+    "tooltip": Blockly.Msg.TOOLTIP_DELAY_US,
+    "helpUrl": ""
   }
 ];
 
@@ -79,5 +91,10 @@ cppGenerator.forBlock['delay_ms_advanced'] = function(block) {
 // ── millis ───────────────────────────────────
 cppGenerator.forBlock['millis'] = function(_block) {
   return ['millis()', cppGenerator.ORDER_ATOMIC];
+};
+// ── delay_microseconds ───────────────────────
+cppGenerator.forBlock['delay_microseconds'] = function(block) {
+  const us = block.getFieldValue('US');
+  return 'delayMicroseconds(' + us + ');\n';
 };
 }

@@ -46,6 +46,8 @@ export const blocks = [
       ]}
     ],
     "colour": 200,
+    "previousStatement": null,
+    "nextStatement": null,
     "tooltip": Blockly.Msg.TOOLTIP_LIBRARY_INCLUDE,
     "helpUrl": ""
   }

@@ -34,6 +34,19 @@ export const blocks = [
     "style": "math_blocks",
     "tooltip": "Nivel Avanzado. Todos los rangos pueden ser variables o expresiones. Permite mapeos completamente dinámicos.",
     "helpUrl": ""
+  },
+{
+    "type": "random_seed",
+    "message0": Blockly.Msg.MSG_RANDOM_SEED,
+    "args0": [
+      { "type": "input_value", "name": "SEED", "check": "Number" }
+    ],
+    "inputsInline": true,
+    "previousStatement": null,
+    "nextStatement": null,
+    "style": "math_blocks",
+    "tooltip": Blockly.Msg.TOOLTIP_RANDOM_SEED,
+    "helpUrl": ""
   }
 ];
 
@@ -57,5 +70,10 @@ cppGenerator.forBlock['map_value_advanced'] = function(block) {
   const toHigh   = cppGenerator.valueToCode(block, 'TO_HIGH', cppGenerator.ORDER_ATOMIC) || '255';
   return ['map(' + val + ', ' + fromLow + ', ' + fromHigh + ', ' + toLow + ', ' + toHigh + ')',
           cppGenerator.ORDER_ATOMIC];
+};
+// ── random_seed ──────────────────────────────
+cppGenerator.forBlock['random_seed'] = function(block) {
+  const seed = cppGenerator.valueToCode(block, 'SEED', cppGenerator.ORDER_ATOMIC) || '0';
+  return 'randomSeed(' + seed + ');\n';
 };
 }

@@ -355,6 +355,7 @@ export function buildToolboxForBoard(fqbn, level) {
           { 'kind': 'block', 'type': 'delay_ms_basic', 'level': 1 },
           { 'kind': 'block', 'type': 'delay_ms', 'level': 2 },
           { 'kind': 'block', 'type': 'delay_ms_advanced', 'level': 3 },
+          { 'kind': 'block', 'type': 'delay_microseconds', 'level': 3 },
           { 'kind': 'block', 'type': 'millis', 'level': 2 }
         ]},
       { 'kind': 'category', 'name': '%{BKY_CAT_MATEMATICAS}', 'colour': '#4f86c2', 'level': 1,
@@ -367,7 +368,8 @@ export function buildToolboxForBoard(fqbn, level) {
           { 'kind': 'block', 'type': 'math_constrain', 'level': 3 },
           { 'kind': 'block', 'type': 'map_value', 'level': 3 },
           { 'kind': 'block', 'type': 'map_value_advanced', 'level': 3 },
-          { 'kind': 'block', 'type': 'math_number_property', 'level': 3 }
+          { 'kind': 'block', 'type': 'math_number_property', 'level': 3 },
+          { 'kind': 'block', 'type': 'random_seed', 'level': 3 }
         ]},
       { 'kind': 'category', 'name': '%{BKY_CAT_SERIAL}', 'colour': '20', 'level': 1,
         'contents': [

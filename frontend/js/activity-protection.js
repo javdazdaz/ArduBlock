@@ -95,7 +95,9 @@ function protectBlock(block) {
 
   if (activityMeta.protected.has(id)) {
     block.setDeletable(false);
-    block.setMovable(false);
+    // Procedure definitions: no borrables pero sí movibles
+    const isProc = block.type && block.type.startsWith('procedures_');
+    block.setMovable(isProc);
     block.setEditable(false);
     block.getSvgRoot()?.classList.add('ardublock-protected');
     addBadge(block, 'protected');

@@ -89,6 +89,7 @@ import { exportSketch } from './download.js';
 import { initTabManager, getTabs, loadTabs, setSketchName, setInoContent, getInoContent, setCodeTheme } from './tab-manager.js';
 import { t, applyDOMLanguage } from './i18n.js';
 import { initActivityProtection, getActivityMeta, applyActivityMeta, clearActivityMeta, isActivityLoaded } from './activity-protection.js';
+import { initActivities, getActivityList, loadActivity } from './activities.js';
 
 // ═══ Toolbox ══════════════════════════════════
 import { buildToolboxForBoard, getBlockLevel } from './blocks.js';
@@ -218,6 +219,10 @@ document.getElementById('hmenu-examples').addEventListener('click', () => {
 document.getElementById('hmenu-export').addEventListener('click', () => {
   hamburgerMenu.classList.add('hidden');
   document.getElementById('btn-export').click();
+});
+document.getElementById('hmenu-activities').addEventListener('click', () => {
+  hamburgerMenu.classList.add('hidden');
+  showActivityModal();
 });
 document.getElementById('hmenu-settings').addEventListener('click', () => {
   hamburgerMenu.classList.add('hidden');
@@ -404,6 +409,78 @@ initUpload({
 initExamples({
   workspace, examplesModal, examplesList, showToast, updateCode, projectInput
 });
+
+initActivities({
+  workspace, showToast
+});
+
+function showActivityModal() {
+  const activities = getActivityList();
+  if (!activities.length) {
+    showToast('No hay actividades disponibles');
+    return;
+  }
+
+  const modal = document.getElementById('examples-modal');
+  const list = document.getElementById('examples-list');
+  const closeBtn = document.getElementById('examples-close');
+
+  const lang = (() => {
+    try { const s = JSON.parse(localStorage.getItem('ardublock:settings') || '{}'); return s.language || 'es'; }
+    catch (_) { return 'es'; }
+  })();
+
+  const title = lang === 'es' ? '📋 Actividades — Fundación BH' : '📋 Activities — Fundación BH';
+  const subtitle1 = lang === 'es' ? 'Tarea 1: Movimientos' : 'Task 1: Movements';
+  const subtitle2 = lang === 'es' ? 'Tarea 2: Sensor Ultrasónico' : 'Task 2: Ultrasonic Sensor';
+
+  let html = `<div class="example-category">${title}</div>`;
+  html += `<div class="example-category" style="margin-top:0.5rem;font-size:0.8rem;opacity:0.7">${subtitle1}</div>`;
+
+  // Tarea 1 (indices 0-4)
+  for (let i = 0; i < 5 && i < activities.length; i++) {
+    const a = activities[i];
+    html += `<div class="example-item activity-click" data-idx="${i}">
+      <span>${a.name}</span>
+      <span class="example-desc">${a.description}</span>
+    </div>`;
+  }
+
+  html += `<div class="example-category" style="margin-top:0.5rem;font-size:0.8rem;opacity:0.7">${subtitle2}</div>`;
+
+  // Tarea 2 (indices 5-9)
+  for (let i = 5; i < activities.length; i++) {
+    const a = activities[i];
+    html += `<div class="example-item activity-click" data-idx="${i}">
+      <span>${a.name}</span>
+      <span class="example-desc">${a.description}</span>
+    </div>`;
+  }
+
+  list.innerHTML = html;
+  modal.classList.remove('hidden');
+
+  // Click handlers
+  list.querySelectorAll('.activity-click').forEach(el => {
+    el.addEventListener('click', () => {
+      const idx = parseInt(el.dataset.idx, 10);
+      loadActivity(idx);
+      modal.classList.add('hidden');
+    });
+  });
+
+  // Close button
+  closeBtn.onclick = () => modal.classList.add('hidden');
+
+  // Click outside to close
+  const outsideHandler = (e) => {
+    if (e.target === modal) {
+      modal.classList.add('hidden');
+      modal.removeEventListener('click', outsideHandler);
+    }
+  };
+  modal.addEventListener('click', outsideHandler);
+}
 
 initResize({
   workspace, resizer, editorPanel, codePanel, floatExpandBtn, collapseBtn
