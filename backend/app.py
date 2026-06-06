@@ -40,7 +40,8 @@ serial_lock = threading.Lock()
 serial_running = False
 
 # ── Configuración ───────────────────────────────
-FRONTEND_DIR = Path(__file__).resolve().parent.parent / "frontend"
+_FRONTEND_BASE = Path(__file__).resolve().parent.parent / "frontend"
+FRONTEND_DIR = _FRONTEND_BASE / "dist" if os.environ.get("ARDUBLOCK_PRODUCTION") else _FRONTEND_BASE
 PROJECTS_DIR = Path(__file__).resolve().parent / "projects"
 EXAMPLES_DIR = Path(__file__).resolve().parent.parent / "examples" / "arduino"
 PROJECTS_DIR.mkdir(exist_ok=True)
