@@ -217,6 +217,8 @@ function _syncContent() {
   if (tab && !tab.readonly) {
     tab.content = hView.state.doc.toString();
     _updateLineCount();
+    // Notificar al árbol de undo que hubo cambio en tabs
+    if (window._scheduleUndoPush) window._scheduleUndoPush();
   }
 }
 

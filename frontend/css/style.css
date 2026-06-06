@@ -79,6 +79,36 @@ header {
   border-color: var(--accent);
 }
 
+/* ── Undo/Redo buttons ───────────────────────── */
+.undo-btn, .redo-btn {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 1.2rem;
+  width: 2.2rem;
+  height: 2.2rem;
+  padding: 0;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.15s, border-color 0.15s;
+}
+.undo-btn:hover, .redo-btn:hover {
+  background: var(--bg-input);
+  border-color: var(--accent);
+}
+.undo-btn:disabled, .redo-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+.undo-btn:disabled:hover, .redo-btn:disabled:hover {
+  background: none;
+  border-color: var(--border);
+}
+
 /* ── Header brand (logo + subtitle) ───────────── */
 .header-brand {
   display: flex;

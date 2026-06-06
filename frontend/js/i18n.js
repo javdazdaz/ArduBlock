@@ -463,6 +463,9 @@ const messages = {
     hmenu_activities: 'Activities',
     hmenu_export: 'Export sketch',
     hmenu_settings: 'Settings',
+    // ── Undo/Redo toolbar ──
+    btn_undo: 'Undo',
+    btn_redo: 'Redo',
     // ── Code panel ──
     panel_code: 'C++ Code',
     panel_lines: 'lines',

@@ -89,6 +89,7 @@ import { exportSketch } from './download.js';
 import { initTabManager, getTabs, loadTabs, setSketchName, setInoContent, getInoContent, setCodeTheme } from './tab-manager.js';
 import { t, applyDOMLanguage } from './i18n.js';
 import { initActivityProtection, getActivityMeta, applyActivityMeta, clearActivityMeta, isActivityLoaded } from './activity-protection.js';
+import { initUndoTree, undo as treeUndo, redo as treeRedo, canUndo, canRedo, schedulePush, forcePush, restoreSnapshot, resetTree } from './undo-tree.js';
 import { initActivities, getActivityList, loadActivity } from './activities.js';
 
 // ═══ Toolbox ══════════════════════════════════
@@ -203,6 +204,37 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') hamburgerMenu.classList.add('hidden');
 });
 
+// ═══ Undo/Redo vía árbol de historial ═══════
+
+const undoBtn = document.getElementById('btn-undo');
+const redoBtn = document.getElementById('btn-redo');
+
+// Tooltips según idioma
+undoBtn.title = t('btn_undo');
+redoBtn.title = t('btn_redo');
+
+function updateUndoRedoButtons() {
+  undoBtn.disabled = !canUndo();
+  redoBtn.disabled = !canRedo();
+}
+
+undoBtn.addEventListener('click', () => {
+  const snap = treeUndo();
+  if (snap) restoreSnapshot(snap);
+  updateUndoRedoButtons();
+});
+
+redoBtn.addEventListener('click', () => {
+  const snap = treeRedo();
+  if (snap) restoreSnapshot(snap);
+  updateUndoRedoButtons();
+});
+
+// Exponer para que tab-manager y otros módulos puedan disparar snapshot
+window._scheduleUndoPush = schedulePush;
+window._forceUndoPush = forcePush;
+window._updateUndoRedoButtons = updateUndoRedoButtons;
+
 // Items del menú → disparan los botones originales
 document.getElementById('hmenu-new').addEventListener('click', () => {
   hamburgerMenu.classList.add('hidden');
@@ -230,6 +262,7 @@ document.getElementById('hmenu-settings').addEventListener('click', () => {
 });
 
 document.getElementById('btn-new').addEventListener('click', () => {
+  resetTree();
   workspace.clear();
   Blockly.serialization.workspaces.load(getDefaultState(), workspace);
   projectInput.value = '';
@@ -237,6 +270,7 @@ document.getElementById('btn-new').addEventListener('click', () => {
   if (window._tabManager) window._tabManager.loadTabs([]);
   if (window._clearActivityMeta) window._clearActivityMeta();
   showToast('Proyecto nuevo');
+  updateUndoRedoButtons();
 });
 
 export function showToast(msg) {
@@ -491,6 +525,10 @@ initTabManager();
 window._tabManager = { getTabs, loadTabs, setSketchName, setInoContent, getInoContent, setCodeTheme };
 window.updateCode = updateCode;  // para que tab-manager refresque el .ino
 window._showToast = showToast;   // para download.js y otros módulos
+
+// Undo tree: historial completo del proyecto (workspace + tabs + nombre + placa)
+initUndoTree({ workspace });
+updateUndoRedoButtons();
 
 // Activity protection: bloques protegidos + placeholders (backend)
 initActivityProtection(workspace);

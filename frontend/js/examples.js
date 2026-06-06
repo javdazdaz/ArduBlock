@@ -213,6 +213,8 @@ function openSource(sourceId) {
 function loadPresetExample(ex) {
   if (!ex || !ex.state) return;
 
+  // Guardar estado actual en el árbol de undo antes de limpiar
+  if (window._forceUndoPush) window._forceUndoPush();
   workspace.clear();
   Blockly.serialization.workspaces.load(ex.state, workspace);
 

@@ -44,6 +44,8 @@ export function loadActivity(index) {
   }
 
   try {
+    // Guardar estado actual en el árbol de undo antes de limpiar
+    if (window._forceUndoPush) window._forceUndoPush();
     workspace.clear();
     Blockly.serialization.workspaces.load(act.state, workspace);
 

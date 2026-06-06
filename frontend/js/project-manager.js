@@ -117,6 +117,8 @@ export function loadProject(name) {
     const raw = localStorage.getItem(lsKey(name));
     if (!raw) { showToast(`Proyecto "${name}" no encontrado`); return; }
     const record = JSON.parse(raw);
+    // Guardar estado actual en el árbol de undo antes de limpiar
+    if (window._forceUndoPush) window._forceUndoPush();
     workspace.clear();
     Blockly.serialization.workspaces.load(record.state, workspace);
     let displayName = record.name;
