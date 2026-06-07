@@ -202,6 +202,7 @@ const messages = {
     hmenu_activities: 'Actividades',
     hmenu_export: 'Exportar sketch',
     hmenu_settings: 'Configuración',
+    hmenu_diagnostics: 'Diagnóstico',
     // ── Panel de código ──
     panel_code: 'Código C++',
     panel_lines: 'líneas',
@@ -464,6 +465,7 @@ const messages = {
     hmenu_activities: 'Activities',
     hmenu_export: 'Export sketch',
     hmenu_settings: 'Settings',
+    hmenu_diagnostics: 'Diagnostics',
     // ── Undo/Redo toolbar ──
     btn_undo: 'Undo',
     btn_redo: 'Redo',

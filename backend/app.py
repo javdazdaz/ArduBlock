@@ -481,15 +481,31 @@ def health():
 
 @app.route('/api/board/install', methods=['POST'])
 def board_install():
-    """Instala cores y librerías necesarias para la placa seleccionada."""
+    """Instala cores y librerías necesarias para la placa seleccionada.
+    
+    Solo instala lo que no esté ya instalado (consulta core list y lib list).
+    """
     data = request.get_json() or {}
     fqbn = data.get('fqbn', 'arduino:avr:uno')
 
     deps = BOARD_DEPS.get(fqbn, {'cores': [], 'libs': []})
+    
+    # Consultar qué hay instalado (una sola vez cada uno)
+    installed_cores = _get_installed_cores()
+    installed_libs = _get_installed_libs()
+    
     results = []
+    skipped = 0
 
-    # Instalar cores
+    # Instalar cores (solo los que falten)
     for core in deps.get('cores', []):
+        if core in installed_cores:
+            skipped += 1
+            results.append({
+                'type': 'core', 'name': core,
+                'success': True, 'already_installed': True,
+            })
+            continue
         try:
             r = _run_arduino_cli(
                 ['core', 'install', core],
@@ -506,8 +522,15 @@ def board_install():
         except Exception as e:
             results.append({'type': 'core', 'name': core, 'success': False, 'error': str(e)})
 
-    # Instalar librerías
+    # Instalar librerías (solo las que falten)
     for lib in deps.get('libs', []):
+        if lib in installed_libs:
+            skipped += 1
+            results.append({
+                'type': 'lib', 'name': lib,
+                'success': True, 'already_installed': True,
+            })
+            continue
         try:
             r = _run_arduino_cli(
                 ['lib', 'install', lib],
@@ -524,7 +547,37 @@ def board_install():
         except Exception as e:
             results.append({'type': 'lib', 'name': lib, 'success': False, 'error': str(e)})
 
-    return jsonify({'fqbn': fqbn, 'results': results})
+    return jsonify({'fqbn': fqbn, 'results': results, 'skipped': skipped})
+
+
+def _get_installed_cores():
+    """Devuelve un set con los IDs de cores instalados (ej: 'arduino:renesas_uno')."""
+    try:
+        r = _run_arduino_cli(
+            ['core', 'list', '--format', 'json'],
+            capture_output=True, timeout=15
+        )
+        data = json.loads(r.stdout)
+        # Formato: {"platforms": [{"id": "arduino:avr", ...}, ...]}
+        platforms = data.get('platforms', data) if isinstance(data, dict) else data
+        items = platforms if isinstance(platforms, list) else []
+        return {item['id'] for item in items if isinstance(item, dict) and item.get('id')}
+    except Exception:
+        return set()
+
+
+def _get_installed_libs():
+    """Devuelve un set con los nombres de librerías instaladas."""
+    try:
+        r = _run_arduino_cli(
+            ['lib', 'list', '--format', 'json'],
+            capture_output=True, timeout=15
+        )
+        data = json.loads(r.stdout)
+        # Formato: [{"name": "WiFiS3", "author": "...", "installed": "1.0.0"}, ...]
+        return {item['name'] for item in data if isinstance(item, dict) and item.get('name')}
+    except Exception:
+        return set()
 
 
 # ══════════════════════════════════════════════════
@@ -697,16 +750,28 @@ def _detect_driver_issues():
     for entry in detected:
         port_info = entry.get('port', {})
         address = port_info.get('address', '?')
-        hw_id = port_info.get('hardware_id', '') or ''
         matching = entry.get('matching_boards', [])
+        props = port_info.get('properties', {})
         
-        # Extraer VID/PID del hardware_id: "USB\\VID_1A86&PID_7523\\..."
+        # Extraer VID/PID. Dos formatos posibles:
+        #   Windows: hardware_id = "USB\\VID_1A86&PID_7523\\..."
+        #   Linux:   properties.vid = "0x1a86", properties.pid = "0x7523"
         vid = pid = None
+        
+        hw_id = port_info.get('hardware_id', '') or ''
         for part in hw_id.replace('&', '\\').split('\\'):
             if part.upper().startswith('VID_'):
                 vid = part[4:].upper()
             elif part.upper().startswith('PID_'):
                 pid = part[4:].upper()
+        
+        # Si no se encontró en hardware_id, buscar en properties (Linux)
+        if not (vid and pid):
+            raw_vid = props.get('vid', '')
+            raw_pid = props.get('pid', '')
+            if raw_vid and raw_pid:
+                vid = raw_vid.replace('0x', '').replace('0X', '').upper().zfill(4)
+                pid = raw_pid.replace('0x', '').replace('0X', '').upper().zfill(4)
         
         if not (vid and pid):
             continue

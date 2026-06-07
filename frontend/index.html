@@ -41,6 +41,7 @@
     <button id="hmenu-export" class="hmenu-item" role="menuitem">📦 <span data-i18n="hmenu_export">Exportar sketch</span></button>
     <hr class="hmenu-divider">
     <button id="hmenu-settings" class="hmenu-item" role="menuitem">⚙ <span data-i18n="hmenu_settings">Configuración</span></button>
+    <button id="hmenu-diagnostics" class="hmenu-item" role="menuitem">🔍 <span data-i18n="hmenu_diagnostics">Diagnóstico</span></button>
   </nav>
 
   <main>
@@ -78,7 +79,6 @@
         </select>
         <button id="btn-console-toggle" class="arduino-btn console" data-i18n="btn_console" title="Abrir/cerrar monitor serial">🔌 Consola</button>
         <button id="btn-upload" class="arduino-btn upload" data-i18n="btn_upload" title="Compilar y subir al Arduino">⚡ Subir</button>
-        <button id="btn-install-cli" class="arduino-btn install-cli hidden" title="Instalar arduino-cli automáticamente">🔧 Instalar CLI</button>
         <button id="btn-export" class="arduino-btn export" data-i18n="btn_export" title="Exportar sketch como .zip" style="display:none">📦 Exportar</button>
       </div>
 
@@ -205,6 +205,38 @@
         <button id="examples-close" class="modal-close">&times;</button>
       </div>
       <div id="examples-list" class="modal-body">Cargando...</div>
+    </div>
+  </div>
+
+  <!-- Diagnostics Modal -->
+  <div id="diagnostics-modal" class="modal hidden">
+    <div class="modal-content" style="width:520px">
+      <div class="modal-header">
+        <h2>🔍 Diagnóstico del sistema</h2>
+        <button id="diagnostics-close" class="modal-close">&times;</button>
+      </div>
+      <div id="diagnostics-body" class="modal-body" style="padding:1rem">
+        <div class="diag-loading">⏳ Verificando...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CLI Install Modal (al cargar si falta) -->
+  <div id="cli-install-modal" class="modal hidden">
+    <div class="modal-content" style="width:420px">
+      <div class="modal-header">
+        <h2>🔧 arduino-cli</h2>
+        <button id="cli-install-close" class="modal-close">&times;</button>
+      </div>
+      <div class="modal-body" style="padding:1.5rem;text-align:center">
+        <p style="margin-bottom:1rem">arduino-cli no está instalado.<br>Es necesario para compilar y subir código al Arduino.</p>
+        <p id="cli-install-platform" style="font-size:0.8rem;opacity:0.6;margin-bottom:1rem"></p>
+        <div style="display:flex;gap:0.5rem;justify-content:center">
+          <button id="cli-install-btn" class="btn-primary" style="padding:0.6rem 1.5rem">⚡ Instalar ahora</button>
+          <button id="cli-install-later" class="btn-secondary" style="padding:0.6rem 1.5rem">Ahora no</button>
+        </div>
+        <p id="cli-install-status" style="margin-top:0.8rem;font-size:0.85rem"></p>
+      </div>
     </div>
   </div>
 </body>

@@ -344,7 +344,6 @@ const btnConnect      = document.getElementById('serial-connect');
 const btnConsoleToggle = document.getElementById('btn-console-toggle');
 const serialBaud      = document.getElementById('serial-baud');
 const btnUpload       = document.getElementById('btn-upload');
-const btnInstallCli  = document.getElementById('btn-install-cli');
 const resizer         = document.getElementById('panel-resizer');
 const editorPanel     = document.getElementById('editor-panel');
 const codePanel       = document.getElementById('code-panel');
@@ -385,9 +384,8 @@ if (boardSelector) {
     // Reconstruir toolbox
     if (window._rebuildToolbox) window._rebuildToolbox(fqbn);
 
-    // Instalar cores/libs con feedback
+    // Instalar cores/libs con feedback (solo lo que falte)
     const boardName = boardSelector.options[boardSelector.selectedIndex]?.text || fqbn;
-    showToast(`Instalando ${boardName}...`);
     try {
       const res = await fetch('/api/board/install', {
         method: 'POST',
@@ -395,12 +393,23 @@ if (boardSelector) {
         body: JSON.stringify({ fqbn })
       });
       const data = await res.json();
-      const failed = (data.results || []).filter(r => !r.success);
-      if (failed.length === 0) {
-        showToast('✅ Placa lista');
-      } else {
-        showToast(`⚠ ${failed.length} componente(s) fallaron. Revisa la Consola.`);
+      const results = data.results || [];
+      const failed = results.filter(r => !r.success);
+      const installed = results.filter(r => r.success && !r.already_installed);
+      const skipped = data.skipped || 0;
+      
+      if (failed.length > 0) {
         console.warn('[ArduBlock] Fallos en instalación:', failed);
+        if (installed.length > 0) {
+          showToast(`⚠ ${installed.length} instalado(s), ${failed.length} fallo(s)`);
+        } else {
+          showToast(`⚠ ${failed.length} componente(s) fallaron. Revisa la Consola.`);
+        }
+      } else if (installed.length > 0) {
+        showToast(`✅ ${boardName} lista (${installed.length} nuevo(s))`);
+      } else if (skipped > 0) {
+        // Todo ya estaba instalado — sin toast ruidoso
+        console.log(`[ArduBlock] ${boardName}: ${skipped} dependencia(s) ya instaladas`);
       }
     } catch (e) {
       showToast('⚠ Error de conexión al instalar dependencias');
@@ -652,61 +661,210 @@ workspace.addChangeListener((event) => {
 // Exponer para el hook del validador (que limpia warnings en cada cambio)
 window._applyLevelProtection = () => applyLevelProtection(getSetting('level'));
 
-// ═══ Detección de arduino-cli ═════════════════
-(async function checkArduinoCli() {
-  if (!btnInstallCli) return;
+// ═══ Diagnóstico del sistema ══════════════════
+// Modal de instalación al cargar + modal de diagnóstico en menú hamburguesa
+
+const cliInstallModal  = document.getElementById('cli-install-modal');
+const cliInstallBtn    = document.getElementById('cli-install-btn');
+const cliInstallLater  = document.getElementById('cli-install-later');
+const cliInstallClose  = document.getElementById('cli-install-close');
+const cliInstallStatus = document.getElementById('cli-install-status');
+const cliInstallPlatform = document.getElementById('cli-install-platform');
+
+const diagnosticsModal = document.getElementById('diagnostics-modal');
+const diagnosticsBody  = document.getElementById('diagnostics-body');
+const diagnosticsClose = document.getElementById('diagnostics-close');
+
+function closeCliInstallModal() { cliInstallModal.classList.add('hidden'); }
+
+[cliInstallLater, cliInstallClose].forEach(el => {
+  if (el) el.addEventListener('click', closeCliInstallModal);
+});
+
+cliInstallModal?.addEventListener('click', (e) => {
+  if (e.target === cliInstallModal) closeCliInstallModal();
+});
+
+async function installCliFromModal() {
+  if (!cliInstallBtn) return;
+  cliInstallBtn.disabled = true;
+  cliInstallBtn.textContent = '⏳ Instalando...';
+  cliInstallStatus.textContent = '';
+  cliInstallStatus.className = '';
+  try {
+    const res = await fetch('/api/arduino-cli/install', { method: 'POST' });
+    const data = await res.json();
+    if (data.success) {
+      cliInstallBtn.textContent = '✅ Instalado';
+      cliInstallBtn.style.background = '#27ae60';
+      cliInstallStatus.textContent = 'arduino-cli instalado correctamente.';
+      cliInstallStatus.className = 'success';
+      setTimeout(closeCliInstallModal, 2000);
+    } else {
+      cliInstallBtn.disabled = false;
+      cliInstallBtn.textContent = '🔧 Reintentar';
+      cliInstallStatus.textContent = 'Error: ' + (data.error || 'falló la instalación');
+      cliInstallStatus.className = 'error';
+    }
+  } catch (e) {
+    cliInstallBtn.disabled = false;
+    cliInstallBtn.textContent = '🔧 Reintentar';
+    cliInstallStatus.textContent = 'Error de conexión: ' + e.message;
+    cliInstallStatus.className = 'error';
+  }
+}
+
+cliInstallBtn?.addEventListener('click', installCliFromModal);
+
+// Verificar al cargar la página
+(async function checkCliOnLoad() {
   try {
     const res = await fetch('/api/arduino-cli/status');
     const data = await res.json();
-    if (data.available) {
-      // Todo bien, no mostrar nada
-      return;
+    if (data.available) return;
+    if (cliInstallModal && cliInstallPlatform) {
+      cliInstallPlatform.textContent = data.can_auto_install
+        ? `Plataforma: ${data.platform} — instalación automática disponible`
+        : `Plataforma: ${data.platform} — requiere instalación manual`;
+      if (!data.can_auto_install) {
+        cliInstallBtn.textContent = '📖 Abrir guía de instalación';
+        cliInstallBtn.onclick = () => window.open('https://arduino.github.io/arduino-cli/installation/', '_blank');
+      }
+      cliInstallModal.classList.remove('hidden');
     }
-    // No está instalado
-    if (data.can_auto_install) {
-      btnInstallCli.classList.remove('hidden');
-      btnInstallCli.onclick = async () => {
-        btnInstallCli.disabled = true;
-        btnInstallCli.textContent = '⏳ Instalando...';
-        try {
-          const instRes = await fetch('/api/arduino-cli/install', { method: 'POST' });
-          const instData = await instRes.json();
-          if (instData.success) {
-            btnInstallCli.textContent = '✅ Listo';
-            btnInstallCli.style.background = '#27ae60';
-            showToast('arduino-cli instalado correctamente');
-            // Recargar estado tras 1.5s
-            setTimeout(() => {
-              btnInstallCli.classList.add('hidden');
-              btnInstallCli.disabled = false;
-              btnInstallCli.textContent = '🔧 Instalar CLI';
-              btnInstallCli.style.background = '';
-            }, 2000);
-          } else {
-            showToast('Error: ' + (instData.error || 'falló la instalación'));
-            btnInstallCli.disabled = false;
-            btnInstallCli.textContent = '🔧 Reintentar';
-          }
-        } catch (e) {
-          showToast('Error de conexión al instalar: ' + e.message);
-          btnInstallCli.disabled = false;
-          btnInstallCli.textContent = '🔧 Reintentar';
-        }
-      };
-    } else {
-      // Plataforma no soportada para auto-instalación
-      btnInstallCli.classList.remove('hidden');
-      btnInstallCli.style.background = '#c0392b';
-      btnInstallCli.textContent = '⚠ Instalar CLI (manual)';
-      btnInstallCli.title = `Plataforma ${data.platform} no soportada. Instalá manualmente.`;
-      btnInstallCli.onclick = () => {
-        window.open('https://arduino.github.io/arduino-cli/installation/', '_blank');
-      };
-    }
-  } catch (_) {
-    // Backend no disponible, ignorar
-  }
+  } catch (_) { /* backend no disponible */ }
 })();
+
+// ═══ Modal de diagnóstico (menú hamburguesa) ═══
+
+function closeDiagnostics() { diagnosticsModal?.classList.add('hidden'); }
+
+diagnosticsClose?.addEventListener('click', closeDiagnostics);
+diagnosticsModal?.addEventListener('click', (e) => {
+  if (e.target === diagnosticsModal) closeDiagnostics();
+});
+
+async function openDiagnostics() {
+  if (!diagnosticsModal || !diagnosticsBody) return;
+  diagnosticsModal.classList.remove('hidden');
+  diagnosticsBody.innerHTML = '<div class="diag-loading">⏳ Verificando...</div>';
+
+  const [cliStatus, drivers, boards] = await Promise.allSettled([
+    fetch('/api/arduino-cli/status').then(r => r.json()).catch(() => null),
+    fetch('/api/drivers').then(r => r.json()).catch(() => null),
+    fetch('/api/boards').then(r => r.json()).catch(() => null),
+  ]);
+
+  const cli = cliStatus.value;
+  const drv = drivers.value;
+  const brd = boards.value;
+
+  let html = '';
+
+  // ── arduino-cli ──
+  html += '<div class="diag-section">';
+  html += '<h3>🔧 arduino-cli</h3>';
+  if (!cli) {
+    html += '<div class="diag-row"><span>Backend no disponible</span><span class="diag-error">✕</span></div>';
+  } else if (cli.available) {
+    html += `<div class="diag-row"><span>Estado</span><span class="diag-ok">✓ Instalado</span></div>`;
+    html += `<div class="diag-row"><span>Ruta</span><span style="font-size:0.7rem;opacity:0.7">${cli.path}</span></div>`;
+  } else {
+    html += `<div class="diag-row"><span>Estado</span><span class="diag-error">✕ No encontrado</span></div>`;
+    if (cli.can_auto_install) {
+      html += `<div class="diag-row"><span></span><button class="diag-btn install" id="diag-install-cli">⚡ Instalar ahora</button></div>`;
+    } else {
+      html += `<div class="diag-row"><span>Plataforma</span><span class="diag-warn">${cli.platform} — manual</span></div>`;
+      html += `<div class="diag-row"><span></span><button class="diag-btn refresh" id="diag-manual-install">📖 Abrir guía</button></div>`;
+    }
+  }
+  html += '</div>';
+
+  // ── Drivers USB ──
+  html += '<div class="diag-section">';
+  html += '<h3>🔌 Drivers USB-Serial</h3>';
+  if (!drv || drv.error) {
+    html += `<div class="diag-row"><span>${drv?.error || 'No disponible'}</span><span class="diag-warn">⚠</span></div>`;
+  } else if (!drv.ports || drv.ports.length === 0) {
+    html += '<div class="diag-row"><span>Sin chips detectados</span><span class="diag-ok">✓</span></div>';
+  } else {
+    for (const p of drv.ports) {
+      const icon = p.driver_needed ? '⚠' : '✓';
+      const cls = p.driver_needed ? 'diag-warn' : 'diag-ok';
+      html += `<div class="diag-row"><span>${p.chip} en ${p.address}</span><span class="${cls}">${icon} ${p.driver_needed ? 'Requiere driver' : 'OK'}</span></div>`;
+      if (p.driver_needed) {
+        html += `<div class="diag-row"><span></span><a href="${p.driver_url}" target="_blank" class="diag-btn install" style="text-decoration:none;display:inline-block">Descargar driver</a></div>`;
+      }
+    }
+    if (drv.recommendations && drv.recommendations.length > 0) {
+      html += '<div class="diag-recommendations">';
+      for (const rec of drv.recommendations) {
+        html += `<div>💡 ${rec}</div>`;
+      }
+      html += '</div>';
+    }
+  }
+  html += '</div>';
+
+  // ── Placas ──
+  html += '<div class="diag-section">';
+  html += '<h3>📟 Placas Arduino</h3>';
+  if (!brd || brd.error) {
+    html += `<div class="diag-row"><span>${brd?.error || 'No disponible'}</span><span class="diag-warn">⚠</span></div>`;
+  } else if (!brd.detected_ports || brd.detected_ports.length === 0) {
+    html += '<div class="diag-row"><span>No se detectó ningún Arduino</span><span class="diag-warn">—</span></div>';
+    html += '<div class="diag-row"><span style="opacity:0.6">Conectalo por USB</span><span></span></div>';
+  } else {
+    for (const p of brd.detected_ports) {
+      const addr = p.port?.address || p.address || '?';
+      const boards = p.matching_boards || [];
+      const names = boards.length > 0 ? boards.map(b => b.name || b.fqbn).join(', ') : 'No identificada';
+      html += `<div class="diag-row"><span>${addr}</span><span>${names}</span></div>`;
+    }
+  }
+  html += '</div>';
+
+  html += `<div style="text-align:center;margin-top:0.5rem">
+    <button class="diag-btn refresh" id="diag-refresh">🔄 Actualizar</button>
+  </div>`;
+
+  diagnosticsBody.innerHTML = html;
+
+  // Event listeners para botones dentro del diagnóstico
+  document.getElementById('diag-install-cli')?.addEventListener('click', async () => {
+    const btn = document.getElementById('diag-install-cli');
+    btn.disabled = true;
+    btn.textContent = '⏳ Instalando...';
+    try {
+      const res = await fetch('/api/arduino-cli/install', { method: 'POST' });
+      const data = await res.json();
+      if (data.success) {
+        btn.textContent = '✅ Listo';
+        btn.style.background = '#27ae60';
+        showToast('arduino-cli instalado');
+        setTimeout(() => openDiagnostics(), 1500);
+      } else {
+        btn.textContent = '❌ Falló';
+        showToast('Error: ' + (data.error || 'falló'));
+      }
+    } catch (e) {
+      btn.textContent = '❌ Error';
+    }
+  });
+
+  document.getElementById('diag-manual-install')?.addEventListener('click', () => {
+    window.open('https://arduino.github.io/arduino-cli/installation/', '_blank');
+  });
+
+  document.getElementById('diag-refresh')?.addEventListener('click', openDiagnostics);
+}
+
+// Conectar menú hamburguesa
+const hmenuDiagnostics = document.getElementById('hmenu-diagnostics');
+hmenuDiagnostics?.addEventListener('click', () => {
+  document.getElementById('hamburger-menu')?.classList.add('hidden');
+  openDiagnostics();
+});
 
 // ═══ beforeunload: confirmar cierre con cambios sin guardar ═══
 window.addEventListener('beforeunload', (e) => {
