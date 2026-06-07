@@ -100,11 +100,12 @@ PROJECTS_DIR.mkdir(exist_ok=True)
 
 # ── Board config: cores y libs requeridas ──────
 BOARD_DEPS = {
-    'arduino:avr:uno':              {'cores': [], 'libs': []},
+    'arduino:avr:uno':              {'cores': ['arduino:avr'], 'libs': []},
+    'arduino:avr:nano':             {'cores': ['arduino:avr'], 'libs': []},
+    'arduino:avr:mega':             {'cores': ['arduino:avr'], 'libs': []},
     'arduino:renesas_uno:minima':   {'cores': ['arduino:renesas_uno'], 'libs': []},
     'arduino:renesas_uno:wifi':     {'cores': ['arduino:renesas_uno'], 'libs': []},  # WiFiS3 incluida en el core
     'arduino:esp32:nano_nora':      {'cores': ['arduino:esp32'], 'libs': []},
-    'arduino:avr:mega':             {'cores': [], 'libs': []},
 }
 
 HOST = os.environ.get('ARDUBLOCK_HOST', '0.0.0.0')
@@ -164,6 +165,31 @@ def _write_tabs(sketch_dir, tabs):
         if safe != filename or '..' in safe:
             continue
         (sketch_dir / safe).write_text(content)
+
+
+def _try_install_missing_core(stderr_text):
+    """Intenta instalar un core faltante a partir del mensaje de error de arduino-cli.
+    
+    Reconoce mensajes como:
+      "Error during build: Platform 'arduino:avr' not found: platform not installed"
+    """
+    import re as _re
+    m = _re.search(r"Platform '([^']+)' not found", stderr_text)
+    if not m:
+        m = _re.search(r'platform not installed', stderr_text)
+        if not m:
+            return False
+    
+    core_id = m.group(1) if m.lastindex else None
+    if not core_id:
+        # Intentar extraer del FQBN (ej: arduino:avr:uno → arduino:avr)
+        return False
+    
+    try:
+        _run_arduino_cli(['core', 'install', core_id], capture_output=True, timeout=120)
+        return True
+    except Exception:
+        return False
 
 @app.route('/api/projects', methods=['GET'])
 def list_projects():
@@ -370,6 +396,13 @@ def compile_sketch():
             ['compile', '--fqbn', fqbn, str(sketch_dir)],
             capture_output=True, timeout=60
         )
+        
+        # Auto-instalar core faltante y reintentar
+        if result.returncode != 0 and _try_install_missing_core(result.stderr):
+            result = _run_arduino_cli(
+                ['compile', '--fqbn', fqbn, str(sketch_dir)],
+                capture_output=True, timeout=60
+            )
 
         return jsonify({
             'success': result.returncode == 0,
@@ -412,6 +445,13 @@ def upload_sketch():
             ['compile', '--fqbn', fqbn, str(sketch_dir)],
             capture_output=True, timeout=60
         )
+
+        # Auto-instalar core faltante y reintentar compilación
+        if compile_result.returncode != 0 and _try_install_missing_core(compile_result.stderr):
+            compile_result = _run_arduino_cli(
+                ['compile', '--fqbn', fqbn, str(sketch_dir)],
+                capture_output=True, timeout=60
+            )
 
         if compile_result.returncode != 0:
             return jsonify({
