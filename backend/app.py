@@ -19,7 +19,59 @@ import subprocess
 import tempfile
 import shutil
 import threading
+import zipfile
+import tarfile
+import urllib.request
+import platform
+import stat
 from pathlib import Path
+
+# ── Detección de arduino-cli ────────────────────
+# Directorio local de ArduBlock para binarios auto-instalados
+_ARDUINO_CLI_DIR = Path.home() / '.ardublock' / 'bin'
+_ARDUINO_CLI_LOCAL = _ARDUINO_CLI_DIR / ('arduino-cli.exe' if sys.platform == 'win32' else 'arduino-cli')
+
+_ARDUINO_CLI = None
+# 1. Buscar en PATH del sistema
+_ARDUINO_CLI = shutil.which('arduino-cli')
+# 2. Buscar en instalación local automática de ArduBlock
+if not _ARDUINO_CLI and _ARDUINO_CLI_LOCAL.is_file():
+    _ARDUINO_CLI = str(_ARDUINO_CLI_LOCAL)
+# 3. Windows: buscar en rutas comunes de instalación manual
+if not _ARDUINO_CLI and sys.platform == 'win32':
+    _candidates = [
+        os.path.join(os.path.expandvars('%LOCALAPPDATA%'), 'arduino-cli', 'arduino-cli.exe'),
+        os.path.join(os.path.expandvars('%PROGRAMFILES%'), 'arduino-cli', 'arduino-cli.exe'),
+        os.path.join(os.path.expandvars('%PROGRAMFILES(X86)%'), 'arduino-cli', 'arduino-cli.exe'),
+    ]
+    for _c in _candidates:
+        if os.path.isfile(_c):
+            _ARDUINO_CLI = _c
+            break
+
+_ARDUINO_CLI_AVAILABLE = _ARDUINO_CLI is not None and os.path.isfile(_ARDUINO_CLI)
+
+
+def _run_arduino_cli(args, **kwargs):
+    """Ejecuta arduino-cli usando la ruta resuelta.
+    
+    Lanza FileNotFoundError con mensaje descriptivo si no está instalado.
+    """
+    cli_path: str | None = _ARDUINO_CLI
+    if not cli_path or not os.path.isfile(cli_path):
+        raise FileNotFoundError(
+            'arduino-cli no encontrado. Instálalo desde '
+            'https://arduino.github.io/arduino-cli/installation/ '
+            'y asegurate de que esté en el PATH.'
+        )
+    cmd = [cli_path] + list(args)
+    # Forzar encoding UTF-8 en Windows para evitar mojibake
+    if sys.platform == 'win32':
+        kwargs.setdefault('encoding', 'utf-8')
+        kwargs.setdefault('errors', 'replace')
+    if 'text' not in kwargs and 'encoding' not in kwargs:
+        kwargs['text'] = True
+    return subprocess.run(cmd, **kwargs)
 
 app = Flask(__name__, static_folder=None)
 CORS(app, origins=['http://localhost:5000', 'http://127.0.0.1:5000'])
@@ -220,9 +272,9 @@ def get_example(example_path):
 def list_boards():
     """Lista placas Arduino conectadas"""
     try:
-        result = subprocess.run(
-            ['arduino-cli', 'board', 'list', '--format', 'json'],
-            capture_output=True, text=True, timeout=10
+        result = _run_arduino_cli(
+            ['board', 'list', '--format', 'json'],
+            capture_output=True, timeout=10
         )
         if result.returncode != 0:
             return jsonify({'error': result.stderr}), 500
@@ -253,9 +305,9 @@ def compile_sketch():
         ino_file.write_text(code)
         _write_tabs(sketch_dir, tabs)
 
-        result = subprocess.run(
-            ['arduino-cli', 'compile', '--fqbn', fqbn, str(sketch_dir)],
-            capture_output=True, text=True, timeout=60
+        result = _run_arduino_cli(
+            ['compile', '--fqbn', fqbn, str(sketch_dir)],
+            capture_output=True, timeout=60
         )
 
         return jsonify({
@@ -295,9 +347,9 @@ def upload_sketch():
         ino_file.write_text(code)
         _write_tabs(sketch_dir, tabs)
 
-        compile_result = subprocess.run(
-            ['arduino-cli', 'compile', '--fqbn', fqbn, str(sketch_dir)],
-            capture_output=True, text=True, timeout=60
+        compile_result = _run_arduino_cli(
+            ['compile', '--fqbn', fqbn, str(sketch_dir)],
+            capture_output=True, timeout=60
         )
 
         if compile_result.returncode != 0:
@@ -308,9 +360,9 @@ def upload_sketch():
                 'stderr': compile_result.stderr
             })
 
-        upload_result = subprocess.run(
-            ['arduino-cli', 'upload', '-p', port, '--fqbn', fqbn, str(sketch_dir)],
-            capture_output=True, text=True, timeout=60
+        upload_result = _run_arduino_cli(
+            ['upload', '-p', port, '--fqbn', fqbn, str(sketch_dir)],
+            capture_output=True, timeout=60
         )
 
         return jsonify({
@@ -341,9 +393,9 @@ def serial_open():
     if not port:
         # Autodetectar
         try:
-            result = subprocess.run(
-                ['arduino-cli', 'board', 'list', '--format', 'json'],
-                capture_output=True, text=True, timeout=10
+            result = _run_arduino_cli(
+                ['board', 'list', '--format', 'json'],
+                capture_output=True, timeout=10
             )
             try:
                 boards = json.loads(result.stdout)
@@ -417,8 +469,15 @@ def serial_status():
 
 @app.route('/api/health')
 def health():
-    """Health check"""
-    return jsonify({'status': 'ok', 'app': 'ArduBlock'})
+    """Health check — incluye estado de arduino-cli."""
+    return jsonify({
+        'status': 'ok',
+        'app': 'ArduBlock',
+        'arduino_cli': {
+            'available': _ARDUINO_CLI_AVAILABLE,
+            'path': _ARDUINO_CLI,
+        }
+    })
 
 @app.route('/api/board/install', methods=['POST'])
 def board_install():
@@ -432,9 +491,9 @@ def board_install():
     # Instalar cores
     for core in deps.get('cores', []):
         try:
-            r = subprocess.run(
-                ['arduino-cli', 'core', 'install', core],
-                capture_output=True, text=True, timeout=120
+            r = _run_arduino_cli(
+                ['core', 'install', core],
+                capture_output=True, timeout=120
             )
             results.append({
                 'type': 'core', 'name': core,
@@ -450,9 +509,9 @@ def board_install():
     # Instalar librerías
     for lib in deps.get('libs', []):
         try:
-            r = subprocess.run(
-                ['arduino-cli', 'lib', 'install', lib],
-                capture_output=True, text=True, timeout=120
+            r = _run_arduino_cli(
+                ['lib', 'install', lib],
+                capture_output=True, timeout=120
             )
             results.append({
                 'type': 'lib', 'name': lib,
@@ -467,6 +526,241 @@ def board_install():
 
     return jsonify({'fqbn': fqbn, 'results': results})
 
+
+# ══════════════════════════════════════════════════
+#  Auto-instalación de arduino-cli
+# ══════════════════════════════════════════════════
+
+_ARDUINO_CLI_DOWNLOADS = {
+    ('linux', 'x86_64'):  'https://downloads.arduino.cc/arduino-cli/arduino-cli_latest_Linux_64bit.tar.gz',
+    ('linux', 'aarch64'): 'https://downloads.arduino.cc/arduino-cli/arduino-cli_latest_Linux_ARM64.tar.gz',
+    ('linux', 'armv7l'):  'https://downloads.arduino.cc/arduino-cli/arduino-cli_latest_Linux_ARMv7.tar.gz',
+    ('linux', 'i686'):    'https://downloads.arduino.cc/arduino-cli/arduino-cli_latest_Linux_32bit.tar.gz',
+    ('win32', 'AMD64'):   'https://downloads.arduino.cc/arduino-cli/arduino-cli_latest_Windows_64bit.zip',
+    ('darwin', 'x86_64'): 'https://downloads.arduino.cc/arduino-cli/arduino-cli_latest_macOS_64bit.tar.gz',
+    ('darwin', 'arm64'):  'https://downloads.arduino.cc/arduino-cli/arduino-cli_latest_macOS_ARM64.tar.gz',
+}
+
+
+def _get_download_url():
+    """Devuelve la URL de descarga para la plataforma actual, o None."""
+    return _ARDUINO_CLI_DOWNLOADS.get((sys.platform, platform.machine()))
+
+
+def _install_arduino_cli():
+    """Descarga e instala arduino-cli en ~/.ardublock/bin/.
+    
+    Returns:
+        dict con 'success' (bool) y 'path' o 'error'.
+    """
+    url = _get_download_url()
+    if not url:
+        return {
+            'success': False,
+            'error': f'Plataforma no soportada: {sys.platform}/{platform.machine()}. '
+                      'Instalá arduino-cli manualmente desde https://arduino.github.io/arduino-cli/installation/'
+        }
+    
+    try:
+        _ARDUINO_CLI_DIR.mkdir(parents=True, exist_ok=True)
+        
+        with tempfile.TemporaryDirectory(prefix='ardublock_cli_') as tmpdir:
+            tmppath = Path(tmpdir)
+            
+            # Descargar
+            archive_name = url.split('/')[-1]
+            archive_path = tmppath / archive_name
+            urllib.request.urlretrieve(url, str(archive_path))
+            
+            # Extraer
+            if archive_name.endswith('.zip'):
+                with zipfile.ZipFile(archive_path, 'r') as zf:
+                    zf.extractall(tmppath)
+            elif archive_name.endswith('.tar.gz') or archive_name.endswith('.tgz'):
+                with tarfile.open(archive_path, 'r:gz') as tf:
+                    tf.extractall(tmppath)
+            else:
+                return {'success': False, 'error': f'Formato desconocido: {archive_name}'}
+            
+            # Buscar el binario arduino-cli en lo extraído
+            cli_bin = None
+            for root, _dirs, files in os.walk(tmppath):
+                for f in files:
+                    if f.startswith('arduino-cli') and not f.endswith(('.zip', '.tar.gz', '.tgz', '.txt', '.md')):
+                        cli_bin = Path(root) / f
+                        break
+                if cli_bin:
+                    break
+            
+            if not cli_bin:
+                return {'success': False, 'error': 'No se encontró el binario arduino-cli en el archivo descargado'}
+            
+            # Mover al destino
+            if _ARDUINO_CLI_LOCAL.exists():
+                _ARDUINO_CLI_LOCAL.unlink()
+            shutil.move(str(cli_bin), str(_ARDUINO_CLI_LOCAL))
+            
+            # Hacer ejecutable en Unix
+            if sys.platform != 'win32':
+                st = _ARDUINO_CLI_LOCAL.stat()
+                _ARDUINO_CLI_LOCAL.chmod(st.st_mode | stat.S_IEXEC | stat.S_IXGRP | stat.S_IXOTH)
+            
+            # Actualizar variable global
+            global _ARDUINO_CLI, _ARDUINO_CLI_AVAILABLE
+            _ARDUINO_CLI = str(_ARDUINO_CLI_LOCAL)
+            _ARDUINO_CLI_AVAILABLE = True
+            
+            return {'success': True, 'path': _ARDUINO_CLI}
+            
+    except Exception as e:
+        return {'success': False, 'error': f'Error al instalar arduino-cli: {str(e)}'}
+
+
+@app.route('/api/arduino-cli/install', methods=['POST'])
+def install_arduino_cli():
+    """Instala arduino-cli automáticamente para la plataforma actual."""
+    if _ARDUINO_CLI_AVAILABLE:
+        return jsonify({'success': True, 'path': _ARDUINO_CLI, 'message': 'arduino-cli ya está instalado'})
+    
+    result = _install_arduino_cli()
+    status_code = 200 if result['success'] else 500
+    return jsonify(result), status_code
+
+
+@app.route('/api/arduino-cli/status')
+def arduino_cli_status():
+    """Estado de arduino-cli: disponible, ruta, y si se puede instalar automáticamente."""
+    return jsonify({
+        'available': _ARDUINO_CLI_AVAILABLE,
+        'path': _ARDUINO_CLI,
+        'can_auto_install': _get_download_url() is not None,
+        'platform': f'{sys.platform}/{platform.machine()}',
+    })
+
+
+# ══════════════════════════════════════════════════
+#  Detección de drivers USB-Serial (CH340, etc.)
+# ══════════════════════════════════════════════════
+
+# VID/PID de chips USB-Serial comunes que pueden requerir driver
+_KNOWN_USB_SERIAL = {
+    # (VID, PID): { name, driver_url por plataforma }
+    ('1A86', '7523'): {
+        'name': 'CH340',
+        'drivers': {
+            'win32': 'http://www.wch-ic.com/downloads/CH341SER_EXE.html',
+            'darwin': 'http://www.wch-ic.com/downloads/CH34XSER_MAC_ZIP.html',
+            'linux': None,  # incluido en kernel desde 2.6
+        }
+    },
+    ('1A86', '5523'): {
+        'name': 'CH341',
+        'drivers': {
+            'win32': 'http://www.wch-ic.com/downloads/CH341SER_EXE.html',
+            'darwin': 'http://www.wch-ic.com/downloads/CH34XSER_MAC_ZIP.html',
+            'linux': None,
+        }
+    },
+    ('10C4', 'EA60'): {
+        'name': 'CP2102',
+        'drivers': {
+            'win32': 'https://www.silabs.com/developers/usb-to-uart-bridge-vcp-drivers',
+            'darwin': 'https://www.silabs.com/developers/usb-to-uart-bridge-vcp-drivers',
+            'linux': None,
+        }
+    },
+}
+
+
+def _detect_driver_issues():
+    """Ejecuta arduino-cli board list y detecta chips que pueden necesitar drivers.
+    
+    Returns:
+        dict con 'ports' (lista de puertos con chips conocidos) y 'recommendations'.
+    """
+    ports = []
+    recommendations = []
+    
+    if not _ARDUINO_CLI_AVAILABLE:
+        return {'ports': [], 'recommendations': [], 'error': 'arduino-cli no disponible'}
+    
+    try:
+        result = _run_arduino_cli(
+            ['board', 'list', '--format', 'json'],
+            capture_output=True, timeout=10
+        )
+        data = json.loads(result.stdout)
+        detected = data.get('detected_ports', [])
+    except Exception:
+        return {'ports': [], 'recommendations': [], 'error': 'No se pudo consultar las placas'}
+    
+    for entry in detected:
+        port_info = entry.get('port', {})
+        address = port_info.get('address', '?')
+        hw_id = port_info.get('hardware_id', '') or ''
+        matching = entry.get('matching_boards', [])
+        
+        # Extraer VID/PID del hardware_id: "USB\\VID_1A86&PID_7523\\..."
+        vid = pid = None
+        for part in hw_id.replace('&', '\\').split('\\'):
+            if part.upper().startswith('VID_'):
+                vid = part[4:].upper()
+            elif part.upper().startswith('PID_'):
+                pid = part[4:].upper()
+        
+        if not (vid and pid):
+            continue
+        
+        chip_info = _KNOWN_USB_SERIAL.get((vid, pid))
+        if not chip_info:
+            continue
+        
+        driver_url = chip_info['drivers'].get(sys.platform)
+        driver_needed = driver_url is not None
+        
+        port_entry = {
+            'address': address,
+            'chip': chip_info['name'],
+            'vid': vid,
+            'pid': pid,
+            'driver_needed': driver_needed,
+            'driver_url': driver_url,
+            'board_identified': len(matching) > 0,
+        }
+        ports.append(port_entry)
+        
+        if driver_needed and not matching:
+            os_name = {'win32': 'Windows', 'darwin': 'macOS', 'linux': 'Linux'}.get(sys.platform, sys.platform)
+            recommendations.append(
+                f'Chip {chip_info["name"]} detectado en {address}. '
+                f'En {os_name} este chip requiere instalar el driver manualmente.'
+            )
+    
+    # Recomendaciones generales según plataforma
+    if ports and sys.platform == 'darwin':
+        recommendations.append(
+            'En macOS, después de instalar el driver CH34x, '
+            'reinicia el Mac y autorizá la extensión en Preferencias del Sistema → Seguridad.'
+        )
+    elif ports and sys.platform == 'win32':
+        recommendations.append(
+            'En Windows, si el driver no se instala automáticamente, '
+            'descargalo del sitio del fabricante y ejecutalo como administrador.'
+        )
+    
+    return {
+        'ports': ports,
+        'recommendations': recommendations,
+    }
+
+
+@app.route('/api/drivers')
+def drivers_status():
+    """Detecta chips USB-Serial que pueden necesitar drivers."""
+    result = _detect_driver_issues()
+    return jsonify(result)
+
+
 # ── Main ────────────────────────────────────────
 
 if __name__ == '__main__':
@@ -474,4 +768,8 @@ if __name__ == '__main__':
     print(f"   Host:      {HOST}:{PORT}")
     print(f"   Frontend:  {FRONTEND_DIR}")
     print(f"   Proyectos: {PROJECTS_DIR}")
+    if _ARDUINO_CLI_AVAILABLE:
+        print(f"   arduino-cli: ✓ {_ARDUINO_CLI}")
+    else:
+        print(f"   arduino-cli: ✕ NO ENCONTRADO (compilar/subir requiere arduino-cli)")
     app.run(host=HOST, port=PORT, debug=False)

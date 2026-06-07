@@ -344,6 +344,7 @@ const btnConnect      = document.getElementById('serial-connect');
 const btnConsoleToggle = document.getElementById('btn-console-toggle');
 const serialBaud      = document.getElementById('serial-baud');
 const btnUpload       = document.getElementById('btn-upload');
+const btnInstallCli  = document.getElementById('btn-install-cli');
 const resizer         = document.getElementById('panel-resizer');
 const editorPanel     = document.getElementById('editor-panel');
 const codePanel       = document.getElementById('code-panel');
@@ -650,6 +651,62 @@ workspace.addChangeListener((event) => {
 
 // Exponer para el hook del validador (que limpia warnings en cada cambio)
 window._applyLevelProtection = () => applyLevelProtection(getSetting('level'));
+
+// ═══ Detección de arduino-cli ═════════════════
+(async function checkArduinoCli() {
+  if (!btnInstallCli) return;
+  try {
+    const res = await fetch('/api/arduino-cli/status');
+    const data = await res.json();
+    if (data.available) {
+      // Todo bien, no mostrar nada
+      return;
+    }
+    // No está instalado
+    if (data.can_auto_install) {
+      btnInstallCli.classList.remove('hidden');
+      btnInstallCli.onclick = async () => {
+        btnInstallCli.disabled = true;
+        btnInstallCli.textContent = '⏳ Instalando...';
+        try {
+          const instRes = await fetch('/api/arduino-cli/install', { method: 'POST' });
+          const instData = await instRes.json();
+          if (instData.success) {
+            btnInstallCli.textContent = '✅ Listo';
+            btnInstallCli.style.background = '#27ae60';
+            showToast('arduino-cli instalado correctamente');
+            // Recargar estado tras 1.5s
+            setTimeout(() => {
+              btnInstallCli.classList.add('hidden');
+              btnInstallCli.disabled = false;
+              btnInstallCli.textContent = '🔧 Instalar CLI';
+              btnInstallCli.style.background = '';
+            }, 2000);
+          } else {
+            showToast('Error: ' + (instData.error || 'falló la instalación'));
+            btnInstallCli.disabled = false;
+            btnInstallCli.textContent = '🔧 Reintentar';
+          }
+        } catch (e) {
+          showToast('Error de conexión al instalar: ' + e.message);
+          btnInstallCli.disabled = false;
+          btnInstallCli.textContent = '🔧 Reintentar';
+        }
+      };
+    } else {
+      // Plataforma no soportada para auto-instalación
+      btnInstallCli.classList.remove('hidden');
+      btnInstallCli.style.background = '#c0392b';
+      btnInstallCli.textContent = '⚠ Instalar CLI (manual)';
+      btnInstallCli.title = `Plataforma ${data.platform} no soportada. Instalá manualmente.`;
+      btnInstallCli.onclick = () => {
+        window.open('https://arduino.github.io/arduino-cli/installation/', '_blank');
+      };
+    }
+  } catch (_) {
+    // Backend no disponible, ignorar
+  }
+})();
 
 // ═══ beforeunload: confirmar cierre con cambios sin guardar ═══
 window.addEventListener('beforeunload', (e) => {

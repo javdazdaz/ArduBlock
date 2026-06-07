@@ -35,6 +35,11 @@ export async function uploadToArduino() {
   try {
     const boardRes = await fetch('/api/boards');
     const boardData = await boardRes.json();
+    if (boardData.error) {
+      consoleLog('✕ ' + boardData.error, 'error');
+      btnUpload.disabled = false;
+      return;
+    }
     if (boardData.detected_ports && boardData.detected_ports.length > 0) {
       const p = boardData.detected_ports[0];
       port = p.port.address || p.address || '';
@@ -42,8 +47,20 @@ export async function uploadToArduino() {
         fqbn = p.matching_boards[0].fqbn || fqbn;
       }
       consoleLog(`✓ Placa detectada: ${port} (${fqbn})`, 'success');
+      
+      // Verificar si el chip necesita drivers
+      _checkDriverIssues();
     } else {
-      consoleLog('✕ No se detectó ningún Arduino. Conectalo por USB.', 'error');
+      // No se detectó placa — verificar si hay chips conocidos sin driver
+      const driverIssues = await _fetchDriverIssues();
+      if (driverIssues && driverIssues.recommendations && driverIssues.recommendations.length > 0) {
+        consoleLog('⚠ ' + driverIssues.recommendations[0], 'warn');
+        for (let i = 1; i < driverIssues.recommendations.length; i++) {
+          consoleLog('   ' + driverIssues.recommendations[i], 'info');
+        }
+      } else {
+        consoleLog('✕ No se detectó ningún Arduino. Conectalo por USB.', 'error');
+      }
       btnUpload.disabled = false;
       return;
     }
@@ -83,4 +100,35 @@ export async function uploadToArduino() {
     consoleLog('Error de conexión: ' + e.message, 'error');
   }
   btnUpload.disabled = false;
+}
+
+// ── Helpers de drivers USB ─────────────────────
+
+async function _fetchDriverIssues() {
+  try {
+    const res = await fetch('/api/drivers');
+    return await res.json();
+  } catch (_) {
+    return null;
+  }
+}
+
+async function _checkDriverIssues() {
+  const data = await _fetchDriverIssues();
+  if (!data || !data.ports || data.ports.length === 0) return;
+  
+  for (const p of data.ports) {
+    if (p.driver_needed && !p.board_identified) {
+      consoleLog(
+        `⚠ Chip ${p.chip} en ${p.address}: requiere driver. ` +
+        `Descargalo en ${p.driver_url}`,
+        'warn'
+      );
+    }
+  }
+  if (data.recommendations) {
+    for (const rec of data.recommendations) {
+      consoleLog('💡 ' + rec, 'info');
+    }
+  }
 }
