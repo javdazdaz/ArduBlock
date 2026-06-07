@@ -1,118 +1,100 @@
 # ArduBlock
 
-Implementación de [Blockly](https://developers.google.com/blockly) para clases de
-programación escolar con Arduino. Los estudiantes construyen sketches arrastrando
-bloques, ven el código C++ generado en tiempo real, y lo suben a la placa sin salir
-del navegador.
+Programación visual para Arduino con [Blockly](https://developers.google.com/blockly).
+Los estudiantes construyen sketches arrastrando bloques, ven el código C++ generado
+en tiempo real, y lo suben a la placa sin salir del navegador.
 
-## Contexto
+**[ardublock.matemancia.net](https://ardublock.matemancia.net)** — uso libre, sin
+instalación.
 
-Proyecto educativo para el diferenciado de programación. La herramienta elimina la
-barrera de la sintaxis de C++ y deja que el estudiante se concentre en la lógica:
-estructura de un sketch (setup/loop), pines, sensores, actuadores, variables y
-control de flujo.
+## Inicio rápido
 
-## Stack
+### Usar la versión hosteada
 
-Blockly v12 · Vite · Flask · arduino-cli · pyserial
+Abrir https://ardublock.matemancia.net. La primera vez, si arduino-cli no está
+instalado, un modal ofrece instalarlo con un clic. Compatible con Linux, Windows y
+macOS (x86_64 y ARM).
 
-## Montar el servidor
+### Montar un servidor local
 
-ArduBlock tiene arquitectura web: el profesor levanta un servidor en su
-computadora y los estudiantes acceden desde el navegador, sin instalar nada.
-Solo necesita **Node.js** y **Python 3.10 o superior**.
+Requisitos: **Node.js** y **Python 3.10+**.
 
-Para que otras computadoras de la misma red puedan entrar, usar la IP local
-del servidor en vez de `localhost` (por ejemplo `http://192.168.1.20:5000`).
-
-> Próximamente ArduBlock estará disponible en la web para uso libre, sin
-> necesidad de instalar nada. Sin garantías de disponibilidad.
-
-Todos los comandos se ejecutan dentro de la carpeta del proyecto.
-
-### 1. Instalar dependencias del sistema
-
-**Debian / Ubuntu**
 ```bash
+# Debian / Ubuntu
 sudo apt install nodejs npm python3 python3-venv
-```
-Instalar Node.js, npm (gestor de paquetes de JavaScript) y Python con soporte
-para entornos virtuales.
 
-**Arch**
-```bash
+# Arch
 sudo pacman -S nodejs npm python python-virtualenv
-```
-Instalar Node.js, npm y Python con la herramienta de entornos virtuales.
 
-**Gentoo**
-```bash
+# Gentoo
 sudo emerge -av net-libs/nodejs dev-lang/python
 ```
-Compilar e instalar Node.js y Python desde el código fuente.
-
-### 2. Instalar librerías del frontend
 
 ```bash
-npm install
-```
-Descargar Blockly y todos los plugins que usa la interfaz de bloques.
-
-### 3. Preparar el backend
-
-```bash
-python -m venv backend/.venv
+npm install                                    # dependencias frontend
+python -m venv backend/.venv                   # entorno virtual Python
 source backend/.venv/bin/activate
 pip install -r backend/requirements.txt
-```
-Crear un entorno virtual de Python, activarlo, e instalar Flask y pyserial dentro
-de él. En Windows la segunda línea cambia por:
-```bash
-backend\.venv\Scripts\activate
+./ardublock.sh start                           # iniciar servidor
 ```
 
-### 4. Iniciar el servidor
+Dos servicios: Vite en `:5000` (interfaz) y Flask en `:5001` (API). Abrir
+http://localhost:5000. Para que otras máquinas de la red accedan, usar la IP
+local en vez de `localhost`.
 
-```bash
-./ardublock.sh start     # Enciende el servidor
-./ardublock.sh stop      # Lo detiene
-./ardublock.sh status    # Muestra si está funcionando
-./ardublock.sh logs      # Muestra las últimas líneas de registro
-```
+Otros comandos: `./ardublock.sh stop | restart | status | logs`.
 
-El primer comando levanta dos servicios: Vite en el puerto 5000 (la interfaz web)
-y Flask en el 5001 (el backend que habla con Arduino).
+## Funcionalidades
 
-Abrir http://localhost:5000 en el navegador.
+| Funcionalidad | Descripción |
+|---|---|
+| **Editor de bloques** | Blockly v12 con toolbox dinámica según placa y nivel (Básico / Intermedio / Avanzado). |
+| **Código C++ en vivo** | Cada cambio en los bloques genera el código equivalente al instante. CodeMirror 6 con tabs `.ino` y `.h`. |
+| **Compilar y subir** | Un solo botón: detecta la placa, compila con arduino-cli y sube el sketch. Si falta un core, lo instala automáticamente. |
+| **Monitor Serial** | Consola integrada con salida en tiempo real, selector de baud rate, conectar/desconectar. |
+| **Validación pedagógica** | Analiza los bloques en tiempo real y advierte de errores antes de compilar. Los bloques con error se deshabilitan — nunca se borran. |
+| **Persistencia local** | Proyectos guardados automáticamente en localStorage cada 2 segundos. Sin backend, sin login. |
+| **Historial undo/redo** | Árbol completo de estados: bloques, tabs, nombre y placa. Botones ↩ y ↪. |
+| **Diagnóstico del sistema** | Menú ☰ → 🔍 Diagnóstico: estado de arduino-cli, drivers USB-Serial y placas conectadas. |
+| **Niveles de bloques** | Selector Básico / Intermedio / Avanzado. Bloques de niveles superiores muestran advertencia pero siguen funcionando. |
 
-## Quemar código en la placa
+## Placas soportadas
 
-Para compilar y subir sketches a un Arduino físico se necesita **arduino-cli**,
-la herramienta oficial de Arduino por línea de comandos.
+| Placa | FQBN | Identificación |
+|---|---|---|
+| Arduino Uno R3 | `arduino:avr:uno` | Oficial y clones CH340/CH341 |
+| Arduino Nano | `arduino:avr:nano` | Clones CH340/CP2102 |
+| Arduino Mega | `arduino:avr:mega` | Oficial y clones |
+| Arduino Uno R4 Minima | `arduino:renesas_uno:minima` | Oficial |
+| Arduino Uno R4 WiFi | `arduino:renesas_uno:wifi` | Oficial |
+| Arduino Nano ESP32 | `arduino:esp32:nano_nora` | Oficial |
 
-> ⚠️ ArduBlock solo ha sido testeado en Linux. La instalación de arduino-cli en
-> Windows y Mac está documentada abajo, pero quemar código en esos sistemas
-> todavía no fue verificado.
 
-### Instalar arduino-cli
+## arduino-cli
 
-**Windows**
+ArduBlock gestiona arduino-cli de forma automática:
+
+- **Detección al cargar** — si no está instalado, abre un modal ofreciendo
+  instalarlo (descarga desde `downloads.arduino.cc`).
+- **Diagnóstico** — el menú ☰ → 🔍 Diagnóstico muestra estado, ruta y permite
+  reinstalar.
+- **Auto-install de cores** — si al compilar falta un core (`arduino:avr`,
+  `arduino:renesas_uno`, etc.), lo instala y reintenta.
+
+### Instalación manual
+
+Si prefieres instalar arduino-cli por tu cuenta:
+
 ```powershell
-winget install Arduino.arduino-cli
+# Windows
+winget install ArduinoSA.CLI
 ```
-Si winget no está disponible, descargar el instalador desde
-https://arduino.github.io/arduino-cli/installation/.
 
-Algunas placas clone (CH340) requieren instalar el driver manualmente.
-
-**Mac**
 ```bash
+# macOS
 brew install arduino-cli
 ```
-Las placas conectadas aparecen como `/dev/cu.usbmodem*`. No requiere permisos
-adicionales.
 
-**Linux**
 ```bash
 # Debian / Ubuntu
 sudo apt install arduino-cli
@@ -120,65 +102,59 @@ sudo apt install arduino-cli
 # Arch
 sudo pacman -S arduino-cli
 
-# Gentoo
+# Gentoo (overlay GURU)
 sudo emerge -av dev-embedded/arduino-cli
 ```
 
-En Linux el puerto serial tiene permisos restringidos. Para que arduino-cli
-pueda hablar con la placa, agregar al usuario al grupo correspondiente y
-**cerrar y volver a abrir sesión**:
+### Permisos del puerto serial (Linux)
+
+Agregar el usuario al grupo correspondiente y vuelve a iniciar sesión:
 
 | Distro | Grupo | Comando |
-|--------|-------|---------|
+|---|---|---|
 | Debian / Ubuntu | `dialout` | `sudo gpasswd -a $USER dialout` |
 | Arch | `uucp` | `sudo gpasswd -a $USER uucp` |
-| Gentoo | `uucp` | `sudo gpasswd -a $USER uucp` |
+| Gentoo | `dialout` | `sudo gpasswd -a $USER dialout` |
 
-## Qué puede hacer
+### Drivers USB-Serial
 
-**Validación en tiempo real.** Mientras el estudiante arma el sketch, ArduBlock
-analiza los bloques y avisa de errores antes de compilar. Los bloques con error se
-ponen grises — **nunca se borran** solos. El estudiante ve el problema, entiende
-por qué está mal, y lo corrige.
+Las placas clon usan chips CH340/CH341 que en Windows y macOS requieren drivers
+manuales. ArduBlock los detecta y muestra el enlace de descarga en el diagnóstico.
+En Linux funcionan sin drivers adicionales (kernel ≥ 2.6).
 
-**Generación automática de C++.** Cada cambio en los bloques genera el código
-equivalente al instante. El estudiante ve la traducción directa entre bloque y
-código, reforzando el aprendizaje de la sintaxis.
+## Reglas de validación
 
-**Persistencia en el navegador.** Los proyectos se guardan automáticamente en
-localStorage cada 2 segundos. Al volver a abrir la página, se recupera el último
-proyecto. Sin backend, sin login, sin que un estudiante pueda borrar el trabajo
-de otro.
+Cada aviso explica al estudiante qué ocurre y por qué. Las advertencias buscan dar retroalimentación y explicar porque algo falla.
 
-**Monitor Serial integrado.** La consola muestra la salida de la placa en tiempo
-real. Conectar, desconectar y elegir baud rate desde la interfaz.
+| # | Regla | Descripción |
+|---|---|---|
+| R1 | Dos bloques `al iniciar` | Solo puede haber un `setup()`. El duplicado se deshabilita. |
+| R2 | Dos bloques `repetir siempre` | Solo puede haber un `loop()`. El duplicado se deshabilita. |
+| R3 | `iniciar Serial` fuera de setup() | Debe ir dentro de `al iniciar`. |
+| R4 | Bloque suelto | No está conectado a `al iniciar` ni a `repetir siempre`. |
+| R5 | `iniciar variable` dentro de loop() | La variable se redeclararía en cada iteración. |
+| R6a | Servo sin declarar | No hay un bloque `crear servo` con ese nombre. |
+| R6b | `crear servo` fuera de setup() | Debe ir dentro de `al iniciar`. |
+| R6c | `crear LCD/DHT/ultrasónico` fuera de setup() | Debe ir dentro de `al iniciar`. |
+| R7 | Pin sin `configurar pin` | El pin no fue declarado con `configurar pin` en setup(). |
 
-**Compilar y subir a la placa.** Un solo botón: detecta la placa conectada,
-compila el sketch con arduino-cli y lo sube. Todo el flujo pasa en el panel de
-código, sin abrir el Arduino IDE.
+## Desarrollo
 
-## Retroalimentación al estudiante
+### Stack técnico
 
-Las reglas de validación están pensadas como ayuda pedagógica, no como
-restricciones técnicas. Cada aviso le dice al estudiante **qué pasa y por qué**.
+Blockly v12 · Vite · Flask · arduino-cli · pyserial · CodeMirror 6
 
-| Regla | Qué detecta | Descripción |
-|-------|------------|------------|
-| R1 | Dos bloques `al iniciar` | Solo puede haber un `al iniciar (setup)`. El duplicado se deshabilita. |
-| R2 | Dos bloques `repetir siempre` | Solo puede haber un `repetir siempre (loop)`. El duplicado se deshabilita. |
-| R3 | `iniciar Serial` fuera de setup() | `iniciar Serial` debe ir dentro de `al iniciar (setup)`. |
-| R4 | Bloque suelto | El bloque no está conectado a `al iniciar` ni a `repetir siempre`. |
-| R5 | `iniciar variable` dentro de loop() | La variable se redeclara en cada vuelta de `repetir siempre`. |
-| R6a | Servo usado sin declarar | No hay un bloque `crear servo` con ese nombre en el sketch. |
-| R6b | `crear servo` fuera de setup() | `crear servo` debe ir dentro de `al iniciar (setup)`. |
-| R6c | `crear LCD/DHT/ultrasónico` fuera de setup() | Estos bloques deben ir dentro de `al iniciar (setup)`. |
-| R7 | Pin usado sin `configurar pin` | El pin no fue declarado con `configurar pin` en `al iniciar (setup)`. |
+### Estructura del proyecto
 
-## Roadmap
-
-- [ ] **Múltiples tabs en el workspace** — soportar varias pestañas de sketches abiertas simultáneamente, como un IDE.
-- [ ] **Selector de placa en la toolbar de Arduino** — dropdown para elegir modelo de placa (Uno, Nano, Mega, etc.) y que afecte compilación y pines disponibles.
-
+```
+ardublock/
+├── frontend/           # HTML, CSS, JS (Blockly + Vite)
+│   ├── js/             # Módulos: blocks, generator, upload, serial, ...
+│   └── css/
+├── backend/            # API Flask (compilar, subir, serial, drivers)
+├── examples/           # Sketches .ino de ejemplo
+└── ardublock.sh        # Script de control del servicio
+```
 ## Licencia
 
 GPL-3.0-or-later
