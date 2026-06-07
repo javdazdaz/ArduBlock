@@ -45,6 +45,17 @@ export async function uploadToArduino() {
       port = p.port.address || p.address || '';
       if (p.matching_boards && p.matching_boards.length > 0) {
         fqbn = p.matching_boards[0].fqbn || fqbn;
+      } else if (p.suggested_fqbn) {
+        // Clon detectado — usar sugerencia o respetar selección del usuario
+        const userFqbn = getSetting('board');
+        const compat = p.compatible_fqbns || [];
+        if (compat.includes(userFqbn)) {
+          fqbn = userFqbn;
+        } else {
+          fqbn = p.suggested_fqbn;
+          consoleLog(`💡 Placa no identificada (${p.chip_label || 'clon'}). Asumiendo ${fqbn}.`, 'info');
+          consoleLog('   Si es otra placa, cambiala en el selector.', 'info');
+        }
       }
       consoleLog(`✓ Placa detectada: ${port} (${fqbn})`, 'success');
       

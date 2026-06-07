@@ -384,6 +384,24 @@ if (boardSelector) {
     // Reconstruir toolbox
     if (window._rebuildToolbox) window._rebuildToolbox(fqbn);
 
+    // Verificar compatibilidad con chip detectado
+    try {
+      const brd = await fetch('/api/boards').then(r => r.json());
+      const ports = brd.detected_ports || [];
+      for (const p of ports) {
+        const matching = p.matching_boards || [];
+        if (matching.length > 0) continue; // placa oficial identificada, todo bien
+        const compat = p.compatible_fqbns || [];
+        if (compat.length > 0 && !compat.includes(fqbn)) {
+          const compatNames = compat.map(f => {
+            const opt = boardSelector.querySelector(`option[value="${f}"]`);
+            return opt ? opt.textContent : f;
+          }).join(', ');
+          showToast(`⚠ La placa "${boardSelector.options[boardSelector.selectedIndex]?.text || fqbn}" puede no ser compatible con el chip detectado (${p.chip_label || 'desconocido'}). Compatibles: ${compatNames}`);
+        }
+      }
+    } catch (_) { /* ignorar */ }
+
     // Instalar cores/libs con feedback (solo lo que falte)
     const boardName = boardSelector.options[boardSelector.selectedIndex]?.text || fqbn;
     try {
@@ -818,8 +836,25 @@ async function openDiagnostics() {
     for (const p of brd.detected_ports) {
       const addr = p.port?.address || p.address || '?';
       const boards = p.matching_boards || [];
-      const names = boards.length > 0 ? boards.map(b => b.name || b.fqbn).join(', ') : 'No identificada';
-      html += `<div class="diag-row"><span>${addr}</span><span>${names}</span></div>`;
+      if (boards.length > 0) {
+        const names = boards.map(b => b.name || b.fqbn).join(', ');
+        html += `<div class="diag-row"><span>${addr}</span><span class="diag-ok">${names}</span></div>`;
+      } else if (p.suggested_fqbn && p.compatible_fqbns) {
+        // Clon no identificado — ofrecer selector de placa
+        const currentBoard = boardSelector?.value || p.suggested_fqbn;
+        const label = p.chip_label || 'Clon';
+        html += `<div class="diag-row"><span>${addr}</span><span class="diag-warn">${label} — ¿qué placa es?</span></div>`;
+        html += `<div class="diag-row" style="flex-wrap:wrap;gap:0.3rem">`;
+        for (const f of p.compatible_fqbns) {
+          const opt = boardSelector?.querySelector(`option[value="${f}"]`);
+          const name = opt ? opt.textContent : f;
+          const sel = f === currentBoard ? 'style="background:#27ae60;color:#fff"' : '';
+          html += `<button class="diag-btn install diag-board-pick" data-fqbn="${f}" ${sel}>${name}</button>`;
+        }
+        html += `</div>`;
+      } else {
+        html += `<div class="diag-row"><span>${addr}</span><span>No identificada</span></div>`;
+      }
     }
   }
   html += '</div>';
@@ -857,6 +892,25 @@ async function openDiagnostics() {
   });
 
   document.getElementById('diag-refresh')?.addEventListener('click', openDiagnostics);
+
+  // Botones de selección de placa en diagnóstico
+  document.querySelectorAll('.diag-board-pick').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const fqbn = btn.dataset.fqbn;
+      if (boardSelector) {
+        boardSelector.value = fqbn;
+        boardSelector.dispatchEvent(new Event('change'));
+      }
+      // Actualizar estilo visual
+      document.querySelectorAll('.diag-board-pick').forEach(b => {
+        b.style.background = '';
+        b.style.color = '';
+      });
+      btn.style.background = '#27ae60';
+      btn.style.color = '#fff';
+      showToast(`Placa cambiada a ${btn.textContent}`);
+    });
+  });
 }
 
 // Conectar menú hamburguesa

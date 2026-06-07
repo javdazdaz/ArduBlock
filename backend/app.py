@@ -268,9 +268,54 @@ def get_example(example_path):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+# ── Mapeo chips USB → placas probables ──────────
+# (VID, PID): { suggested_fqbn, compatible_fqbns, label }
+_CHIP_BOARD_MAP = {
+    ('1A86', '7523'): {
+        'suggested_fqbn': 'arduino:avr:uno',
+        'compatible_fqbns': ['arduino:avr:uno', 'arduino:avr:nano', 'arduino:avr:mega'],
+        'label': 'CH340 (clon Arduino AVR)',
+    },
+    ('1A86', '5523'): {
+        'suggested_fqbn': 'arduino:avr:uno',
+        'compatible_fqbns': ['arduino:avr:uno', 'arduino:avr:nano', 'arduino:avr:mega'],
+        'label': 'CH341 (clon Arduino AVR)',
+    },
+    ('10C4', 'EA60'): {
+        'suggested_fqbn': 'arduino:avr:nano',
+        'compatible_fqbns': ['arduino:avr:nano', 'arduino:avr:uno', 'arduino:avr:mega', 'arduino:esp32:nano_nora'],
+        'label': 'CP2102 (clon Arduino/ESP)',
+    },
+}
+
+
+def _extract_vid_pid(port_info):
+    """Extrae (VID, PID) normalizados de un puerto, o (None, None)."""
+    props = port_info.get('properties', {})
+    vid = pid = None
+    
+    # Formato Windows: hardware_id = "USB\\VID_1A86&PID_7523\\..."
+    hw_id = port_info.get('hardware_id', '') or ''
+    for part in hw_id.replace('&', '\\').split('\\'):
+        if part.upper().startswith('VID_'):
+            vid = part[4:].upper()
+        elif part.upper().startswith('PID_'):
+            pid = part[4:].upper()
+    
+    # Formato Linux: properties.vid = "0x1a86", properties.pid = "0x7523"
+    if not (vid and pid):
+        raw_vid = props.get('vid', '')
+        raw_pid = props.get('pid', '')
+        if raw_vid and raw_pid:
+            vid = raw_vid.replace('0x', '').replace('0X', '').upper().zfill(4)
+            pid = raw_pid.replace('0x', '').replace('0X', '').upper().zfill(4)
+    
+    return (vid, pid)
+
+
 @app.route('/api/boards')
 def list_boards():
-    """Lista placas Arduino conectadas"""
+    """Lista placas Arduino conectadas, con sugerencia para clones."""
     try:
         result = _run_arduino_cli(
             ['board', 'list', '--format', 'json'],
@@ -278,7 +323,23 @@ def list_boards():
         )
         if result.returncode != 0:
             return jsonify({'error': result.stderr}), 500
-        return jsonify(json.loads(result.stdout))
+        
+        data = json.loads(result.stdout)
+        
+        # Enriquecer puertos no identificados con sugerencias
+        for entry in data.get('detected_ports', []):
+            port_info = entry.get('port', {})
+            matching = entry.get('matching_boards', [])
+            
+            if not matching:
+                vid, pid = _extract_vid_pid(port_info)
+                chip_map = _CHIP_BOARD_MAP.get((vid, pid)) if vid and pid else None
+                if chip_map:
+                    entry['suggested_fqbn'] = chip_map['suggested_fqbn']
+                    entry['compatible_fqbns'] = chip_map['compatible_fqbns']
+                    entry['chip_label'] = chip_map['label']
+        
+        return jsonify(data)
     except subprocess.TimeoutExpired:
         return jsonify({'error': 'Timeout buscando placas'}), 500
     except Exception as e:
@@ -751,28 +812,8 @@ def _detect_driver_issues():
         port_info = entry.get('port', {})
         address = port_info.get('address', '?')
         matching = entry.get('matching_boards', [])
-        props = port_info.get('properties', {})
         
-        # Extraer VID/PID. Dos formatos posibles:
-        #   Windows: hardware_id = "USB\\VID_1A86&PID_7523\\..."
-        #   Linux:   properties.vid = "0x1a86", properties.pid = "0x7523"
-        vid = pid = None
-        
-        hw_id = port_info.get('hardware_id', '') or ''
-        for part in hw_id.replace('&', '\\').split('\\'):
-            if part.upper().startswith('VID_'):
-                vid = part[4:].upper()
-            elif part.upper().startswith('PID_'):
-                pid = part[4:].upper()
-        
-        # Si no se encontró en hardware_id, buscar en properties (Linux)
-        if not (vid and pid):
-            raw_vid = props.get('vid', '')
-            raw_pid = props.get('pid', '')
-            if raw_vid and raw_pid:
-                vid = raw_vid.replace('0x', '').replace('0X', '').upper().zfill(4)
-                pid = raw_pid.replace('0x', '').replace('0X', '').upper().zfill(4)
-        
+        vid, pid = _extract_vid_pid(port_info)
         if not (vid and pid):
             continue
         
@@ -783,6 +824,9 @@ def _detect_driver_issues():
         driver_url = chip_info['drivers'].get(sys.platform)
         driver_needed = driver_url is not None
         
+        # Info de placas compatibles
+        board_map = _CHIP_BOARD_MAP.get((vid, pid), {})
+        
         port_entry = {
             'address': address,
             'chip': chip_info['name'],
@@ -791,6 +835,9 @@ def _detect_driver_issues():
             'driver_needed': driver_needed,
             'driver_url': driver_url,
             'board_identified': len(matching) > 0,
+            'suggested_fqbn': board_map.get('suggested_fqbn'),
+            'compatible_fqbns': board_map.get('compatible_fqbns', []),
+            'chip_label': board_map.get('label', chip_info['name']),
         }
         ports.append(port_entry)
         
