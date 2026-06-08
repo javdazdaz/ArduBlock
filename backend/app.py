@@ -104,7 +104,7 @@ BOARD_DEPS = {
     'arduino:avr:nano':             {'cores': ['arduino:avr'], 'libs': []},
     'arduino:avr:mega':             {'cores': ['arduino:avr'], 'libs': []},
     'arduino:renesas_uno:minima':   {'cores': ['arduino:renesas_uno'], 'libs': []},
-    'arduino:renesas_uno:wifi':     {'cores': ['arduino:renesas_uno'], 'libs': []},  # WiFiS3 incluida en el core
+    'arduino:renesas_uno:unor4wifi': {'cores': ['arduino:renesas_uno'], 'libs': []},  # WiFiS3 incluida en el core
     'arduino:esp32:nano_nora':      {'cores': ['arduino:esp32'], 'libs': []},
 }
 
