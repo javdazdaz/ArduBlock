@@ -217,7 +217,20 @@ async function _uploadRenesas(code, fqbn, tabs) {
     return;
   }
 
-  // 2. Abrir puerto a 230400 (el bootloader espera este baud)
+  // 2. Touch 1200 bps para entrar en bootloader
+  consoleLog('🔄 Activando bootloader (1200 bps)...', 'info');
+  try {
+    await port.open({ baudRate: 1200 });
+    await new Promise(r => setTimeout(r, 100));
+    await port.close();
+  } catch (e) {
+    consoleLog('⚠ No se pudo hacer touch 1200 bps: ' + e.message, 'warn');
+  }
+  // Esperar que el bootloader inicie
+  consoleLog('   Esperando bootloader...', 'info');
+  await new Promise(r => setTimeout(r, 1500));
+
+  // 3. Abrir puerto a 230400 (el bootloader espera este baud)
   consoleLog('🔌 Abriendo puerto a 230400 baud...', 'info');
   try {
     await port.open({ baudRate: 230400 });
