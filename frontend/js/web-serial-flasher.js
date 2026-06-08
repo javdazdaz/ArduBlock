@@ -491,30 +491,23 @@ const SAMBA_FLASH_BASE = 0x00000000;
 class SAMBAFlasher {
   constructor(log) {
     this.port = null;
-    this.writer = null;
-    this.reader = null;
     this.log = log || (() => {});
   }
 
   /**
-   * Abre el puerto serial ya solicitado (requestPort lo hizo el caller).
+   * Conecta al puerto serial ya abierto (requestPort + open lo hizo el caller).
+   * No mantiene reader — cada lectura obtiene y libera el suyo.
    * @param {SerialPort} port
    */
   async connect(port) {
     this.port = port;
-    // Configurar para lectura/escritura
-    // NOTA: NO reconfigurar baud rate — el bootloader está a 230400
-    this.reader = this.port.readable.getReader();
-    // Pequeña espera para estabilizar
     await this._delay(300);
     this.log('✓ Puerto SAM-BA listo', 'success');
   }
 
   async disconnect() {
-    try { this.reader?.releaseLock(); } catch (_) {}
     try { await this.port?.close(); } catch (_) {}
     this.port = null;
-    this.reader = null;
     this.log('🔌 Puerto SAM-BA cerrado', 'info');
   }
 
@@ -526,11 +519,8 @@ class SAMBAFlasher {
     } finally {
       writer.releaseLock();
     }
-
-    // Pequeña pausa para que el bootloader procese
     await this._delay(30);
-    // Leer respuesta
-    return await this._readLine(5000);
+    return await this._readLine(3000);
   }
 
   /** Envía comando S (write to RAM) + datos binarios. */
@@ -539,79 +529,62 @@ class SAMBAFlasher {
     const writer = this.port.writable.getWriter();
     try {
       await writer.write(new TextEncoder().encode(cmd));
-      // Pausa para que el bootloader procese el header S antes de recibir datos
       await this._delay(15);
       await writer.write(data);
-      // Esperar a que los datos se envíen
       await this._delay(30);
     } finally {
       writer.releaseLock();
     }
   }
 
-  /** 
-   * Lee respuesta del bootloader. El bootloader envía la respuesta inmediatamente
-   * después de cada comando, terminada en \n. Usamos reader.read() secuencial
-   * acumulando hasta encontrar \n, con timeout total.
+  /**
+   * Lee respuesta del bootloader terminada en \n (0x0a).
+   * Obtiene reader fresco cada vez, acumula chunks hasta encontrar \n,
+   * y libera el reader. Sin cancel() — eso aborta el stream.
    */
   async _readLine(timeoutMs) {
     const start = Date.now();
     const chunks = [];
-    
+
     while (Date.now() - start < timeoutMs) {
-      // reader.read() devuelve {value, done}. Si no hay datos aún, se queda esperando.
-      // Como el bootloader responde rápido, un timeout de 500ms por lectura alcanza.
       const remaining = timeoutMs - (Date.now() - start);
       if (remaining <= 0) break;
-      
+
+      let reader;
       try {
-        // Cancelar cualquier read previo si existe (esto es seguro en Web Serial)
-        await this.reader.cancel();
-      } catch (_) {}
-      
-      try {
-        const { value, done } = await this._readWithTimeout(Math.min(500, remaining));
+        reader = this.port.readable.getReader();
+        const { value, done } = await Promise.race([
+          reader.read(),
+          new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('timeout')), Math.min(500, remaining))
+          )
+        ]);
+
         if (value && value.length > 0) {
           chunks.push(value);
           // ¿Ya tenemos \n?
-          let totalLen = chunks.reduce((s, c) => s + c.length, 0);
-          if (totalLen > 0) {
-            const all = new Uint8Array(totalLen);
-            let off = 0;
-            for (const c of chunks) { all.set(c, off); off += c.length; }
-            if (all.includes(0x0a)) return all;
-          }
+          let total = chunks.reduce((s, c) => s + c.length, 0);
+          const all = new Uint8Array(total);
+          let off = 0;
+          for (const c of chunks) { all.set(c, off); off += c.length; }
+          if (all.includes(0x0a)) return all;
         }
         if (done) break;
-      } catch (_) {
+      } catch (e) {
+        if (e.message !== 'timeout') throw e;
         // Timeout de esta lectura, reintentar
         await this._delay(50);
+      } finally {
+        try { reader?.releaseLock(); } catch (_) {}
       }
     }
-    
+
     if (chunks.length === 0) return new Uint8Array(0);
-    const totalLen = chunks.reduce((s, c) => s + c.length, 0);
-    const all = new Uint8Array(totalLen);
+    let total = chunks.reduce((s, c) => s + c.length, 0);
+    const all = new Uint8Array(total);
     let off = 0;
     for (const c of chunks) { all.set(c, off); off += c.length; }
     return all;
-  }
-
-  /**
-   * reader.read() con timeout.
-   */
-  async _readWithTimeout(ms) {
-    let timer;
-    try {
-      return await Promise.race([
-        this.reader.read(),
-        new Promise((_, reject) => {
-          timer = setTimeout(() => reject(new Error('Timeout')), ms);
-        })
-      ]);
-    } finally {
-      if (timer) clearTimeout(timer);
-    }
   }
 
   async _delay(ms) {
@@ -619,31 +592,28 @@ class SAMBAFlasher {
   }
 
   /**
-   * Secuencia de init: N#, V#, I#.
+   * Secuencia de init: N#, V#, I# + subir applet.
    */
   async init() {
     this.log('🔄 Inicializando SAM-BA...', 'info');
 
-    // N# — binary mode
     let resp = await this._cmd('N#');
     if (resp.length < 2) throw new Error('Bootloader no responde a N#');
 
-    // V# — version
     resp = await this._cmd('V#');
     const ver = new TextDecoder().decode(resp).trim();
     this.log('   Bootloader: ' + ver, 'info');
     if (!ver.includes('Arduino')) throw new Error('Bootloader no reconocido: ' + ver);
 
-    // I# — chip ID
     resp = await this._cmd('I#');
     const chip = new TextDecoder().decode(resp).trim();
     this.log('   Chip: ' + chip, 'info');
 
-    // Subir applet
+    // Subir applet a RAM
     this.log('📟 Subiendo applet...', 'info');
     await this._writeRAM(SAMBA_APPLET_ADDR, SAMBA_APPLET);
 
-    // Configurar applet: writeWord(0x30, 0x400) y writeWord(0x20, 0)
+    // Configurar applet
     await this._cmd(`W${(SAMBA_APPLET_ADDR + 0x30).toString(16).padStart(8, '0').toUpperCase()},00000400#`);
     await this._cmd(`W${(SAMBA_APPLET_ADDR + 0x20).toString(16).padStart(8, '0').toUpperCase()},00000000#`);
 
@@ -655,7 +625,6 @@ class SAMBAFlasher {
    */
   async chipErase() {
     this.log('🗑️ Borrando flash...', 'info');
-    // Ejecutar applet en addr 0 para chipErase
     const resp = await this._cmd('X00000000#');
     const text = new TextDecoder().decode(resp).trim();
     if (!text.startsWith('X')) throw new Error('Chip erase falló: ' + text);
@@ -678,19 +647,14 @@ class SAMBAFlasher {
     const pageBuf = new Uint8Array(SAMBA_PAGE_SIZE);
 
     while (offset < binData.length) {
-      // Preparar página (rellenar con 0x00 si es parcial)
       const chunkSize = Math.min(SAMBA_PAGE_SIZE, binData.length - offset);
       pageBuf.fill(0x00);
       pageBuf.set(binData.slice(offset, offset + chunkSize));
 
-      // 1. Subir página a RAM
       await this._writeRAM(SAMBA_BUFFER_ADDR, pageBuf);
-
-      // 2. Checksum
       await this._cmd(`Y${SAMBA_BUFFER_ADDR.toString(16).padStart(8, '0').toUpperCase()},0#`);
 
-      // 3. Flashear a flash
-      const flashAddr = (SAMBA_FLASH_BASE + offset);
+      const flashAddr = SAMBA_FLASH_BASE + offset;
       await this._cmd(`Y${flashAddr.toString(16).padStart(8, '0').toUpperCase()},00001000#`);
 
       offset += SAMBA_PAGE_SIZE;
