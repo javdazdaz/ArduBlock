@@ -500,10 +500,26 @@ def compile_hex():
             }), 422
 
         hex_files = list(build_dir.glob('*.hex'))
+        bin_files = list(build_dir.glob('*.ino.bin'))
+
+        # Placas no-AVR (Renesas, ESP32) producen .bin, no .hex
+        is_avr = ':avr:' in fqbn
+        if not is_avr and bin_files:
+            import base64
+            bin_content = bin_files[0].read_bytes()
+            return jsonify({
+                'success': True,
+                'format': 'bin',
+                'bin': base64.b64encode(bin_content).decode('ascii'),
+                'bin_name': bin_files[0].name,
+                'fqbn': fqbn,
+                'stdout': result.stdout
+            })
+
         if not hex_files:
             return jsonify({
                 'success': False,
-                'error': 'No se encontró .hex en la salida de compilación'
+                'error': 'No se encontró .hex ni .bin en la salida de compilación'
             }), 500
 
         hex_content = hex_files[0].read_text()

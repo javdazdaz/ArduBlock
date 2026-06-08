@@ -5,7 +5,7 @@
 import { generateArduinoCode } from './generator.js';
 import { getSetting } from './settings.js';
 import { consoleLog, isSerialConnected, disconnectSerial, connectSerial } from './serial.js';
-import { flashHexViaSerial, requestAndOpenPort, getDeviceCode } from './web-serial-flasher.js';
+import { flashHexViaSerial, requestAndOpenPort, getDeviceCode, SAMBAFlasher } from './web-serial-flasher.js';
 
 let workspace, arduinoConsole, btnConsoleToggle, consoleOutput, btnUpload;
 
@@ -123,9 +123,10 @@ async function _uploadViaWebSerial(code, fqbn, tabs) {
     return;
   }
 
-  // 0. Verificar que la placa sea AVR (stk500v1 solo funciona con AVR)
+  // 0. Verificar compatibilidad de placa con Web Serial
+  let deviceCode;
   try {
-    getDeviceCode(fqbn); // lanza error si no es AVR
+    deviceCode = getDeviceCode(fqbn);
   } catch (e) {
     consoleLog('⚠ ' + e.message, 'warn');
     consoleLog('  Conectá el Arduino a una máquina con arduino-cli para flashear esta placa.', 'info');
@@ -134,6 +135,13 @@ async function _uploadViaWebSerial(code, fqbn, tabs) {
 
   // 1. Pedir puerto AHORA (requiere activación de usuario = este click)
   consoleLog('💡 Seleccioná el puerto del Arduino en el diálogo.', 'info');
+  if (deviceCode === 'renesas-ra4m1') {
+    // ── Modo SAM-BA (Renesas UNO R4) ──
+    await _uploadRenesas(code, fqbn, tabs);
+    return;
+  }
+
+  // ── Modo stk500v1 (AVR) ──
   let flasher;
   try {
     flasher = await requestAndOpenPort(msg => consoleLog(msg));
@@ -191,6 +199,86 @@ async function _uploadViaWebSerial(code, fqbn, tabs) {
     consoleLog('✕ Error al flashear: ' + e.message, 'error');
     if (e.message.includes('sincronizar') || e.message.includes('bootloader')) {
       consoleLog('  ¿El Arduino está en modo programación? Probá presionar RESET.', 'info');
+    }
+  } finally {
+    await flasher.disconnect();
+  }
+}
+
+// ── Upload vía SAM-BA (Renesas UNO R4) ─────
+
+async function _uploadRenesas(code, fqbn, tabs) {
+  // 1. Solicitar puerto serial
+  let port;
+  try {
+    port = await navigator.serial.requestPort();
+  } catch (e) {
+    consoleLog('✕ No se seleccionó ningún puerto', 'error');
+    return;
+  }
+
+  // 2. Abrir puerto a 230400 (el bootloader espera este baud)
+  consoleLog('🔌 Abriendo puerto a 230400 baud...', 'info');
+  try {
+    await port.open({ baudRate: 230400 });
+  } catch (e) {
+    consoleLog('✕ No se pudo abrir el puerto: ' + e.message, 'error');
+    return;
+  }
+
+  const flasher = new SAMBAFlasher(msg => consoleLog(msg));
+  try {
+    await flasher.connect(port);
+
+    // 3. Compilar en servidor → .bin
+    consoleLog('🌐 Compilando en servidor...', 'info');
+    let binBase64;
+    try {
+      const res = await fetch('/api/compile-hex', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code, fqbn, tabs })
+      });
+      const data = await res.json();
+
+      if (!data.success) {
+        consoleLog('✕ Error de compilación:', 'error');
+        if (data.stdout) {
+          for (const line of data.stdout.split('\n').filter(l => l.trim())) {
+            consoleLog(line, 'error');
+          }
+        }
+        if (data.stderr) {
+          for (const line of data.stderr.split('\n').filter(l => l.trim())) {
+            consoleLog(line, 'error');
+          }
+        }
+        return;
+      }
+
+      if (data.format === 'bin' && data.bin) {
+        binBase64 = data.bin;
+        consoleLog('✓ Compilación exitosa (.bin)', 'success');
+      } else {
+        consoleLog('✕ El servidor no devolvió .bin para esta placa', 'error');
+        return;
+      }
+    } catch (e) {
+      consoleLog('Error de conexión con el servidor: ' + e.message, 'error');
+      return;
+    }
+
+    // 4. Decodificar y flashear
+    const binData = Uint8Array.from(atob(binBase64), c => c.charCodeAt(0));
+    await flasher.flash(binData);
+    await flasher.reset();
+
+    consoleLog('✅ ¡Sketch flasheado correctamente vía Web Serial (SAM-BA)!', 'success');
+
+  } catch (e) {
+    consoleLog('✕ Error al flashear: ' + e.message, 'error');
+    if (e.message.includes('Bootloader no responde')) {
+      consoleLog('  Probá presionando RESET en la placa dos veces.', 'info');
     }
   } finally {
     await flasher.disconnect();
