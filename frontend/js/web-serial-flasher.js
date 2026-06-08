@@ -527,7 +527,9 @@ class SAMBAFlasher {
       writer.releaseLock();
     }
 
-    // Leer respuesta (hasta \n o timeout 5s)
+    // Pequeña pausa para que el bootloader procese
+    await this._delay(30);
+    // Leer respuesta
     return await this._readLine(5000);
   }
 
@@ -537,49 +539,79 @@ class SAMBAFlasher {
     const writer = this.port.writable.getWriter();
     try {
       await writer.write(new TextEncoder().encode(cmd));
+      // Pausa para que el bootloader procese el header S antes de recibir datos
+      await this._delay(15);
       await writer.write(data);
+      // Esperar a que los datos se envíen
+      await this._delay(30);
     } finally {
       writer.releaseLock();
     }
   }
 
-  /** Lee hasta encontrar \n o timeout. */
+  /** 
+   * Lee respuesta del bootloader. El bootloader envía la respuesta inmediatamente
+   * después de cada comando, terminada en \n. Usamos reader.read() secuencial
+   * acumulando hasta encontrar \n, con timeout total.
+   */
   async _readLine(timeoutMs) {
     const start = Date.now();
     const chunks = [];
+    
     while (Date.now() - start < timeoutMs) {
+      // reader.read() devuelve {value, done}. Si no hay datos aún, se queda esperando.
+      // Como el bootloader responde rápido, un timeout de 500ms por lectura alcanza.
+      const remaining = timeoutMs - (Date.now() - start);
+      if (remaining <= 0) break;
+      
       try {
-        const { value, done } = await this._readWithTimeout(200);
+        // Cancelar cualquier read previo si existe (esto es seguro en Web Serial)
+        await this.reader.cancel();
+      } catch (_) {}
+      
+      try {
+        const { value, done } = await this._readWithTimeout(Math.min(500, remaining));
         if (value && value.length > 0) {
           chunks.push(value);
-          // Buscar \n en lo acumulado
-          const all = new Uint8Array(chunks.reduce((s, c) => s + c.length, 0));
-          let off = 0;
-          for (const c of chunks) { all.set(c, off); off += c.length; }
-          if (all.includes(0x0a)) return all;
+          // ¿Ya tenemos \n?
+          let totalLen = chunks.reduce((s, c) => s + c.length, 0);
+          if (totalLen > 0) {
+            const all = new Uint8Array(totalLen);
+            let off = 0;
+            for (const c of chunks) { all.set(c, off); off += c.length; }
+            if (all.includes(0x0a)) return all;
+          }
         }
         if (done) break;
-      } catch (_) { break; }
+      } catch (_) {
+        // Timeout de esta lectura, reintentar
+        await this._delay(50);
+      }
     }
-    // Devolver lo que haya
+    
     if (chunks.length === 0) return new Uint8Array(0);
-    const all = new Uint8Array(chunks.reduce((s, c) => s + c.length, 0));
+    const totalLen = chunks.reduce((s, c) => s + c.length, 0);
+    const all = new Uint8Array(totalLen);
     let off = 0;
     for (const c of chunks) { all.set(c, off); off += c.length; }
     return all;
   }
 
+  /**
+   * reader.read() con timeout.
+   */
   async _readWithTimeout(ms) {
-    return new Promise((resolve, reject) => {
-      const timer = setTimeout(() => reject(new Error('Timeout')), ms);
-      this.reader.read().then(result => {
-        clearTimeout(timer);
-        resolve(result);
-      }).catch(e => {
-        clearTimeout(timer);
-        reject(e);
-      });
-    });
+    let timer;
+    try {
+      return await Promise.race([
+        this.reader.read(),
+        new Promise((_, reject) => {
+          timer = setTimeout(() => reject(new Error('Timeout')), ms);
+        })
+      ]);
+    } finally {
+      if (timer) clearTimeout(timer);
+    }
   }
 
   async _delay(ms) {
