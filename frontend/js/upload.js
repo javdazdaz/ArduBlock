@@ -5,7 +5,7 @@
 import { generateArduinoCode } from './generator.js';
 import { getSetting } from './settings.js';
 import { consoleLog, isSerialConnected, disconnectSerial, connectSerial } from './serial.js';
-import { flashHexViaSerial } from './web-serial-flasher.js';
+import { flashHexViaSerial, requestAndOpenPort, getDeviceCode } from './web-serial-flasher.js';
 
 let workspace, arduinoConsole, btnConsoleToggle, consoleOutput, btnUpload;
 
@@ -123,9 +123,18 @@ async function _uploadViaWebSerial(code, fqbn, tabs) {
     return;
   }
 
-  consoleLog('🌐 Compilando en servidor...', 'info');
+  // 1. Pedir puerto AHORA (requiere activación de usuario = este click)
+  consoleLog('💡 Seleccioná el puerto del Arduino en el diálogo.', 'info');
+  let flasher;
+  try {
+    flasher = await requestAndOpenPort(msg => consoleLog(msg));
+  } catch (e) {
+    consoleLog('✕ No se pudo abrir el puerto: ' + e.message, 'error');
+    return;
+  }
 
-  // 1. Compilar en servidor → obtener .hex
+  // 2. Compilar en servidor
+  consoleLog('🌐 Compilando en servidor...', 'info');
   let hexContent;
   try {
     const res = await fetch('/api/compile-hex', {
@@ -147,33 +156,35 @@ async function _uploadViaWebSerial(code, fqbn, tabs) {
           consoleLog(line, 'error');
         }
       }
+      await flasher.disconnect();
       return;
     }
 
     hexContent = data.hex;
     consoleLog('✓ Compilación exitosa', 'success');
     if (data.stdout) {
-      // Mostrar resumen de compilación (últimas líneas relevantes)
       const lines = data.stdout.split('\n').filter(l => l.trim());
       const last = lines.slice(-3);
       for (const l of last) consoleLog(l, 'info');
     }
   } catch (e) {
     consoleLog('Error de conexión con el servidor: ' + e.message, 'error');
+    await flasher.disconnect();
     return;
   }
 
-  // 2. Flashear vía Web Serial
-  consoleLog('💡 Conectá el Arduino por USB y seleccionalo en el diálogo.', 'info');
+  // 3. Flashear por el puerto ya abierto
   try {
-    await flashHexViaSerial(hexContent, fqbn, (msg, level) => consoleLog(msg, level));
+    const deviceCode = getDeviceCode(fqbn);
+    await flasher.flash(hexContent, deviceCode);
     consoleLog('✅ ¡Sketch flasheado correctamente vía Web Serial!', 'success');
   } catch (e) {
     consoleLog('✕ Error al flashear: ' + e.message, 'error');
     if (e.message.includes('sincronizar') || e.message.includes('bootloader')) {
       consoleLog('  ¿El Arduino está en modo programación? Probá presionar RESET.', 'info');
     }
-    return;
+  } finally {
+    await flasher.disconnect();
   }
 }
 

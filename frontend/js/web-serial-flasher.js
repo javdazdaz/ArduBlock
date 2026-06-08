@@ -400,24 +400,39 @@ class STK500Flasher {
  */
 export async function flashHexViaSerial(hexContent, fqbn, log) {
   const flasher = new STK500Flasher(log);
-  
-  // Detectar tipo de micro basado en fqbn
-  let deviceCode = 'atmega328p';
-  if (fqbn.includes('mega') || fqbn.includes('2560')) {
-    deviceCode = 'atmega2560';
-  } else if (fqbn.includes('nano') && fqbn.includes('old')) {
-    deviceCode = 'atmega328p'; // Nano con bootloader antiguo (ATmega168 o 328)
-  }
-  
+  const deviceCode = getDeviceCode(fqbn);
+
   try {
-    // Conectar a 115200 (Optiboot)
     await flasher.connect(115200);
-    
-    // Flashear
     await flasher.flash(hexContent, deviceCode);
-    
     return { success: true };
   } finally {
     await flasher.disconnect();
   }
 }
+
+/**
+ * Solicita el puerto serial al usuario y lo abre.
+ * Debe llamarse dentro de un evento de usuario (click) para que
+ * requestPort() no falle con "requires user activation".
+ *
+ * @param {(msg: string, level?: string) => void} log
+ * @returns {STK500Flasher} instancia con puerto ya abierto
+ */
+export async function requestAndOpenPort(log) {
+  const flasher = new STK500Flasher(log);
+  await flasher.connect(115200);
+  return flasher;
+}
+
+/**
+ * Devuelve el código de dispositivo stk500 según el FQBN.
+ */
+export function getDeviceCode(fqbn) {
+  if (fqbn.includes('mega') || fqbn.includes('2560')) {
+    return 'atmega2560';
+  }
+  return 'atmega328p';
+}
+
+export { STK500Flasher };
