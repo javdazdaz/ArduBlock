@@ -208,17 +208,7 @@ async function _uploadViaWebSerial(code, fqbn, tabs) {
 // ── Upload vía SAM-BA (Renesas UNO R4) ─────
 
 async function _uploadRenesas(code, fqbn, tabs) {
-  // 1. Solicitar puerto serial
-  let port;
-  try {
-    port = await navigator.serial.requestPort();
-  } catch (e) {
-    consoleLog('✕ No se seleccionó ningún puerto', 'error');
-    return;
-  }
-
-  // 2. Compilar en servidor ANTES de tocar el bootloader
-  //    (así no perdemos tiempo con el puerto abierto)
+  // 1. Compilar en servidor (no necesita puerto)
   consoleLog('🌐 Compilando en servidor...', 'info');
   let binBase64;
   try {
@@ -256,19 +246,40 @@ async function _uploadRenesas(code, fqbn, tabs) {
     return;
   }
 
+  // 2. Solicitar puerto para el touch 1200
+  consoleLog('💡 Seleccioná el puerto del Arduino.', 'info');
+  let port;
+  try {
+    port = await navigator.serial.requestPort();
+  } catch (e) {
+    consoleLog('✕ No se seleccionó ningún puerto', 'error');
+    return;
+  }
+
   // 3. Touch 1200 bps para entrar en bootloader
   consoleLog('🔄 Activando bootloader (1200 bps)...', 'info');
   try {
     await port.open({ baudRate: 1200 });
     await new Promise(r => setTimeout(r, 100));
     await port.close();
+    consoleLog('   Touch completado', 'success');
   } catch (e) {
     consoleLog('⚠ No se pudo hacer touch 1200 bps: ' + e.message, 'warn');
   }
-  consoleLog('   Esperando bootloader...', 'info');
-  await new Promise(r => setTimeout(r, 1500));
 
-  // 4. Abrir puerto a 230400 e inmediatamente flashear
+  // 4. Esperar bootloader + SOLICITAR PUERTO FRESCO
+  consoleLog('   Esperando bootloader (1.5s)...', 'info');
+  await new Promise(r => setTimeout(r, 1500));
+  
+  consoleLog('💡 Seleccioná el puerto OTRA VEZ (bootloader).', 'info');
+  try {
+    port = await navigator.serial.requestPort();
+  } catch (e) {
+    consoleLog('✕ No se seleccionó puerto para bootloader', 'error');
+    return;
+  }
+
+  // 5. Abrir puerto fresco a 230400 y flashear inmediatamente
   consoleLog('🔌 Abriendo puerto a 230400 baud...', 'info');
   try {
     await port.open({ baudRate: 230400 });
@@ -281,7 +292,6 @@ async function _uploadRenesas(code, fqbn, tabs) {
   try {
     await flasher.connect(port);
 
-    // 5. Flashear inmediatamente (sin esperas intermedias)
     const binData = Uint8Array.from(atob(binBase64), c => c.charCodeAt(0));
     await flasher.flash(binData);
     await flasher.reset();
@@ -291,7 +301,8 @@ async function _uploadRenesas(code, fqbn, tabs) {
   } catch (e) {
     consoleLog('✕ Error al flashear: ' + e.message, 'error');
     if (e.message.includes('Bootloader no responde')) {
-      consoleLog('  Probá presionando RESET en la placa dos veces.', 'info');
+      consoleLog('  ¿El puerto correcto? Después del touch el R4 puede cambiar de nombre.', 'info');
+      consoleLog('  Probá presionando RESET dos veces y reintentá.', 'info');
     }
   } finally {
     await flasher.disconnect();
