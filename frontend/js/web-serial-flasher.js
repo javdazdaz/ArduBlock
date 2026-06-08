@@ -503,6 +503,7 @@ class SAMBAFlasher {
     this.port = port;
     await this._delay(300);
     this.log('✓ Puerto SAM-BA listo', 'success');
+    this.log(`   readable=${!!port.readable} writable=${!!port.writable}`, 'info');
   }
 
   async disconnect() {
@@ -513,6 +514,7 @@ class SAMBAFlasher {
 
   /** Envía comando SAM-BA y lee respuesta (terminada en \n\r). */
   async _cmd(command) {
+    this.log(`   >> ${command.trim()}`, 'info');
     const writer = this.port.writable.getWriter();
     try {
       await writer.write(new TextEncoder().encode(command));
@@ -520,12 +522,20 @@ class SAMBAFlasher {
       writer.releaseLock();
     }
     await this._delay(30);
-    return await this._readLine(3000);
+    const resp = await this._readLine(3000);
+    if (resp.length > 0) {
+      const hex = Array.from(resp.slice(0, 20)).map(b => b.toString(16).padStart(2,'0')).join(' ');
+      this.log(`   << ${resp.length}B: ${hex}`, 'info');
+    } else {
+      this.log(`   << (sin respuesta en 3s)`, 'warn');
+    }
+    return resp;
   }
 
   /** Envía comando S (write to RAM) + datos binarios. */
   async _writeRAM(addr, data) {
     const cmd = `S${addr.toString(16).padStart(8, '0').toUpperCase()},${data.length.toString(16).padStart(8, '0').toUpperCase()}#`;
+    this.log(`   >> S addr=${addr.toString(16)} len=${data.length}`, 'info');
     const writer = this.port.writable.getWriter();
     try {
       await writer.write(new TextEncoder().encode(cmd));
@@ -545,6 +555,7 @@ class SAMBAFlasher {
   async _readLine(timeoutMs) {
     const start = Date.now();
     const chunks = [];
+    let attempts = 0;
 
     while (Date.now() - start < timeoutMs) {
       const remaining = timeoutMs - (Date.now() - start);
@@ -559,10 +570,9 @@ class SAMBAFlasher {
             setTimeout(() => reject(new Error('timeout')), Math.min(500, remaining))
           )
         ]);
-
+        attempts++;
         if (value && value.length > 0) {
           chunks.push(value);
-          // ¿Ya tenemos \n?
           let total = chunks.reduce((s, c) => s + c.length, 0);
           const all = new Uint8Array(total);
           let off = 0;
@@ -571,14 +581,18 @@ class SAMBAFlasher {
         }
         if (done) break;
       } catch (e) {
-        if (e.message !== 'timeout') throw e;
-        // Timeout de esta lectura, reintentar
+        if (e.message !== 'timeout') {
+          this.log(`   ⚠ read error: ${e.message}`, 'warn');
+          throw e;
+        }
+        attempts++;
         await this._delay(50);
       } finally {
         try { reader?.releaseLock(); } catch (_) {}
       }
     }
 
+    this.log(`   _readLine: ${attempts} intentos, ${chunks.length} chunks`, 'info');
     if (chunks.length === 0) return new Uint8Array(0);
     let total = chunks.reduce((s, c) => s + c.length, 0);
     const all = new Uint8Array(total);
