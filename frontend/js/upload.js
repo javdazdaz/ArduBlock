@@ -246,7 +246,7 @@ async function _uploadRenesas(code, fqbn, tabs) {
     return;
   }
 
-  // 2. Solicitar puerto para el touch 1200
+  // 2. Solicitar puerto (único requestPort, requiere user gesture)
   consoleLog('💡 Seleccioná el puerto del Arduino.', 'info');
   let port;
   try {
@@ -267,19 +267,11 @@ async function _uploadRenesas(code, fqbn, tabs) {
     consoleLog('⚠ No se pudo hacer touch 1200 bps: ' + e.message, 'warn');
   }
 
-  // 4. Esperar bootloader + SOLICITAR PUERTO FRESCO
-  consoleLog('   Esperando bootloader (1.5s)...', 'info');
-  await new Promise(r => setTimeout(r, 1500));
-  
-  consoleLog('💡 Seleccioná el puerto OTRA VEZ (bootloader).', 'info');
-  try {
-    port = await navigator.serial.requestPort();
-  } catch (e) {
-    consoleLog('✕ No se seleccionó puerto para bootloader', 'error');
-    return;
-  }
+  // 4. Esperar bootloader
+  consoleLog('   Esperando bootloader (2s)...', 'info');
+  await new Promise(r => setTimeout(r, 2000));
 
-  // 5. Abrir puerto fresco a 230400 y flashear inmediatamente
+  // 5. Abrir puerto a 230400 y flashear inmediatamente
   consoleLog('🔌 Abriendo puerto a 230400 baud...', 'info');
   try {
     await port.open({ baudRate: 230400 });
@@ -301,7 +293,6 @@ async function _uploadRenesas(code, fqbn, tabs) {
   } catch (e) {
     consoleLog('✕ Error al flashear: ' + e.message, 'error');
     if (e.message.includes('Bootloader no responde')) {
-      consoleLog('  ¿El puerto correcto? Después del touch el R4 puede cambiar de nombre.', 'info');
       consoleLog('  Probá presionando RESET dos veces y reintentá.', 'info');
     }
   } finally {

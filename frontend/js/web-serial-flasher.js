@@ -491,37 +491,38 @@ const SAMBA_FLASH_BASE = 0x00000000;
 class SAMBAFlasher {
   constructor(log) {
     this.port = null;
+    this.writer = null;
     this.log = log || (() => {});
   }
 
   /**
    * Conecta al puerto serial ya abierto (requestPort + open lo hizo el caller).
-   * No mantiene reader — cada lectura obtiene y libera el suyo.
+   * Crea un writer persistente para todo el flasheo.
    * @param {SerialPort} port
    */
   async connect(port) {
     this.port = port;
+    // Writer persistente — se reusa en todos los comandos para evitar
+    // que releaseLock/close deje datos en buffer sin enviar.
+    this.writer = this.port.writable.getWriter();
     await this._delay(300);
     this.log('✓ Puerto SAM-BA listo', 'success');
     this.log(`   readable=${!!port.readable} writable=${!!port.writable}`, 'info');
   }
 
   async disconnect() {
+    try { this.writer?.releaseLock(); } catch (_) {}
     try { await this.port?.close(); } catch (_) {}
     this.port = null;
+    this.writer = null;
     this.log('🔌 Puerto SAM-BA cerrado', 'info');
   }
 
   /** Envía comando SAM-BA y lee respuesta (terminada en \n\r). */
   async _cmd(command) {
     this.log(`   >> ${command.trim()}`, 'info');
-    const writer = this.port.writable.getWriter();
-    try {
-      await writer.write(new TextEncoder().encode(command));
-    } finally {
-      writer.releaseLock();
-    }
-    await this._delay(30);
+    await this.writer.write(new TextEncoder().encode(command));
+    await this._delay(50);
     const resp = await this._readLine(3000);
     if (resp.length > 0) {
       const hex = Array.from(resp.slice(0, 20)).map(b => b.toString(16).padStart(2,'0')).join(' ');
@@ -536,15 +537,10 @@ class SAMBAFlasher {
   async _writeRAM(addr, data) {
     const cmd = `S${addr.toString(16).padStart(8, '0').toUpperCase()},${data.length.toString(16).padStart(8, '0').toUpperCase()}#`;
     this.log(`   >> S addr=${addr.toString(16)} len=${data.length}`, 'info');
-    const writer = this.port.writable.getWriter();
-    try {
-      await writer.write(new TextEncoder().encode(cmd));
-      await this._delay(15);
-      await writer.write(data);
-      await this._delay(30);
-    } finally {
-      writer.releaseLock();
-    }
+    await this.writer.write(new TextEncoder().encode(cmd));
+    await this._delay(15);
+    await this.writer.write(data);
+    await this._delay(30);
   }
 
   /**
