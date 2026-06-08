@@ -246,7 +246,13 @@ async function _uploadRenesas(code, fqbn, tabs) {
     return;
   }
 
-  // 2. Solicitar puerto (único requestPort, requiere user gesture)
+  // 2. Doble-reset manual para entrar en bootloader
+  //    El touch 1200bps no funciona desde HTTPS/Firefox.
+  //    Workaround oficial de Arduino (ArduinoCore-renesas#73).
+  consoleLog('🔄 Presioná el botón RESET dos veces en el R4.', 'info');
+  consoleLog('   El LED L debe quedar pulsando (modo bootloader).', 'info');
+
+  // 3. Solicitar puerto
   consoleLog('💡 Seleccioná el puerto del Arduino.', 'info');
   let port;
   try {
@@ -256,22 +262,7 @@ async function _uploadRenesas(code, fqbn, tabs) {
     return;
   }
 
-  // 3. Touch 1200 bps para entrar en bootloader
-  consoleLog('🔄 Activando bootloader (1200 bps)...', 'info');
-  try {
-    await port.open({ baudRate: 1200 });
-    await new Promise(r => setTimeout(r, 100));
-    await port.close();
-    consoleLog('   Touch completado', 'success');
-  } catch (e) {
-    consoleLog('⚠ No se pudo hacer touch 1200 bps: ' + e.message, 'warn');
-  }
-
-  // 4. Esperar bootloader
-  consoleLog('   Esperando bootloader (2s)...', 'info');
-  await new Promise(r => setTimeout(r, 2000));
-
-  // 5. Abrir puerto a 230400 y flashear inmediatamente
+  // 4. Abrir a 230400 y flashear
   consoleLog('🔌 Abriendo puerto a 230400 baud...', 'info');
   try {
     await port.open({ baudRate: 230400 });
@@ -293,7 +284,7 @@ async function _uploadRenesas(code, fqbn, tabs) {
   } catch (e) {
     consoleLog('✕ Error al flashear: ' + e.message, 'error');
     if (e.message.includes('Bootloader no responde')) {
-      consoleLog('  Probá presionando RESET dos veces y reintentá.', 'info');
+      consoleLog('  ¿Presionaste RESET dos veces? El LED L debe pulsar.', 'info');
     }
   } finally {
     await flasher.disconnect();
