@@ -172,24 +172,38 @@ def _try_install_missing_core(stderr_text):
     
     Reconoce mensajes como:
       "Error during build: Platform 'arduino:avr' not found: platform not installed"
+      "Invalid FQBN: board arduino:renesas_uno:wifi not found"
     """
     import re as _re
+    
+    # Caso 1: "Platform 'arduino:avr' not found"
     m = _re.search(r"Platform '([^']+)' not found", stderr_text)
-    if not m:
-        m = _re.search(r'platform not installed', stderr_text)
-        if not m:
+    if m:
+        core_id = m.group(1)
+        try:
+            _run_arduino_cli(['core', 'install', core_id], capture_output=True, timeout=120)
+            return True
+        except Exception:
             return False
     
-    core_id = m.group(1) if m.lastindex else None
-    if not core_id:
-        # Intentar extraer del FQBN (ej: arduino:avr:uno → arduino:avr)
-        return False
+    # Caso 2: "Invalid FQBN: board arduino:renesas_uno:wifi not found"
+    m = _re.search(r'board (\S+) not found', stderr_text)
+    if m:
+        fqbn = m.group(1)  # ej: arduino:renesas_uno:wifi
+        parts = fqbn.split(':')
+        if len(parts) >= 2:
+            core_id = f'{parts[0]}:{parts[1]}'  # ej: arduino:renesas_uno
+            try:
+                _run_arduino_cli(['core', 'install', core_id], capture_output=True, timeout=120)
+                return True
+            except Exception:
+                return False
     
-    try:
-        _run_arduino_cli(['core', 'install', core_id], capture_output=True, timeout=120)
-        return True
-    except Exception:
-        return False
+    # Caso 3: "platform not installed" (genérico, sin nombre de plataforma)
+    if 'platform not installed' in stderr_text.lower():
+        return False  # no se puede determinar cuál instalar
+    
+    return False
 
 @app.route('/api/projects', methods=['GET'])
 def list_projects():
