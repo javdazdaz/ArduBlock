@@ -157,32 +157,43 @@ class STK500Flasher {
   }
 
   /**
-   * Lee del puerto serial con timeout.
+   * Lee del puerto serial con timeout real.
    */
   async _readWithTimeout(ms) {
-    const chunks = [];
-    const start = Date.now();
-    
-    while (Date.now() - start < ms) {
-      const { value, done } = await this.reader.read();
-      if (value) chunks.push(value);
-      if (done) break;
-      if (chunks.length > 0 && value && value.length === 0) {
-        // dar tiempo extra para recibir mas datos
-        await this._delay(50);
-        break;
+    const readPromise = (async () => {
+      const chunks = [];
+      while (true) {
+        const { value, done } = await this.reader.read();
+        if (value) chunks.push(value);
+        if (done) break;
+        // Si ya tenemos datos, damos un pequeño margen extra y salimos
+        if (chunks.length > 0) {
+          await this._delay(30);
+          break;
+        }
       }
+      const total = chunks.reduce((s, c) => s + c.length, 0);
+      const result = new Uint8Array(total);
+      let offset = 0;
+      for (const c of chunks) {
+        result.set(c, offset);
+        offset += c.length;
+      }
+      return result;
+    })();
+
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Timeout')), ms)
+    );
+
+    try {
+      return await Promise.race([readPromise, timeoutPromise]);
+    } catch (e) {
+      if (e.message === 'Timeout') {
+        return new Uint8Array(0);
+      }
+      throw e;
     }
-    
-    // Concatenar chunks
-    const total = chunks.reduce((s, c) => s + c.length, 0);
-    const result = new Uint8Array(total);
-    let offset = 0;
-    for (const c of chunks) {
-      result.set(c, offset);
-      offset += c.length;
-    }
-    return result;
   }
 
   async _delay(ms) {
@@ -399,8 +410,8 @@ class STK500Flasher {
  * @param {(msg: string, level?: string) => void} log - callback de log
  */
 export async function flashHexViaSerial(hexContent, fqbn, log) {
-  const flasher = new STK500Flasher(log);
   const deviceCode = getDeviceCode(fqbn);
+  const flasher = new STK500Flasher(log);
 
   try {
     await flasher.connect(115200);
@@ -427,12 +438,25 @@ export async function requestAndOpenPort(log) {
 
 /**
  * Devuelve el código de dispositivo stk500 según el FQBN.
+ * Lanza error si la placa no es AVR (no soportada por stk500v1).
  */
 export function getDeviceCode(fqbn) {
-  if (fqbn.includes('mega') || fqbn.includes('2560')) {
-    return 'atmega2560';
+  // Solo AVR es soportado por stk500v1
+  if (fqbn.includes(':avr:')) {
+    if (fqbn.includes('mega') || fqbn.includes('2560')) {
+      return 'atmega2560';
+    }
+    return 'atmega328p';
   }
-  return 'atmega328p';
+
+  // Placas no-AVR: Renesas, ESP32, ARM, etc.
+  if (fqbn.includes('renesas')) {
+    throw new Error('UNO R4 (Renesas) no usa bootloader AVR. Solo soportado vía arduino-cli local.');
+  }
+  if (fqbn.includes('esp32')) {
+    throw new Error('ESP32 no usa bootloader AVR. Solo soportado vía arduino-cli local.');
+  }
+  throw new Error(`Placa no soportada para Web Serial: ${fqbn}. Solo AVR (Uno R3, Nano, Mega).`);
 }
 
 export { STK500Flasher };

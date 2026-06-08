@@ -123,6 +123,15 @@ async function _uploadViaWebSerial(code, fqbn, tabs) {
     return;
   }
 
+  // 0. Verificar que la placa sea AVR (stk500v1 solo funciona con AVR)
+  try {
+    getDeviceCode(fqbn); // lanza error si no es AVR
+  } catch (e) {
+    consoleLog('⚠ ' + e.message, 'warn');
+    consoleLog('  Conectá el Arduino a una máquina con arduino-cli para flashear esta placa.', 'info');
+    return;
+  }
+
   // 1. Pedir puerto AHORA (requiere activación de usuario = este click)
   consoleLog('💡 Seleccioná el puerto del Arduino en el diálogo.', 'info');
   let flasher;
