@@ -167,6 +167,27 @@ def _write_tabs(sketch_dir, tabs):
         (sketch_dir / safe).write_text(content)
 
 
+def _is_fake_serial_port(address: str) -> bool:
+    """Devuelve True si el puerto NO puede ser un Arduino real.
+
+    /dev/ttyS* son consolas seriales del kernel, /dev/tty* genéricos
+    sin ACM/USB en el nombre tampoco son Arduino. Solo /dev/ttyACM*
+    y /dev/ttyUSB* son dispositivos USB reales.
+    """
+    if not address:
+        return True
+    # Windows: solo COM* son válidos
+    if address.startswith('COM'):
+        return False
+    # Linux: solo ttyACM* y ttyUSB* son Arduino
+    if '/dev/ttyACM' in address or '/dev/ttyUSB' in address:
+        return False
+    # /dev/ttyS*, /dev/tty0, /dev/ttyAMA*, etc. → falso positivo
+    if address.startswith('/dev/tty'):
+        return True
+    return False
+
+
 def _try_install_missing_core(stderr_text):
     """Intenta instalar un core faltante a partir del mensaje de error de arduino-cli.
     
@@ -365,7 +386,14 @@ def list_boards():
             return jsonify({'error': result.stderr}), 500
         
         data = json.loads(result.stdout)
-        
+
+        # Filtrar puertos que no son Arduino: /dev/ttyS* son consolas seriales del kernel,
+        # no USB. Solo /dev/ttyACM* y /dev/ttyUSB* pueden ser Arduinos reales.
+        data['detected_ports'] = [
+            p for p in data.get('detected_ports', [])
+            if not _is_fake_serial_port(p.get('port', {}).get('address', ''))
+        ]
+
         # Enriquecer puertos no identificados con sugerencias
         for entry in data.get('detected_ports', []):
             port_info = entry.get('port', {})
