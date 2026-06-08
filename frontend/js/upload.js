@@ -217,7 +217,46 @@ async function _uploadRenesas(code, fqbn, tabs) {
     return;
   }
 
-  // 2. Touch 1200 bps para entrar en bootloader
+  // 2. Compilar en servidor ANTES de tocar el bootloader
+  //    (así no perdemos tiempo con el puerto abierto)
+  consoleLog('🌐 Compilando en servidor...', 'info');
+  let binBase64;
+  try {
+    const res = await fetch('/api/compile-hex', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code, fqbn, tabs })
+    });
+    const data = await res.json();
+
+    if (!data.success) {
+      consoleLog('✕ Error de compilación:', 'error');
+      if (data.stdout) {
+        for (const line of data.stdout.split('\n').filter(l => l.trim())) {
+          consoleLog(line, 'error');
+        }
+      }
+      if (data.stderr) {
+        for (const line of data.stderr.split('\n').filter(l => l.trim())) {
+          consoleLog(line, 'error');
+        }
+      }
+      return;
+    }
+
+    if (data.format === 'bin' && data.bin) {
+      binBase64 = data.bin;
+      consoleLog('✓ Compilación exitosa (.bin)', 'success');
+    } else {
+      consoleLog('✕ El servidor no devolvió .bin para esta placa', 'error');
+      return;
+    }
+  } catch (e) {
+    consoleLog('Error de conexión con el servidor: ' + e.message, 'error');
+    return;
+  }
+
+  // 3. Touch 1200 bps para entrar en bootloader
   consoleLog('🔄 Activando bootloader (1200 bps)...', 'info');
   try {
     await port.open({ baudRate: 1200 });
@@ -226,11 +265,10 @@ async function _uploadRenesas(code, fqbn, tabs) {
   } catch (e) {
     consoleLog('⚠ No se pudo hacer touch 1200 bps: ' + e.message, 'warn');
   }
-  // Esperar que el bootloader inicie
   consoleLog('   Esperando bootloader...', 'info');
   await new Promise(r => setTimeout(r, 1500));
 
-  // 3. Abrir puerto a 230400 (el bootloader espera este baud)
+  // 4. Abrir puerto a 230400 e inmediatamente flashear
   consoleLog('🔌 Abriendo puerto a 230400 baud...', 'info');
   try {
     await port.open({ baudRate: 230400 });
@@ -243,45 +281,7 @@ async function _uploadRenesas(code, fqbn, tabs) {
   try {
     await flasher.connect(port);
 
-    // 3. Compilar en servidor → .bin
-    consoleLog('🌐 Compilando en servidor...', 'info');
-    let binBase64;
-    try {
-      const res = await fetch('/api/compile-hex', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code, fqbn, tabs })
-      });
-      const data = await res.json();
-
-      if (!data.success) {
-        consoleLog('✕ Error de compilación:', 'error');
-        if (data.stdout) {
-          for (const line of data.stdout.split('\n').filter(l => l.trim())) {
-            consoleLog(line, 'error');
-          }
-        }
-        if (data.stderr) {
-          for (const line of data.stderr.split('\n').filter(l => l.trim())) {
-            consoleLog(line, 'error');
-          }
-        }
-        return;
-      }
-
-      if (data.format === 'bin' && data.bin) {
-        binBase64 = data.bin;
-        consoleLog('✓ Compilación exitosa (.bin)', 'success');
-      } else {
-        consoleLog('✕ El servidor no devolvió .bin para esta placa', 'error');
-        return;
-      }
-    } catch (e) {
-      consoleLog('Error de conexión con el servidor: ' + e.message, 'error');
-      return;
-    }
-
-    // 4. Decodificar y flashear
+    // 5. Flashear inmediatamente (sin esperas intermedias)
     const binData = Uint8Array.from(atob(binBase64), c => c.charCodeAt(0));
     await flasher.flash(binData);
     await flasher.reset();
