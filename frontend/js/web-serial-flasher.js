@@ -496,9 +496,8 @@ class SAMBAFlasher {
 
   async connect(port) {
     this.port = port;
-    await this._delay(500);  // esperar que ESP32-S3 bridge estabilice
+    await this._delay(500);
     this.log('✓ Puerto SAM-BA listo', 'success');
-    this.log(`   readable=${!!port.readable} writable=${!!port.writable}`, 'info');
   }
 
   async disconnect() {
@@ -508,7 +507,6 @@ class SAMBAFlasher {
   }
 
   async _cmd(command) {
-    this.log(`   >> ${command.trim()}`, 'info');
     const writer = this.port.writable.getWriter();
     try {
       await writer.write(new TextEncoder().encode(command));
@@ -516,19 +514,11 @@ class SAMBAFlasher {
       writer.releaseLock();
     }
     await this._delay(200);
-    const resp = await this._readLine(3000);
-    if (resp.length > 0) {
-      const hex = Array.from(resp.slice(0, 20)).map(b => b.toString(16).padStart(2,'0')).join(' ');
-      this.log(`   << ${resp.length}B: ${hex}`, 'info');
-    } else {
-      this.log(`   << (sin respuesta en 3s)`, 'warn');
-    }
-    return resp;
+    return await this._readLine(3000);
   }
 
   async _writeRAM(addr, data) {
     const cmd = `S${addr.toString(16).padStart(8, '0').toUpperCase()},${data.length.toString(16).padStart(8, '0').toUpperCase()}#`;
-    this.log(`   >> S addr=${addr.toString(16)} len=${data.length}`, 'info');
     const writer = this.port.writable.getWriter();
     try {
       await writer.write(new TextEncoder().encode(cmd));
@@ -540,15 +530,9 @@ class SAMBAFlasher {
     await this._delay(50);
   }
 
-  /**
-   * Lee respuesta del bootloader terminada en \n (0x0a).
-   * Obtiene reader fresco cada vez, acumula chunks hasta encontrar \n,
-   * y libera el reader. Sin cancel() — eso aborta el stream.
-   */
   async _readLine(timeoutMs) {
     const start = Date.now();
     const chunks = [];
-    let attempts = 0;
 
     while (Date.now() - start < timeoutMs) {
       const remaining = timeoutMs - (Date.now() - start);
@@ -559,11 +543,11 @@ class SAMBAFlasher {
         reader = this.port.readable.getReader();
         const { value, done } = await Promise.race([
           reader.read(),
-          new Promise((_, reject) => 
+          new Promise((_, reject) =>
             setTimeout(() => reject(new Error('timeout')), Math.min(500, remaining))
           )
         ]);
-        attempts++;
+
         if (value && value.length > 0) {
           chunks.push(value);
           let total = chunks.reduce((s, c) => s + c.length, 0);
@@ -574,18 +558,13 @@ class SAMBAFlasher {
         }
         if (done) break;
       } catch (e) {
-        if (e.message !== 'timeout') {
-          this.log(`   ⚠ read error: ${e.message}`, 'warn');
-          throw e;
-        }
-        attempts++;
+        if (e.message !== 'timeout') throw e;
         await this._delay(50);
       } finally {
         try { reader?.releaseLock(); } catch (_) {}
       }
     }
 
-    this.log(`   _readLine: ${attempts} intentos, ${chunks.length} chunks`, 'info');
     if (chunks.length === 0) return new Uint8Array(0);
     let total = chunks.reduce((s, c) => s + c.length, 0);
     const all = new Uint8Array(total);
