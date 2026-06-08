@@ -208,7 +208,19 @@ async function _uploadViaWebSerial(code, fqbn, tabs) {
 // ── Upload vía SAM-BA (Renesas UNO R4) ─────
 
 async function _uploadRenesas(code, fqbn, tabs) {
-  // 1. Compilar en servidor (no necesita puerto)
+  // 1. Solicitar puerto INMEDIATAMENTE (transient activation del clic)
+  consoleLog('💡 Seleccioná el puerto del Arduino.', 'info');
+  let port;
+  try {
+    port = await navigator.serial.requestPort();
+  } catch (e) {
+    consoleLog('✕ No se seleccionó ningún puerto', 'error');
+    return;
+  }
+
+  // 2. Compilar en servidor (mientras el usuario hace doble-reset)
+  consoleLog('🔄 Presioná el botón RESET dos veces en el R4.', 'info');
+  consoleLog('   El LED L debe quedar pulsando (modo bootloader).', 'info');
   consoleLog('🌐 Compilando en servidor...', 'info');
   let binBase64;
   try {
@@ -246,23 +258,7 @@ async function _uploadRenesas(code, fqbn, tabs) {
     return;
   }
 
-  // 2. Doble-reset manual para entrar en bootloader
-  //    El touch 1200bps no funciona desde HTTPS/Firefox.
-  //    Workaround oficial de Arduino (ArduinoCore-renesas#73).
-  consoleLog('🔄 Presioná el botón RESET dos veces en el R4.', 'info');
-  consoleLog('   El LED L debe quedar pulsando (modo bootloader).', 'info');
-
-  // 3. Solicitar puerto
-  consoleLog('💡 Seleccioná el puerto del Arduino.', 'info');
-  let port;
-  try {
-    port = await navigator.serial.requestPort();
-  } catch (e) {
-    consoleLog('✕ No se seleccionó ningún puerto', 'error');
-    return;
-  }
-
-  // 4. Abrir a 230400 y flashear
+  // 3. Abrir a 230400 y flashear
   consoleLog('🔌 Abriendo puerto a 230400 baud...', 'info');
   try {
     await port.open({ baudRate: 230400 });
