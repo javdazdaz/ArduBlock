@@ -416,6 +416,71 @@ def compile_sketch():
         return jsonify({'error': str(e)}), 500
     finally:
         shutil.rmtree(tmpdir, ignore_errors=True)
+@app.route('/api/compile-hex', methods=['POST'])
+def compile_hex():
+    """Compila y devuelve el .hex para flasheo Web Serial."""
+    data = request.get_json()
+    code = data.get('code', '') if data else ''
+    fqbn = data.get('fqbn', 'arduino:avr:uno') if data else 'arduino:avr:uno'
+    tabs = data.get('tabs', []) if data else []
+
+    if not code.strip():
+        return jsonify({'error': 'Código vacío'}), 400
+
+    tmpdir = tempfile.mkdtemp(prefix='ardublock_hex_')
+    sketch_name = 'ardublock_sketch'
+    sketch_dir = Path(tmpdir) / sketch_name
+    sketch_dir.mkdir()
+    ino_file = sketch_dir / f'{sketch_name}.ino'
+    build_dir = Path(tmpdir) / 'build'
+    build_dir.mkdir()
+
+    try:
+        ino_file.write_text(code)
+        _write_tabs(sketch_dir, tabs)
+
+        result = _run_arduino_cli(
+            ['compile', '--fqbn', fqbn, '--output-dir', str(build_dir), str(sketch_dir)],
+            capture_output=True, timeout=60
+        )
+
+        if result.returncode != 0 and _try_install_missing_core(result.stderr):
+            result = _run_arduino_cli(
+                ['compile', '--fqbn', fqbn, '--output-dir', str(build_dir), str(sketch_dir)],
+                capture_output=True, timeout=60
+            )
+
+        if result.returncode != 0:
+            return jsonify({
+                'success': False,
+                'stdout': result.stdout,
+                'stderr': result.stderr
+            }), 422
+
+        hex_files = list(build_dir.glob('*.hex'))
+        if not hex_files:
+            return jsonify({
+                'success': False,
+                'error': 'No se encontró .hex en la salida de compilación'
+            }), 500
+
+        hex_content = hex_files[0].read_text()
+
+        return jsonify({
+            'success': True,
+            'hex': hex_content,
+            'fqbn': fqbn,
+            'hex_name': hex_files[0].name,
+            'stdout': result.stdout
+        })
+
+    except subprocess.TimeoutExpired:
+        return jsonify({'error': 'Timeout de compilación (60s)'}), 500
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        shutil.rmtree(tmpdir, ignore_errors=True)
+
 
 @app.route('/api/upload', methods=['POST'])
 def upload_sketch():

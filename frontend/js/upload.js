@@ -1,10 +1,11 @@
 /**
- * ArduBlock — Upload a Arduino vía arduino-cli.
+ * ArduBlock — Upload a Arduino vía arduino-cli (local) o Web Serial (instancia pública).
  */
 
 import { generateArduinoCode } from './generator.js';
 import { getSetting } from './settings.js';
 import { consoleLog, isSerialConnected, disconnectSerial, connectSerial } from './serial.js';
+import { flashHexViaSerial } from './web-serial-flasher.js';
 
 let workspace, arduinoConsole, btnConsoleToggle, consoleOutput, btnUpload;
 
@@ -32,6 +33,8 @@ export async function uploadToArduino() {
 
   let port = '';
   let fqbn = getSetting('board');
+  let boardFound = false;
+
   try {
     const boardRes = await fetch('/api/boards');
     const boardData = await boardRes.json();
@@ -46,7 +49,6 @@ export async function uploadToArduino() {
       if (p.matching_boards && p.matching_boards.length > 0) {
         fqbn = p.matching_boards[0].fqbn || fqbn;
       } else if (p.suggested_fqbn) {
-        // Clon detectado — usar sugerencia o respetar selección del usuario
         const userFqbn = getSetting('board');
         const compat = p.compatible_fqbns || [];
         if (compat.includes(userFqbn)) {
@@ -58,30 +60,30 @@ export async function uploadToArduino() {
         }
       }
       consoleLog(`✓ Placa detectada: ${port} (${fqbn})`, 'success');
-      
-      // Verificar si el chip necesita drivers
+      boardFound = true;
       _checkDriverIssues();
-    } else {
-      // No se detectó placa — verificar si hay chips conocidos sin driver
-      const driverIssues = await _fetchDriverIssues();
-      if (driverIssues && driverIssues.recommendations && driverIssues.recommendations.length > 0) {
-        consoleLog('⚠ ' + driverIssues.recommendations[0], 'warn');
-        for (let i = 1; i < driverIssues.recommendations.length; i++) {
-          consoleLog('   ' + driverIssues.recommendations[i], 'info');
-        }
-      } else {
-        consoleLog('✕ No se detectó ningún Arduino. Conectalo por USB.', 'error');
-      }
-      btnUpload.disabled = false;
-      return;
     }
+    // Si no se detectó placa en el servidor, seguimos para intentar Web Serial
   } catch (e) {
-    consoleLog('✕ Error al buscar placa: ' + e.message, 'error');
-    btnUpload.disabled = false;
-    return;
+    consoleLog('⚠ Servidor local no disponible: ' + e.message, 'warn');
+    // Continuar: intentar Web Serial
   }
 
-  consoleLog('⚙ Compilando...', 'info');
+  if (boardFound) {
+    // ── Modo local: compilar + subir desde servidor ──
+    await _uploadLocal(code, port, fqbn, tabs);
+  } else {
+    // ── Modo Web Serial: compilar en servidor, flashear desde navegador ──
+    await _uploadViaWebSerial(code, fqbn, tabs);
+  }
+
+  btnUpload.disabled = false;
+}
+
+// ── Upload local (servidor) ────────────────────
+
+async function _uploadLocal(code, port, fqbn, tabs) {
+  consoleLog('⚙ Compilando y subiendo desde servidor...', 'info');
 
   try {
     const res = await fetch('/api/upload', {
@@ -110,7 +112,69 @@ export async function uploadToArduino() {
   } catch (e) {
     consoleLog('Error de conexión: ' + e.message, 'error');
   }
-  btnUpload.disabled = false;
+}
+
+// ── Upload vía Web Serial (instancia pública) ──
+
+async function _uploadViaWebSerial(code, fqbn, tabs) {
+  if (!('serial' in navigator)) {
+    consoleLog('✕ Web Serial no soportado en este navegador.', 'error');
+    consoleLog('  Usá Chrome, Edge u Opera para flashear por USB.', 'info');
+    return;
+  }
+
+  consoleLog('🌐 Compilando en servidor...', 'info');
+
+  // 1. Compilar en servidor → obtener .hex
+  let hexContent;
+  try {
+    const res = await fetch('/api/compile-hex', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code, fqbn, tabs })
+    });
+    const data = await res.json();
+
+    if (!data.success) {
+      consoleLog('✕ Error de compilación:', 'error');
+      if (data.stdout) {
+        for (const line of data.stdout.split('\n').filter(l => l.trim())) {
+          consoleLog(line, 'error');
+        }
+      }
+      if (data.stderr) {
+        for (const line of data.stderr.split('\n').filter(l => l.trim())) {
+          consoleLog(line, 'error');
+        }
+      }
+      return;
+    }
+
+    hexContent = data.hex;
+    consoleLog('✓ Compilación exitosa', 'success');
+    if (data.stdout) {
+      // Mostrar resumen de compilación (últimas líneas relevantes)
+      const lines = data.stdout.split('\n').filter(l => l.trim());
+      const last = lines.slice(-3);
+      for (const l of last) consoleLog(l, 'info');
+    }
+  } catch (e) {
+    consoleLog('Error de conexión con el servidor: ' + e.message, 'error');
+    return;
+  }
+
+  // 2. Flashear vía Web Serial
+  consoleLog('💡 Conectá el Arduino por USB y seleccionalo en el diálogo.', 'info');
+  try {
+    await flashHexViaSerial(hexContent, fqbn, (msg, level) => consoleLog(msg, level));
+    consoleLog('✅ ¡Sketch flasheado correctamente vía Web Serial!', 'success');
+  } catch (e) {
+    consoleLog('✕ Error al flashear: ' + e.message, 'error');
+    if (e.message.includes('sincronizar') || e.message.includes('bootloader')) {
+      consoleLog('  ¿El Arduino está en modo programación? Probá presionar RESET.', 'info');
+    }
+    return;
+  }
 }
 
 // ── Helpers de drivers USB ─────────────────────

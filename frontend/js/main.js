@@ -682,6 +682,41 @@ window._applyLevelProtection = () => applyLevelProtection(getSetting('level'));
 // ═══ Diagnóstico del sistema ══════════════════
 // Modal de instalación al cargar + modal de diagnóstico en menú hamburguesa
 
+/**
+ * Detecta la plataforma del CLIENTE (navegador), no del servidor.
+ * Devuelve { platform, machine, label } — ej: 'win32/AMD64' → 'Windows 64-bit'
+ */
+function getClientPlatform() {
+  const ua = navigator.userAgentData;
+  let raw = '';
+  if (ua && ua.platform) {
+    raw = ua.platform; // ej: 'Windows', 'macOS', 'Linux'
+  } else {
+    raw = navigator.platform || ''; // ej: 'Win32', 'MacIntel', 'Linux x86_64'
+  }
+
+  const rawLower = raw.toLowerCase();
+  let platform, machine, label;
+
+  if (rawLower.includes('win')) {
+    platform = 'win32';
+    machine = 'AMD64'; // asumir 64-bit (Windows 11+ es solo 64-bit)
+    label = 'Windows 64-bit';
+  } else if (rawLower.includes('mac')) {
+    platform = 'darwin';
+    // userAgentData diferencia MacARM de MacIntel
+    machine = rawLower.includes('arm') ? 'arm64' : 'x86_64';
+    label = rawLower.includes('arm') ? 'macOS (Apple Silicon)' : 'macOS (Intel)';
+  } else {
+    // Linux, ChromeOS, etc.
+    platform = 'linux';
+    machine = rawLower.includes('aarch64') || rawLower.includes('arm') ? 'aarch64' : 'x86_64';
+    label = 'Linux ' + (machine === 'aarch64' ? 'ARM 64-bit' : '64-bit');
+  }
+
+  return { platform, machine, label };
+}
+
 const cliInstallModal  = document.getElementById('cli-install-modal');
 const cliInstallBtn    = document.getElementById('cli-install-btn');
 const cliInstallLater  = document.getElementById('cli-install-later');
@@ -741,13 +776,11 @@ cliInstallBtn?.addEventListener('click', installCliFromModal);
     const data = await res.json();
     if (data.available) return;
     if (cliInstallModal && cliInstallPlatform) {
-      cliInstallPlatform.textContent = data.can_auto_install
-        ? `Plataforma: ${data.platform} — instalación automática disponible`
-        : `Plataforma: ${data.platform} — requiere instalación manual`;
-      if (!data.can_auto_install) {
-        cliInstallBtn.textContent = '📖 Abrir guía de instalación';
-        cliInstallBtn.onclick = () => window.open('https://arduino.github.io/arduino-cli/installation/', '_blank');
-      }
+      const client = getClientPlatform();
+      cliInstallPlatform.textContent = `Tu sistema: ${client.label} — requiere instalación manual`;
+      // Siempre guiar a instalación manual (la auto-instalación es para uso local)
+      cliInstallBtn.textContent = '📖 Abrir guía de instalación';
+      cliInstallBtn.onclick = () => window.open('https://arduino.github.io/arduino-cli/installation/', '_blank');
       cliInstallModal.classList.remove('hidden');
     }
   } catch (_) { /* backend no disponible */ }
@@ -789,12 +822,9 @@ async function openDiagnostics() {
     html += `<div class="diag-row"><span>Ruta</span><span style="font-size:0.7rem;opacity:0.7">${cli.path}</span></div>`;
   } else {
     html += `<div class="diag-row"><span>Estado</span><span class="diag-error">✕ No encontrado</span></div>`;
-    if (cli.can_auto_install) {
-      html += `<div class="diag-row"><span></span><button class="diag-btn install" id="diag-install-cli">⚡ Instalar ahora</button></div>`;
-    } else {
-      html += `<div class="diag-row"><span>Plataforma</span><span class="diag-warn">${cli.platform} — manual</span></div>`;
-      html += `<div class="diag-row"><span></span><button class="diag-btn refresh" id="diag-manual-install">📖 Abrir guía</button></div>`;
-    }
+    const client = getClientPlatform();
+    html += `<div class="diag-row"><span>Tu sistema</span><span class="diag-warn">${client.label}</span></div>`;
+    html += `<div class="diag-row"><span></span><button class="diag-btn refresh" id="diag-manual-install">📖 Abrir guía de instalación</button></div>`;
   }
   html += '</div>';
 
@@ -866,26 +896,6 @@ async function openDiagnostics() {
   diagnosticsBody.innerHTML = html;
 
   // Event listeners para botones dentro del diagnóstico
-  document.getElementById('diag-install-cli')?.addEventListener('click', async () => {
-    const btn = document.getElementById('diag-install-cli');
-    btn.disabled = true;
-    btn.textContent = '⏳ Instalando...';
-    try {
-      const res = await fetch('/api/arduino-cli/install', { method: 'POST' });
-      const data = await res.json();
-      if (data.success) {
-        btn.textContent = '✅ Listo';
-        btn.style.background = '#27ae60';
-        showToast('arduino-cli instalado');
-        setTimeout(() => openDiagnostics(), 1500);
-      } else {
-        btn.textContent = '❌ Falló';
-        showToast('Error: ' + (data.error || 'falló'));
-      }
-    } catch (e) {
-      btn.textContent = '❌ Error';
-    }
-  });
 
   document.getElementById('diag-manual-install')?.addEventListener('click', () => {
     window.open('https://arduino.github.io/arduino-cli/installation/', '_blank');
