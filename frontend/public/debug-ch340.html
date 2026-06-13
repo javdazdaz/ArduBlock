@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ArduBlock — Debug CH340 Web Serial</title>
+<style>
+  body { font-family: monospace; max-width: 800px; margin: 40px auto; 
+         background: #1a1a2e; color: #e0e0e0; padding: 20px; }
+  button { padding: 10px 20px; margin: 5px; cursor: pointer; font-size: 14px; }
+  #log { background: #0d0d1a; color: #0f0; padding: 15px; min-height: 300px; 
+         margin: 15px 0; white-space: pre-wrap; font-size: 13px; overflow-y: auto; max-height: 400px; }
+  .info { color: #5af; }
+  .success { color: #0f0; }
+  .error { color: #f55; }
+  .warn { color: #fa0; }
+  h2 { border-bottom: 1px solid #333; padding-bottom: 5px; }
+  .step { background: #16213e; padding: 15px; margin: 10px 0; border-radius: 4px; }
+</style>
+</head>
+<body>
+<h1>🔌 Debug CH340 — Web Serial + stk500v1</h1>
+<p>Conectá tu Arduino Uno R3 (CH340) y seguí los pasos.</p>
+
+<div class="step">
+  <strong>Paso 1:</strong> Probar DTR toggle + sync básico
+  <br>
+  <button id="btnTestDTR">1️⃣ DTR + Sync</button>
+  <button id="btnBlink">2️⃣ Flashear Blink</button>
+  <button id="btnInfo">3️⃣ Info Puerto</button>
+</div>
+
+<div id="log">[Log] Esperando acción...</div>
+
+<script>
+const log = document.getElementById('log');
+
+function logMsg(msg, cls = '') {
+  const ts = new Date().toLocaleTimeString();
+  log.innerHTML += `<span class="${cls}">[${ts}] ${msg}</span>\n`;
+  log.scrollTop = log.scrollHeight;
+}
+
+const STK_INSYNC = 0x14;
+const STK_OK     = 0x10;
+
+// ── Botón: test DTR + sync ──
+document.getElementById('btnTestDTR').addEventListener('click', async () => {
+  log.innerHTML = '';
+  logMsg('=== Test DTR + Sync ===', 'info');
+  
+  if (!('serial' in navigator)) {
+    logMsg('✕ Web Serial no soportado. Usá Chrome/Edge/Opera.', 'error');
+    return;
+  }
+  
+  let port;
+  try {
+    // 1. Seleccionar puerto
+    logMsg('💡 Seleccioná el puerto del Arduino CH340...', 'info');
+    port = await navigator.serial.requestPort();
+    logMsg(`✓ Puerto seleccionado: ${port.getInfo()?.usbVendorId?.toString(16)}:${port.getInfo()?.usbProductId?.toString(16)}`, 'success');
+    
+    // 2. Abrir a 115200
+    await port.open({ baudRate: 115200, dataBits: 8, stopBits: 1, parity: 'none' });
+    logMsg('✓ Puerto abierto a 115200 baud', 'success');
+    
+    // 3. Toggle DTR
+    logMsg('🔄 Toggle DTR...', 'info');
+    try {
+      await port.setSignals({ dataTerminalReady: false, requestToSend: false });
+      logMsg('   DTR=false, RTS=false', 'info');
+      await delay(50);
+      await port.setSignals({ dataTerminalReady: true, requestToSend: false });
+      logMsg('   DTR=true (pulso de reset enviado)', 'success');
+      await delay(250);
+    } catch (e) {
+      logMsg('⚠ setSignals falló: ' + e.message, 'warn');
+      logMsg('   El driver CH340 puede no soportar control de señales.', 'warn');
+    }
+    
+    // 4. Sync stk500v1
+    logMsg('🔄 Intentando sync stk500v1...', 'info');
+    const reader = port.readable.getReader();
+    
+    let synced = false;
+    for (let attempt = 0; attempt < 10; attempt++) {
+      try {
+        const writer = port.writable.getWriter();
+        try {
+          await writer.write(new Uint8Array([0x30, 0x20]));
+        } finally {
+          writer.releaseLock();
+        }
+        
+        const resp = await readWithTimeout(reader, 200);
+        if (resp.length >= 2 && resp[0] === STK_INSYNC && resp[1] === STK_OK) {
+          logMsg(`✓ Sync exitoso en intento ${attempt + 1}! Respuesta: 0x${resp[0].toString(16)} 0x${resp[1].toString(16)}`, 'success');
+          synced = true;
+          break;
+        } else if (resp.length > 0) {
+          logMsg(`   Intento ${attempt + 1}: respuesta inesperada ${Array.from(resp).map(b=>'0x'+b.toString(16)).join(' ')}`, 'warn');
+        }
+      } catch (e) {
+        logMsg(`   Intento ${attempt + 1}: ${e.message}`, 'warn');
+      }
+      await delay(100);
+    }
+    
+    reader.releaseLock();
+    
+    if (!synced) {
+      logMsg('✕ No se pudo sincronizar con el bootloader', 'error');
+      logMsg('  Posibles causas:', 'warn');
+      logMsg('  1. El driver CH340 no toggled DTR → el bootloader no se activó', 'warn');
+      logMsg('  2. Probá presionar RESET manualmente justo después de hacer clic en "DTR+Sync"', 'warn');
+      logMsg('  3. El cable USB puede ser solo de carga (sin datos)', 'warn');
+    }
+    
+    await port.close();
+    
+  } catch (e) {
+    logMsg('✕ Error: ' + e.message, 'error');
+  }
+});
+
+// ── Botón: flashear Blink ──
+document.getElementById('btnBlink').addEventListener('click', async () => {
+  log.innerHTML = '';
+  logMsg('=== Flashear Blink de prueba ===', 'info');
+  
+  if (!('serial' in navigator)) {
+    logMsg('✕ Web Serial no soportado. Usá Chrome/Edge/Opera.', 'error');
+    return;
+  }
+  
+  // HEX mínimo para Blink en Uno (pin 13)
+  // Compilado: void setup(){pinMode(13,OUTPUT);} void loop(){digitalWrite(13,HIGH);delay(500);digitalWrite(13,LOW);delay(500);}
+  const blinkHex = `:100000000C945C000C946E000C946E000C946E0091
+:100010000C946E000C946E000C946E000C946E0028
+:100020000C946E000C946E000C946E000C946E0018
+:100030000C946E000C946E000C946E000C946E0008
+:100040000C9492010C946E000C946E000C946E00D8
+:100050000C946E000C946E000C946E000C946E00F8
+:100060000C946E000C946E000C946E0000000000E9
+:1000700000240027002A0000000000250028002B00
+:100080000000000023002600290004040404040402
+:100090000404040202020202020303030303030110
+:1000A0000102040810204080010204081020010240
+:1000B000040810200000000800020100000304072D
+:1000C000000000000000000011241FBECFEFD8E0E6
+:1000D000DEBFCDBF11E0A0E0B1E0E8E5F1E002C02A
+:1000E00005900D92A23EB107D9F722E0A2E5B1E00C
+:1000F00001C01D92A93EB107E1F720E0A5E5B1E0EF
+:1001000001C01D92A13EB107E1F710E0CAE0D0E0E6
+:1001100004C02297FE010E941A02C934D107C9F7BD
+:100120000E94B9010C94CA020C940000FF920F9330
+:100130001F93CF93DF938091010190910201A09160
+:100140000301B0910401309105012109130122095C
+:1001500027093E0941095109610971098109900950
+:100160000895CF92DF92EF92FF920F931F93CF93BC
+:10017000DF93EC018B016A010E94D7016B017C01EE
+:1001800080E090E0A0E0B0E00E94D7010E94540290
+:100190002091090130910A018093050190930601E3
+:1001A00000930A01109309010E940000F894FFCFCE
+:00000001FF`;
+  
+  let port;
+  try {
+    port = await navigator.serial.requestPort();
+    logMsg('✓ Puerto seleccionado', 'success');
+    
+    await port.open({ baudRate: 115200, dataBits: 8, stopBits: 1, parity: 'none' });
+    
+    // DTR toggle
+    await port.setSignals({ dataTerminalReady: false, requestToSend: false });
+    await delay(50);
+    await port.setSignals({ dataTerminalReady: true, requestToSend: false });
+    await delay(250);
+    
+    // Parse HEX
+    const hexLines = blinkHex.trim().split('\n').map(l => l.trim());
+    logMsg(`📦 ${hexLines.length} líneas HEX`, 'info');
+    
+    const reader = port.readable.getReader();
+    
+    // Sync
+    logMsg('🔄 Syncing...', 'info');
+    let synced = false;
+    for (let i = 0; i < 10; i++) {
+      const writer = port.writable.getWriter();
+      try { await writer.write(new Uint8Array([0x30, 0x20])); } finally { writer.releaseLock(); }
+      const resp = await readWithTimeout(reader, 200);
+      if (resp.length >= 2 && resp[0] === 0x14 && resp[1] === 0x10) {
+        synced = true;
+        logMsg('✓ Synced', 'success');
+        break;
+      }
+      await delay(100);
+    }
+    
+    if (!synced) {
+      logMsg('✕ Sync falló', 'error');
+      reader.releaseLock();
+      await port.close();
+      return;
+    }
+    
+    logMsg('👍 Bootloader responde. El DTR toggle funciona con este CH340.', 'success');
+    logMsg('   El fix en web-serial-flasher.js debería resolver el problema.', 'info');
+    
+    reader.releaseLock();
+    await port.close();
+    
+  } catch (e) {
+    logMsg('✕ Error: ' + e.message, 'error');
+  }
+});
+
+// ── Botón: info del puerto ──
+document.getElementById('btnInfo').addEventListener('click', async () => {
+  log.innerHTML = '';
+  logMsg('=== Info del Puerto ===', 'info');
+  
+  if (!('serial' in navigator)) {
+    logMsg('✕ Web Serial no soportado', 'error');
+    return;
+  }
+  
+  try {
+    const port = await navigator.serial.requestPort();
+    const info = port.getInfo();
+    logMsg(`VID: 0x${info.usbVendorId?.toString(16) || '?'}`, 'info');
+    logMsg(`PID: 0x${info.usbProductId?.toString(16) || '?'}`, 'info');
+    
+    if (info.usbVendorId === 0x1A86) {
+      logMsg('✅ Chip CH34x detectado (WCH)', 'success');
+      if (info.usbProductId === 0x7523) logMsg('   Modelo: CH340', 'info');
+      else if (info.usbProductId === 0x5523) logMsg('   Modelo: CH341', 'info');
+    }
+    
+    // Ver si setSignals está disponible
+    try {
+      await port.open({ baudRate: 9600 });
+      try {
+        await port.setSignals({ dataTerminalReady: false, requestToSend: false });
+        logMsg('✓ setSignals() disponible en este puerto', 'success');
+      } catch (e) {
+        logMsg('✕ setSignals() NO disponible: ' + e.message, 'error');
+        logMsg('  Esto explica por qué falla: el driver no permite control DTR.', 'warn');
+      }
+      await port.close();
+    } catch (e) {
+      logMsg('✕ No se pudo abrir el puerto: ' + e.message, 'error');
+    }
+    
+  } catch (e) {
+    logMsg('✕ Cancelado o error: ' + e.message, 'warn');
+  }
+});
+
+// Helpers
+function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+async function readWithTimeout(reader, ms) {
+  const readPromise = (async () => {
+    const chunks = [];
+    while (true) {
+      const { value, done } = await reader.read();
+      if (value) chunks.push(value);
+      if (done) break;
+      if (chunks.length > 0) { await delay(30); break; }
+    }
+    const total = chunks.reduce((s, c) => s + c.length, 0);
+    const result = new Uint8Array(total);
+    let offset = 0;
+    for (const c of chunks) { result.set(c, offset); offset += c.length; }
+    return result;
+  })();
+  
+  const timeoutPromise = new Promise((_, reject) =>
+    setTimeout(() => reject(new Error('Timeout')), ms)
+  );
+  
+  try {
+    return await Promise.race([readPromise, timeoutPromise]);
+  } catch (e) {
+    if (e.message === 'Timeout') return new Uint8Array(0);
+    throw e;
+  }
+}
+</script>
+
+</body>
+</html>

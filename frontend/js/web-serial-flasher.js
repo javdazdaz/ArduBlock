@@ -96,9 +96,36 @@ class STK500Flasher {
 
     // Configurar para lectura/escritura
     this.reader = this.port.readable.getReader();
+
+    // ── DTR toggle: activa auto-reset para entrar al bootloader ──
+    // Arduino Uno/Nano/Mega usan un capacitor de 100nF entre DTR y RESET.
+    // Al bajar DTR se genera un pulso de reset que activa el bootloader
+    // por ~2 segundos. Sin esto, el sketch en ejecución responde en vez
+    // del bootloader y el sync stk500v1 falla.
+    // CH340/CH341 requieren este pulso explícito; el ATmega16U2 a veces
+    // lo recibe del driver al abrir el puerto, pero no siempre.
+    await this._toggleDTR();
     
-    // Pequeño delay para que el bootloader se estabilice
-    await this._delay(200);
+    this.log('✓ DTR toggled — bootloader debería estar activo', 'info');
+  }
+
+  /**
+   * Toggle DTR para activar el auto-reset del Arduino.
+   * Secuencia estándar de avrdude: DTR=off → 50ms → DTR=on → 250ms.
+   */
+  async _toggleDTR() {
+    try {
+      // DTR LOW: el capacitor se descarga → RESET baja
+      await this.port.setSignals({ dataTerminalReady: false, requestToSend: false });
+      await this._delay(50);
+      // DTR HIGH: el capacitor se carga → pulso en RESET → bootloader
+      await this.port.setSignals({ dataTerminalReady: true, requestToSend: false });
+      await this._delay(250); // tiempo para que el bootloader arranque
+    } catch (e) {
+      // setSignals() puede fallar en algunos SO/drivers — continuar sin DTR
+      this.log('⚠ No se pudo togglear DTR: ' + e.message, 'warn');
+      await this._delay(200);
+    }
   }
 
   /**
