@@ -196,7 +196,7 @@ class OptibootFlasher {
         const resp = await this._readWithTimeout(300);
         
         if (resp.length >= 2 && resp[0] === STK_INSYNC && resp[1] === STK_OK) {
-          await this._drain();
+          // NO drenamos — podría estar rompiendo el reader en CH340
           this.log('✓ Bootloader sincronizado', 'success');
           return;
         }
