@@ -34,6 +34,7 @@
 <div class="step">
   <button id="btnFull">🚀 Test Completo (DTR → Sync → Firma → Flash Blink)</button>
   <button id="btnSyncOnly">📡 Solo Sync</button>
+  <button id="btnManualReset">🔴 Reset Manual + Sync</button>
   <button id="btnDiag">🩺 Diagnóstico</button>
   <button id="btnClear">🧹 Limpiar Log</button>
 </div>
@@ -426,6 +427,120 @@ document.getElementById('btnSyncOnly').addEventListener('click', async () => {
       await port.close();
       if (ok) break;
     }
+  } catch(e) { logMsg(`✕ ${e.message}`, 'error'); try{await port?.close()}catch(_){} }
+});
+
+// ── Botón: Reset Manual + Sync ────────────────
+document.getElementById('btnManualReset').addEventListener('click', async () => {
+  log.innerHTML = '';
+  logMsg('═══ Reset Manual + Sync ═══', 'info');
+  logMsg('⚠ NO se usará DTR. Tenés que presionar RESET vos.', 'warn');
+  logMsg('');
+  
+  if (!('serial' in navigator)) { logMsg('✕ Web Serial no soportado', 'error'); return; }
+  
+  let port;
+  try {
+    port = await navigator.serial.requestPort();
+    logMsg(`✓ Puerto: VID 0x${(port.getInfo()?.usbVendorId||0).toString(16)}`, 'success');
+    
+    await port.open({ baudRate: 115200, dataBits: 8, stopBits: 1, parity: 'none' });
+    logMsg('✓ Puerto abierto (sin DTR)', 'success');
+    
+    // NO toggleamos DTR — el usuario lo hace manualmente
+    const reader = port.readable.getReader();
+    
+    for (let round = 0; round < 5; round++) {
+      logMsg('');
+      logMsg(`🔴 Ronda ${round+1}/5: PRESIONÁ RESET en el Arduino AHORA`, 'warn');
+      logMsg('   (tenés 4 segundos para presionar el botón...)', 'dim');
+      
+      // Esperar a que el usuario presione reset
+      await delay(4000);
+      
+      // Intentar sync inmediatamente
+      logMsg('   Enviando sync...', 'info');
+      for (let attempt = 0; attempt < 8; attempt++) {
+        const w = port.writable.getWriter();
+        try { await w.write(new Uint8Array([CMD_SYNC, CRC_EOP])); await w.ready; }
+        finally { w.releaseLock(); }
+        
+        await delay(10);
+        const resp = await readWithTimeout(reader, 300);
+        
+        if (resp.length >= 2 && resp[0] === STK_INSYNC && resp[1] === STK_OK) {
+          logMsg(`   ✅ SYNC OK (intento ${attempt+1}) RX: ${hex(resp)}`, 'success');
+          
+          // Leer firma para confirmar
+          const w2 = port.writable.getWriter();
+          try { await w2.write(new Uint8Array([CMD_READ_SIGN, CRC_EOP])); await w2.ready; }
+          finally { w2.releaseLock(); }
+          await delay(10);
+          const sigResp = await readWithTimeout(reader, 1000);
+          if (sigResp.length >= 5) {
+            const sig = [sigResp[1], sigResp[2], sigResp[3]];
+            logMsg(`   🔍 Firma: 0x${sig[0].toString(16)} 0x${sig[1].toString(16)} 0x${sig[2].toString(16)} RX: ${hex(sigResp)}`, 'success');
+          }
+          
+          // Flashear Blink
+          logMsg('   💾 Flasheando Blink...', 'info');
+          const blocks = parseHex(BLINK_HEX);
+          let totalBytes = 0;
+          let ok = true;
+          for (const block of blocks) {
+            let addr = block.address;
+            const data = block.data;
+            const wa = Math.floor(addr / 2);
+            
+            // Load address
+            const w3 = port.writable.getWriter();
+            try { await w3.write(new Uint8Array([CMD_LOAD_ADDR, wa & 0xFF, (wa >> 8) & 0xFF, CRC_EOP])); await w3.ready; }
+            finally { w3.releaseLock(); }
+            await delay(5);
+            await readWithTimeout(reader, 1000);
+            
+            // Program page
+            const szHi = (data.length >> 8) & 0xFF;
+            const szLo = data.length & 0xFF;
+            const w4 = port.writable.getWriter();
+            try {
+              const m = [CMD_PROG_PAGE, szHi, szLo, CRC_EOP, ...Array.from(data), CRC_EOP];
+              await w4.write(new Uint8Array(m)); await w4.ready;
+            } finally { w4.releaseLock(); }
+            await delay(5);
+            const pr = await readWithTimeout(reader, 3000);
+            if (pr.length < 2 || pr[0] !== STK_INSYNC || pr[pr.length-1] !== STK_OK) {
+              logMsg(`   ❌ ProgPage falló: ${hex(pr)}`, 'error');
+              ok = false; break;
+            }
+            totalBytes += data.length;
+          }
+          
+          if (ok) {
+            // Leave
+            const w5 = port.writable.getWriter();
+            try { await w5.write(new Uint8Array([CMD_LEAVE, CRC_EOP])); await w5.ready; }
+            finally { w5.releaseLock(); }
+            
+            logMsg(`   ✅ ${totalBytes} bytes flasheados — ¡LED en pin 13 debería parpadear!`, 'success');
+          }
+          
+          reader.releaseLock();
+          await port.close();
+          return;
+        } else if (resp.length > 0) {
+          logMsg(`   Intento ${attempt+1}: RX ${hex(resp)}`, 'warn');
+        }
+        await delay(50);
+      }
+      logMsg('   ❌ No se detectó bootloader en esta ronda', 'warn');
+    }
+    
+    logMsg('\n❌ Falló tras 5 rondas de reset manual', 'error');
+    logMsg('   ¿Seguro que presionaste RESET? El bootloader solo está activo ~2 segundos.', 'warn');
+    reader.releaseLock();
+    await port.close();
+    
   } catch(e) { logMsg(`✕ ${e.message}`, 'error'); try{await port?.close()}catch(_){} }
 });
 
