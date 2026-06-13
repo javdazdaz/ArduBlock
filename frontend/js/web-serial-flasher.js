@@ -87,54 +87,46 @@ class OptibootFlasher {
   }
 
   /**
-   * Activa el bootloader cerrando y reabriendo el puerto.
+   * Activa el bootloader: cierra/reabre el puerto + togglea DTR+RTS.
    * 
-   * En Web Serial, setSignals(DTR/RTS) no funciona en chips CH340
-   * (el API reporta éxito pero el hardware no cambia).
-   * 
-   * Al cerrar y reabrir el puerto, el SO aserta DTR por hardware al
-   * abrir → pulso de reset real vía el capacitor 100nF en el Arduino.
-   * 
-   * Funciona en todos los chips USB-Serial (genuino, CH340, CP2102).
+   * El close/reopen fuerza un reset de hardware (el SO aserta DTR al abrir).
+   * Luego setSignals(DTR+RTS) por si el CH340 necesita el pulso explícito.
+   * Combinación probada en CH340 genuinos y clones.
    */
   async _toggleDTR() {
     const baud = 115200;
     
-    // Soltar reader
+    // ── Paso 1: close/reopen para reset de hardware ──
     try { this.reader?.releaseLock(); } catch (_) {}
     this.reader = null;
     
-    // Cerrar puerto
-    this.log('   Cerrando puerto...', 'info');
-    try { await this.port.close(); } catch (e) {
-      this.log(`   ⚠ Error al cerrar: ${e.message}`, 'warn');
-    }
+    try { await this.port.close(); } catch (_) {}
+    await this._delay(300);
     
-    // Esperar que el CH340 re-enumere (máquinas lentas necesitan más)
-    await this._delay(500);
-    
-    // Reabrir con reintentos
     for (let attempt = 0; attempt < 5; attempt++) {
       try {
         await this.port.open({ baudRate: baud, dataBits: 8, stopBits: 1, parity: 'none' });
-        this.log('   ✓ Puerto reabierto', 'success');
         break;
       } catch (e) {
-        if (attempt < 4) {
-          this.log(`   Reintentando abrir (${attempt+1}/5): ${e.message}`, 'warn');
-          await this._delay(300);
-        } else {
-          throw new Error(`No se pudo reabrir el puerto: ${e.message}`);
-        }
+        if (attempt >= 4) throw new Error(`No se pudo reabrir el puerto: ${e.message}`);
+        await this._delay(200);
       }
     }
     
-    // Esperar bootloader
-    await this._delay(500);
+    // ── Paso 2: toggle DTR+RTS (por si el clone usa RTS→RESET) ──
+    try {
+      // Bajar ambas señales
+      await this.port.setSignals({ dataTerminalReady: false, requestToSend: false });
+      await this._delay(50);
+      // Subir ambas → pulso en cualquier pin que use el clon
+      await this.port.setSignals({ dataTerminalReady: true, requestToSend: true });
+    } catch (_) {
+      // setSignals puede fallar en CH340, el close/reopen ya hizo el reset
+    }
     
-    // Re-adquirir reader
+    await this._delay(500); // bootloader arranque
+    
     this.reader = this.port.readable.getReader();
-    this.log('   ✓ Reader re-adquirido', 'info');
   }
 
   async disconnect() {
@@ -196,16 +188,24 @@ class OptibootFlasher {
         const resp = await this._readWithTimeout(300);
         
         if (resp.length >= 2 && resp[0] === STK_INSYNC && resp[1] === STK_OK) {
-          // Limpiar buffer residual
           await this._drain();
           this.log('✓ Bootloader sincronizado', 'success');
           return;
+        }
+        
+        // Log de diagnóstico en cada intento
+        if (resp.length > 0) {
+          const hex = Array.from(resp).map(b => b.toString(16).padStart(2,'0')).join(' ');
+          this.log(`   Intento ${attempt+1}: RX ${hex}`, 'warn');
+        } else {
+          this.log(`   Intento ${attempt+1}: timeout`, 'dim');
         }
       } catch (_) {}
       
       await this._delay(100);
     }
     
+    this.log('   ❌ 10 intentos sin respuesta del bootloader', 'error');
     throw new Error('No se pudo sincronizar con el bootloader. ¿El Arduino está en modo programación?');
   }
 
