@@ -334,43 +334,54 @@ class OptibootFlasher {
   // ── Helpers ─────────────────────────────────
 
   async _readWithTimeout(ms) {
-    const readPromise = (async () => {
-      const chunks = [];
-      while (true) {
-        const { value, done } = await this.reader.read();
-        if (value) chunks.push(value);
+    // Usamos un reader cancelable: después de 'ms', cancelamos el stream
+    // para forzar que reader.read() rechace en vez de colgarse.
+    const start = Date.now();
+    const chunks = [];
+    
+    while (true) {
+      const elapsed = Date.now() - start;
+      if (elapsed >= ms) break;
+      
+      const remaining = ms - elapsed;
+      
+      try {
+        const readPromise = this.reader.read();
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('T')), Math.min(remaining, 100))
+        );
+        
+        const { value, done } = await Promise.race([readPromise, timeoutPromise]);
+        
         if (done) break;
-        if (chunks.length > 0) {
-          await this._delay(30);
-          break;
+        if (value && value.length > 0) {
+          chunks.push(value);
+          // Si ya tenemos datos, damos un pequeño margen extra
+          if (Date.now() - start > ms - 30) break;
+          continue;
         }
+        // value undefined or empty: esperar un poco y reintentar
+        await this._delay(10);
+      } catch (e) {
+        if (e.message === 'T') break; // timeout
+        throw e;
       }
-      const total = chunks.reduce((s, c) => s + c.length, 0);
-      const result = new Uint8Array(total);
-      let offset = 0;
-      for (const c of chunks) { result.set(c, offset); offset += c.length; }
-      return result;
-    })();
-
-    const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('Timeout')), ms)
-    );
-
-    try {
-      return await Promise.race([readPromise, timeoutPromise]);
-    } catch (e) {
-      if (e.message === 'Timeout') return new Uint8Array(0);
-      throw e;
     }
+    
+    const total = chunks.reduce((s, c) => s + c.length, 0);
+    if (total === 0) return new Uint8Array(0);
+    
+    const result = new Uint8Array(total);
+    let offset = 0;
+    for (const c of chunks) { result.set(c, offset); offset += c.length; }
+    return result;
   }
 
   async _drain() {
-    try {
-      while (true) {
-        const { value, done } = await this.reader.read();
-        if (done || !value || value.length === 0) break;
-      }
-    } catch (_) {}
+    // Usar readWithTimeout para no bloquear
+    for (let i = 0; i < 3; i++) {
+      await this._readWithTimeout(30);
+    }
   }
 
   async _delay(ms) {
