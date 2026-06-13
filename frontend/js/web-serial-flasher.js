@@ -82,8 +82,8 @@ class OptibootFlasher {
     }
 
     this.reader = this.port.readable.getReader();
-    await this._toggleDTR();
-    this.log('✓ DTR toggled — bootloader debería estar activo', 'info');
+    // DTR se togglea en flash(), justo antes del sync,
+    // para no perder el bootloader durante la compilación.
   }
 
   async _toggleDTR() {
@@ -244,6 +244,7 @@ class OptibootFlasher {
     // Re-toggear DTR: el bootloader pudo haber expirado entre connect() y flash()
     // (ej. durante la compilación en servidor, que tarda 2-5s).
     // Optiboot tiene timeout de ~1-2s, así que refrescamos el reset.
+    this.log('🔄 Activando bootloader (DTR)...', 'info');
     await this._toggleDTR();
     
     // 1. Sync
