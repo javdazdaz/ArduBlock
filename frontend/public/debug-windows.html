@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ArduBlock — Debug Windows</title>
+<style>
+  body { font-family: 'Segoe UI', system-ui, monospace; max-width: 900px; margin: 20px auto;
+         background: #0d1117; color: #c9d1d9; padding: 20px; }
+  button { padding: 10px 18px; margin: 4px; cursor: pointer; font-size: 13px;
+           background: #21262d; color: #c9d1d9; border: 1px solid #30363d; border-radius: 6px; }
+  button:hover { background: #30363d; }
+  button:active { background: #484f58; }
+  #log { background: #0d1117; padding: 15px; min-height: 300px;
+         margin: 15px 0; white-space: pre-wrap; font-size: 13px; overflow-y: auto;
+         max-height: 500px; border: 1px solid #30363d; border-radius: 6px;
+         font-family: 'Cascadia Code', 'Consolas', monospace; }
+  .info { color: #58a6ff; }
+  .success { color: #3fb950; }
+  .error { color: #f85149; }
+  .warn { color: #d2991d; }
+  .dim { color: #484f58; }
+  h1 { font-size: 20px; border-bottom: 1px solid #30363d; padding-bottom: 8px; }
+  .step { background: #161b22; padding: 12px; margin: 8px 0; border-radius: 6px; border: 1px solid #21262d; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; }
+  .badge-ok { background: #1b3a1b; color: #3fb950; }
+  .badge-err { background: #3a1b1b; color: #f85149; }
+  .badge-warn { background: #3a2f1b; color: #d2991d; }
+</style>
+</head>
+<body>
+<h1>🔍 ArduBlock — Debug Windows (protocolo raw Optiboot)</h1>
+
+<div class="step">
+  <button id="btnFull">🚀 Test Completo (DTR → Sync → Firma → Flash Blink)</button>
+  <button id="btnSyncOnly">📡 Solo Sync</button>
+  <button id="btnDiag">🩺 Diagnóstico</button>
+  <button id="btnClear">🧹 Limpiar Log</button>
+</div>
+
+<div id="log">[Log] Seleccioná un botón para empezar.</div>
+
+<script>
+const log = document.getElementById('log');
+let _seq = 0;
+function ts() { return new Date().toLocaleTimeString(); }
+function logMsg(msg, cls = '') {
+  log.innerHTML += `<span class="${cls}">[${ts()}] ${msg}</span>\n`;
+  log.scrollTop = log.scrollHeight;
+}
+
+const CRC_EOP = 0x20;
+const STK_OK = 0x10;
+const STK_INSYNC = 0x14;
+const CMD_SYNC = 0x30;
+const CMD_READ_SIGN = 0x75;
+const CMD_LOAD_ADDR = 0x55;
+const CMD_PROG_PAGE = 0x64;
+const CMD_LEAVE = 0x51;
+
+// Blink real compilado (924 bytes, verificado con arduino-cli)
+const BLINK_HEX = `:100000000C945C000C946E000C946E000C946E00CA
+:100010000C946E000C946E000C946E000C946E00A8
+:100020000C946E000C946E000C946E000C946E0098
+:100030000C946E000C946E000C946E000C946E0088
+:100040000C9413010C946E000C946E000C946E00D2
+:100050000C946E000C946E000C946E000C946E0068
+:100060000C946E000C946E00000000002400270029
+:100070002A0000000000250028002B0004040404CE
+:100080000404040402020202020203030303030342
+:10009000010204081020408001020408102001021F
+:1000A00004081020000000080002010000030407FB
+:1000B000000000000000000011241FBECFEFD8E0B8
+:1000C000DEBFCDBF21E0A0E0B1E001C01D92A930AC
+:1000D000B207E1F70E945D010C94CC010C94000082
+:1000E000E1EBF0E02491EDE9F0E09491E9E8F0E053
+:1000F000E491EE23C9F0222339F0233001F1A8F472
+:10010000213019F1223029F1F0E0EE0FFF1FEE58F7
+:10011000FF4FA591B4912FB7F894EC91811126C0AF
+:1001200090959E239C932FBF08952730A9F02830E7
+:10013000C9F0243049F7209180002F7D03C0209121
+:1001400080002F7720938000DFCF24B52F7724BD48
+:10015000DBCF24B52F7DFBCF2091B0002F772093EC
+:10016000B000D2CF2091B0002F7DF9CF9E2BDACFF7
+:100170003FB7F8948091050190910601A091070185
+:10018000B091080126B5A89B05C02F3F19F0019634
+:10019000A11DB11D3FBFBA2FA92F982F8827BC01E1
+:1001A000CD01620F711D811D911D42E0660F771F09
+:1001B000881F991F4A95D1F708958F929F92AF9209
+:1001C000BF92CF92DF92EF92FF920E94B8004B0154
+:1001D0005C0184EFC82EDD24D394E12CF12C0E9425
+:1001E000B800681979098A099B09683E734081053E
+:1001F0009105A8F321E0C21AD108E108F10888EEC0
+:10020000880E83E0981EA11CB11CC114D104E10426
+:10021000F10429F7FF90EF90DF90CF90BF90AF905F
+:100220009F908F9008951F920F920FB60F921124F6
+:100230002F933F938F939F93AF93BF93809101012F
+:1002400090910201A0910301B0910401309100014D
+:1002500023E0230F2D3758F50196A11DB11D2093E2
+:1002600000018093010190930201A0930301B093D8
+:1002700004018091050190910601A0910701B091C0
+:1002800008010196A11DB11D8093050190930601FF
+:10029000A0930701B0930801BF91AF919F918F91F7
+:1002A0003F912F910F900FBE0F901F90189526E849
+:1002B000230F0296A11DB11DD2CF789484B5826020
+:1002C00084BD84B5816084BD85B5826085BD85B5FA
+:1002D000816085BD80916E00816080936E00109278
+:1002E00081008091810082608093810080918100F3
+:1002F0008160809381008091800081608093800084
+:100300008091B10084608093B1008091B0008160E1
+:100310008093B00080917A00846080937A0080910D
+:100320007A00826080937A0080917A008160809365
+:100330007A0080917A00806880937A001092C100E0
+:10034000EDE9F0E02491E9E8F0E08491882399F068
+:1003500090E0880F991FFC01E859FF4FA591B491D7
+:10036000FC01EE58FF4F859194918FB7F894EC9172
+:10037000E22BEC938FBFC0E0D0E081E00E947000E0
+:100380000E94DD0080E00E9470000E94DD00209746
+:0C039000A1F30E940000F1CFF894FFCF11
+:00000001FF`;
+
+// ── Helpers ─────────────────────────────────
+function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+function parseHex(hexText) {
+  const mem = new Map();
+  for (const raw of hexText.trim().split(/\r?\n/)) {
+    const line = raw.trim();
+    if (!line.startsWith(':')) continue;
+    const bc = parseInt(line.slice(1,3), 16);
+    const addr = parseInt(line.slice(3,7), 16);
+    if (parseInt(line.slice(7,9), 16) !== 0) continue;
+    const bytes = [];
+    for (let i = 0; i < bc; i++) bytes.push(parseInt(line.slice(9+i*2, 11+i*2), 16));
+    mem.set(addr, (mem.get(addr) || []).concat(bytes));
+  }
+  return [...mem.entries()].sort((a,b)=>a[0]-b[0]).map(([a,b])=>({address:a, data:new Uint8Array(b)}));
+}
+
+async function readWithTimeout(reader, ms) {
+  const p = (async () => {
+    const chunks = [];
+    while (true) {
+      const { value, done } = await reader.read();
+      if (value) chunks.push(value);
+      if (done) break;
+      if (chunks.length > 0) { await delay(30); break; }
+    }
+    const t = chunks.reduce((s,c)=>s+c.length,0);
+    const r = new Uint8Array(t); let o=0;
+    for (const c of chunks) { r.set(c,o); o+=c.length; }
+    return r;
+  })();
+  try { return await Promise.race([p, new Promise((_,r)=>setTimeout(()=>r(new Error('T')), ms))]); }
+  catch(e) { return new Uint8Array(0); }
+}
+
+function hex(arr) { return Array.from(arr).map(b=>b.toString(16).padStart(2,'0')).join(' '); }
+
+// ── Botón: Test Completo ─────────────────────
+document.getElementById('btnFull').addEventListener('click', async () => {
+  log.innerHTML = '';
+  logMsg('══════════ TEST COMPLETO (Optiboot raw) ══════════', 'info');
+  
+  if (!('serial' in navigator)) { logMsg('✕ Web Serial no soportado', 'error'); return; }
+
+  let port;
+  try {
+    // ── FASE 0: Diagnóstico del sistema ──
+    logMsg('🩺 FASE 0: Diagnóstico del sistema', 'dim');
+    logMsg(`   User-Agent: ${navigator.userAgent.substring(0,80)}...`, 'dim');
+    logMsg(`   Platform: ${navigator.platform}`, 'dim');
+    logMsg(`   Web Serial: ${'serial' in navigator ? '✅' : '❌'}`, 'dim');
+
+    // ── FASE 1: Abrir puerto ──
+    logMsg('');
+    logMsg('🔌 FASE 1: Abrir puerto serial', 'info');
+    try {
+      port = await navigator.serial.requestPort();
+      const info = port.getInfo();
+      logMsg(`   Puerto seleccionado OK`, 'success');
+      logMsg(`   VID: 0x${(info.usbVendorId||0).toString(16)}  PID: 0x${(info.usbProductId||0).toString(16)}`, 'info');
+      if (info.usbVendorId === 0x1A86) logMsg('   → Chip CH34x (WCH) detectado', 'warn');
+      else if (info.usbVendorId === 0x2341) logMsg('   → Arduino genuino (Arduino SA)', 'success');
+    } catch (e) {
+      logMsg(`   ❌ Falló: ${e.message}`, 'error');
+      return;
+    }
+
+    logMsg('   Abriendo a 115200 baud...', 'info');
+    try {
+      await port.open({ baudRate: 115200, dataBits: 8, stopBits: 1, parity: 'none' });
+      logMsg('   ✓ Puerto abierto', 'success');
+    } catch (e) {
+      logMsg(`   ❌ Falló al abrir: ${e.message}`, 'error');
+      logMsg('   ⚠ Causas comunes en Windows:', 'warn');
+      logMsg('      - Puerto en uso por otro programa (IDE, terminal)', 'warn');
+      logMsg('      - Cerrá TODAS las pestañas que usen este puerto', 'warn');
+      logMsg('      - Desconectá y reconectá el Arduino', 'warn');
+      return;
+    }
+
+    const reader = port.readable.getReader();
+    logMsg('   ✓ Reader adquirido', 'dim');
+
+    // ── FASE 2: DTR toggle ──
+    logMsg('');
+    logMsg('⚡ FASE 2: DTR toggle (reset del Arduino)', 'info');
+    try {
+      logMsg('   DTR=false...', 'dim');
+      await port.setSignals({ dataTerminalReady: false, requestToSend: false });
+      await delay(50);
+      logMsg('   DTR=true (pulso de reset)...', 'dim');
+      await port.setSignals({ dataTerminalReady: true, requestToSend: false });
+      await delay(250);
+      logMsg('   ✓ DTR toggle completado', 'success');
+    } catch (e) {
+      logMsg(`   ⚠ setSignals falló: ${e.message}`, 'warn');
+      logMsg('   → El driver CH340 puede no soportar control DTR', 'warn');
+      logMsg('   → Probá presionar RESET manual ahora', 'warn');
+      await delay(1000);
+    }
+
+    // Drenar basura post-reset
+    let drained = 0;
+    for (let i = 0; i < 3; i++) {
+      const junk = await readWithTimeout(reader, 100);
+      if (junk.length > 0) { drained += junk.length; logMsg(`   🧹 Basura: ${hex(junk)}`, 'warn'); }
+    }
+    if (drained > 0) logMsg(`   ${drained} bytes drenados`, 'dim');
+
+    // ── FASE 3: Sync ──
+    logMsg('');
+    logMsg('📡 FASE 3: Sync (0x30 0x20)', 'info');
+    let synced = false;
+    for (let attempt = 0; attempt < 10; attempt++) {
+      const w = port.writable.getWriter();
+      try {
+        await w.write(new Uint8Array([CMD_SYNC, CRC_EOP]));
+        await w.ready;
+      } finally { w.releaseLock(); }
+      
+      await delay(10);
+      const resp = await readWithTimeout(reader, 400);
+      
+      if (resp.length >= 2 && resp[0] === STK_INSYNC && resp[1] === STK_OK) {
+        synced = true;
+        logMsg(`   ✓ Sync OK (intento ${attempt+1}) → RX: ${hex(resp)}`, 'success');
+        break;
+      } else if (resp.length > 0) {
+        logMsg(`   Intento ${attempt+1}: RX inesperado → ${hex(resp)}`, 'warn');
+      }
+      await delay(100);
+    }
+    if (!synced) {
+      logMsg('   ❌ Sync falló 10 intentos', 'error');
+      logMsg('   ⚠ Diagnóstico:', 'warn');
+      logMsg('      - ¿El Arduino tiene bootloader? (probá con Arduino IDE)', 'warn');
+      logMsg('      - ¿Cable USB de datos? (no solo carga)', 'warn');
+      logMsg('      - ¿Otro programa usando el puerto?', 'warn');
+      reader.releaseLock();
+      await port.close();
+      return;
+    }
+
+    // ── FASE 4: Leer firma ──
+    logMsg('');
+    logMsg('🔍 FASE 4: Leer firma (0x75 0x20)', 'info');
+    {
+      const w = port.writable.getWriter();
+      try { await w.write(new Uint8Array([CMD_READ_SIGN, CRC_EOP])); await w.ready; }
+      finally { w.releaseLock(); }
+      await delay(10);
+      const resp = await readWithTimeout(reader, 2000);
+      if (resp.length >= 5 && resp[0] === STK_INSYNC) {
+        const sig = [resp[1], resp[2], resp[3]];
+        logMsg(`   ✓ Firma: 0x${sig[0].toString(16)} 0x${sig[1].toString(16)} 0x${sig[2].toString(16)} → RX: ${hex(resp)}`, 'success');
+        if (sig[0]===0x1e && sig[1]===0x95 && sig[2]===0x0f) logMsg('   → ATmega328P confirmado ✅', 'success');
+      } else {
+        logMsg(`   ⚠ Respuesta inesperada: ${hex(resp)}`, 'warn');
+      }
+    }
+
+    // ── FASE 5: Flashear Blink ──
+    logMsg('');
+    logMsg('💾 FASE 5: Flashear Blink', 'info');
+    const blocks = parseHex(BLINK_HEX);
+    logMsg(`   ${blocks.length} bloques de datos`, 'dim');
+    
+    const pageSize = 128;
+    let totalBytes = 0;
+    const t0 = Date.now();
+
+    for (const block of blocks) {
+      let addr = block.address;
+      const data = block.data;
+      const wordAddr = Math.floor(addr / 2);
+      
+      // Load address
+      {
+        const w = port.writable.getWriter();
+        try {
+          await w.write(new Uint8Array([CMD_LOAD_ADDR, wordAddr & 0xFF, (wordAddr >> 8) & 0xFF, CRC_EOP]));
+          await w.ready;
+        } finally { w.releaseLock(); }
+        await delay(5);
+        const resp = await readWithTimeout(reader, 2000);
+        if (resp.length < 2 || resp[0] !== STK_INSYNC || resp[resp.length-1] !== STK_OK) {
+          logMsg(`   ❌ LoadAddress 0x${addr.toString(16)} falló: ${hex(resp)}`, 'error');
+          reader.releaseLock(); await port.close(); return;
+        }
+      }
+
+      // Program pages
+      let offset = 0;
+      while (offset < data.length) {
+        const chunk = data.slice(offset, offset + pageSize);
+        const szHi = (chunk.length >> 8) & 0xFF;
+        const szLo = chunk.length & 0xFF;
+        
+        {
+          const w = port.writable.getWriter();
+          try {
+            const msg = [CMD_PROG_PAGE, szHi, szLo, CRC_EOP, ...Array.from(chunk), CRC_EOP];
+            await w.write(new Uint8Array(msg));
+            await w.ready;
+          } finally { w.releaseLock(); }
+          await delay(5);
+          const resp = await readWithTimeout(reader, 3000);
+          if (resp.length < 2 || resp[0] !== STK_INSYNC || resp[resp.length-1] !== STK_OK) {
+            logMsg(`   ❌ ProgPage 0x${addr.toString(16)} +${chunk.length}B falló: ${hex(resp)}`, 'error');
+            reader.releaseLock(); await port.close(); return;
+          }
+        }
+        
+        offset += pageSize;
+        addr += pageSize;
+        totalBytes += chunk.length;
+        
+        if (offset < data.length) {
+          const wa = Math.floor(addr / 2);
+          const w = port.writable.getWriter();
+          try { await w.write(new Uint8Array([CMD_LOAD_ADDR, wa & 0xFF, (wa >> 8) & 0xFF, CRC_EOP])); await w.ready; }
+          finally { w.releaseLock(); }
+          await delay(5);
+          await readWithTimeout(reader, 500);
+        }
+        
+        if (totalBytes % 256 === 0) logMsg(`   ${totalBytes} bytes...`, 'dim');
+      }
+    }
+
+    // Leave
+    {
+      const w = port.writable.getWriter();
+      try { await w.write(new Uint8Array([CMD_LEAVE, CRC_EOP])); await w.ready; }
+      finally { w.releaseLock(); }
+    }
+
+    const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
+    reader.releaseLock();
+    await port.close();
+    
+    logMsg('');
+    logMsg(`✅ ¡${totalBytes} bytes flasheados en ${elapsed}s!`, 'success');
+    logMsg('🎉 El LED en pin 13 debería estar parpadeando', 'success');
+
+  } catch (e) {
+    logMsg(`\n💥 Error fatal: ${e.message}`, 'error');
+    logMsg(`   Stack: ${e.stack?.split('\\n').slice(0,3).join(' → ')}`, 'dim');
+    try { await port?.close(); } catch (_) {}
+  }
+});
+
+// ── Botón: Solo Sync ─────────────────────────
+document.getElementById('btnSyncOnly').addEventListener('click', async () => {
+  log.innerHTML = '';
+  logMsg('═══ Solo Sync ═══', 'info');
+  if (!('serial' in navigator)) { logMsg('✕ Web Serial no soportado', 'error'); return; }
+  
+  let port;
+  try {
+    port = await navigator.serial.requestPort();
+    logMsg(`✓ Puerto: VID 0x${(port.getInfo()?.usbVendorId||0).toString(16)}`, 'success');
+    
+    for (const baud of [115200, 57600]) {
+      logMsg(`\n── Probando ${baud} baud ──`, 'info');
+      await port.open({ baudRate: baud, dataBits: 8, stopBits: 1, parity: 'none' });
+      
+      // DTR
+      try { await port.setSignals({ dataTerminalReady: false }); await delay(50); await port.setSignals({ dataTerminalReady: true }); await delay(250); }
+      catch(e) { logMsg(`   ⚠ DTR no disponible: ${e.message}`, 'warn'); }
+      
+      const reader = port.readable.getReader();
+      let ok = false;
+      for (let i=0; i<10; i++) {
+        const w = port.writable.getWriter();
+        try { await w.write(new Uint8Array([CMD_SYNC, CRC_EOP])); await w.ready; }
+        finally { w.releaseLock(); }
+        await delay(10);
+        const r = await readWithTimeout(reader, 300);
+        if (r.length>=2 && r[0]===STK_INSYNC && r[1]===STK_OK) {
+          logMsg(`   ✓ ${baud} OK (intento ${i+1}) RX: ${hex(r)}`, 'success');
+          ok = true; break;
+        } else if (r.length>0) { logMsg(`   i${i+1}: ${hex(r)}`, 'warn'); }
+        await delay(100);
+      }
+      reader.releaseLock();
+      await port.close();
+      if (ok) break;
+    }
+  } catch(e) { logMsg(`✕ ${e.message}`, 'error'); try{await port?.close()}catch(_){} }
+});
+
+// ── Botón: Diagnóstico ───────────────────────
+document.getElementById('btnDiag').addEventListener('click', async () => {
+  log.innerHTML = '';
+  logMsg('═══ Diagnóstico del Sistema ═══', 'info');
+  logMsg(`Navegador: ${navigator.userAgent}`, 'dim');
+  logMsg(`Web Serial: ${'serial' in navigator ? '✅ disponible' : '❌ no disponible'}`, 'dim');
+  
+  if (!('serial' in navigator)) {
+    logMsg('⚠ Usá Chrome, Edge u Opera para Web Serial', 'warn');
+    return;
+  }
+
+  try {
+    const ports = await navigator.serial.getPorts();
+    logMsg(`Puertos autorizados: ${ports.length}`, 'dim');
+    for (const p of ports) {
+      const i = p.getInfo();
+      logMsg(`  VID:0x${(i.usbVendorId||0).toString(16)} PID:0x${(i.usbProductId||0).toString(16)}`, 'dim');
+    }
+  } catch(e) {
+    logMsg(`No se pudo listar puertos: ${e.message}`, 'warn');
+  }
+
+  // Pedir puerto para ver info
+  try {
+    const port = await navigator.serial.requestPort();
+    const info = port.getInfo();
+    logMsg(`\nPuerto seleccionado:`, 'info');
+    logMsg(`  VID: 0x${(info.usbVendorId||0).toString(16)}`, 'info');
+    logMsg(`  PID: 0x${(info.usbProductId||0).toString(16)}`, 'info');
+    
+    if (info.usbVendorId === 0x1A86) {
+      logMsg('  → Chip WCH CH34x', 'warn');
+      logMsg('  Driver: http://www.wch-ic.com/downloads/CH341SER_EXE.html', 'warn');
+    } else if (info.usbVendorId === 0x2341) {
+      logMsg('  → Arduino genuino (Arduino SA)', 'success');
+    } else if (info.usbVendorId === 0x10C4) {
+      logMsg('  → Silicon Labs CP210x', 'info');
+    } else if (info.usbVendorId === 0x0403) {
+      logMsg('  → FTDI', 'info');
+    } else {
+      logMsg(`  → Fabricante desconocido`, 'warn');
+    }
+
+    // Probar si el puerto se puede abrir
+    try {
+      await port.open({ baudRate: 9600 });
+      logMsg('  ✓ Puerto se puede abrir a 9600', 'success');
+      
+      try {
+        await port.setSignals({ dataTerminalReady: false });
+        logMsg('  ✓ setSignals(DTR) funciona', 'success');
+      } catch(e) {
+        logMsg(`  ⚠ setSignals NO funciona: ${e.message}`, 'warn');
+      }
+      
+      await port.close();
+    } catch(e) {
+      logMsg(`  ❌ No se pudo abrir: ${e.message}`, 'error');
+      logMsg('  → Puerto ocupado. Cerrá Arduino IDE y otras pestañas.', 'warn');
+    }
+    
+  } catch(e) {
+    logMsg(`No se seleccionó puerto: ${e.message}`, 'dim');
+  }
+});
+
+// ── Botón: Limpiar ───────────────────────────
+document.getElementById('btnClear').addEventListener('click', () => {
+  log.innerHTML = '[Log] Limpio.';
+});
+</script>
+</body>
+</html>
