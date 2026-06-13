@@ -212,8 +212,21 @@ document.getElementById('btnBlink').addEventListener('click', async () => {
     for (let i = 1; i < msg.length; i++) checksum ^= msg[i];
     msg.push(checksum);
     seq = (seq + 1) & 0xFF;
+    
+    // Escribir y esperar flush (crítico para CH340 en Windows)
     const writer = port.writable.getWriter();
-    try { await writer.write(new Uint8Array(msg)); } finally { writer.releaseLock(); }
+    try {
+      await writer.write(new Uint8Array(msg));
+      // writer.ready resuelve cuando el buffer se vació al hardware
+      // Sin esto, CH340 en Windows puede no haber transmitido aún
+      await writer.ready;
+    } finally {
+      writer.releaseLock();
+    }
+    
+    // Pequeña pausa para que el bootloader procese
+    await delay(5);
+    
     const resp = await readWithTimeout(reader, 5000);
     if (resp.length < 2) throw new Error('Respuesta vacía del bootloader');
     if (resp[0] !== STK_INSYNC) throw new Error(`Bootloader no sincronizado (0x${resp[0].toString(16)})`);
@@ -250,21 +263,40 @@ document.getElementById('btnBlink').addEventListener('click', async () => {
 
     const reader = port.readable.getReader();
 
-    // 2. Sync
+    // 2. Sync (raw wake-up como hace Arduino IDE)
     logMsg('🔄 Sync...', 'info');
     let synced = false;
     for (let i = 0; i < 10; i++) {
       const w = port.writable.getWriter();
       try { await w.write(new Uint8Array([0x30, 0x20])); } finally { w.releaseLock(); }
-      const resp = await readWithTimeout(reader, 200);
+      await delay(50); // CH340 necesita pausa entre write y read
+      const resp = await readWithTimeout(reader, 400);
       if (resp.length >= 2 && resp[0] === STK_INSYNC && resp[1] === STK_OK) {
-        synced = true; logMsg('✓ Sync OK', 'success'); break;
+        synced = true; logMsg(`✓ Sync OK (intento ${i+1})`, 'success'); break;
+      }
+      if (resp.length > 0) {
+        logMsg(`   Intento ${i+1}: ${Array.from(resp).map(b=>'0x'+b.toString(16).padStart(2,'0')).join(' ')}`, 'warn');
       }
       await delay(100);
     }
     if (!synced) { logMsg('✕ Sync falló', 'error'); reader.releaseLock(); await port.close(); return; }
 
-    // 3. Enter programming mode
+    // Limpiar bytes residuales post-sync (crítico para CH340)
+    await drainReader(reader);
+
+    // 3. STK_GET_SYNC formal (formato STK) — algunos bootloaders lo requieren
+    //    antes de aceptar SET_DEVICE
+    logMsg('📡 STK_GET_SYNC formal...', 'info');
+    try {
+      const syncResp = await sendCommand(reader, port, STK_GET_SYNC, []);
+      if (syncResp[0] === STK_INSYNC && syncResp[1] === STK_OK) {
+        logMsg('✓ GET_SYNC OK', 'success');
+      }
+    } catch (e) {
+      logMsg('⚠ GET_SYNC formal falló: ' + e.message + ' — continuando igual...', 'warn');
+    }
+
+    // 4. Enter programming mode
     logMsg('📟 Enter progmode...', 'info');
     const deviceParams = [0x86,0x00,0x00,0x01,0x01,0x01,0x3F,0x0F,0x00,0x00,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF];
     await sendCommand(reader, port, STK_SET_DEVICE, deviceParams);
@@ -272,11 +304,11 @@ document.getElementById('btnBlink').addEventListener('click', async () => {
     if (enterResp[1] !== STK_OK) { logMsg('✕ No se pudo entrar en modo programación', 'error'); reader.releaseLock(); await port.close(); return; }
     logMsg('✓ Modo programación', 'success');
 
-    // 4. Leer firma
+    // 5. Leer firma
     const sigResp = await sendCommand(reader, port, STK_READ_SIGN);
     logMsg(`🔍 Firma: 0x${sigResp[2]?.toString(16)} 0x${sigResp[3]?.toString(16)} 0x${sigResp[4]?.toString(16)}`, 'info');
 
-    // 5. Programar flash
+    // 6. Programar flash
     const blocks = parseHex(blinkHex);
     logMsg(`📦 ${blocks.length} bloques para flashear`, 'info');
     const pageSize = 128;
@@ -305,7 +337,7 @@ document.getElementById('btnBlink').addEventListener('click', async () => {
     }
     logMsg(`✅ ${totalBytes} bytes programados`, 'success');
 
-    // 6. Salir de progmode
+    // 7. Salir de progmode
     try { await sendCommand(reader, port, STK_LEAVE_PROGMODE); } catch(_){}
     reader.releaseLock();
     await port.close();
@@ -361,6 +393,16 @@ document.getElementById('btnInfo').addEventListener('click', async () => {
 
 // Helpers
 function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+/** Drena bytes residuales del reader (post-sync o entre comandos). */
+async function drainReader(reader) {
+  try {
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done || !value || value.length === 0) break;
+    }
+  } catch (_) { /* reader puede no tener datos */ }
+}
 
 async function readWithTimeout(reader, ms) {
   const readPromise = (async () => {

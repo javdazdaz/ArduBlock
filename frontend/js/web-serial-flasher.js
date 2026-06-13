@@ -163,9 +163,16 @@ class STK500Flasher {
     const writer = this.port.writable.getWriter();
     try {
       await writer.write(new Uint8Array(msg));
+      // writer.ready asegura que el buffer se vació al hardware USB.
+      // Crítico para CH340 en Windows: sin esto, releaseLock() puede
+      // cortar la transmisión antes de que los bytes lleguen al Arduino.
+      await writer.ready;
     } finally {
       writer.releaseLock();
     }
+    
+    // Micro-pausa para que el bootloader procese el comando
+    await this._delay(5);
     
     // Leer respuesta (stk500 responses son cortas: 2-10 bytes)
     const timeout = 5000;
@@ -238,11 +245,13 @@ class STK500Flasher {
         const writer = this.port.writable.getWriter();
         try {
           await writer.write(new Uint8Array([0x30, 0x20]));
+          await writer.ready; // flush para CH340
         } finally {
           writer.releaseLock();
         }
         
-        const resp = await this._readWithTimeout(200);
+        await this._delay(10);
+        const resp = await this._readWithTimeout(300);
         
         if (resp.length >= 2 && resp[0] === STK_INSYNC && resp[1] === STK_OK) {
           // Limpiar buffer residual
