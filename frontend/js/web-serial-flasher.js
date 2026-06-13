@@ -158,7 +158,7 @@ class OptibootFlasher {
       writer.releaseLock();
     }
     
-    await this._delay(15); // más tiempo para que el bootloader procese
+    await this._delay(100); // CH340 necesita tiempo para procesar cada comando
     
     const resp = await this._readWithTimeout(5000);
     
@@ -192,8 +192,8 @@ class OptibootFlasher {
           writer.releaseLock();
         }
         
-        await this._delay(10);
-        const resp = await this._readWithTimeout(300);
+        await this._delay(50); // CH340: dar tiempo al bootloader
+        const resp = await this._readWithTimeout(500);
         
         if (resp.length >= 2 && resp[0] === STK_INSYNC && resp[1] === STK_OK) {
           // NO drenamos — podría estar rompiendo el reader en CH340
