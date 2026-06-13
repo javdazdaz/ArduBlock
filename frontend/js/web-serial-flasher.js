@@ -241,6 +241,11 @@ class OptibootFlasher {
     
     this.log(`📦 ${blocks.length} bloques de datos para flashear`, 'info');
     
+    // Re-toggear DTR: el bootloader pudo haber expirado entre connect() y flash()
+    // (ej. durante la compilación en servidor, que tarda 2-5s).
+    // Optiboot tiene timeout de ~1-2s, así que refrescamos el reset.
+    await this._toggleDTR();
+    
     // 1. Sync
     await this.sync();
     
