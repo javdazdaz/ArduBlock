@@ -86,16 +86,34 @@ class OptibootFlasher {
     // para no perder el bootloader durante la compilación.
   }
 
+  /**
+   * Fuerza un reset del Arduino cerrando y reabriendo el puerto.
+   * 
+   * Al abrir el puerto serial, el SO aserta DTR automáticamente (hardware),
+   * lo que genera el pulso de reset vía el capacitor de 100nF en el Arduino.
+   * 
+   * NO usamos setSignals() porque en chips CH340 (tanto en Windows como en
+   * Linux) la API de Web Serial reporta éxito pero el hardware no recibe
+   * el cambio de DTR. Cerrar/reabrir el puerto sí funciona porque el driver
+   * del SO maneja DTR correctamente al abrir.
+   */
   async _toggleDTR() {
-    try {
-      await this.port.setSignals({ dataTerminalReady: false, requestToSend: false });
-      await this._delay(50);
-      await this.port.setSignals({ dataTerminalReady: true, requestToSend: false });
-      await this._delay(250);
-    } catch (e) {
-      this.log('⚠ No se pudo togglear DTR: ' + e.message, 'warn');
-      await this._delay(200);
-    }
+    // Soltar reader antes de cerrar
+    try { this.reader?.releaseLock(); } catch (_) {}
+    this.reader = null;
+    
+    // Cerrar puerto → DTR baja → capacitor se descarga
+    try { await this.port?.close(); } catch (_) {}
+    
+    await this._delay(100); // pulso de reset
+    
+    // Reabrir → DTR sube → capacitor se carga → pulso en RESET → bootloader
+    await this.port.open({ baudRate: 115200, dataBits: 8, stopBits: 1, parity: 'none' });
+    
+    await this._delay(250); // esperar que el bootloader arranque
+    
+    // Re-adquirir reader
+    this.reader = this.port.readable.getReader();
   }
 
   async disconnect() {
