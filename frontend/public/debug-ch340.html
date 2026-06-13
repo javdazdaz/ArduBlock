@@ -28,6 +28,7 @@
   <button id="btnTestDTR">1️⃣ DTR + Sync</button>
   <button id="btnBlink">2️⃣ Flashear Blink</button>
   <button id="btnDirecto">3️⃣ Directo (sin sync raw)</button>
+  <button id="btnByteByByte">5️⃣ Byte a byte</button>
   <button id="btnInfo">4️⃣ Info Puerto</button>
 </div>
 
@@ -428,6 +429,74 @@ document.getElementById('btnDirecto').addEventListener('click', async () => {
     reader.releaseLock();
     await port.close();
     logMsg('✅ ¡Comunicación STK formateada funciona!', 'success');
+    
+  } catch (e) {
+    logMsg('✕ Error: ' + e.message, 'error');
+    try { await port?.close(); } catch(_) {}
+  }
+});
+
+// ── Botón: Byte a byte (escribe cada byte individualmente) ──
+document.getElementById('btnByteByByte').addEventListener('click', async () => {
+  log.innerHTML = '';
+  logMsg('=== Byte a byte — STK_GET_SYNC con pausas de 5ms entre bytes ===', 'info');
+  
+  if (!('serial' in navigator)) {
+    logMsg('✕ Web Serial no soportado', 'error');
+    return;
+  }
+
+  const MSG = [0x1B, 0x00, 0x00, 0x01, 0x0E, 0x30, 0x3F]; // STK_GET_SYNC
+  
+  let port;
+  try {
+    port = await navigator.serial.requestPort();
+    logMsg(`✓ Puerto: VID 0x${port.getInfo()?.usbVendorId?.toString(16)}`, 'success');
+    await port.open({ baudRate: 115200, dataBits: 8, stopBits: 1, parity: 'none' });
+    
+    // DTR
+    await port.setSignals({ dataTerminalReady: false, requestToSend: false });
+    await delay(100);
+    await port.setSignals({ dataTerminalReady: true, requestToSend: false });
+    await delay(1000);
+    logMsg('✓ DTR ok', 'success');
+    
+    const reader = port.readable.getReader();
+    
+    // Drenar basura
+    for (let i = 0; i < 5; i++) {
+      const junk = await readWithTimeout(reader, 100);
+      if (junk.length > 0) logMsg(`   Basura: ${Array.from(junk).map(b=>b.toString(16).padStart(2,'0')).join(' ')}`, 'warn');
+    }
+    
+    // Enviar byte por byte con 5ms entre cada uno
+    logMsg(`📤 Enviando ${MSG.length} bytes uno a uno...`, 'info');
+    for (let i = 0; i < MSG.length; i++) {
+      const b = MSG[i];
+      const writer = port.writable.getWriter();
+      try {
+        await writer.write(new Uint8Array([b]));
+      } finally {
+        writer.releaseLock();
+      }
+      await delay(5); // pausa de 5ms entre bytes
+    }
+    logMsg(`   TX: ${MSG.map(b=>b.toString(16).padStart(2,'0')).join(' ')}`, 'info');
+    
+    // Leer respuesta
+    await delay(20);
+    const resp = await readWithTimeout(reader, 3000);
+    if (resp.length === 0) {
+      logMsg('✕ Timeout (3s) — el bootloader no respondió', 'error');
+    } else {
+      logMsg(`✓ RX [${resp.length}B]: ${Array.from(resp).map(b=>b.toString(16).padStart(2,'0')).join(' ')}`, 'success');
+      if (resp[0] === 0x14 && resp[1] === 0x10) {
+        logMsg('✅ GET_SYNC exitoso — el problema era el tamaño del write', 'success');
+      }
+    }
+    
+    reader.releaseLock();
+    await port.close();
     
   } catch (e) {
     logMsg('✕ Error: ' + e.message, 'error');
