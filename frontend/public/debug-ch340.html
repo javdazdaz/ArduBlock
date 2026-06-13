@@ -205,9 +205,11 @@ document.getElementById('btnBlink').addEventListener('click', async () => {
   let seq = 0;
 
   async function sendCommand(reader, port, cmd, data = []) {
-    const msgLen = data.length;
+    const bodySize = data.length + 1; // +1 por el byte de comando
+    const sizeHi = (bodySize >> 8) & 0xFF;
+    const sizeLo = bodySize & 0xFF;
     const token = 0x0E;
-    const msg = [0x1B, seq, msgLen, token, cmd, ...data];
+    const msg = [0x1B, seq, sizeHi, sizeLo, token, cmd, ...data];
     let checksum = 0x00;
     for (let i = 1; i < msg.length; i++) checksum ^= msg[i];
     msg.push(checksum);

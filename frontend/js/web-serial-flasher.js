@@ -143,11 +143,13 @@ class STK500Flasher {
    * Envía un comando stk500 y espera la respuesta.
    */
   async _sendCommand(cmd, data = []) {
-    const msgLength = data.length;
+    const bodySize = data.length + 1; // +1 por el byte de comando
+    const sizeHi = (bodySize >> 8) & 0xFF;
+    const sizeLo = bodySize & 0xFF;
     const token = 0x0E; // token fijo
     
     // Construir mensaje
-    const msg = [0x1B, this.seq, msgLength, token, cmd, ...data];
+    const msg = [0x1B, this.seq, sizeHi, sizeLo, token, cmd, ...data];
     
     // Checksum: XOR de seq..último byte de data
     let checksum = 0x00;
