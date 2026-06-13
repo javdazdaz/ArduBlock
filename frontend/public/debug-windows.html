@@ -206,20 +206,25 @@ document.getElementById('btnFull').addEventListener('click', async () => {
     // ── FASE 2: DTR toggle ──
     logMsg('');
     logMsg('⚡ FASE 2: DTR toggle (reset del Arduino)', 'info');
-    try {
-      logMsg('   DTR=false...', 'dim');
-      await port.setSignals({ dataTerminalReady: false, requestToSend: false });
-      await delay(50);
-      logMsg('   DTR=true (pulso de reset)...', 'dim');
-      await port.setSignals({ dataTerminalReady: true, requestToSend: false });
-      await delay(250);
-      logMsg('   ✓ DTR toggle completado', 'success');
-    } catch (e) {
-      logMsg(`   ⚠ setSignals falló: ${e.message}`, 'warn');
-      logMsg('   → El driver CH340 puede no soportar control DTR', 'warn');
-      logMsg('   → Probá presionar RESET manual ahora', 'warn');
-      await delay(1000);
+    async function doDTR() {
+      try {
+        logMsg('   DTR=false...', 'dim');
+        await port.setSignals({ dataTerminalReady: false, requestToSend: false });
+        await delay(100); // pulso más largo para máquinas lentas
+        logMsg('   DTR=true (pulso de reset)...', 'dim');
+        await port.setSignals({ dataTerminalReady: true, requestToSend: false });
+        await delay(500); // 500ms para bootloader en PCs lentas
+        logMsg('   ✓ DTR toggle completado (espera 500ms)', 'success');
+        return true;
+      } catch (e) {
+        logMsg(`   ⚠ setSignals falló: ${e.message}`, 'warn');
+        logMsg('   → El driver CH340 puede no soportar control DTR', 'warn');
+        logMsg('   → Probá presionar RESET manual ahora', 'warn');
+        await delay(1000);
+        return false;
+      }
     }
+    await doDTR();
 
     // Drenar basura post-reset
     let drained = 0;
@@ -233,27 +238,39 @@ document.getElementById('btnFull').addEventListener('click', async () => {
     logMsg('');
     logMsg('📡 FASE 3: Sync (0x30 0x20)', 'info');
     let synced = false;
-    for (let attempt = 0; attempt < 10; attempt++) {
-      const w = port.writable.getWriter();
-      try {
-        await w.write(new Uint8Array([CMD_SYNC, CRC_EOP]));
-        await w.ready;
-      } finally { w.releaseLock(); }
-      
-      await delay(10);
-      const resp = await readWithTimeout(reader, 400);
-      
-      if (resp.length >= 2 && resp[0] === STK_INSYNC && resp[1] === STK_OK) {
-        synced = true;
-        logMsg(`   ✓ Sync OK (intento ${attempt+1}) → RX: ${hex(resp)}`, 'success');
-        break;
-      } else if (resp.length > 0) {
-        logMsg(`   Intento ${attempt+1}: RX inesperado → ${hex(resp)}`, 'warn');
+    let totalAttempts = 0;
+    for (let dtrRound = 0; dtrRound < 3 && !synced; dtrRound++) {
+      if (dtrRound > 0) {
+        logMsg(`   ⟳ Re-DTR (ronda ${dtrRound+1})...`, 'warn');
+        await doDTR();
+        // Drenar de nuevo
+        for (let i = 0; i < 2; i++) await readWithTimeout(reader, 50);
       }
-      await delay(100);
+      for (let attempt = 0; attempt < 5 && !synced; attempt++) {
+        totalAttempts++;
+        const w = port.writable.getWriter();
+        try {
+          await w.write(new Uint8Array([CMD_SYNC, CRC_EOP]));
+          await w.ready;
+        } finally { w.releaseLock(); }
+        
+        await delay(15); // un poco más en PCs lentas
+        const resp = await readWithTimeout(reader, 500);
+        
+        if (resp.length >= 2 && resp[0] === STK_INSYNC && resp[1] === STK_OK) {
+          synced = true;
+          logMsg(`   ✓ Sync OK (intento ${totalAttempts}) → RX: ${hex(resp)}`, 'success');
+          break;
+        } else if (resp.length > 0) {
+          logMsg(`   Intento ${totalAttempts}: RX → ${hex(resp)}`, 'warn');
+        } else {
+          logMsg(`   Intento ${totalAttempts}: timeout (sin respuesta)`, 'dim');
+        }
+        await delay(100);
+      }
     }
     if (!synced) {
-      logMsg('   ❌ Sync falló 10 intentos', 'error');
+      logMsg(`   ❌ Sync falló tras ${totalAttempts} intentos en 3 rondas DTR`, 'error');
       logMsg('   ⚠ Diagnóstico:', 'warn');
       logMsg('      - ¿El Arduino tiene bootloader? (probá con Arduino IDE)', 'warn');
       logMsg('      - ¿Cable USB de datos? (no solo carga)', 'warn');
