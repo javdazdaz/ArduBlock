@@ -87,33 +87,54 @@ class OptibootFlasher {
   }
 
   /**
-   * Fuerza un reset del Arduino cerrando y reabriendo el puerto.
+   * Activa el bootloader cerrando y reabriendo el puerto.
    * 
-   * Al abrir el puerto serial, el SO aserta DTR automáticamente (hardware),
-   * lo que genera el pulso de reset vía el capacitor de 100nF en el Arduino.
+   * En Web Serial, setSignals(DTR/RTS) no funciona en chips CH340
+   * (el API reporta éxito pero el hardware no cambia).
    * 
-   * NO usamos setSignals() porque en chips CH340 (tanto en Windows como en
-   * Linux) la API de Web Serial reporta éxito pero el hardware no recibe
-   * el cambio de DTR. Cerrar/reabrir el puerto sí funciona porque el driver
-   * del SO maneja DTR correctamente al abrir.
+   * Al cerrar y reabrir el puerto, el SO aserta DTR por hardware al
+   * abrir → pulso de reset real vía el capacitor 100nF en el Arduino.
+   * 
+   * Funciona en todos los chips USB-Serial (genuino, CH340, CP2102).
    */
   async _toggleDTR() {
-    // Soltar reader antes de cerrar
+    const baud = 115200;
+    
+    // Soltar reader
     try { this.reader?.releaseLock(); } catch (_) {}
     this.reader = null;
     
-    // Cerrar puerto → DTR baja → capacitor se descarga
-    try { await this.port?.close(); } catch (_) {}
+    // Cerrar puerto
+    this.log('   Cerrando puerto...', 'info');
+    try { await this.port.close(); } catch (e) {
+      this.log(`   ⚠ Error al cerrar: ${e.message}`, 'warn');
+    }
     
-    await this._delay(100); // pulso de reset
+    // Esperar que el CH340 re-enumere (máquinas lentas necesitan más)
+    await this._delay(500);
     
-    // Reabrir → DTR sube → capacitor se carga → pulso en RESET → bootloader
-    await this.port.open({ baudRate: 115200, dataBits: 8, stopBits: 1, parity: 'none' });
+    // Reabrir con reintentos
+    for (let attempt = 0; attempt < 5; attempt++) {
+      try {
+        await this.port.open({ baudRate: baud, dataBits: 8, stopBits: 1, parity: 'none' });
+        this.log('   ✓ Puerto reabierto', 'success');
+        break;
+      } catch (e) {
+        if (attempt < 4) {
+          this.log(`   Reintentando abrir (${attempt+1}/5): ${e.message}`, 'warn');
+          await this._delay(300);
+        } else {
+          throw new Error(`No se pudo reabrir el puerto: ${e.message}`);
+        }
+      }
+    }
     
-    await this._delay(250); // esperar que el bootloader arranque
+    // Esperar bootloader
+    await this._delay(500);
     
     // Re-adquirir reader
     this.reader = this.port.readable.getReader();
+    this.log('   ✓ Reader re-adquirido', 'info');
   }
 
   async disconnect() {
