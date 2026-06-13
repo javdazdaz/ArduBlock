@@ -29,6 +29,7 @@
   <button id="btnBlink">2️⃣ Flashear Blink</button>
   <button id="btnDirecto">3️⃣ Directo (sin sync raw)</button>
   <button id="btnByteByByte">5️⃣ Byte a byte</button>
+  <button id="btnBaudScan">6️⃣ Auto-detectar baud</button>
   <button id="btnInfo">4️⃣ Info Puerto</button>
 </div>
 
@@ -501,6 +502,125 @@ document.getElementById('btnByteByByte').addEventListener('click', async () => {
   } catch (e) {
     logMsg('✕ Error: ' + e.message, 'error');
     try { await port?.close(); } catch(_) {}
+  }
+});
+
+// ── Botón: Auto-detectar baud rate correcto ──
+document.getElementById('btnBaudScan').addEventListener('click', async () => {
+  log.innerHTML = '';
+  logMsg('=== Auto-detección de baud rate ===', 'info');
+  
+  if (!('serial' in navigator)) {
+    logMsg('✕ Web Serial no soportado', 'error');
+    return;
+  }
+
+  const BAUDS = [115200, 57600, 19200, 38400, 9600, 230400, 460800];
+  const MSG = [0x1B, 0x00, 0x00, 0x01, 0x0E, 0x30, 0x3F]; // STK_GET_SYNC
+  let foundBaud = null;
+
+  try {
+    // Pedir puerto una sola vez
+    const port = await navigator.serial.requestPort();
+    logMsg(`✓ Puerto: VID 0x${port.getInfo()?.usbVendorId?.toString(16)}`, 'success');
+
+    for (const baud of BAUDS) {
+      logMsg(``, 'info');
+      logMsg(`── Probando ${baud} baud ──`, 'info');
+      
+      try {
+        await port.open({ baudRate: baud, dataBits: 8, stopBits: 1, parity: 'none' });
+      } catch (e) {
+        logMsg(`   No se pudo abrir a ${baud}: ${e.message}`, 'warn');
+        continue;
+      }
+
+      // DTR
+      try {
+        await port.setSignals({ dataTerminalReady: false, requestToSend: false });
+        await delay(50);
+        await port.setSignals({ dataTerminalReady: true, requestToSend: false });
+      } catch (_) {}
+      await delay(500);
+
+      const reader = port.readable.getReader();
+      
+      // Drenar
+      for (let i = 0; i < 3; i++) {
+        try { await readWithTimeout(reader, 50); } catch (_) {}
+      }
+
+      // Probar sync raw primero
+      let rawOk = false;
+      for (let attempt = 0; attempt < 3; attempt++) {
+        const w = port.writable.getWriter();
+        try { await w.write(new Uint8Array([0x30, 0x20])); } finally { w.releaseLock(); }
+        await delay(30);
+        const resp = await readWithTimeout(reader, 300);
+        if (resp.length >= 2 && resp[0] === 0x14 && resp[1] === 0x10) {
+          rawOk = true;
+          logMsg(`   Raw sync OK a ${baud}`, 'success');
+          break;
+        }
+        await delay(100);
+      }
+
+      if (!rawOk) {
+        logMsg(`   Raw sync falló a ${baud}`, 'warn');
+        reader.releaseLock();
+        await port.close();
+        await delay(200);
+        continue;
+      }
+
+      // Probar STK formateado
+      logMsg(`   Probando STK_GET_SYNC formateado...`, 'info');
+      let stkOk = false;
+      for (let attempt = 0; attempt < 2; attempt++) {
+        // Enviar byte por byte
+        for (const b of MSG) {
+          const w = port.writable.getWriter();
+          try { await w.write(new Uint8Array([b])); } finally { w.releaseLock(); }
+          await delay(3);
+        }
+        await delay(30);
+        const resp = await readWithTimeout(reader, 2000);
+        if (resp.length >= 2 && resp[0] === 0x14 && resp[1] === 0x10) {
+          stkOk = true;
+          foundBaud = baud;
+          logMsg(`✅ STK_GET_SYNC OK a ${baud} baud!`, 'success');
+          logMsg(`   RX: ${Array.from(resp).map(b=>'0x'+b.toString(16)).join(' ')}`, 'success');
+          break;
+        } else if (resp.length > 0) {
+          logMsg(`   Respuesta inesperada: ${Array.from(resp).map(b=>'0x'+b.toString(16)).join(' ')}`, 'warn');
+        }
+        await delay(100);
+      }
+
+      reader.releaseLock();
+      await port.close();
+
+      if (stkOk) break;
+      
+      logMsg(`   STK formateado falló a ${baud}`, 'warn');
+      await delay(200);
+    }
+
+    if (foundBaud) {
+      logMsg('', 'info');
+      logMsg(`🎯 Baud rate correcto: ${foundBaud}`, 'success');
+      logMsg('   Actualizá BOARD_BAUD_RATE en board.js con este valor.', 'info');
+    } else {
+      logMsg('', 'info');
+      logMsg('✕ No se encontró baud rate compatible', 'error');
+      logMsg('   Posibles causas:', 'warn');
+      logMsg('   1. Bootloader dañado o ausente', 'warn');
+      logMsg('   2. Cable USB solo de carga (sin datos)', 'warn');
+      logMsg('   3. El Arduino necesita un reset manual durante el test', 'warn');
+    }
+
+  } catch (e) {
+    logMsg('✕ Error: ' + e.message, 'error');
   }
 });
 
