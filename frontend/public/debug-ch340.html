@@ -124,96 +124,196 @@ document.getElementById('btnTestDTR').addEventListener('click', async () => {
   }
 });
 
-// ── Botón: flashear Blink ──
+// ── Botón: flashear Blink (COMPLETO — programa la flash) ──
 document.getElementById('btnBlink').addEventListener('click', async () => {
   log.innerHTML = '';
-  logMsg('=== Flashear Blink de prueba ===', 'info');
+  logMsg('=== Flashear Blink real ===', 'info');
   
   if (!('serial' in navigator)) {
     logMsg('✕ Web Serial no soportado. Usá Chrome/Edge/Opera.', 'error');
     return;
   }
-  
-  // HEX mínimo para Blink en Uno (pin 13)
-  // Compilado: void setup(){pinMode(13,OUTPUT);} void loop(){digitalWrite(13,HIGH);delay(500);digitalWrite(13,LOW);delay(500);}
-  const blinkHex = `:100000000C945C000C946E000C946E000C946E0091
-:100010000C946E000C946E000C946E000C946E0028
-:100020000C946E000C946E000C946E000C946E0018
-:100030000C946E000C946E000C946E000C946E0008
-:100040000C9492010C946E000C946E000C946E00D8
-:100050000C946E000C946E000C946E000C946E00F8
-:100060000C946E000C946E000C946E0000000000E9
-:1000700000240027002A0000000000250028002B00
-:100080000000000023002600290004040404040402
-:100090000404040202020202020303030303030110
-:1000A0000102040810204080010204081020010240
-:1000B000040810200000000800020100000304072D
-:1000C000000000000000000011241FBECFEFD8E0E6
-:1000D000DEBFCDBF11E0A0E0B1E0E8E5F1E002C02A
-:1000E00005900D92A23EB107D9F722E0A2E5B1E00C
-:1000F00001C01D92A93EB107E1F720E0A5E5B1E0EF
-:1001000001C01D92A13EB107E1F710E0CAE0D0E0E6
-:1001100004C02297FE010E941A02C934D107C9F7BD
-:100120000E94B9010C94CA020C940000FF920F9330
-:100130001F93CF93DF938091010190910201A09160
-:100140000301B0910401309105012109130122095C
-:1001500027093E0941095109610971098109900950
-:100160000895CF92DF92EF92FF920F931F93CF93BC
-:10017000DF93EC018B016A010E94D7016B017C01EE
-:1001800080E090E0A0E0B0E00E94D7010E94540290
-:100190002091090130910A018093050190930601E3
-:1001A00000930A01109309010E940000F894FFCFCE
+
+  // Blink real compilado con arduino-cli en VPS (924 bytes, verificado)
+  const blinkHex = `:100000000C945C000C946E000C946E000C946E00CA
+:100010000C946E000C946E000C946E000C946E00A8
+:100020000C946E000C946E000C946E000C946E0098
+:100030000C946E000C946E000C946E000C946E0088
+:100040000C9413010C946E000C946E000C946E00D2
+:100050000C946E000C946E000C946E000C946E0068
+:100060000C946E000C946E00000000002400270029
+:100070002A0000000000250028002B0004040404CE
+:100080000404040402020202020203030303030342
+:10009000010204081020408001020408102001021F
+:1000A00004081020000000080002010000030407FB
+:1000B000000000000000000011241FBECFEFD8E0B8
+:1000C000DEBFCDBF21E0A0E0B1E001C01D92A930AC
+:1000D000B207E1F70E945D010C94CC010C94000082
+:1000E000E1EBF0E02491EDE9F0E09491E9E8F0E053
+:1000F000E491EE23C9F0222339F0233001F1A8F472
+:10010000213019F1223029F1F0E0EE0FFF1FEE58F7
+:10011000FF4FA591B4912FB7F894EC91811126C0AF
+:1001200090959E239C932FBF08952730A9F02830E7
+:10013000C9F0243049F7209180002F7D03C0209121
+:1001400080002F7720938000DFCF24B52F7724BD48
+:10015000DBCF24B52F7DFBCF2091B0002F772093EC
+:10016000B000D2CF2091B0002F7DF9CF9E2BDACFF7
+:100170003FB7F8948091050190910601A091070185
+:10018000B091080126B5A89B05C02F3F19F0019634
+:10019000A11DB11D3FBFBA2FA92F982F8827BC01E1
+:1001A000CD01620F711D811D911D42E0660F771F09
+:1001B000881F991F4A95D1F708958F929F92AF9209
+:1001C000BF92CF92DF92EF92FF920E94B8004B0154
+:1001D0005C0184EFC82EDD24D394E12CF12C0E9425
+:1001E000B800681979098A099B09683E734081053E
+:1001F0009105A8F321E0C21AD108E108F10888EEC0
+:10020000880E83E0981EA11CB11CC114D104E10426
+:10021000F10429F7FF90EF90DF90CF90BF90AF905F
+:100220009F908F9008951F920F920FB60F921124F6
+:100230002F933F938F939F93AF93BF93809101012F
+:1002400090910201A0910301B0910401309100014D
+:1002500023E0230F2D3758F50196A11DB11D2093E2
+:1002600000018093010190930201A0930301B093D8
+:1002700004018091050190910601A0910701B091C0
+:1002800008010196A11DB11D8093050190930601FF
+:10029000A0930701B0930801BF91AF919F918F91F7
+:1002A0003F912F910F900FBE0F901F90189526E849
+:1002B000230F0296A11DB11DD2CF789484B5826020
+:1002C00084BD84B5816084BD85B5826085BD85B5FA
+:1002D000816085BD80916E00816080936E00109278
+:1002E00081008091810082608093810080918100F3
+:1002F0008160809381008091800081608093800084
+:100300008091B10084608093B1008091B0008160E1
+:100310008093B00080917A00846080937A0080910D
+:100320007A00826080937A0080917A008160809365
+:100330007A0080917A00806880937A001092C100E0
+:10034000EDE9F0E02491E9E8F0E08491882399F068
+:1003500090E0880F991FFC01E859FF4FA591B491D7
+:10036000FC01EE58FF4F859194918FB7F894EC9172
+:10037000E22BEC938FBFC0E0D0E081E00E947000E0
+:100380000E94DD0080E00E9470000E94DD00209746
+:0C039000A1F30E940000F1CFF894FFCF11
 :00000001FF`;
-  
+
+  const STK_GET_SYNC      = 0x30;
+  const STK_SET_DEVICE    = 0x42;
+  const STK_ENTER_PROGMODE = 0x50;
+  const STK_LEAVE_PROGMODE = 0x51;
+  const STK_LOAD_ADDRESS  = 0x55;
+  const STK_PROG_PAGE     = 0x64;
+  const STK_READ_SIGN     = 0x75;
+  let seq = 0;
+
+  async function sendCommand(reader, port, cmd, data = []) {
+    const msgLen = data.length;
+    const token = 0x0E;
+    const msg = [0x1B, seq, msgLen, token, cmd, ...data];
+    let checksum = 0x00;
+    for (let i = 1; i < msg.length; i++) checksum ^= msg[i];
+    msg.push(checksum);
+    seq = (seq + 1) & 0xFF;
+    const writer = port.writable.getWriter();
+    try { await writer.write(new Uint8Array(msg)); } finally { writer.releaseLock(); }
+    const resp = await readWithTimeout(reader, 5000);
+    if (resp.length < 2) throw new Error('Respuesta vacía del bootloader');
+    if (resp[0] !== STK_INSYNC) throw new Error(`Bootloader no sincronizado (0x${resp[0].toString(16)})`);
+    return resp;
+  }
+
+  function parseHex(hexText) {
+    const mem = new Map();
+    for (const raw of hexText.trim().split(/\\r?\\n/)) {
+      const line = raw.trim();
+      if (!line.startsWith(':')) continue;
+      const byteCount = parseInt(line.slice(1,3), 16);
+      const address   = parseInt(line.slice(3,7), 16);
+      const recordType = parseInt(line.slice(7,9), 16);
+      if (recordType !== 0) continue;
+      const bytes = [];
+      for (let i = 0; i < byteCount; i++) bytes.push(parseInt(line.slice(9+i*2, 11+i*2), 16));
+      mem.set(address, (mem.get(address) || []).concat(bytes));
+    }
+    return [...mem.entries()].sort((a,b)=>a[0]-b[0]).map(([addr,bytes]) => ({address: addr, data: new Uint8Array(bytes)}));
+  }
+
   let port;
   try {
+    // 1. Abrir puerto + DTR
     port = await navigator.serial.requestPort();
-    logMsg('✓ Puerto seleccionado', 'success');
-    
+    logMsg(`✓ Puerto: VID 0x${port.getInfo()?.usbVendorId?.toString(16) || '?'} PID 0x${port.getInfo()?.usbProductId?.toString(16) || '?'}`, 'success');
     await port.open({ baudRate: 115200, dataBits: 8, stopBits: 1, parity: 'none' });
-    
-    // DTR toggle
     await port.setSignals({ dataTerminalReady: false, requestToSend: false });
     await delay(50);
     await port.setSignals({ dataTerminalReady: true, requestToSend: false });
     await delay(250);
-    
-    // Parse HEX
-    const hexLines = blinkHex.trim().split('\n').map(l => l.trim());
-    logMsg(`📦 ${hexLines.length} líneas HEX`, 'info');
-    
+    logMsg('✓ DTR toggled', 'success');
+
     const reader = port.readable.getReader();
-    
-    // Sync
-    logMsg('🔄 Syncing...', 'info');
+
+    // 2. Sync
+    logMsg('🔄 Sync...', 'info');
     let synced = false;
     for (let i = 0; i < 10; i++) {
-      const writer = port.writable.getWriter();
-      try { await writer.write(new Uint8Array([0x30, 0x20])); } finally { writer.releaseLock(); }
+      const w = port.writable.getWriter();
+      try { await w.write(new Uint8Array([0x30, 0x20])); } finally { w.releaseLock(); }
       const resp = await readWithTimeout(reader, 200);
-      if (resp.length >= 2 && resp[0] === 0x14 && resp[1] === 0x10) {
-        synced = true;
-        logMsg('✓ Synced', 'success');
-        break;
+      if (resp.length >= 2 && resp[0] === STK_INSYNC && resp[1] === STK_OK) {
+        synced = true; logMsg('✓ Sync OK', 'success'); break;
       }
       await delay(100);
     }
-    
-    if (!synced) {
-      logMsg('✕ Sync falló', 'error');
-      reader.releaseLock();
-      await port.close();
-      return;
+    if (!synced) { logMsg('✕ Sync falló', 'error'); reader.releaseLock(); await port.close(); return; }
+
+    // 3. Enter programming mode
+    logMsg('📟 Enter progmode...', 'info');
+    const deviceParams = [0x86,0x00,0x00,0x01,0x01,0x01,0x3F,0x0F,0x00,0x00,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF];
+    await sendCommand(reader, port, STK_SET_DEVICE, deviceParams);
+    const enterResp = await sendCommand(reader, port, STK_ENTER_PROGMODE);
+    if (enterResp[1] !== STK_OK) { logMsg('✕ No se pudo entrar en modo programación', 'error'); reader.releaseLock(); await port.close(); return; }
+    logMsg('✓ Modo programación', 'success');
+
+    // 4. Leer firma
+    const sigResp = await sendCommand(reader, port, STK_READ_SIGN);
+    logMsg(`🔍 Firma: 0x${sigResp[2]?.toString(16)} 0x${sigResp[3]?.toString(16)} 0x${sigResp[4]?.toString(16)}`, 'info');
+
+    // 5. Programar flash
+    const blocks = parseHex(blinkHex);
+    logMsg(`📦 ${blocks.length} bloques para flashear`, 'info');
+    const pageSize = 128;
+    let totalBytes = 0;
+    for (const block of blocks) {
+      let addr = block.address;
+      const data = block.data;
+      const wordAddr = Math.floor(addr / 2);
+      await sendCommand(reader, port, STK_LOAD_ADDRESS, [wordAddr & 0xFF, (wordAddr >> 8) & 0xFF]);
+      let offset = 0;
+      while (offset < data.length) {
+        const chunk = data.slice(offset, offset + pageSize);
+        const sizeHi = (chunk.length >> 8) & 0xFF;
+        const sizeLo = chunk.length & 0xFF;
+        const payload = [sizeHi, sizeLo, 0x20, ...Array.from(chunk)];
+        await sendCommand(reader, port, STK_PROG_PAGE, payload);
+        offset += pageSize;
+        addr += pageSize;
+        totalBytes += chunk.length;
+        if (offset < data.length) {
+          const wa = Math.floor(addr / 2);
+          await sendCommand(reader, port, STK_LOAD_ADDRESS, [wa & 0xFF, (wa >> 8) & 0xFF]);
+        }
+        if (totalBytes % 256 === 0) logMsg(`   ${totalBytes} bytes...`, 'info');
+      }
     }
-    
-    logMsg('👍 Bootloader responde. El DTR toggle funciona con este CH340.', 'success');
-    logMsg('   El fix en web-serial-flasher.js debería resolver el problema.', 'info');
-    
+    logMsg(`✅ ${totalBytes} bytes programados`, 'success');
+
+    // 6. Salir de progmode
+    try { await sendCommand(reader, port, STK_LEAVE_PROGMODE); } catch(_){}
     reader.releaseLock();
     await port.close();
-    
+    logMsg('🎉 ¡Blink flasheado! El LED en pin 13 debería parpadear.', 'success');
+
   } catch (e) {
     logMsg('✕ Error: ' + e.message, 'error');
+    try { await port?.close(); } catch(_) {}
   }
 });
 
