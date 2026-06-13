@@ -146,6 +146,10 @@ class OptibootFlasher {
   async _sendRaw(cmd, data = []) {
     const msg = [cmd, ...data, CRC_EOP];
     
+    // Log TX para diagnóstico
+    const txHex = msg.map(b => b.toString(16).padStart(2,'0')).join(' ');
+    this.log(`   TX: ${txHex}`, 'dim');
+    
     const writer = this.port.writable.getWriter();
     try {
       await writer.write(new Uint8Array(msg));
@@ -154,17 +158,21 @@ class OptibootFlasher {
       writer.releaseLock();
     }
     
-    await this._delay(5);
+    await this._delay(15); // más tiempo para que el bootloader procese
     
     const resp = await this._readWithTimeout(5000);
     
     if (resp.length < 2) {
       throw new Error('Respuesta vacía del bootloader');
     }
+    
+    // Log RX
+    const rxHex = Array.from(resp).map(b => b.toString(16).padStart(2,'0')).join(' ');
+    this.log(`   RX: ${rxHex}`, 'dim');
+    
     if (resp[0] !== STK_INSYNC) {
       throw new Error(`Bootloader no sincronizado (0x${resp[0].toString(16)})`);
     }
-    // El último byte debería ser STK_OK
     return resp;
   }
 
@@ -288,6 +296,9 @@ class OptibootFlasher {
     
     // 1. Sync
     await this.sync();
+    
+    // Pausa post-sync: algunos bootloaders necesitan tiempo
+    await this._delay(50);
     
     // 2. Verificar firma (opcional pero útil para diagnóstico)
     try {
