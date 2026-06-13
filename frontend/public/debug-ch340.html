@@ -281,8 +281,8 @@ document.getElementById('btnBlink').addEventListener('click', async () => {
     }
     if (!synced) { logMsg('✕ Sync falló', 'error'); reader.releaseLock(); await port.close(); return; }
 
-    // Limpiar bytes residuales post-sync (crítico para CH340)
-    await drainReader(reader);
+    // Pequeña pausa post-sync para estabilizar el bootloader
+    await delay(100);
 
     // 3. STK_GET_SYNC formal (formato STK) — algunos bootloaders lo requieren
     //    antes de aceptar SET_DEVICE
