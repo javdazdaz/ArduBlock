@@ -94,14 +94,15 @@ export async function connectSerial() {
   }
 }
 
-export async function disconnectSerial() {
+export async function disconnectSerial(quiet = false) {
+  const wasConnected = serialConnected;
   serialConnected = false;
   if (serialPollTimer) { clearInterval(serialPollTimer); serialPollTimer = null; }
   try { await fetch('/api/serial/close', { method: 'POST' }); } catch(e) { console.warn('[Serial] close failed:', e); }
   btnConnect.disabled = false;
   btnConnect.textContent = t('serial_connect');
   btnConnect.className = 'console-btn connect';
-  consoleLog('Desconectado', 'info');
+  if (wasConnected && !quiet) consoleLog('Desconectado', 'info');
 }
 
 // Exponer para upload.js

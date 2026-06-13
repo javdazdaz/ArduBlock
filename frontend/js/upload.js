@@ -24,8 +24,8 @@ export async function uploadToArduino() {
   btnConsoleToggle.classList.add('active');
   consoleOutput.innerHTML = '';
   btnUpload.disabled = true;
-
-  if (isSerialConnected()) disconnectSerial();
+  // Forzar cierre del monitor serial — puede estar abierto de sesión previa
+  await disconnectSerial(true);
 
   const code = generateArduinoCode(workspace);
   const tabs = window._tabManager ? window._tabManager.getTabs() : [];

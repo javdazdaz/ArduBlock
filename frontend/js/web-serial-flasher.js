@@ -345,43 +345,66 @@ class OptibootFlasher {
   // ── Helpers ─────────────────────────────────
 
   async _readWithTimeout(ms) {
-    // Usamos un reader cancelable: después de 'ms', cancelamos el stream
-    // para forzar que reader.read() rechace en vez de colgarse.
+    // Lee datos del puerto serial con timeout total de 'ms'.
+    // Usa AbortSignal para cancelar lecturas individuales sin romper el stream.
     const start = Date.now();
     const chunks = [];
-    
+
     while (true) {
       const elapsed = Date.now() - start;
       if (elapsed >= ms) break;
-      
+
       const remaining = ms - elapsed;
-      
+      // CH340 puede tardar >100ms en responder; 500ms por chunk es seguro
+      const chunkTimeout = Math.min(remaining, 500);
+
+      // Intentar con AbortSignal (soportado en Firefox 151+, Chrome 98+)
+      if (typeof AbortController !== 'undefined') {
+        try {
+          const controller = new AbortController();
+          const timer = setTimeout(() => controller.abort(), chunkTimeout);
+
+          const { value, done } = await this.reader.read({ signal: controller.signal });
+          clearTimeout(timer);
+
+          if (done) break;
+          if (value && value.length > 0) {
+            chunks.push(value);
+            if (Date.now() - start > ms - 30) break;
+            continue;
+          }
+          await this._delay(10);
+          continue;
+        } catch (e) {
+          if (e.name === 'AbortError') continue; // timeout, reintentar
+          throw e;
+        }
+      }
+
+      // Fallback sin AbortSignal: una sola lectura con timeout via Promise.race
+      // (menos robusto: si race gana el timeout, reader.read() queda pendiente)
+      const readPromise = this.reader.read();
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('T')), Math.min(remaining, 500))
+      );
+
       try {
-        const readPromise = this.reader.read();
-        const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('T')), Math.min(remaining, 100))
-        );
-        
         const { value, done } = await Promise.race([readPromise, timeoutPromise]);
-        
         if (done) break;
         if (value && value.length > 0) {
           chunks.push(value);
-          // Si ya tenemos datos, damos un pequeño margen extra
           if (Date.now() - start > ms - 30) break;
-          continue;
         }
-        // value undefined or empty: esperar un poco y reintentar
         await this._delay(10);
       } catch (e) {
-        if (e.message === 'T') break; // timeout
+        if (e.message === 'T') break; // timeout — fallback sin reintento
         throw e;
       }
     }
-    
+
     const total = chunks.reduce((s, c) => s + c.length, 0);
     if (total === 0) return new Uint8Array(0);
-    
+
     const result = new Uint8Array(total);
     let offset = 0;
     for (const c of chunks) { result.set(c, offset); offset += c.length; }
