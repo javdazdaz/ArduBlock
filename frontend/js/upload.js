@@ -290,15 +290,14 @@ async function _pathB2_samba(code, fqbn, tabs) {
     return;
   }
 
-  // 2. Compilar en servidor (mientras el usuario hace doble-reset)
-  consoleLog('🔄 Hacé doble-RESET en el R4 WiFi ahora.', 'info');
-  consoleLog('   El LED L debe quedar pulsando (modo bootloader SAM-BA).', 'info');
+  // 2. Compilar en servidor PRIMERO (el bootloader expira en ~5s)
   consoleLog('🌐 Compilando en servidor...', 'info');
-
   const binBase64 = await _compileOnServer(code, fqbn, tabs, 'bin');
   if (!binBase64) return;
 
-  // 3. Abrir puerto a 230400 baud (SAM-BA)
+  // 3. AHORA sí: doble-reset y abrir puerto (ventana de ~5s del bootloader)
+  consoleLog('🔄 Hacé doble-RESET en el R4 WiFi AHORA.', 'info');
+  consoleLog('   El LED L debe quedar pulsando (modo bootloader SAM-BA).', 'info');
   consoleLog('🔌 Abriendo puerto a 230400 baud...', 'info');
   try {
     await port.open({ baudRate: 230400 });
