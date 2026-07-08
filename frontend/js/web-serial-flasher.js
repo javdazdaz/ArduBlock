@@ -537,79 +537,55 @@ export class SAMBAFlasher {
 
   /**
    * Lee hasta encontrar \\n (0x0a) o timeout.
-   * Usa AbortSignal para cancelar lecturas sin abandonar el reader.
+   *
+   * Un solo reader, lecturas continuas sin timeout por chunk.
+   * El hard timeout externo (Promise.race) fuerza salida si
+   * reader.read() se cuelga (bootloader no responde).
+   * Así evitamos lecturas abandonadas del enfoque Promise.race por chunk.
    */
   async _readLine(timeoutMs) {
-    const start = Date.now();
-    const chunks = [];
+    const hardTimeout = timeoutMs + 5000;
 
-    while (Date.now() - start < timeoutMs) {
-      const remaining = timeoutMs - (Date.now() - start);
-      if (remaining <= 0) break;
+    const result = await Promise.race([
+      this._readLineImpl(timeoutMs),
+      new Promise((resolve) => setTimeout(() => {
+        this.log('   ⚠ Hard timeout en _readLine, forzando salida', 'warn');
+        resolve(new Uint8Array(0));
+      }, hardTimeout))
+    ]);
 
-      const chunkTimeout = Math.min(remaining, 500);
+    return result;
+  }
 
-      if (typeof AbortController !== 'undefined') {
-        let reader;
-        try {
-          reader = this.port.readable.getReader();
-          const controller = new AbortController();
-          const timer = setTimeout(() => controller.abort(), chunkTimeout);
+  async _readLineImpl(timeoutMs) {
+    const reader = this.port.readable.getReader();
+    try {
+      const start = Date.now();
+      const chunks = [];
 
-          const { value, done } = await reader.read({ signal: controller.signal });
-          clearTimeout(timer);
+      while (Date.now() - start < timeoutMs) {
+        const { value, done } = await reader.read();
 
-          if (value && value.length > 0) {
-            chunks.push(value);
-            const total = chunks.reduce((s, c) => s + c.length, 0);
-            const all = new Uint8Array(total);
-            let off = 0;
-            for (const c of chunks) { all.set(c, off); off += c.length; }
-            if (all.includes(0x0a)) return all;
-          }
-          if (done) break;
-        } catch (e) {
-          if (e.name !== 'AbortError') throw e;
-          // timeout, reintentar
-        } finally {
-          try { reader?.releaseLock(); } catch (_) {}
+        if (value && value.length > 0) {
+          chunks.push(value);
+          const total = chunks.reduce((s, c) => s + c.length, 0);
+          const all = new Uint8Array(total);
+          let off = 0;
+          for (const c of chunks) { all.set(c, off); off += c.length; }
+          if (all.includes(0x0a)) return all;
         }
-      } else {
-        // Fallback sin AbortSignal
-        let reader;
-        try {
-          reader = this.port.readable.getReader();
-          const readPromise = reader.read();
-          const timeoutPromise = new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('T')), chunkTimeout)
-          );
-          const { value, done } = await Promise.race([readPromise, timeoutPromise]);
-
-          if (value && value.length > 0) {
-            chunks.push(value);
-            const total = chunks.reduce((s, c) => s + c.length, 0);
-            const all = new Uint8Array(total);
-            let off = 0;
-            for (const c of chunks) { all.set(c, off); off += c.length; }
-            if (all.includes(0x0a)) return all;
-          }
-          if (done) break;
-        } catch (e) {
-          if (e.message !== 'T') throw e;
-          // timeout, reintentar
-        } finally {
-          try { reader?.releaseLock(); } catch (_) {}
-        }
+        if (done) break;
       }
-      await this._delay(10);
-    }
 
-    if (chunks.length === 0) return new Uint8Array(0);
-    const total = chunks.reduce((s, c) => s + c.length, 0);
-    const all = new Uint8Array(total);
-    let off = 0;
-    for (const c of chunks) { all.set(c, off); off += c.length; }
-    return all;
+      if (chunks.length === 0) return new Uint8Array(0);
+      const total = chunks.reduce((s, c) => s + c.length, 0);
+      const all = new Uint8Array(total);
+      let off = 0;
+      for (const c of chunks) { all.set(c, off); off += c.length; }
+      return all;
+    } finally {
+      try { reader.releaseLock(); } catch (_) {}
+    }
   }
 
   async _delay(ms) {
