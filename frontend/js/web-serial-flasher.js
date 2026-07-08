@@ -536,28 +536,15 @@ export class SAMBAFlasher {
   }
 
   /**
-   * Lee hasta encontrar \\n (0x0a) o timeout.
+   * Lee hasta encontrar \\n (0x0a) o timeoutMs.
    *
-   * Un solo reader, lecturas continuas sin timeout por chunk.
-   * El hard timeout externo (Promise.race) fuerza salida si
-   * reader.read() se cuelga (bootloader no responde).
-   * Así evitamos lecturas abandonadas del enfoque Promise.race por chunk.
+   * Un solo reader, lecturas continuas. Si no encuentra \\n en
+   * timeoutMs, devuelve lo que haya leído (o vacío).
+   *
+   * NO usa Promise.race externo — eso deja readers huérfanos
+   * que bloquean el stream para siempre.
    */
   async _readLine(timeoutMs) {
-    const hardTimeout = timeoutMs + 5000;
-
-    const result = await Promise.race([
-      this._readLineImpl(timeoutMs),
-      new Promise((resolve) => setTimeout(() => {
-        this.log('   ⚠ Hard timeout en _readLine, forzando salida', 'warn');
-        resolve(new Uint8Array(0));
-      }, hardTimeout))
-    ]);
-
-    return result;
-  }
-
-  async _readLineImpl(timeoutMs) {
     const reader = this.port.readable.getReader();
     try {
       const start = Date.now();
