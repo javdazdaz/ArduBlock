@@ -337,8 +337,20 @@ class OptibootFlasher {
       }
     }
     
-    // 4. Salir (el Arduino resetea y corre el sketch)
+    // 4. Salir del bootloader
     await this.leaveProgramming();
+
+    // 5. Reset vía DTR para ejecutar el sketch
+    //    STK_LEAVE_PROGMODE libera el bootloader pero no siempre resetea.
+    //    Al cerrar el puerto, DTR baja → el board resetea y corre el sketch nuevo.
+    try { this.reader?.releaseLock(); } catch (_) {}
+    try { await this.port.close(); } catch (_) {}
+    this.reader = null;
+    await this._delay(200);
+    // Reabrir para que disconnect() pueda limpiar sin errores
+    await this.port.open({ baudRate: 115200, dataBits: 8, stopBits: 1, parity: 'none' });
+    this.reader = this.port.readable.getReader();
+
     this.log(`✅ ${totalBytes} bytes flasheados correctamente`, 'success');
   }
 
