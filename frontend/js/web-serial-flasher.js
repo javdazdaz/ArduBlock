@@ -532,7 +532,10 @@ export class SAMBAFlasher {
     } finally {
       writer.releaseLock();
     }
+    // El bootloader responde con \n\r después de recibir los datos.
+    // Hay que consumir la respuesta o contamina la siguiente lectura.
     await this._delay(50);
+    await this._readLine(2000);
   }
 
   /**
