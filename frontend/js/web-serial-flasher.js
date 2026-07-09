@@ -635,18 +635,15 @@ export class SAMBAFlasher {
       // 1. Subir página a RAM vía Y + datos
       await this._writeBuffer(SAMBA_BUFFER_ADDR, pageBuf);
 
-      // Dar tiempo al bootloader para procesar los 4KB
-      await this._delay(100);
+      // Dar tiempo al bootloader para procesar los 4KB (necesita ~2s)
+      await this._delay(2000);
 
-      // 2. Checksum (prepara buffer para escritura)
-      await this._cmd(`Y${SAMBA_BUFFER_ADDR.toString(16).padStart(8, '0').toUpperCase()},0#`);
-
-      // 3. Escribir de RAM a flash
+      // 2. Escribir de RAM a flash (sin checksum — no necesario)
       const flashAddr = SAMBA_FLASH_BASE + offset;
       await this._cmd(`Y${flashAddr.toString(16).padStart(8, '0').toUpperCase()},00001000#`);
 
-      // Dar tiempo al bootloader para programar la página flash
-      await this._delay(100);
+      // Dar tiempo para programación de flash
+      await this._delay(200);
 
       offset += SAMBA_PAGE_SIZE;
       pageNum++;
