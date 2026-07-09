@@ -511,6 +511,10 @@ export class SAMBAFlasher {
 
   /** Envía comando SAM-BA y lee respuesta (terminada en \\n). */
   async _cmd(command) {
+    // Log del comando para diagnóstico (primeros 30 chars)
+    const short = command.length > 30 ? command.slice(0, 30) + '…' : command;
+    this.log(`   >> ${short}`, 'dim');
+
     const writer = this.port.writable.getWriter();
     try {
       await writer.write(new TextEncoder().encode(command));
@@ -518,7 +522,9 @@ export class SAMBAFlasher {
       writer.releaseLock();
     }
     await this._delay(200);
-    return await this._readLine(3000);
+    const resp = await this._readLine(3000);
+    this.log(`   << ${resp.length}B`, 'dim');
+    return resp;
   }
 
   /** Envía comando S (write to RAM) + datos binarios. */
@@ -532,10 +538,8 @@ export class SAMBAFlasher {
     } finally {
       writer.releaseLock();
     }
-    // El bootloader responde con \n\r después de recibir los datos.
-    // Hay que consumir la respuesta o contamina la siguiente lectura.
-    await this._delay(50);
-    await this._readLine(2000);
+    // Dar tiempo al bootloader para procesar los datos antes del próximo comando
+    await this._delay(200);
   }
 
   /**
