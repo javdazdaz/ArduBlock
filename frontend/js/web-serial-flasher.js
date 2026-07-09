@@ -486,10 +486,11 @@ const SAMBA_APPLET = new Uint8Array([
 ]);
 
 const SAMBA_PAGE_SIZE = 4096;
-const SAMBA_BUFFER_ADDR = 0x34;
-const SAMBA_APPLET_ADDR = 0x00000000;
+// RA4M1 memory map: RAM at 0x20000000, flash app at 0x00004000 (16KB bootloader)
+const SAMBA_BUFFER_ADDR = 0x20000100;  // RAM buffer para páginas
+const SAMBA_APPLET_ADDR = 0x20000000;  // RAM para el applet
 
-const SAMBA_FLASH_BASE = 0x00000000;
+const SAMBA_FLASH_BASE = 0x00004000;   // aplicación empieza después del bootloader
 
 export class SAMBAFlasher {
   constructor(log) {
