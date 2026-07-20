@@ -36,6 +36,8 @@ class SAMBAFlasher {
   }
 
   async _cmd(command) {
+    const shortCmd = command.length > 35 ? command.slice(0, 35) + '…' : command;
+    this.log(`   >> ${shortCmd}`, 'dim');
     const writer = this.port.writable.getWriter();
     try {
       await writer.write(new TextEncoder().encode(command));
@@ -43,11 +45,14 @@ class SAMBAFlasher {
       writer.releaseLock();
     }
     await this._delay(200);
-    return await this._readLine(3000);
+    const resp = await this._readLine(3000);
+    this.log(`   << ${resp.length}B`, 'dim');
+    return resp;
   }
 
   async _writeRAM(addr, data) {
     const cmd = `S${addr.toString(16).padStart(8, '0').toUpperCase()},${data.length.toString(16).padStart(8, '0').toUpperCase()}#`;
+    this.log(`   >> ${cmd} + ${data.length}B`, 'dim');
     const writer = this.port.writable.getWriter();
     try {
       await writer.write(new TextEncoder().encode(cmd));
@@ -56,8 +61,7 @@ class SAMBAFlasher {
     } finally {
       writer.releaseLock();
     }
-    // Fire-and-forget: el bootloader puede no responder inmediatamente.
-    // La respuesta (si la hay) será drenada por el siguiente _cmd.
+    this.log(`   << (fire-and-forget, delay 100ms)`, 'dim');
     await this._delay(100);
   }
 
