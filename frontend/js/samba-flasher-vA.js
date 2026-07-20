@@ -110,7 +110,8 @@ class SAMBAFlasher {
     this.log(`📦 ${totalPages} páginas (${binData.length} bytes)`, 'info');
 
     await this.init();
-    await this.chipErase();
+    // TODO: X00000000# sin applet no borra flash — probar sin erase
+    // await this.chipErase();
 
     let offset = 0;
     let pageNum = 0;
@@ -130,7 +131,7 @@ class SAMBAFlasher {
       await this._writeRaw(pageBuf);
       await this._delay(2000);  // Bootloader procesa 4KB
 
-      // Flash write (fire-and-forget — bootloader puede no responder)
+      // Flash write (fire-and-forget)
       const flashCmd = `Y${flashAddr.toString(16).padStart(8, '0').toUpperCase()},00001000#`;
       await this._writeRaw(new TextEncoder().encode(flashCmd));
       this.log(`   ↓ flash write`, 'dim');
