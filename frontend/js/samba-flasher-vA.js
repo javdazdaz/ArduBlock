@@ -56,11 +56,9 @@ class SAMBAFlasher {
     } finally {
       writer.releaseLock();
     }
-    // Drenar respuesta \n\r del bootloader tras S+data
-    const resp = await this._readLine(3000);
-    if (resp.length === 0) {
-      this.log('⚠ Bootloader no respondió tras S+data', 'warn');
-    }
+    // Fire-and-forget: el bootloader puede no responder inmediatamente.
+    // La respuesta (si la hay) será drenada por el siguiente _cmd.
+    await this._delay(100);
   }
 
   async _readLine(timeoutMs) {
