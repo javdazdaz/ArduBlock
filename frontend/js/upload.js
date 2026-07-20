@@ -228,7 +228,7 @@ async function _pathB_uploadWebSerial(detection) {
   // ── Sub-ruta B2: Renesas (SAM-BA) ────────────────
   if (deviceCode === 'renesas-ra4m1') {
     consoleLog('→ PATH B2: SAM-BA (Renesas UNO R4 WiFi)', 'info');
-    consoleLog('   Protocolo: SAM-BA vía applet ARM', 'dim');
+    consoleLog('   Protocolo: SAM-BA nativo Y (sin applet)', 'dim');
     consoleLog('   Requiere: doble-reset para entrar en modo bootloader', 'dim');
     await _pathB2_samba(code, fqbn, tabs);
     return;
@@ -315,7 +315,7 @@ async function _pathB2_samba(code, fqbn, tabs) {
 
     const binData = Uint8Array.from(atob(binBase64), c => c.charCodeAt(0));
     consoleLog('⚡ Iniciando secuencia SAM-BA...', 'info');
-    consoleLog('   Fases: N# → V# → I# → cargar applet → borrar flash → escribir → Z#', 'dim');
+    consoleLog('   Fases: N# → V# → I# → borrar flash → escribir → Z#', 'dim');
 
     await flasher.flash(binData);
     await flasher.reset();

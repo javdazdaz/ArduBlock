@@ -1,21 +1,11 @@
-// ── SAMBAFlasher — Versión A (con applet, comandos S/W) ──
-// Extraído de commit 3dcc500: "chore: limpia logs verbose de debug SAM-BA + borra debug-samba.html"
-// Uso: import { SAMBAFlasher } from './samba-flasher-vA.js';
+// ── SAMBAFlasher — Protocolo nativo Y (sin applet, sin S/W) ──
+// Bootloader: SAM-BA extended 2.0 [Arduino:IKXYZ]
+// Solo comandos I, K, X, Y, Z. Sin S ni W.
+// Basado en debug/samba-webserial-test.html (verificado Jul 2026).
 
-const SAMBA_APPLET = new Uint8Array([
-  0x09, 0x48, 0x0a, 0x49, 0x0a, 0x4a, 0x02, 0xe0,
-  0x08, 0xc9, 0x08, 0xc0, 0x01, 0x3a, 0x00, 0x2a,
-  0xfa, 0xd1, 0x04, 0x48, 0x00, 0x28, 0x01, 0xd1,
-  0x01, 0x48, 0x85, 0x46, 0x70, 0x47, 0xc0, 0x46,
-  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-  0x00, 0x00, 0x00, 0x00,
-]);
-
-const SAMBA_PAGE_SIZE = 4096;  // R4 usa páginas de 4KB
-const SAMBA_BUFFER_ADDR = 0x34;  // Dirección RAM para buffer de página
-const SAMBA_APPLET_ADDR = 0x00000000;
-const SAMBA_FLASH_BASE = 0x00000000;
+const SAMBA_PAGE_SIZE = 4096;
+const SAMBA_BUF_ADDR   = 0x20000100;  // RAM buffer
+const SAMBA_FLASH_BASE = 0x00004000;  // App después del bootloader
 
 class SAMBAFlasher {
   constructor(log) {
@@ -35,36 +25,24 @@ class SAMBAFlasher {
     this.log('🔌 Puerto SAM-BA cerrado', 'info');
   }
 
+  // ── Write raw (fire-and-forget, sin leer respuesta) ──
+  async _writeRaw(data) {
+    const w = this.port.writable.getWriter();
+    try { await w.write(data); } finally { w.releaseLock(); }
+  }
+
+  // ── Enviar comando texto + leer respuesta ──
   async _cmd(command) {
     const shortCmd = command.length > 35 ? command.slice(0, 35) + '…' : command;
     this.log(`   >> ${shortCmd}`, 'dim');
-    const writer = this.port.writable.getWriter();
-    try {
-      await writer.write(new TextEncoder().encode(command));
-    } finally {
-      writer.releaseLock();
-    }
+    await this._writeRaw(new TextEncoder().encode(command));
     await this._delay(200);
     const resp = await this._readLine(3000);
     this.log(`   << ${resp.length}B`, 'dim');
     return resp;
   }
 
-  async _writeRAM(addr, data) {
-    const cmd = `S${addr.toString(16).padStart(8, '0').toUpperCase()},${data.length.toString(16).padStart(8, '0').toUpperCase()}#`;
-    this.log(`   >> ${cmd} + ${data.length}B`, 'dim');
-    const writer = this.port.writable.getWriter();
-    try {
-      await writer.write(new TextEncoder().encode(cmd));
-      await this._delay(15);
-      await writer.write(data);
-    } finally {
-      writer.releaseLock();
-    }
-    this.log(`   << (fire-and-forget, delay 100ms)`, 'dim');
-    await this._delay(100);
-  }
-
+  // ── Leer hasta \n o timeout ──
   async _readLine(timeoutMs) {
     const start = Date.now();
     const chunks = [];
@@ -98,9 +76,7 @@ class SAMBAFlasher {
     return new Promise(r => setTimeout(r, ms));
   }
 
-  /**
-   * Secuencia de init: N#, V#, I# + subir applet.
-   */
+  // ── Init: N# → V# → I# ──
   async init() {
     this.log('🔄 Inicializando SAM-BA...', 'info');
 
@@ -116,20 +92,10 @@ class SAMBAFlasher {
     const chip = new TextDecoder().decode(resp).trim();
     this.log('   Chip: ' + chip, 'info');
 
-    // Subir applet a RAM
-    this.log('📟 Subiendo applet...', 'info');
-    await this._writeRAM(SAMBA_APPLET_ADDR, SAMBA_APPLET);
-
-    // Configurar applet
-    await this._cmd(`W${(SAMBA_APPLET_ADDR + 0x30).toString(16).padStart(8, '0').toUpperCase()},00000400#`);
-    await this._cmd(`W${(SAMBA_APPLET_ADDR + 0x20).toString(16).padStart(8, '0').toUpperCase()},00000000#`);
-
-    this.log('✓ Applet listo', 'success');
+    this.log('✓ Init completo', 'success');
   }
 
-  /**
-   * Borra todo el flash (chip erase).
-   */
+  // ── Chip erase ──
   async chipErase() {
     this.log('🗑️ Borrando flash...', 'info');
     const resp = await this._cmd('X00000000#');
@@ -138,10 +104,7 @@ class SAMBAFlasher {
     this.log('✓ Flash borrado', 'success');
   }
 
-  /**
-   * Flashea el .bin completo.
-   * @param {Uint8Array} binData — contenido del .bin (ya decodificado de base64)
-   */
+  // ── Flashear .bin ──
   async flash(binData) {
     const totalPages = Math.ceil(binData.length / SAMBA_PAGE_SIZE);
     this.log(`📦 ${totalPages} páginas (${binData.length} bytes)`, 'info');
@@ -157,30 +120,37 @@ class SAMBAFlasher {
       const chunkSize = Math.min(SAMBA_PAGE_SIZE, binData.length - offset);
       pageBuf.fill(0x00);
       pageBuf.set(binData.slice(offset, offset + chunkSize));
-
-      await this._writeRAM(SAMBA_BUFFER_ADDR, pageBuf);
-      await this._cmd(`Y${SAMBA_BUFFER_ADDR.toString(16).padStart(8, '0').toUpperCase()},0#`);
-
       const flashAddr = SAMBA_FLASH_BASE + offset;
-      await this._cmd(`Y${flashAddr.toString(16).padStart(8, '0').toUpperCase()},00001000#`);
+
+      // Subir página a RAM (Y upload)
+      const uploadCmd = `Y${SAMBA_BUF_ADDR.toString(16).padStart(8, '0').toUpperCase()},${SAMBA_PAGE_SIZE.toString(16).padStart(8, '0').toUpperCase()}#`;
+      this.log(`   ↑ 0x${flashAddr.toString(16).toUpperCase()} [${pageNum + 1}/${totalPages}]`, 'dim');
+      await this._writeRaw(new TextEncoder().encode(uploadCmd));
+      await this._delay(15);
+      await this._writeRaw(pageBuf);
+      await this._delay(2000);  // Bootloader procesa 4KB
+
+      // Flash write (fire-and-forget — bootloader puede no responder)
+      const flashCmd = `Y${flashAddr.toString(16).padStart(8, '0').toUpperCase()},00001000#`;
+      await this._writeRaw(new TextEncoder().encode(flashCmd));
+      this.log(`   ↓ flash write`, 'dim');
+      await this._delay(2000);  // Programación de flash
 
       offset += SAMBA_PAGE_SIZE;
       pageNum++;
 
       if (pageNum % 4 === 0 || pageNum === totalPages) {
-        this.log(`   ${pageNum}/${totalPages} páginas (${Math.round(pageNum/totalPages*100)}%)`, 'info');
+        this.log(`   ${pageNum}/${totalPages} páginas (${Math.round(pageNum / totalPages * 100)}%)`, 'info');
       }
     }
 
     this.log(`✅ ${offset} bytes flasheados`, 'success');
   }
 
-  /**
-   * Resetea la CPU.
-   */
+  // ── Reset CPU ──
   async reset() {
     try {
-      await this._cmd('Z#');
+      await this._writeRaw(new TextEncoder().encode('Z#'));
       this.log('✓ CPU reseteada', 'success');
     } catch (_) { /* ignorar */ }
   }

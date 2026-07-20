@@ -23,6 +23,7 @@ export default [
         TextDecoder: 'readonly',
         Blob: 'readonly',
         URL: 'readonly',
+        atob: 'readonly',
         Uint8Array: 'readonly',
         DataView: 'readonly',
       },
