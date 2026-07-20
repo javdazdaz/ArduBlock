@@ -16,7 +16,8 @@
 import { generateArduinoCode } from './generator.js';
 import { getSetting } from './settings.js';
 import { consoleLog, disconnectSerial, connectSerial } from './serial.js';
-import { requestAndOpenPort, getDeviceCode, SAMBAFlasher } from './web-serial-flasher.js';
+import { requestAndOpenPort, getDeviceCode } from './web-serial-flasher.js';
+import { SAMBAFlasher } from './samba-flasher-vA.js';
 
 let workspace, arduinoConsole, btnConsoleToggle, consoleOutput, btnUpload;
 
