@@ -41,6 +41,17 @@ export async function uploadToArduino() {
   consoleOutput.innerHTML = '';
   btnUpload.disabled = true;
 
+  // Solicitar puerto AHORA (transient activation del clic expira tras 1er await).
+  // Si no hay soporte Web Serial o el usuario cancela, se guarda null.
+  let webSerialPort = null;
+  if ('serial' in navigator) {
+    try {
+      webSerialPort = await navigator.serial.requestPort();
+    } catch (_) {
+      consoleLog('ℹ No se seleccionó puerto serial', 'dim');
+    }
+  }
+
   try {
     // ── FASE 0: Pre-vuelo ──────────────────────────
     await _phase0_preflight();
@@ -53,7 +64,7 @@ export async function uploadToArduino() {
       await _pathA_uploadLocal(detection);
     } else {
       // ── PATH B: Web Serial (flasheo navegador) ────
-      await _pathB_uploadWebSerial(detection);
+      await _pathB_uploadWebSerial(detection, webSerialPort);
     }
   } finally {
     btnUpload.disabled = false;
@@ -202,18 +213,22 @@ async function _pathA_uploadLocal(detection) {
 //   B2: Renesas (SAM-BA)   — UNO R4 WiFi
 //
 
-async function _pathB_uploadWebSerial(detection) {
+async function _pathB_uploadWebSerial(detection, webSerialPort) {
   const { code, fqbn, tabs } = detection;
 
   consoleLog('═══ PATH B: Web Serial ═══', 'info');
 
-  // Verificar soporte del navegador
   if (!('serial' in navigator)) {
     consoleLog('✕ Web Serial no soportado en este navegador.', 'error');
     consoleLog('  Usá Chrome, Edge u Opera para flashear por USB.', 'info');
     return;
   }
   consoleLog('✓ Web Serial disponible en este navegador', 'dim');
+
+  if (!webSerialPort) {
+    consoleLog('✕ No se seleccionó ningún puerto serial.', 'error');
+    return;
+  }
 
   // Determinar protocolo según FQBN
   let deviceCode;
@@ -230,7 +245,7 @@ async function _pathB_uploadWebSerial(detection) {
     consoleLog('→ PATH B2: SAM-BA (Renesas UNO R4 WiFi)', 'info');
     consoleLog('   Protocolo: SAM-BA vía applet ARM (réplica bossac)', 'dim');
     consoleLog('   Requiere: doble-reset para entrar en modo bootloader', 'dim');
-    await _pathB2_samba(code, fqbn, tabs);
+    await _pathB2_samba(code, fqbn, tabs, webSerialPort);
     return;
   }
 
@@ -280,23 +295,15 @@ async function _pathB1_optiboot(code, fqbn, tabs, deviceCode) {
 
 // ── PATH B2: Renesas vía SAM-BA ──────────────────
 
-async function _pathB2_samba(code, fqbn, tabs) {
-  // 1. Solicitar puerto INMEDIATAMENTE (transient activation del clic)
-  consoleLog('💡 Seleccioná el puerto del Arduino en el diálogo.', 'info');
-  let port;
-  try {
-    port = await navigator.serial.requestPort();
-  } catch (e) {
-    consoleLog('✕ No se seleccionó ningún puerto', 'error');
-    return;
-  }
+async function _pathB2_samba(code, fqbn, tabs, port) {
+  // Puerto ya fue solicitado al inicio (transient activation)
 
-  // 2. Compilar en servidor PRIMERO (el bootloader expira en ~5s)
+  // 1. Compilar en servidor
   consoleLog('🌐 Compilando en servidor...', 'info');
   const binBase64 = await _compileOnServer(code, fqbn, tabs, 'bin');
   if (!binBase64) return;
 
-  // 3. AHORA sí: doble-reset y abrir puerto (ventana de ~5s del bootloader)
+  // 2. Doble-reset y abrir puerto
   consoleLog('🔄 Hacé doble-RESET en el R4 WiFi AHORA.', 'info');
   consoleLog('   El LED L debe quedar pulsando (modo bootloader SAM-BA).', 'info');
   consoleLog('🔌 Abriendo puerto a 230400 baud...', 'info');
