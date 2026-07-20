@@ -48,7 +48,7 @@ class SAMBAFlasher {
     const shortCmd = command.length > 35 ? command.slice(0, 35) + '…' : command;
     this.log(`   >> ${shortCmd}`, 'dim');
     await this._writeRaw(new TextEncoder().encode(command));
-    await this._delay(200);
+    await this._delay(10);
     const resp = await this._readLine(3000);
     this.log(`   << ${resp.length}B`, 'dim');
     return resp;
@@ -59,7 +59,7 @@ class SAMBAFlasher {
     const shortCmd = command.length > 35 ? command.slice(0, 35) + '…' : command;
     this.log(`   >> ${shortCmd} (fire-and-forget)`, 'dim');
     await this._writeRaw(new TextEncoder().encode(command));
-    await this._delay(100);
+    await this._delay(10);
   }
 
   async _readLine(timeoutMs) {
@@ -122,7 +122,7 @@ class SAMBAFlasher {
       await w.write(SAMBA_APPLET);
     } finally { w.releaseLock(); }
     this.log(`   >> S+applet (52B, fire-and-forget)`, 'dim');
-    await this._delay(500);
+    await this._delay(100);
 
     // Configurar applet (fire-and-forget)
     await this._cmdF(`W${(SAMBA_APPLET_ADDR + 0x30).toString(16).padStart(8, '0').toUpperCase()},00000400#`);
@@ -167,7 +167,7 @@ class SAMBAFlasher {
         await this._delay(15);
         await w.write(pageBuf);
       } finally { w.releaseLock(); }
-      await this._delay(2000);  // Bootloader procesa 4KB
+      await this._delay(60);  // Bootloader procesa 4KB (~30ms mínimo verificado)
 
       // 2. Y checksum (responde)
       await this._cmdR(`Y${SAMBA_BUF_ADDR.toString(16).padStart(8, '0').toUpperCase()},0#`);
