@@ -20,6 +20,7 @@ export default [
         prompt: 'readonly',
         alert: 'readonly',
         TextEncoder: 'readonly',
+        TextDecoder: 'readonly',
         Blob: 'readonly',
         URL: 'readonly',
         Uint8Array: 'readonly',
