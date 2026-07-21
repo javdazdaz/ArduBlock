@@ -29,6 +29,7 @@ export function initMatrixEditor() {
   _renderFrameList();
   _renderAnimList();
   _renderTimeline();
+  _setupTimelineDrop();
   _bindEvents();
   _update();
 }
@@ -180,7 +181,7 @@ function _renderFrameList() {
   list.innerHTML = names.map(name => {
     const sel = name === selectedFrame ? ' selected' : '';
     return `<div class="matrix-frame-item${sel}" data-name="${name}" draggable="true">
-      <canvas class="frame-preview" width="28" height="20"></canvas>
+      <canvas class="frame-preview" width="54" height="36"></canvas>
       <span class="frame-item-name">${_esc(name)}</span>
       <span class="frame-item-del" data-del="${name}">✕</span>
     </div>`;
@@ -299,7 +300,7 @@ function _renderTimeline() {
   const track = document.getElementById('matrix-timeline-track');
 
   if (timeline.length === 0) {
-    track.innerHTML = '<div class="matrix-timeline-empty">Arrastrá frames desde el panel lateral o seleccioná uno y configurá su duración</div>';
+    track.innerHTML = '<div class="matrix-timeline-empty">Arrastrá frames desde el panel lateral o usá el botón +</div>';
     return;
   }
 
@@ -325,7 +326,6 @@ function _renderTimeline() {
     el.addEventListener('click', () => {
       timelineSelected = parseInt(el.dataset.idx);
       _renderTimeline();
-      // Cargar el frame en el grid para editar
       const f = timeline[timelineSelected];
       if (f) {
         _loadFrameToGrid(f.u32);
@@ -340,8 +340,21 @@ function _renderTimeline() {
   if (addBtn) {
     addBtn.addEventListener('click', _addCurrentToTimeline);
   }
+}
 
-  // Drop: aceptar frames arrastrados desde el sidebar
+function _addCurrentToTimeline() {
+  const u32 = _encodeFrame();
+  const dur = parseInt(document.getElementById('matrix-timeline-duration').value) || 200;
+  const label = selectedFrame || 'frame' + (timeline.length + 1);
+  timeline.push({ name: label, u32: [...u32], dur });
+  _renderTimeline();
+}
+
+// ── Drop handlers (se registran una sola vez) ──
+
+function _setupTimelineDrop() {
+  const track = document.getElementById('matrix-timeline-track');
+
   track.addEventListener('dragover', (e) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'copy';
@@ -372,14 +385,6 @@ function _renderTimeline() {
       _toast(`Animación "${animName}" cargada (${timeline.length} frames)`);
     }
   });
-}
-
-function _addCurrentToTimeline() {
-  const u32 = _encodeFrame();
-  const dur = parseInt(document.getElementById('matrix-timeline-duration').value) || 200;
-  const label = selectedFrame || 'frame' + (timeline.length + 1);
-  timeline.push({ name: label, u32: [...u32], dur });
-  _renderTimeline();
 }
 
 function _playTimeline() {
