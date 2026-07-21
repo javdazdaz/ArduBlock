@@ -17,6 +17,7 @@
 const CRC_EOP     = 0x20; // End-of-packet marker para Optiboot raw
 const STK_OK      = 0x10;
 const STK_INSYNC  = 0x14;
+const MEMTYPE_FLASH = 0x46; // 'F' — Optiboot requiere este byte para programar flash
 
 const Cmnd_STK_GET_SYNC      = 0x30;
 const Cmnd_STK_LOAD_ADDRESS  = 0x55;
@@ -50,10 +51,26 @@ function parseHex(hexText) {
   }
   
   const sorted = [...memoryMap.entries()].sort((a, b) => a[0] - b[0]);
-  return sorted.map(([addr, bytes]) => ({
+  const blocks = sorted.map(([addr, bytes]) => ({
     address: addr,
     data: new Uint8Array(bytes)
   }));
+  
+  // Merge contiguous blocks (avrdude manda páginas de 128 bytes,
+  // no de 16 como vienen en el Intel HEX)
+  const merged = [];
+  for (const block of blocks) {
+    const last = merged[merged.length - 1];
+    if (last && last.address + last.data.length === block.address) {
+      const combined = new Uint8Array(last.data.length + block.data.length);
+      combined.set(last.data, 0);
+      combined.set(block.data, last.data.length);
+      last.data = combined;
+    } else {
+      merged.push(block);
+    }
+  }
+  return merged;
 }
 
 // ── Optiboot Raw Communication ────────────────
@@ -241,9 +258,9 @@ class OptibootFlasher {
     const sizeHi = (data.length >> 8) & 0xFF;
     const sizeLo = data.length & 0xFF;
     
-    // Formato raw: [0x64] [size_hi] [size_lo] [0x20=flag_flash] [data...] [0x20=CRC_EOP]
+    // Formato raw: [0x64] [size_hi] [size_lo] [memtype='F'] [data...] [0x20=CRC_EOP]
     const resp = await this._sendRaw(Cmnd_STK_PROG_PAGE, [
-      sizeHi, sizeLo, CRC_EOP, ...Array.from(data)
+      sizeHi, sizeLo, MEMTYPE_FLASH, ...Array.from(data)
     ]);
     
     if (resp[resp.length - 1] !== STK_OK) {
