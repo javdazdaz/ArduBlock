@@ -87,6 +87,7 @@ import { initExamples }  from './examples.js';
 import { initResize }   from './resize.js';
 import { exportSketch } from './download.js';
 import { initTabManager, getTabs, loadTabs, setSketchName, setInoContent, getInoContent, setCodeTheme } from './tab-manager.js';
+import { initMatrixEditor, initPanelModeTabs } from './matrix-animation.js';
 import { t, applyDOMLanguage } from './i18n.js';
 import { initActivityProtection, getActivityMeta, applyActivityMeta, clearActivityMeta, isActivityLoaded } from './activity-protection.js';
 import { initUndoTree, undo as treeUndo, redo as treeRedo, canUndo, canRedo, schedulePush, forcePush, restoreSnapshot, resetTree } from './undo-tree.js';
@@ -553,6 +554,10 @@ initTabManager();
 window._tabManager = { getTabs, loadTabs, setSketchName, setInoContent, getInoContent, setCodeTheme };
 window.updateCode = updateCode;  // para que tab-manager refresque el .ino
 window._showToast = showToast;   // para download.js y otros módulos
+
+// Editor visual de matriz LED (panel Animación)
+initPanelModeTabs();
+initMatrixEditor();
 
 // Undo tree: historial completo del proyecto (workspace + tabs + nombre + placa)
 initUndoTree({ workspace });

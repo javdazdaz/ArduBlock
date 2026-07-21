@@ -857,4 +857,92 @@ main {
 /* ── CLI Install Modal ───────────────────────── */
 #cli-install-status { color: var(--text-dim); }
 #cli-install-status.success { color: #27ae60; }
+
+/* ── Panel Mode Tabs (Código | Animación) ────── */
+.panel-mode-tabs {
+  display: flex; gap: 0; margin: 0 auto;
+}
+.panel-mode-tab {
+  padding: 0.25rem 0.75rem; font-size: 0.78rem;
+  font-family: inherit; font-weight: 500;
+  background: transparent; color: var(--text-dim);
+  border: 1px solid var(--border); cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.panel-mode-tab:first-child { border-radius: 3px 0 0 3px; }
+.panel-mode-tab:last-child  { border-radius: 0 3px 3px 0; margin-left: -1px; }
+.panel-mode-tab.active {
+  background: var(--accent); color: #fff; border-color: var(--accent);
+  z-index: 1;
+}
+.panel-mode-tab:hover:not(.active) { background: var(--bg-input); }
+
+/* ── Matrix Editor ───────────────────────────── */
+#code-view-animation {
+  flex: 1; display: flex; flex-direction: column; overflow: auto;
+}
+.matrix-editor-toolbar {
+  display: flex; align-items: center; gap: 0.5rem;
+  padding: 0.5rem 1rem; border-bottom: 1px solid var(--border);
+  background: var(--bg-panel);
+}
+.matrix-preset-select {
+  padding: 0.25rem 0.5rem; font-size: 0.78rem;
+  font-family: inherit; background: var(--bg-input);
+  color: var(--text); border: 1px solid var(--border);
+  border-radius: 3px;
+}
+.matrix-btn {
+  padding: 0.25rem 0.6rem; font-size: 0.75rem;
+  font-family: inherit; background: var(--bg-input);
+  color: var(--text); border: 1px solid var(--border);
+  border-radius: 3px; cursor: pointer; transition: opacity 0.15s;
+}
+.matrix-btn:hover { opacity: 0.8; }
+
+.matrix-editor-main {
+  flex: 1; display: flex; gap: 1rem; padding: 1rem;
+  overflow: auto; align-items: flex-start;
+}
+.matrix-grid {
+  display: grid; grid-template-columns: repeat(12, 28px);
+  grid-template-rows: repeat(8, 28px); gap: 2px;
+  flex-shrink: 0;
+}
+.matrix-cell {
+  width: 28px; height: 28px; border-radius: 2px;
+  background: #1a1a2e; border: 1px solid #333;
+  cursor: pointer; transition: background 0.1s;
+}
+.matrix-cell.on {
+  background: #e94560; border-color: #ff6b81;
+  box-shadow: 0 0 4px rgba(233,69,96,0.5);
+}
+.matrix-cell:hover { border-color: #666; }
+.matrix-cell.on:hover { background: #ff6b81; }
+
+.matrix-info {
+  display: flex; flex-direction: column; gap: 0.75rem;
+  min-width: 200px;
+}
+.matrix-preview canvas {
+  border: 1px solid var(--border); border-radius: 4px;
+  image-rendering: pixelated; background: #1a1a2e;
+}
+.matrix-hex {
+  font-size: 0.78rem; color: var(--text-dim);
+  font-family: 'Fira Code', 'Cascadia Code', monospace;
+}
+.matrix-hex code {
+  color: #27ae60; background: var(--bg-input);
+  padding: 0.1rem 0.3rem; border-radius: 2px;
+}
+.matrix-btn-use {
+  padding: 0.4rem 0.8rem; font-size: 0.8rem;
+  font-family: inherit; font-weight: 500;
+  background: var(--accent); color: #fff;
+  border: none; border-radius: 4px; cursor: pointer;
+  transition: opacity 0.15s;
+}
+.matrix-btn-use:hover { opacity: 0.85; }
 #cli-install-status.error { color: #e74c3c; }
