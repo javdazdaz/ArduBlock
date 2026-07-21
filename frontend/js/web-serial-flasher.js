@@ -406,15 +406,27 @@ class OptibootFlasher {
     return result;
   }
 
+  async _delay(ms) {
+    // Firefox throttlea setTimeout a 1000ms en tabs sin foco.
+    // Para delays < 1000ms usamos busy-wait con performance.now()
+    // para mantener precisión independientemente del foco de la pestaña.
+    if (ms < 1000) {
+      // eslint-disable-next-line no-undef
+      const start = performance.now();
+      // eslint-disable-next-line no-undef
+      while (performance.now() - start < ms) {
+        await new Promise(r => setTimeout(r, 0)); // ceder al event loop
+      }
+      return;
+    }
+    return new Promise(r => setTimeout(r, ms));
+  }
+
   async _drain() {
     // Usar readWithTimeout para no bloquear
     for (let i = 0; i < 3; i++) {
       await this._readWithTimeout(30);
     }
-  }
-
-  async _delay(ms) {
-    return new Promise(r => setTimeout(r, ms));
   }
 }
 
