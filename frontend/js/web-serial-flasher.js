@@ -87,45 +87,30 @@ class OptibootFlasher {
   }
 
   /**
-   * Activa el bootloader: cierra/reabre el puerto + togglea DTR+RTS.
-   * 
-   * El close/reopen fuerza un reset de hardware (el SO aserta DTR al abrir).
-   * Luego setSignals(DTR+RTS) por si el CH340 necesita el pulso explícito.
-   * Combinación probada en CH340 genuinos y clones.
+   * Activa el bootloader: pulso DTR+RTS vía setSignals.
+   *
+   * Simula lo que hace Node.js serialport: bajar DTR+RTS, esperar,
+   * subir, esperar a que el bootloader arranque.
+   * NO hace close/reopen — el doble pulso confunde a algunos bootloaders.
    */
   async _toggleDTR() {
-    const baud = 115200;
-    
-    // ── Paso 1: close/reopen para reset de hardware ──
-    try { this.reader?.releaseLock(); } catch (_) {}
-    this.reader = null;
-    
-    try { await this.port.close(); } catch (_) {}
-    await this._delay(300);
-    
-    for (let attempt = 0; attempt < 5; attempt++) {
-      try {
-        await this.port.open({ baudRate: baud, dataBits: 8, stopBits: 1, parity: 'none' });
-        break;
-      } catch (e) {
-        if (attempt >= 4) throw new Error(`No se pudo reabrir el puerto: ${e.message}`);
-        await this._delay(200);
-      }
-    }
-    
-    // ── Paso 2: toggle DTR+RTS (por si el clone usa RTS→RESET) ──
+    // Bajar ambas señales (reset)
     try {
-      // Bajar ambas señales
       await this.port.setSignals({ dataTerminalReady: false, requestToSend: false });
-      await this._delay(50);
-      // Subir ambas → pulso en cualquier pin que use el clon
-      await this.port.setSignals({ dataTerminalReady: true, requestToSend: true });
     } catch (_) {
-      // setSignals puede fallar en CH340, el close/reopen ya hizo el reset
+      // setSignals puede fallar en CH340 — ignorar, el pulso igual ocurrió
     }
-    
+    await this._delay(50);
+
+    // Subir ambas → bootloader arranca
+    try {
+      await this.port.setSignals({ dataTerminalReady: true, requestToSend: true });
+    } catch (_) {}
+
     await this._delay(500); // bootloader arranque
-    
+
+    // Recrear reader limpio post-DTR
+    try { this.reader?.releaseLock(); } catch (_) {}
     this.reader = this.port.readable.getReader();
   }
 
@@ -356,60 +341,58 @@ class OptibootFlasher {
 
   // ── Helpers ─────────────────────────────────
 
+  /**
+   * Lee datos del puerto serial con timeout total de 'ms'.
+   * A diferencia de serialport.read() en Node.js (no bloqueante),
+   * reader.read() en Web Serial es bloqueante. Firefox 151 puede
+   * ignorar AbortSignal → el read se cuelga para siempre.
+   *
+   * Estrategia: reads ultracortos (100ms) con AbortSignal. Si el
+   * abort no funciona (reader colgado), se recrea el reader y se
+   * reintenta. Esto replica el polling de Node.js dentro de las
+   * limitaciones de Web Serial.
+   */
   async _readWithTimeout(ms) {
-    // Lee datos del puerto serial con timeout total de 'ms'.
-    // Usa AbortSignal para cancelar lecturas individuales sin romper el stream.
+    const POLL_MS = 100; // timeout por intento individual
     const start = Date.now();
     const chunks = [];
+    let abortsConsecutivos = 0;
 
     while (true) {
       const elapsed = Date.now() - start;
       if (elapsed >= ms) break;
 
-      const remaining = ms - elapsed;
-      // CH340 puede tardar >100ms en responder; 500ms por chunk es seguro
-      const chunkTimeout = Math.min(remaining, 500);
-
-      // Intentar con AbortSignal (soportado en Firefox 151+, Chrome 98+)
-      if (typeof AbortController !== 'undefined') {
-        try {
-          const controller = new AbortController();
-          const timer = setTimeout(() => controller.abort(), chunkTimeout);
-
-          const { value, done } = await this.reader.read({ signal: controller.signal });
-          clearTimeout(timer);
-
-          if (done) break;
-          if (value && value.length > 0) {
-            chunks.push(value);
-            if (Date.now() - start > ms - 30) break;
-            continue;
-          }
-          await this._delay(10);
-          continue;
-        } catch (e) {
-          if (e.name === 'AbortError') continue; // timeout, reintentar
-          throw e;
-        }
-      }
-
-      // Fallback sin AbortSignal: una sola lectura con timeout via Promise.race
-      // (menos robusto: si race gana el timeout, reader.read() queda pendiente)
-      const readPromise = this.reader.read();
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('T')), Math.min(remaining, 500))
-      );
+      const remaining = Math.min(ms - elapsed, POLL_MS);
 
       try {
-        const { value, done } = await Promise.race([readPromise, timeoutPromise]);
+        const controller = new AbortController(); // eslint-disable-line no-undef
+        const timer = setTimeout(() => controller.abort(), remaining);
+
+        const { value, done } = await this.reader.read({ signal: controller.signal });
+        clearTimeout(timer);
+        abortsConsecutivos = 0; // reset — read respondió
+
         if (done) break;
         if (value && value.length > 0) {
           chunks.push(value);
-          if (Date.now() - start > ms - 30) break;
+          // Si ya tenemos datos y vemos STK_OK, terminamos
+          const all = new Uint8Array(chunks.reduce((s, c) => s + c.length, 0));
+          let off = 0;
+          for (const c of chunks) { all.set(c, off); off += c.length; }
+          if (all[all.length - 1] === STK_OK) break;
         }
-        await this._delay(10);
       } catch (e) {
-        if (e.message === 'T') break; // timeout — fallback sin reintento
+        if (e.name === 'AbortError') {
+          abortsConsecutivos++;
+          // Si 3 aborts seguidos sin datos, el reader probablemente está
+          // colgado (Firefox ignoró el AbortSignal). Recrear reader.
+          if (abortsConsecutivos >= 3 && chunks.length === 0) {
+            try { this.reader.releaseLock(); } catch (_) {}
+            this.reader = this.port.readable.getReader();
+            abortsConsecutivos = 0;
+          }
+          continue;
+        }
         throw e;
       }
     }
