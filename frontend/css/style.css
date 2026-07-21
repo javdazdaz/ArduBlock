@@ -879,30 +879,40 @@ main {
 
 /* ── Matrix Editor ───────────────────────────── */
 #code-view-animation {
-  flex: 1; display: flex; flex-direction: column; overflow: auto;
+  flex: 1; display: flex; flex-direction: column; overflow: hidden;
 }
 .matrix-editor-toolbar {
   display: flex; align-items: center; gap: 0.5rem;
-  padding: 0.5rem 1rem; border-bottom: 1px solid var(--border);
-  background: var(--bg-panel);
+  padding: 0.4rem 1rem; border-bottom: 1px solid var(--border);
+  background: var(--bg-panel); flex-shrink: 0;
 }
-.matrix-preset-select {
+.matrix-preset-select, .matrix-name-input {
   padding: 0.25rem 0.5rem; font-size: 0.78rem;
   font-family: inherit; background: var(--bg-input);
   color: var(--text); border: 1px solid var(--border);
   border-radius: 3px;
 }
+.matrix-name-input { width: 140px; }
+.matrix-name-input::placeholder { color: var(--text-dim); opacity: 0.5; }
 .matrix-btn {
   padding: 0.25rem 0.6rem; font-size: 0.75rem;
   font-family: inherit; background: var(--bg-input);
   color: var(--text); border: 1px solid var(--border);
   border-radius: 3px; cursor: pointer; transition: opacity 0.15s;
+  white-space: nowrap;
 }
 .matrix-btn:hover { opacity: 0.8; }
+.matrix-btn-save { background: #27ae60; color: #fff; border-color: #27ae60; }
+.matrix-toolbar-sep { color: var(--border); font-size: 0.8rem; }
 
-.matrix-editor-main {
-  flex: 1; display: flex; gap: 1rem; padding: 1rem;
-  overflow: auto; align-items: flex-start;
+/* ── Body: grid + sidebar ───────────────────── */
+.matrix-editor-body {
+  flex: 1; display: flex; overflow: hidden; min-height: 0;
+}
+.matrix-editor-left {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 1rem; gap: 1rem; overflow: auto;
 }
 .matrix-grid {
   display: grid; grid-template-columns: repeat(12, 28px);
@@ -922,15 +932,11 @@ main {
 .matrix-cell.on:hover { background: #ff6b81; }
 
 .matrix-info {
-  display: flex; flex-direction: column; gap: 0.75rem;
-  min-width: 200px;
-}
-.matrix-preview canvas {
-  border: 1px solid var(--border); border-radius: 4px;
-  image-rendering: pixelated; background: #1a1a2e;
+  display: flex; align-items: center; gap: 0.75rem;
+  flex-shrink: 0;
 }
 .matrix-hex {
-  font-size: 0.78rem; color: var(--text-dim);
+  font-size: 0.75rem; color: var(--text-dim);
   font-family: 'Fira Code', 'Cascadia Code', monospace;
 }
 .matrix-hex code {
@@ -938,11 +944,101 @@ main {
   padding: 0.1rem 0.3rem; border-radius: 2px;
 }
 .matrix-btn-use {
-  padding: 0.4rem 0.8rem; font-size: 0.8rem;
+  padding: 0.3rem 0.7rem; font-size: 0.75rem;
   font-family: inherit; font-weight: 500;
   background: var(--accent); color: #fff;
   border: none; border-radius: 4px; cursor: pointer;
   transition: opacity 0.15s;
 }
 .matrix-btn-use:hover { opacity: 0.85; }
+
+/* ── Sidebar: frames guardados ──────────────── */
+.matrix-editor-sidebar {
+  width: 220px; flex-shrink: 0; display: flex;
+  flex-direction: column; border-left: 1px solid var(--border);
+  background: var(--bg-panel);
+}
+.matrix-sidebar-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 0.5rem 0.75rem; font-size: 0.78rem; font-weight: 600;
+  color: var(--text-dim); border-bottom: 1px solid var(--border);
+}
+.matrix-count {
+  background: var(--bg-input); padding: 0.1rem 0.4rem;
+  border-radius: 8px; font-size: 0.7rem;
+}
+.matrix-frame-list {
+  flex: 1; overflow-y: auto; padding: 0.25rem;
+}
+.matrix-frame-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0.35rem 0.5rem; margin: 0.15rem 0;
+  border-radius: 3px; cursor: pointer; font-size: 0.75rem;
+  color: var(--text); transition: background 0.1s;
+  user-select: none;
+}
+.matrix-frame-item:hover { background: var(--bg-input); }
+.matrix-frame-item.selected { background: var(--accent); color: #fff; }
+.matrix-frame-item .frame-item-del {
+  opacity: 0; font-size: 0.7rem; cursor: pointer;
+  padding: 0 0.2rem; transition: opacity 0.1s;
+}
+.matrix-frame-item:hover .frame-item-del { opacity: 0.6; }
+.matrix-frame-item .frame-item-del:hover { opacity: 1; color: #e94560; }
+.matrix-frame-empty {
+  padding: 1rem; text-align: center; font-size: 0.75rem;
+  color: var(--text-dim); opacity: 0.6;
+}
+
+/* ── Timeline ───────────────────────────────── */
+.matrix-timeline {
+  flex-shrink: 0; border-top: 1px solid var(--border);
+  background: var(--bg-panel);
+}
+.matrix-timeline-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 0.4rem 0.75rem; font-size: 0.78rem;
+  font-weight: 600; color: var(--text-dim);
+  border-bottom: 1px solid var(--border);
+}
+.matrix-timeline-controls {
+  display: flex; align-items: center; gap: 0.5rem;
+}
+.matrix-duration-input {
+  width: 55px; padding: 0.15rem 0.3rem; font-size: 0.75rem;
+  font-family: inherit; background: var(--bg-input);
+  color: var(--text); border: 1px solid var(--border);
+  border-radius: 3px; text-align: center;
+}
+.matrix-timeline-track {
+  display: flex; align-items: center; gap: 4px;
+  padding: 0.5rem; min-height: 60px; overflow-x: auto;
+}
+.matrix-timeline-frame {
+  width: 50px; height: 50px; flex-shrink: 0;
+  border-radius: 4px; cursor: pointer; position: relative;
+  border: 2px solid transparent; transition: border-color 0.1s;
+}
+.matrix-timeline-frame:hover { border-color: var(--accent); }
+.matrix-timeline-frame.selected { border-color: #27ae60; }
+.matrix-timeline-frame canvas {
+  width: 100%; height: 100%; border-radius: 2px;
+  image-rendering: pixelated;
+}
+.matrix-timeline-frame .frame-dur {
+  position: absolute; bottom: -14px; left: 0; right: 0;
+  text-align: center; font-size: 0.6rem; color: var(--text-dim);
+}
+.matrix-timeline-add {
+  width: 50px; height: 50px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  border: 2px dashed var(--border); border-radius: 4px;
+  cursor: pointer; font-size: 1.2rem; color: var(--text-dim);
+  transition: border-color 0.15s;
+}
+.matrix-timeline-add:hover { border-color: var(--accent); color: var(--accent); }
+.matrix-timeline-empty {
+  padding: 0.5rem; text-align: center; font-size: 0.72rem;
+  color: var(--text-dim); opacity: 0.5; width: 100%;
+}
 #cli-install-status.error { color: #e74c3c; }

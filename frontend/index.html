@@ -100,22 +100,49 @@
           </select>
           <button id="matrix-clear-grid" class="matrix-btn">Limpiar</button>
           <button id="matrix-invert-grid" class="matrix-btn">Invertir</button>
+          <span class="matrix-toolbar-sep">|</span>
+          <input type="text" id="matrix-frame-name" class="matrix-name-input"
+                 placeholder="nombre del frame" maxlength="20" spellcheck="false">
+          <button id="matrix-save-frame" class="matrix-btn matrix-btn-save">💾 Guardar frame</button>
         </div>
-        <div class="matrix-editor-main">
-          <div id="matrix-grid" class="matrix-grid"></div>
-          <div class="matrix-info">
-            <div class="matrix-preview">
-              <canvas id="matrix-preview-canvas" width="120" height="80"></canvas>
+        <div class="matrix-editor-body">
+          <div class="matrix-editor-left">
+            <div id="matrix-grid" class="matrix-grid"></div>
+            <div class="matrix-info">
+              <div class="matrix-hex">
+                <label>uint32_t frame[] = {</label>
+                <code id="matrix-hex-0">0x0</code><span>, </span>
+                <code id="matrix-hex-1">0x0</code><span>, </span>
+                <code id="matrix-hex-2">0x0</code>
+                <label>};</label>
+              </div>
+              <button id="matrix-use-frame" class="matrix-btn-use">📋 Copiar C++</button>
             </div>
-            <div class="matrix-hex">
-              <label>uint32_t frame[] = {</label>
-              <code id="matrix-hex-0">0x0</code><span>, </span>
-              <code id="matrix-hex-1">0x0</code><span>, </span>
-              <code id="matrix-hex-2">0x0</code>
-              <label>};</label>
-            </div>
-            <button id="matrix-use-frame" class="matrix-btn-use">Usar este frame</button>
           </div>
+          <div class="matrix-editor-sidebar">
+            <div class="matrix-sidebar-header">
+              <span>📁 Frames guardados</span>
+              <span id="matrix-frame-count" class="matrix-count">0</span>
+            </div>
+            <div id="matrix-frame-list" class="matrix-frame-list"></div>
+          </div>
+        </div>
+        <div class="matrix-timeline">
+          <div class="matrix-timeline-header">
+            <span>⏱ Línea de tiempo</span>
+            <div class="matrix-timeline-controls">
+              <label>Duración: <input type="number" id="matrix-timeline-duration"
+                     class="matrix-duration-input" value="200" min="10" max="10000" step="10"> ms</label>
+              <button id="matrix-timeline-play" class="matrix-btn">▶ Reproducir</button>
+              <button id="matrix-timeline-stop" class="matrix-btn">⏹ Parar</button>
+              <button id="matrix-timeline-clear" class="matrix-btn">🗑 Limpiar</button>
+              <span class="matrix-toolbar-sep">|</span>
+              <input type="text" id="matrix-anim-name" class="matrix-name-input"
+                     placeholder="nombre animación" maxlength="20" spellcheck="false">
+              <button id="matrix-save-animation" class="matrix-btn matrix-btn-save">💾 Guardar animación</button>
+            </div>
+          </div>
+          <div id="matrix-timeline-track" class="matrix-timeline-track"></div>
         </div>
       </div>
     </section>

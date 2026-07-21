@@ -1,45 +1,55 @@
 /**
  * ArduBlock — Editor visual de Matriz LED (12×8)
  *
- * Grid interactivo para diseñar frames de la matriz LED del R4.
- * Genera los 3 valores uint32_t correspondientes.
+ * Grid interactivo, frames guardados en localStorage,
+ * línea de tiempo para crear animaciones.
  */
 
 import { MATRIX_FRAMES } from './blocks/ledmatrix.js';
 
-let grid, cells, previewCtx;
+const STORAGE_KEY_FRAMES = 'ardublock:matrix-frames';
+const STORAGE_KEY_ANIMS = 'ardublock:matrix-animations';
+
+let grid, cells;
 let frameData = new Array(8).fill(0).map(() => new Array(12).fill(0));
+let savedFrames = {};      // { name: [u32_0, u32_1, u32_2] }
+let savedAnims = {};       // { name: [[u32_0,u32_1,u32_2,dur], ...] }
+let timeline = [];          // [{ name, u32, dur }]
+let selectedFrame = null;   // nombre del frame seleccionado en sidebar
+let timelineSelected = -1;  // índice en timeline
+let playTimer = null;
+let playIndex = 0;
 
 export function initMatrixEditor() {
   grid = document.getElementById('matrix-grid');
-  const presetSelect = document.getElementById('matrix-preset');
-  const clearBtn = document.getElementById('matrix-clear-grid');
-  const invertBtn = document.getElementById('matrix-invert-grid');
-  const useBtn = document.getElementById('matrix-use-frame');
-  const previewCanvas = document.getElementById('matrix-preview-canvas');
 
-  previewCtx = previewCanvas.getContext('2d');
-
-  // Build 12×8 grid
+  _loadStorage();
   _buildGrid();
-
-  // Populate preset dropdown
-  _populatePresets(presetSelect);
-
-  // Events
-  clearBtn.addEventListener('click', () => { _clearAll(); _update(); });
-  invertBtn.addEventListener('click', () => { _invertAll(); _update(); });
-  presetSelect.addEventListener('change', () => {
-    const key = presetSelect.value;
-    if (key && MATRIX_FRAMES[key]) {
-      _loadFrame(MATRIX_FRAMES[key]);
-      _update();
-    }
-  });
-  useBtn.addEventListener('click', _useFrame);
-
-  // Initial render
+  _populatePresets();
+  _renderFrameList();
+  _renderTimeline();
+  _bindEvents();
   _update();
+}
+
+// ═══ Storage ═══════════════════════════════════
+
+function _loadStorage() {
+  try {
+    savedFrames = JSON.parse(localStorage.getItem(STORAGE_KEY_FRAMES)) || {};
+    savedAnims = JSON.parse(localStorage.getItem(STORAGE_KEY_ANIMS)) || {};
+  } catch (_) {
+    savedFrames = {};
+    savedAnims = {};
+  }
+}
+
+function _saveFrames() {
+  localStorage.setItem(STORAGE_KEY_FRAMES, JSON.stringify(savedFrames));
+}
+
+function _saveAnims() {
+  localStorage.setItem(STORAGE_KEY_ANIMS, JSON.stringify(savedAnims));
 }
 
 // ═══ Grid ═══════════════════════════════════════
@@ -72,25 +82,20 @@ function _toggleCell(row, col) {
 }
 
 function _clearAll() {
-  for (let row = 0; row < 8; row++) {
-    for (let col = 0; col < 12; col++) {
+  for (let row = 0; row < 8; row++)
+    for (let col = 0; col < 12; col++)
       frameData[row][col] = 0;
-    }
-  }
 }
 
 function _invertAll() {
-  for (let row = 0; row < 8; row++) {
-    for (let col = 0; col < 12; col++) {
+  for (let row = 0; row < 8; row++)
+    for (let col = 0; col < 12; col++)
       frameData[row][col] = frameData[row][col] ? 0 : 1;
-    }
-  }
 }
 
 // ═══ Frame encoding (MSB-first, row-major) ═════
 
 function _encodeFrame() {
-  // Pack 8 rows × 12 bits into 96 bits: row 0 at MSB, row 7 at LSB
   let bits = 0n;
   for (let row = 0; row < 8; row++) {
     let rowVal = 0;
@@ -120,42 +125,244 @@ function _decodeFrame(u32) {
   return data;
 }
 
-// ═══ Update ═════════════════════════════════════
+function _loadFrameToGrid(u32) {
+  frameData = _decodeFrame(u32);
+}
+
+// ═══ Render ═════════════════════════════════════
 
 function _update() {
   const u32 = _encodeFrame();
 
-  // Update grid cells
-  for (let row = 0; row < 8; row++) {
-    for (let col = 0; col < 12; col++) {
+  // Grid cells
+  for (let row = 0; row < 8; row++)
+    for (let col = 0; col < 12; col++)
       cells[row][col].classList.toggle('on', frameData[row][col] === 1);
-    }
-  }
 
-  // Update hex display
+  // Hex display
   document.getElementById('matrix-hex-0').textContent = '0x' + u32[0].toString(16);
   document.getElementById('matrix-hex-1').textContent = '0x' + u32[1].toString(16);
   document.getElementById('matrix-hex-2').textContent = '0x' + u32[2].toString(16);
-
-  // Update canvas preview
-  _drawPreview();
 }
 
-function _drawPreview() {
-  const w = 120, h = 80;
-  previewCtx.clearRect(0, 0, w, h);
+function _drawTimelineCanvas(canvas, u32) {
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width, h = canvas.height;
+  ctx.clearRect(0, 0, w, h);
   const cw = w / 12, ch = h / 8;
+  const data = _decodeFrame(u32);
   for (let row = 0; row < 8; row++) {
     for (let col = 0; col < 12; col++) {
-      previewCtx.fillStyle = frameData[row][col] ? '#e94560' : '#1a1a2e';
-      previewCtx.fillRect(col * cw, row * ch, cw - 1, ch - 1);
+      ctx.fillStyle = data[row][col] ? '#e94560' : '#1a1a2e';
+      ctx.fillRect(col * cw, row * ch, cw - 0.5, ch - 0.5);
     }
   }
+}
+
+// ═══ Sidebar: frames guardados ═════════════════
+
+function _renderFrameList() {
+  const list = document.getElementById('matrix-frame-list');
+  const count = document.getElementById('matrix-frame-count');
+  const names = Object.keys(savedFrames).sort();
+
+  count.textContent = names.length;
+
+  if (names.length === 0) {
+    list.innerHTML = '<div class="matrix-frame-empty">Sin frames.<br>Diseña uno y usa 💾 Guardar</div>';
+    return;
+  }
+
+  list.innerHTML = names.map(name => {
+    const sel = name === selectedFrame ? ' selected' : '';
+    return `<div class="matrix-frame-item${sel}" data-name="${name}">
+      <span>${_esc(name)}</span>
+      <span class="frame-item-del" data-del="${name}">✕</span>
+    </div>`;
+  }).join('');
+
+  // Click: seleccionar y cargar en grid
+  list.querySelectorAll('.matrix-frame-item').forEach(el => {
+    el.addEventListener('click', (e) => {
+      if (e.target.classList.contains('frame-item-del')) return;
+      const name = el.dataset.name;
+      selectedFrame = name;
+      _loadFrameToGrid(savedFrames[name]);
+      _update();
+      _renderFrameList();
+    });
+  });
+
+  // Click en ✕: eliminar
+  list.querySelectorAll('.frame-item-del').forEach(el => {
+    el.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const name = el.dataset.del;
+      if (confirm(`¿Eliminar frame "${name}"?`)) {
+        delete savedFrames[name];
+        if (selectedFrame === name) selectedFrame = null;
+        _saveFrames();
+        _renderFrameList();
+        _renderTimeline();
+      }
+    });
+  });
+}
+
+// ═══ Timeline ═══════════════════════════════════
+
+function _renderTimeline() {
+  const track = document.getElementById('matrix-timeline-track');
+
+  if (timeline.length === 0) {
+    track.innerHTML = '<div class="matrix-timeline-empty">Arrastrá frames desde el panel lateral o seleccioná uno y configurá su duración</div>';
+    return;
+  }
+
+  let html = '';
+  for (let i = 0; i < timeline.length; i++) {
+    const f = timeline[i];
+    const sel = i === timelineSelected ? ' selected' : '';
+    html += `<div class="matrix-timeline-frame${sel}" data-idx="${i}">
+      <canvas width="50" height="50"></canvas>
+      <span class="frame-dur">${f.dur}ms</span>
+    </div>`;
+  }
+  html += '<div class="matrix-timeline-add" title="Añadir frame actual">+</div>';
+  track.innerHTML = html;
+
+  // Dibujar canvas de cada frame
+  track.querySelectorAll('.matrix-timeline-frame canvas').forEach((canvas, i) => {
+    if (i < timeline.length) _drawTimelineCanvas(canvas, timeline[i].u32);
+  });
+
+  // Click en frame: seleccionar
+  track.querySelectorAll('.matrix-timeline-frame').forEach(el => {
+    el.addEventListener('click', () => {
+      timelineSelected = parseInt(el.dataset.idx);
+      _renderTimeline();
+      // Cargar el frame en el grid para editar
+      const f = timeline[timelineSelected];
+      if (f) {
+        _loadFrameToGrid(f.u32);
+        _update();
+        document.getElementById('matrix-timeline-duration').value = f.dur;
+      }
+    });
+  });
+
+  // Botón +
+  const addBtn = track.querySelector('.matrix-timeline-add');
+  if (addBtn) {
+    addBtn.addEventListener('click', _addCurrentToTimeline);
+  }
+}
+
+function _addCurrentToTimeline() {
+  const u32 = _encodeFrame();
+  const dur = parseInt(document.getElementById('matrix-timeline-duration').value) || 200;
+  const label = selectedFrame || 'frame' + (timeline.length + 1);
+  timeline.push({ name: label, u32: [...u32], dur });
+  _renderTimeline();
+}
+
+function _playTimeline() {
+  if (timeline.length === 0) return;
+  _stopTimeline();
+  playIndex = 0;
+  _showTimelineFrame(playIndex);
+  playTimer = setInterval(() => {
+    playIndex++;
+    if (playIndex >= timeline.length) {
+      _stopTimeline();
+      return;
+    }
+    _showTimelineFrame(playIndex);
+  }, timeline[playIndex].dur || 200);
+}
+
+function _stopTimeline() {
+  if (playTimer) { clearInterval(playTimer); playTimer = null; }
+  playIndex = 0;
+}
+
+function _showTimelineFrame(idx) {
+  if (idx < 0 || idx >= timeline.length) return;
+  const f = timeline[idx];
+  _loadFrameToGrid(f.u32);
+  _update();
+  timelineSelected = idx;
+  document.getElementById('matrix-timeline-duration').value = f.dur;
+  _renderTimeline();
+}
+
+// ═══ Events ════════════════════════════════════
+
+function _bindEvents() {
+  document.getElementById('matrix-clear-grid').addEventListener('click', () => {
+    _clearAll(); _update();
+  });
+  document.getElementById('matrix-invert-grid').addEventListener('click', () => {
+    _invertAll(); _update();
+  });
+
+  // Guardar frame
+  document.getElementById('matrix-save-frame').addEventListener('click', () => {
+    const nameInput = document.getElementById('matrix-frame-name');
+    const name = nameInput.value.trim();
+    if (!name) { _toast('Escribe un nombre para el frame'); return; }
+    if (!/^[a-zA-Z0-9_]+$/.test(name)) { _toast('Solo letras, números y _'); return; }
+    const u32 = _encodeFrame();
+    savedFrames[name] = [...u32];
+    _saveFrames();
+    selectedFrame = name;
+    _renderFrameList();
+    nameInput.value = '';
+    _toast(`Frame "${name}" guardado`);
+  });
+
+  // Copiar C++
+  document.getElementById('matrix-use-frame').addEventListener('click', () => {
+    const u32 = _encodeFrame();
+    const code = `matrix.loadFrame({0x${u32[0].toString(16)}, 0x${u32[1].toString(16)}, 0x${u32[2].toString(16)}});`;
+    navigator.clipboard.writeText(code).then(() => _toast('Copiado: ' + code));
+  });
+
+  // Timeline: añadir frame actual
+  document.getElementById('matrix-timeline-duration').addEventListener('change', function() {
+    if (timelineSelected >= 0 && timelineSelected < timeline.length) {
+      timeline[timelineSelected].dur = parseInt(this.value) || 200;
+      _renderTimeline();
+    }
+  });
+
+  // Timeline: play/stop/clear
+  document.getElementById('matrix-timeline-play').addEventListener('click', _playTimeline);
+  document.getElementById('matrix-timeline-stop').addEventListener('click', _stopTimeline);
+  document.getElementById('matrix-timeline-clear').addEventListener('click', () => {
+    timeline = [];
+    timelineSelected = -1;
+    _renderTimeline();
+  });
+
+  // Guardar animación
+  document.getElementById('matrix-save-animation').addEventListener('click', () => {
+    const nameInput = document.getElementById('matrix-anim-name');
+    const name = nameInput.value.trim();
+    if (!name) { _toast('Escribe un nombre para la animación'); return; }
+    if (!/^[a-zA-Z0-9_]+$/.test(name)) { _toast('Solo letras, números y _'); return; }
+    if (timeline.length === 0) { _toast('La línea de tiempo está vacía'); return; }
+    savedAnims[name] = timeline.map(f => [...f.u32, f.dur]);
+    _saveAnims();
+    nameInput.value = '';
+    _toast(`Animación "${name}" guardada (${timeline.length} frames)`);
+  });
 }
 
 // ═══ Presets ════════════════════════════════════
 
-function _populatePresets(select) {
+function _populatePresets() {
+  const select = document.getElementById('matrix-preset');
   const names = Object.keys(MATRIX_FRAMES);
   for (const name of names) {
     const opt = document.createElement('option');
@@ -163,28 +370,23 @@ function _populatePresets(select) {
     opt.textContent = name;
     select.appendChild(opt);
   }
-}
-
-function _loadFrame(u32) {
-  frameData = _decodeFrame(u32);
-}
-
-// ═══ Use frame: inserta como bloque custom en workspace ═══
-
-function _useFrame() {
-  const u32 = _encodeFrame();
-  const hex = `{ 0x${u32[0].toString(16)}, 0x${u32[1].toString(16)}, 0x${u32[2].toString(16)} }`;
-
-  // Copiar al portapapeles como código C++
-  const code = `matrix.loadFrame(${hex});`;
-  navigator.clipboard.writeText(code).then(() => {
-    if (window._showToast) {
-      window._showToast('Frame copiado: ' + hex);
+  select.addEventListener('change', () => {
+    const key = select.value;
+    if (key && MATRIX_FRAMES[key]) {
+      _loadFrameToGrid(MATRIX_FRAMES[key]);
+      _update();
     }
-  }).catch(() => {
-    // Fallback: mostrar en un alert
-    alert('Frame generado:\n' + code);
   });
+}
+
+// ═══ Helpers ════════════════════════════════════
+
+function _toast(msg) {
+  if (window._showToast) window._showToast(msg);
+}
+
+function _esc(s) {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
 // ═══ Panel toggle ══════════════════════════════
@@ -218,7 +420,6 @@ export function initPanelModeTabs() {
       if (editorPanel) editorPanel.style.display = '';
       if (resizer) resizer.style.display = '';
       if (codePanel) codePanel.style.flex = '';
-      // Restaurar vista de código activa
       const activeTab = document.querySelector('.code-tab.active');
       if (activeTab && activeTab.dataset.readonly === 'true') {
         codeViews.style.display = '';
@@ -234,13 +435,11 @@ export function initPanelModeTabs() {
       codeViews.style.display = 'none';
       hView.style.display = 'none';
       animView.style.display = '';
-      // Ocultar panel de bloques para usar todo el ancho
       if (editorPanel) editorPanel.style.display = 'none';
       if (resizer) resizer.style.display = 'none';
       if (codePanel) codePanel.style.flex = '1';
     }
 
-    // Actualizar line count
     const lc = document.getElementById('line-count');
     if (lc) lc.style.display = mode === 'code' ? '' : 'none';
   }
