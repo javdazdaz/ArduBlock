@@ -55,6 +55,11 @@ function _buildGrid() {
       cell.dataset.row = row;
       cell.dataset.col = col;
       cell.addEventListener('click', () => _toggleCell(row, col));
+      cell.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        frameData[row][col] = 0;
+        _update();
+      });
       grid.appendChild(cell);
       cells[row][col] = cell;
     }
@@ -201,11 +206,18 @@ export function initPanelModeTabs() {
     tabCode.classList.toggle('active', mode === 'code');
     tabAnim.classList.toggle('active', mode === 'animation');
 
+    const editorPanel = document.getElementById('editor-panel');
+    const resizer = document.getElementById('panel-resizer');
+    const codePanel = document.getElementById('code-panel');
+
     if (mode === 'code') {
       headerTitle.textContent = 'Código Arduino (C++)';
       codeTabs.style.display = '';
       if (arduinoToolbar) arduinoToolbar.style.display = '';
       animView.style.display = 'none';
+      if (editorPanel) editorPanel.style.display = '';
+      if (resizer) resizer.style.display = '';
+      if (codePanel) codePanel.style.flex = '';
       // Restaurar vista de código activa
       const activeTab = document.querySelector('.code-tab.active');
       if (activeTab && activeTab.dataset.readonly === 'true') {
@@ -222,6 +234,10 @@ export function initPanelModeTabs() {
       codeViews.style.display = 'none';
       hView.style.display = 'none';
       animView.style.display = '';
+      // Ocultar panel de bloques para usar todo el ancho
+      if (editorPanel) editorPanel.style.display = 'none';
+      if (resizer) resizer.style.display = 'none';
+      if (codePanel) codePanel.style.flex = '1';
     }
 
     // Actualizar line count
