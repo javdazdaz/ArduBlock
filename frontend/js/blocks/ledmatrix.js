@@ -138,6 +138,7 @@ export function registerGenerators(cppGenerator) {
 
   // ── matrix_show_icon ────────────────────────
   cppGenerator.forBlock['matrix_show_icon'] = function(block) {
+    cppGenerator._matrixUsed = true;
     const icon = block.getFieldValue('ICON') || 'heart';
     if (!cppGenerator._matrixFrameNames) {
       cppGenerator._matrixFrameNames = new Set();
@@ -148,6 +149,7 @@ export function registerGenerators(cppGenerator) {
 
   // ── matrix_play_animation ───────────────────
   cppGenerator.forBlock['matrix_play_animation'] = function(block) {
+    cppGenerator._matrixUsed = true;
     const anim = block.getFieldValue('ANIM') || 'blink';
     const loop = block.getFieldValue('LOOP') === 'TRUE';
     if (!cppGenerator._matrixAnimNames) {
@@ -161,6 +163,7 @@ export function registerGenerators(cppGenerator) {
 
   // ── matrix_clear ────────────────────────────
   cppGenerator.forBlock['matrix_clear'] = function(_block) {
+    cppGenerator._matrixUsed = true;
     if (!cppGenerator._matrixFrameNames) {
       cppGenerator._matrixFrameNames = new Set();
     }

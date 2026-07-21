@@ -678,6 +678,16 @@ export function generateArduinoCode(workspace) {
     }
   }
 
+  // ── Matriz LED R4: auto-inyectar begin() en setup ──
+  if (cppGenerator._matrixUsed) {
+    const beginStmt = '  matrix.begin();\n';
+    if (setupBody && !setupBody.includes('matrix.begin()')) {
+      setupBody = beginStmt + setupBody;
+    } else if (!setupBody) {
+      setupBody = beginStmt;
+    }
+  }
+
   if (globals.trim()) {
     sketch += globals.trim() + '\n\n';
   }
