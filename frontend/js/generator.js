@@ -47,6 +47,8 @@ import { registerGenerators as regVariables }  from './blocks/variables.js';
 import { registerGenerators as regArrays }     from './blocks/arrays.js';
 import { registerGenerators as regBucles }     from './blocks/bucles.js';
 import { registerGenerators as regAfmotor }    from './blocks/afmotor.js';
+import { registerGenerators as regLedmatrix,
+         MATRIX_FRAMES, MATRIX_ANIMATIONS } from './blocks/ledmatrix.js';
 
 regEstructura(cppGenerator);
 regDigital(cppGenerator);
@@ -63,6 +65,7 @@ regVariables(cppGenerator);
 regArrays(cppGenerator);
 regBucles(cppGenerator);
 regAfmotor(cppGenerator);
+regLedmatrix(cppGenerator);
 
 // ═══ Generadores built-in de Blockly ═══════════
 
@@ -428,6 +431,9 @@ export function generateArduinoCode(workspace) {
   cppGenerator._afmotorDcInstances = [];
   cppGenerator._afmotorStepperInstances = [];
   cppGenerator._needsIsPrime = false;
+  cppGenerator._matrixUsed = false;
+  cppGenerator._matrixFrameNames = null;
+  cppGenerator._matrixAnimNames = null;
 
   const topBlocks = workspace.getTopBlocks(true);
 
@@ -558,6 +564,51 @@ export function generateArduinoCode(workspace) {
     for (const inst of cppGenerator._afmotorStepperInstances) {
       sketch += 'AF_Stepper ' + inst.name + '(' + inst.steps + ', ' + inst.channel + ');\n';
     }
+    sketch += '\n';
+  }
+
+  // ── Matriz LED R4 ──
+  if (cppGenerator._matrixUsed) {
+    sketch += '#include "Arduino_LED_Matrix.h"\n';
+    sketch += 'ArduinoLEDMatrix matrix;\n';
+
+    // Emitir frames usados
+    const frameNames = cppGenerator._matrixFrameNames;
+    if (frameNames && frameNames.size > 0) {
+      sketch += '\n';
+      for (const name of frameNames) {
+        const frame = MATRIX_FRAMES[name];
+        if (frame) {
+          sketch += 'const uint32_t frame_' + name + '[] = { '
+                  + '0x' + frame[0].toString(16) + ', '
+                  + '0x' + frame[1].toString(16) + ', '
+                  + '0x' + frame[2].toString(16) + ' };\n';
+        }
+      }
+    }
+
+    // Emitir animaciones usadas
+    const animNames = cppGenerator._matrixAnimNames;
+    if (animNames && animNames.size > 0) {
+      sketch += '\n';
+      for (const name of animNames) {
+        const anim = MATRIX_ANIMATIONS[name];
+        if (anim) {
+          sketch += 'const uint32_t anim_' + name + '[' + anim.length + '][4] = {\n';
+          for (let i = 0; i < anim.length; i++) {
+            const f = anim[i];
+            sketch += '  { 0x' + f[0].toString(16) + ', '
+                    + '0x' + f[1].toString(16) + ', '
+                    + '0x' + f[2].toString(16) + ', '
+                    + f[3] + ' }';
+            if (i < anim.length - 1) sketch += ',';
+            sketch += '\n';
+          }
+          sketch += '};\n';
+        }
+      }
+    }
+
     sketch += '\n';
   }
 

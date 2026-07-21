@@ -131,6 +131,7 @@ import { blocks as variablesBlocks }  from './blocks/variables.js';
 import { blocks as arraysBlocks }     from './blocks/arrays.js';
 import { blocks as buclesBlocks }     from './blocks/bucles.js';
 import { blocks as afmotorBlocks }    from './blocks/afmotor.js';
+import { blocks as ledmatrixBlocks } from './blocks/ledmatrix.js';
 
 // ═══ Registrar todos los bloques ═══════════════
 
@@ -150,6 +151,7 @@ const allBlocks = [
   ...arraysBlocks,
   ...buclesBlocks,
   ...afmotorBlocks,
+  ...ledmatrixBlocks,
 ];
 
 Blockly.common.defineBlocksWithJsonArray(allBlocks);
@@ -266,6 +268,11 @@ const _FULL_TOOLBOX_TEMPLATE = [
   { kind: 'block', type: 'procedures_ifreturn', level: 3 },
   { kind: 'block', type: 'logic_ternary', level: 3 },
   { kind: 'block', type: 'controls_flow_statements', level: 3 },
+  { kind: 'block', type: 'matrix_init', level: 2 },
+  { kind: 'block', type: 'matrix_show_icon', level: 2 },
+  { kind: 'block', type: 'matrix_play_animation', level: 2 },
+  { kind: 'block', type: 'matrix_clear', level: 2 },
+  { kind: 'block', type: 'matrix_sequence_done', level: 3 },
 ];
 
 export const BLOCK_LEVELS = _buildBlockLevelMap(_FULL_TOOLBOX_TEMPLATE);
@@ -450,9 +457,30 @@ export function buildToolboxForBoard(fqbn, level) {
         ]},
       { 'kind': 'category', 'name': '%{BKY_CAT_AFMOTOR}', 'colour': '310', 'level': 3,
         'custom': 'CAT_AFMOTOR' },
+      { 'kind': 'category', 'name': '%{BKY_CAT_MATRIXLED}', 'colour': '35', 'level': 2,
+        'boardFilter': /^arduino:renesas_uno/,
+        'contents': [
+          { 'kind': 'block', 'type': 'matrix_init', 'level': 2 },
+          { 'kind': 'block', 'type': 'matrix_show_icon', 'level': 2 },
+          { 'kind': 'block', 'type': 'matrix_play_animation', 'level': 2 },
+          { 'kind': 'block', 'type': 'matrix_clear', 'level': 2 },
+          { 'kind': 'block', 'type': 'matrix_sequence_done', 'level': 3 },
+        ]},
       { 'kind': 'search', 'name': '%{BKY_CAT_BUSCAR}', 'contents': [] }
     ]
   };
+
+  // ═══ Filtrar por placa ═════════════════════
+  // Categorías con boardFilter: solo visibles si el FQBN coincide
+  if (fqbn) {
+    toolbox.contents = toolbox.contents.filter(cat => {
+      if (cat.kind === 'sep' || cat.kind === 'search') return true;
+      if (cat.boardFilter) {
+        return cat.boardFilter.test(fqbn);
+      }
+      return true;
+    });
+  }
 
   // ═══ Filtrar por nivel ═════════════════════
   // Elimina categorías completas cuyo nivel > currentLevel,
