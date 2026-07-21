@@ -502,6 +502,12 @@ def compile_hex():
         hex_files = list(build_dir.glob('*.hex'))
         bin_files = list(build_dir.glob('*.ino.bin'))
 
+        # ArduBlock flashea sin bootloader (Optiboot ya está en la placa).
+        # El .with_bootloader.hex incluye direcciones 0x7E00+ que pisan
+        # el bootloader si se flashean vía Optiboot raw.
+        sketch_hex = [f for f in hex_files if '.with_bootloader.' not in f.name]
+        hex_files = sketch_hex or hex_files
+
         # Placas no-AVR (Renesas, ESP32) producen .bin, no .hex
         is_avr = ':avr:' in fqbn
         if not is_avr and bin_files:
