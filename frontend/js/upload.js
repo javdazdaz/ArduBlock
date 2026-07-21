@@ -16,7 +16,7 @@
 import { generateArduinoCode } from './generator.js';
 import { getSetting } from './settings.js';
 import { consoleLog, disconnectSerial, connectSerial } from './serial.js';
-import { requestAndOpenPort, getDeviceCode } from './web-serial-flasher.js';
+import { STK500Flasher, getDeviceCode } from './web-serial-flasher.js';
 import { SAMBAFlasher } from './samba-flasher-vA.js';
 
 let workspace, arduinoConsole, btnConsoleToggle, consoleOutput, btnUpload;
@@ -253,34 +253,35 @@ async function _pathB_uploadWebSerial(detection, webSerialPort) {
   consoleLog('→ PATH B1: Optiboot raw (AVR)', 'info');
   consoleLog(`   Dispositivo: ${deviceCode}`, 'dim');
   consoleLog('   Protocolo: comandos raw STK (cmd + 0x20)', 'dim');
-  await _pathB1_optiboot(code, fqbn, tabs, deviceCode);
+  await _pathB1_optiboot(code, fqbn, tabs, deviceCode, webSerialPort);
 }
 
 // ── PATH B1: AVR vía Optiboot ────────────────────
 
-async function _pathB1_optiboot(code, fqbn, tabs, deviceCode) {
-  // 1. Solicitar puerto (requiere click del usuario)
-  consoleLog('💡 Seleccioná el puerto del Arduino en el diálogo.', 'info');
-  let flasher;
+async function _pathB1_optiboot(code, fqbn, tabs, deviceCode, port) {
+  // Puerto ya fue solicitado al inicio (transient activation)
+
+  // 1. Compilar en servidor → obtener .hex
+  consoleLog('🌐 Compilando en servidor...', 'info');
+  const hexContent = await _compileOnServer(code, fqbn, tabs, 'hex');
+  if (!hexContent) return;
+
+  // 2. Abrir puerto
+  consoleLog('🔌 Abriendo puerto a 115200 baud...', 'info');
   try {
-    flasher = await requestAndOpenPort(msg => consoleLog(msg));
-    consoleLog('✓ Puerto abierto a 115200 baud', 'dim');
+    await port.open({ baudRate: 115200, dataBits: 8, stopBits: 1, parity: 'none' });
+    consoleLog('✓ Puerto Optiboot abierto', 'dim');
   } catch (e) {
     consoleLog('✕ No se pudo abrir el puerto: ' + e.message, 'error');
     return;
   }
 
-  // 2. Compilar en servidor → obtener .hex
-  consoleLog('🌐 Compilando en servidor...', 'info');
-  const hexContent = await _compileOnServer(code, fqbn, tabs);
-  if (!hexContent) {
-    await flasher.disconnect();
-    return;
-  }
-
   // 3. Flashear vía Optiboot
-  consoleLog('⚡ Flasheando vía Optiboot...', 'info');
+  const flasher = new STK500Flasher(msg => consoleLog(msg));
   try {
+    flasher.port = port;
+    flasher.reader = port.readable.getReader();
+    consoleLog('⚡ Flasheando vía Optiboot...', 'info');
     await flasher.flash(hexContent, deviceCode);
     consoleLog('✅ ¡Sketch flasheado correctamente vía Web Serial!', 'success');
   } catch (e) {
