@@ -145,6 +145,21 @@ function _update() {
   document.getElementById('matrix-hex-0').textContent = '0x' + u32[0].toString(16);
   document.getElementById('matrix-hex-1').textContent = '0x' + u32[1].toString(16);
   document.getElementById('matrix-hex-2').textContent = '0x' + u32[2].toString(16);
+
+  // Two-way binding: si hay frame seleccionado en timeline, sincronizar
+  if (timelineSelected >= 0 && timelineSelected < timeline.length) {
+    timeline[timelineSelected].u32 = [...u32];
+    _syncTimelineCanvas(timelineSelected);
+  }
+}
+
+function _syncTimelineCanvas(idx) {
+  const track = document.getElementById('matrix-timeline-track');
+  const frameEl = track.querySelector(`.matrix-timeline-frame[data-idx="${idx}"]`);
+  if (frameEl) {
+    const canvas = frameEl.querySelector('canvas');
+    if (canvas) _drawTimelineCanvas(canvas, timeline[idx].u32);
+  }
 }
 
 function _drawTimelineCanvas(canvas, u32) {
@@ -308,7 +323,7 @@ function _renderTimeline() {
   for (let i = 0; i < timeline.length; i++) {
     const f = timeline[i];
     const sel = i === timelineSelected ? ' selected' : '';
-    html += `<div class="matrix-timeline-frame${sel}" data-idx="${i}">
+    html += `<div class="matrix-timeline-frame${sel}" data-idx="${i}" draggable="true">
       <canvas width="50" height="50"></canvas>
       <span class="frame-dur">${f.dur}ms</span>
     </div>`;
@@ -321,7 +336,7 @@ function _renderTimeline() {
     if (i < timeline.length) _drawTimelineCanvas(canvas, timeline[i].u32);
   });
 
-  // Click en frame: seleccionar
+  // Click en frame: seleccionar + dragstart para reordenar
   track.querySelectorAll('.matrix-timeline-frame').forEach(el => {
     el.addEventListener('click', () => {
       timelineSelected = parseInt(el.dataset.idx);
@@ -332,6 +347,16 @@ function _renderTimeline() {
         _update();
         document.getElementById('matrix-timeline-duration').value = f.dur;
       }
+    });
+
+    // Drag para reordenar
+    el.addEventListener('dragstart', (e) => {
+      e.dataTransfer.setData('application/x-timeline-idx', el.dataset.idx);
+      e.dataTransfer.effectAllowed = 'move';
+      el.classList.add('dragging');
+    });
+    el.addEventListener('dragend', () => {
+      el.classList.remove('dragging');
     });
   });
 
@@ -366,15 +391,41 @@ function _setupTimelineDrop() {
   track.addEventListener('drop', (e) => {
     e.preventDefault();
     track.classList.remove('drag-over');
-    // Frame individual
+
+    // Reorden interno: mover frame dentro de la timeline
+    const srcIdx = e.dataTransfer.getData('application/x-timeline-idx');
+    if (srcIdx !== '') {
+      const from = parseInt(srcIdx);
+      // Encontrar posición destino (sobre qué frame se soltó)
+      const target = document.elementFromPoint(e.clientX, e.clientY);
+      const frameEl = target?.closest('.matrix-timeline-frame');
+      let to = frameEl ? parseInt(frameEl.dataset.idx) : timeline.length - 1;
+      if (from >= 0 && from < timeline.length && to >= 0 && to < timeline.length && from !== to) {
+        const [moved] = timeline.splice(from, 1);
+        timeline.splice(to, 0, moved);
+        timelineSelected = to;
+        _renderTimeline();
+      }
+      return;
+    }
+
+    // Frame individual (desde sidebar)
     const frameName = e.dataTransfer.getData('text/plain');
     if (frameName && savedFrames[frameName]) {
       const dur = parseInt(document.getElementById('matrix-timeline-duration').value) || 200;
-      timeline.push({ name: frameName, u32: [...savedFrames[frameName]], dur });
+      // Insertar en la posición donde se soltó
+      const target = document.elementFromPoint(e.clientX, e.clientY);
+      const frameEl = target?.closest('.matrix-timeline-frame');
+      if (frameEl) {
+        const idx = parseInt(frameEl.dataset.idx);
+        timeline.splice(idx, 0, { name: frameName, u32: [...savedFrames[frameName]], dur });
+      } else {
+        timeline.push({ name: frameName, u32: [...savedFrames[frameName]], dur });
+      }
       _renderTimeline();
       return;
     }
-    // Animación completa
+    // Animación completa (desde sidebar)
     const animName = e.dataTransfer.getData('application/x-matrix-anim');
     if (animName && savedAnims[animName]) {
       const anim = savedAnims[animName];
