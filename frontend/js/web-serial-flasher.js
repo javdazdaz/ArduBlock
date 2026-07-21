@@ -296,6 +296,8 @@ class OptibootFlasher {
     // 3. Programar flash
     const pageSize = 128;
     let totalBytes = 0;
+    const totalPages = blocks.reduce((s, b) => s + Math.ceil(b.data.length / pageSize), 0);
+    let pageNum = 0;
     
     for (const block of blocks) {
       let address = block.address;
@@ -311,13 +313,14 @@ class OptibootFlasher {
         offset += pageSize;
         address += pageSize;
         totalBytes += chunk.length;
+        pageNum++;
         
         if (offset < data.length) {
           await this.loadAddress(address);
         }
         
-        if (totalBytes % 1024 === 0) {
-          this.log(`   ${totalBytes} bytes programados...`, 'info');
+        if (pageNum % 4 === 0 || pageNum === totalPages) {
+          this.log(`   ${pageNum}/${totalPages} páginas (${Math.round(pageNum / totalPages * 100)}%)`, 'info');
         }
       }
     }
