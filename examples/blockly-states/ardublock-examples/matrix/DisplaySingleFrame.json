@@ -1,0 +1,116 @@
+{
+  "blocks": {
+    "languageVersion": 0,
+    "blocks": [
+      {
+        "type": "arduino_setup",
+        "id": "b1",
+        "x": 20,
+        "y": 20,
+        "inputs": {
+          "BODY": {
+            "block": {
+              "type": "matrix_init",
+              "id": "m1"
+            }
+          }
+        }
+      },
+      {
+        "type": "arduino_loop",
+        "id": "b2",
+        "x": 20,
+        "y": 160,
+        "inputs": {
+          "BODY": {
+            "block": {
+              "type": "matrix_show_icon",
+              "id": "m2",
+              "fields": {
+                "ICON": "chip"
+              },
+              "next": {
+                "block": {
+                  "type": "delay_ms",
+                  "id": "m3",
+                  "fields": {
+                    "MS": 500
+                  },
+                  "next": {
+                    "block": {
+                      "type": "matrix_show_icon",
+                      "id": "m4",
+                      "fields": {
+                        "ICON": "danger"
+                      },
+                      "next": {
+                        "block": {
+                          "type": "delay_ms",
+                          "id": "m5",
+                          "fields": {
+                            "MS": 500
+                          },
+                          "next": {
+                            "block": {
+                              "type": "matrix_show_icon",
+                              "id": "m6",
+                              "fields": {
+                                "ICON": "happy"
+                              },
+                              "next": {
+                                "block": {
+                                  "type": "delay_ms",
+                                  "id": "m7",
+                                  "fields": {
+                                    "MS": 500
+                                  },
+                                  "next": {
+                                    "block": {
+                                      "type": "matrix_show_icon",
+                                      "id": "m8",
+                                      "fields": {
+                                        "ICON": "heart"
+                                      },
+                                      "next": {
+                                        "block": {
+                                          "type": "delay_ms",
+                                          "id": "m9",
+                                          "fields": {
+                                            "MS": 500
+                                          },
+                                          "next": {
+                                            "block": {
+                                              "type": "matrix_clear",
+                                              "id": "m10",
+                                              "next": {
+                                                "block": {
+                                                  "type": "delay_ms",
+                                                  "id": "m11",
+                                                  "fields": {
+                                                    "MS": 1000
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}
