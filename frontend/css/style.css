@@ -905,15 +905,14 @@ main {
 .matrix-btn-save { background: #27ae60; color: #fff; border-color: #27ae60; }
 .matrix-toolbar-sep { color: var(--border); font-size: 0.8rem; }
 
-/* ── Body: grid centrado ───────────────────── */
+/* ── Body: sidebar fijo + grid ─────────────── */
 .matrix-editor-body {
-  flex: 1; position: relative; overflow: hidden; min-height: 0;
+  flex: 1; display: flex; overflow: hidden; min-height: 0;
 }
 .matrix-editor-main {
-  width: 100%; height: 100%; display: flex;
-  flex-direction: column; align-items: center;
-  justify-content: center; padding: 1rem; gap: 1rem;
-  overflow: auto;
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 1rem; gap: 1rem; overflow: auto;
 }
 .matrix-grid {
   display: grid; grid-template-columns: repeat(12, 28px);
@@ -953,45 +952,27 @@ main {
 }
 .matrix-btn-use:hover { opacity: 0.85; }
 
-/* ── Sidebar flotante (izquierda, semitransparente) ── */
+/* ── Sidebar fijo (estilo Blockly toolbox) ── */
 .matrix-sidebar {
-  position: absolute; left: 0; top: 0; bottom: 0;
-  z-index: 10; display: flex; transition: transform 0.2s ease;
+  width: 195px; flex-shrink: 0; display: flex;
+  flex-direction: column; background: var(--bg-panel);
+  border-right: 1px solid var(--border); overflow-y: auto;
 }
-.matrix-sidebar.collapsed { transform: translateX(-210px); }
-.matrix-sidebar-tab {
-  width: 26px; background: rgba(26,26,46,0.92);
-  border-right: 1px solid var(--border);
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer; font-size: 0.85rem; flex-shrink: 0;
-  writing-mode: vertical-rl; text-orientation: mixed;
-  letter-spacing: 2px; color: var(--text-dim);
-  transition: background 0.15s; border-radius: 0 4px 4px 0;
-}
-.matrix-sidebar-tab:hover { background: rgba(233,69,96,0.15); color: var(--accent); }
-.matrix-sidebar-inner {
-  width: 210px; flex-shrink: 0; display: flex;
-  flex-direction: column; background: rgba(26,26,46,0.92);
-  backdrop-filter: blur(6px); border-right: 1px solid var(--border);
-  border-radius: 0 4px 4px 0;
-}
-.matrix-sidebar-header {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 0.4rem 0.6rem; font-size: 0.78rem; font-weight: 600;
-  color: var(--text-dim); border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
-}
-.matrix-count {
-  background: var(--bg-input); padding: 0.1rem 0.4rem;
-  border-radius: 8px; font-size: 0.7rem;
+.matrix-sidebar-cat {
+  padding: 0.45rem 0.6rem; font-size: 0.72rem;
+  font-weight: 600; color: var(--text-dim);
+  text-transform: uppercase; letter-spacing: 0.5px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(0,0,0,0.15); flex-shrink: 0;
 }
 .matrix-frame-list {
-  flex: 1; overflow-y: auto; padding: 0.25rem;
+  flex: 1; overflow-y: auto; padding: 0.2rem;
+  min-height: 40px; max-height: 40vh;
 }
 .matrix-frame-item {
-  display: flex; align-items: center; gap: 0.4rem;
-  padding: 0.3rem 0.4rem; margin: 0.15rem 0;
-  border-radius: 3px; cursor: grab; font-size: 0.72rem;
+  display: flex; align-items: center; gap: 0.35rem;
+  padding: 0.25rem 0.35rem; margin: 0.1rem 0;
+  border-radius: 3px; cursor: grab; font-size: 0.7rem;
   color: var(--text); transition: background 0.1s;
   user-select: none; border: 1px solid transparent;
 }
@@ -1006,14 +987,18 @@ main {
   flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .matrix-frame-item .frame-item-del {
-  opacity: 0; font-size: 0.7rem; cursor: pointer;
-  padding: 0 0.2rem; transition: opacity 0.1s;
+  opacity: 0; font-size: 0.65rem; cursor: pointer;
+  padding: 0 0.15rem; transition: opacity 0.1s;
 }
-.matrix-frame-item:hover .frame-item-del { opacity: 0.6; }
+.matrix-frame-item:hover .frame-item-del { opacity: 0.5; }
 .matrix-frame-item .frame-item-del:hover { opacity: 1; color: #e94560; }
 .matrix-frame-empty {
-  padding: 1rem; text-align: center; font-size: 0.72rem;
-  color: var(--text-dim); opacity: 0.6;
+  padding: 0.6rem; text-align: center; font-size: 0.68rem;
+  color: var(--text-dim); opacity: 0.5;
+}
+.matrix-frame-count {
+  float: right; font-size: 0.65rem; opacity: 0.5;
+  font-weight: normal;
 }
 
 /* ── Timeline drop zone highlight ─────────── */

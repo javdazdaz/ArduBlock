@@ -27,6 +27,7 @@ export function initMatrixEditor() {
   _buildGrid();
   _populatePresets();
   _renderFrameList();
+  _renderAnimList();
   _renderTimeline();
   _bindEvents();
   _update();
@@ -163,13 +164,16 @@ function _drawTimelineCanvas(canvas, u32) {
 
 function _renderFrameList() {
   const list = document.getElementById('matrix-frame-list');
-  const count = document.getElementById('matrix-frame-count');
   const names = Object.keys(savedFrames).sort();
 
-  count.textContent = names.length;
+  // Update count in category header
+  const cat = list.previousElementSibling;
+  if (cat && cat.classList.contains('matrix-sidebar-cat')) {
+    cat.innerHTML = `📁 Frames <span class="matrix-frame-count">${names.length}</span>`;
+  }
 
   if (names.length === 0) {
-    list.innerHTML = '<div class="matrix-frame-empty">Sin frames.<br>Diseña uno y usa 💾 Guardar</div>';
+    list.innerHTML = '<div class="matrix-frame-empty">Sin frames</div>';
     return;
   }
 
@@ -221,6 +225,69 @@ function _renderFrameList() {
         _saveFrames();
         _renderFrameList();
         _renderTimeline();
+      }
+    });
+  });
+}
+
+// ═══ Sidebar: animaciones guardadas ═════════════
+
+function _renderAnimList() {
+  const list = document.getElementById('matrix-anim-list');
+  const names = Object.keys(savedAnims).sort();
+
+  const cat = list.previousElementSibling;
+  if (cat && cat.classList.contains('matrix-sidebar-cat')) {
+    cat.innerHTML = `🎬 Animaciones <span class="matrix-frame-count">${names.length}</span>`;
+  }
+
+  if (names.length === 0) {
+    list.innerHTML = '<div class="matrix-frame-empty">Sin animaciones</div>';
+    return;
+  }
+
+  list.innerHTML = names.map(name => {
+    const anim = savedAnims[name];
+    const fc = anim ? anim.length : 0;
+    return `<div class="matrix-frame-item" data-anim="${name}" draggable="true">
+      <span class="frame-item-name">🎞 ${_esc(name)}</span>
+      <span style="font-size:0.6rem;opacity:0.5;margin-left:auto">${fc}f</span>
+      <span class="frame-item-del" data-del-anim="${name}">✕</span>
+    </div>`;
+  }).join('');
+
+  list.querySelectorAll('.matrix-frame-item').forEach(el => {
+    el.addEventListener('click', (e) => {
+      if (e.target.classList.contains('frame-item-del')) return;
+      const name = el.dataset.anim;
+      const anim = savedAnims[name];
+      if (anim && anim.length > 0) {
+        timeline = anim.map(f => ({
+          name, u32: [f[0], f[1], f[2]], dur: f[3] || 200
+        }));
+        _renderTimeline();
+        _toast(`Animación "${name}" cargada (${timeline.length} frames)`);
+      }
+    });
+
+    el.addEventListener('dragstart', (e) => {
+      e.dataTransfer.setData('application/x-matrix-anim', el.dataset.anim);
+      e.dataTransfer.effectAllowed = 'copy';
+      el.classList.add('dragging');
+    });
+    el.addEventListener('dragend', () => {
+      el.classList.remove('dragging');
+    });
+  });
+
+  list.querySelectorAll('.frame-item-del').forEach(el => {
+    el.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const name = el.dataset.delAnim;
+      if (confirm(`¿Eliminar animación "${name}"?`)) {
+        delete savedAnims[name];
+        _saveAnims();
+        _renderAnimList();
       }
     });
   });
@@ -286,11 +353,23 @@ function _renderTimeline() {
   track.addEventListener('drop', (e) => {
     e.preventDefault();
     track.classList.remove('drag-over');
-    const name = e.dataTransfer.getData('text/plain');
-    if (name && savedFrames[name]) {
+    // Frame individual
+    const frameName = e.dataTransfer.getData('text/plain');
+    if (frameName && savedFrames[frameName]) {
       const dur = parseInt(document.getElementById('matrix-timeline-duration').value) || 200;
-      timeline.push({ name, u32: [...savedFrames[name]], dur });
+      timeline.push({ name: frameName, u32: [...savedFrames[frameName]], dur });
       _renderTimeline();
+      return;
+    }
+    // Animación completa
+    const animName = e.dataTransfer.getData('application/x-matrix-anim');
+    if (animName && savedAnims[animName]) {
+      const anim = savedAnims[animName];
+      timeline = anim.map(f => ({
+        name: animName, u32: [f[0], f[1], f[2]], dur: f[3] || 200
+      }));
+      _renderTimeline();
+      _toast(`Animación "${animName}" cargada (${timeline.length} frames)`);
     }
   });
 }
@@ -336,12 +415,6 @@ function _showTimelineFrame(idx) {
 // ═══ Events ════════════════════════════════════
 
 function _bindEvents() {
-  // Sidebar toggle
-  document.getElementById('matrix-sidebar-tab').addEventListener('click', () => {
-    const sidebar = document.getElementById('matrix-sidebar');
-    sidebar.classList.toggle('collapsed');
-  });
-
   document.getElementById('matrix-clear-grid').addEventListener('click', () => {
     _clearAll(); _update();
   });
@@ -397,6 +470,7 @@ function _bindEvents() {
     if (timeline.length === 0) { _toast('La línea de tiempo está vacía'); return; }
     savedAnims[name] = timeline.map(f => [...f.u32, f.dur]);
     _saveAnims();
+    _renderAnimList();
     nameInput.value = '';
     _toast(`Animación "${name}" guardada (${timeline.length} frames)`);
   });

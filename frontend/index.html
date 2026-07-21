@@ -106,6 +106,13 @@
           <button id="matrix-save-frame" class="matrix-btn matrix-btn-save">💾 Guardar frame</button>
         </div>
         <div class="matrix-editor-body">
+          <!-- Sidebar fijo: estilo Blockly toolbox -->
+          <div id="matrix-sidebar" class="matrix-sidebar">
+            <div class="matrix-sidebar-cat">📁 Frames</div>
+            <div id="matrix-frame-list" class="matrix-frame-list"></div>
+            <div class="matrix-sidebar-cat">🎬 Animaciones</div>
+            <div id="matrix-anim-list" class="matrix-frame-list"></div>
+          </div>
           <div class="matrix-editor-main">
             <div id="matrix-grid" class="matrix-grid"></div>
             <div class="matrix-info">
@@ -118,17 +125,6 @@
               </div>
               <button id="matrix-use-frame" class="matrix-btn-use">📋 Copiar C++</button>
             </div>
-          </div>
-        </div>
-        <!-- Sidebar flotante: frames guardados (izquierda) -->
-        <div id="matrix-sidebar" class="matrix-sidebar collapsed">
-          <div class="matrix-sidebar-tab" id="matrix-sidebar-tab" title="Frames guardados">📁</div>
-          <div class="matrix-sidebar-inner">
-            <div class="matrix-sidebar-header">
-              <span>📁 Frames</span>
-              <span id="matrix-frame-count" class="matrix-count">0</span>
-            </div>
-            <div id="matrix-frame-list" class="matrix-frame-list"></div>
           </div>
         </div>
         <div class="matrix-timeline">
