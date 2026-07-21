@@ -106,7 +106,7 @@
           <button id="matrix-save-frame" class="matrix-btn matrix-btn-save">💾 Guardar frame</button>
         </div>
         <div class="matrix-editor-body">
-          <div class="matrix-editor-left">
+          <div class="matrix-editor-main">
             <div id="matrix-grid" class="matrix-grid"></div>
             <div class="matrix-info">
               <div class="matrix-hex">
@@ -119,9 +119,13 @@
               <button id="matrix-use-frame" class="matrix-btn-use">📋 Copiar C++</button>
             </div>
           </div>
-          <div class="matrix-editor-sidebar">
+        </div>
+        <!-- Sidebar flotante: frames guardados (izquierda) -->
+        <div id="matrix-sidebar" class="matrix-sidebar collapsed">
+          <div class="matrix-sidebar-tab" id="matrix-sidebar-tab" title="Frames guardados">📁</div>
+          <div class="matrix-sidebar-inner">
             <div class="matrix-sidebar-header">
-              <span>📁 Frames guardados</span>
+              <span>📁 Frames</span>
               <span id="matrix-frame-count" class="matrix-count">0</span>
             </div>
             <div id="matrix-frame-list" class="matrix-frame-list"></div>

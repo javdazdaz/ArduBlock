@@ -159,7 +159,7 @@ function _drawTimelineCanvas(canvas, u32) {
   }
 }
 
-// ═══ Sidebar: frames guardados ═════════════════
+// ═══ Sidebar: frames guardados + drag & drop ══
 
 function _renderFrameList() {
   const list = document.getElementById('matrix-frame-list');
@@ -175,11 +175,18 @@ function _renderFrameList() {
 
   list.innerHTML = names.map(name => {
     const sel = name === selectedFrame ? ' selected' : '';
-    return `<div class="matrix-frame-item${sel}" data-name="${name}">
-      <span>${_esc(name)}</span>
+    return `<div class="matrix-frame-item${sel}" data-name="${name}" draggable="true">
+      <canvas class="frame-preview" width="28" height="20"></canvas>
+      <span class="frame-item-name">${_esc(name)}</span>
       <span class="frame-item-del" data-del="${name}">✕</span>
     </div>`;
   }).join('');
+
+  // Dibujar mini previews
+  list.querySelectorAll('.frame-preview').forEach(canvas => {
+    const name = canvas.parentElement.dataset.name;
+    _drawTimelineCanvas(canvas, savedFrames[name]);
+  });
 
   // Click: seleccionar y cargar en grid
   list.querySelectorAll('.matrix-frame-item').forEach(el => {
@@ -190,6 +197,16 @@ function _renderFrameList() {
       _loadFrameToGrid(savedFrames[name]);
       _update();
       _renderFrameList();
+    });
+
+    // Drag & drop
+    el.addEventListener('dragstart', (e) => {
+      e.dataTransfer.setData('text/plain', el.dataset.name);
+      e.dataTransfer.effectAllowed = 'copy';
+      el.classList.add('dragging');
+    });
+    el.addEventListener('dragend', () => {
+      el.classList.remove('dragging');
     });
   });
 
@@ -256,6 +273,26 @@ function _renderTimeline() {
   if (addBtn) {
     addBtn.addEventListener('click', _addCurrentToTimeline);
   }
+
+  // Drop: aceptar frames arrastrados desde el sidebar
+  track.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+    track.classList.add('drag-over');
+  });
+  track.addEventListener('dragleave', () => {
+    track.classList.remove('drag-over');
+  });
+  track.addEventListener('drop', (e) => {
+    e.preventDefault();
+    track.classList.remove('drag-over');
+    const name = e.dataTransfer.getData('text/plain');
+    if (name && savedFrames[name]) {
+      const dur = parseInt(document.getElementById('matrix-timeline-duration').value) || 200;
+      timeline.push({ name, u32: [...savedFrames[name]], dur });
+      _renderTimeline();
+    }
+  });
 }
 
 function _addCurrentToTimeline() {
@@ -299,6 +336,12 @@ function _showTimelineFrame(idx) {
 // ═══ Events ════════════════════════════════════
 
 function _bindEvents() {
+  // Sidebar toggle
+  document.getElementById('matrix-sidebar-tab').addEventListener('click', () => {
+    const sidebar = document.getElementById('matrix-sidebar');
+    sidebar.classList.toggle('collapsed');
+  });
+
   document.getElementById('matrix-clear-grid').addEventListener('click', () => {
     _clearAll(); _update();
   });

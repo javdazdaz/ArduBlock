@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SAM-BA Web Serial Test — Fase 2</title>
+<style>
+  :root { --bg:#1a1a2e; --panel:#16213e; --text:#e0e0e0; --accent:#0f9; --err:#f44; --dim:#888; --warn:#fa0; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:var(--bg); color:var(--text); font:14px/1.5 'SF Mono','Fira Code',monospace; padding:20px; }
+  h1 { color:var(--accent); font-size:18px; margin-bottom:16px; }
+  .panel { background:var(--panel); border-radius:6px; padding:16px; margin-bottom:12px; }
+  .row { display:flex; gap:8px; align-items:center; margin-bottom:8px; flex-wrap:wrap; }
+  button { background:var(--accent); color:var(--bg); border:none; padding:6px 14px; border-radius:4px; cursor:pointer; font:inherit; font-weight:bold; }
+  button:disabled { opacity:.4; cursor:not-allowed; }
+  button.danger { background:var(--err); }
+  button.warn { background:var(--warn); color:#000; }
+  input, textarea, select { background:#0d1117; color:var(--text); border:1px solid #333; padding:6px 10px; border-radius:4px; font:inherit; }
+  textarea { width:100%; min-height:120px; resize:vertical; font-size:13px; }
+  #log { background:#0d1117; border-radius:6px; padding:12px; max-height:350px; overflow-y:auto; font-size:12px; line-height:1.6; white-space:pre-wrap; word-break:break-all; }
+  .hex { color:var(--accent); }
+  .ascii { color:var(--dim); }
+  .info { color:#5af; }
+  .ok { color:#0f9; }
+  .fail { color:var(--err); }
+  .cmd { color:#f9f; }
+  .stderr { color:var(--err); background:#200; padding:4px 8px; border-radius:3px; }
+  #status { font-size:12px; color:var(--dim); margin-top:8px; }
+  #progress { width:100%; height:6px; background:#0d1117; border-radius:3px; margin-top:8px; overflow:hidden; display:none; }
+  #progressBar { height:100%; background:var(--accent); width:0%; transition:width .2s; }
+  details { margin-top:8px; }
+  summary { cursor:pointer; color:var(--dim); font-size:12px; }
+  summary:hover { color:var(--text); }
+</style>
+</head>
+<body>
+<h1>🔬 SAM-BA Web Serial — Fase 2 (Flasheo)</h1>
+
+<div class="panel">
+  <div class="row">
+    <button id="btnConnect">🔌 Conectar</button>
+    <button id="btnDisconnect" disabled>Desconectar</button>
+    <span id="status">Sin puerto</span>
+  </div>
+</div>
+
+<div class="panel">
+  <strong>Código Arduino:</strong>
+  <textarea id="codeInput">void setup() {
+  pinMode(LED_BUILTIN, OUTPUT);
+}
+void loop() {
+  digitalWrite(LED_BUILTIN, HIGH);
+  delay(200);
+  digitalWrite(LED_BUILTIN, LOW);
+  delay(800);
+}</textarea>
+  <div class="row" style="margin-top:8px">
+    <button id="btnCompile">🔨 Compilar</button>
+    <span id="compileStatus" style="font-size:12px;color:var(--dim)"></span>
+  </div>
+</div>
+
+<div class="panel">
+  <strong>Flasheo:</strong>
+  <div class="row">
+    <button id="btnFlash" disabled>⚡ Flashear vía SAM-BA</button>
+    <span id="binInfo" style="font-size:12px;color:var(--dim)">Sin compilar</span>
+  </div>
+  <div id="progress"><div id="progressBar"></div></div>
+  <details>
+    <summary>Comandos manuales + parámetros</summary>
+    <div class="row" style="margin-top:8px">
+      <input id="cmdInput" placeholder="N#, V#, Y20000100,00001000#, etc." style="flex:1">
+      <button id="btnSend">Enviar</button>
+    </div>
+    <div class="row">
+      <button class="preset" data-cmd="N#">N#</button>
+      <button class="preset" data-cmd="V#">V#</button>
+      <button class="preset" data-cmd="I#">I#</button>
+      <button class="preset" data-cmd="X00000000#">X (erase)</button>
+      <button class="preset" data-cmd="Z#">Z#</button>
+    </div>
+    <details>
+      <summary>Parámetros (fijos — réplica bossac)</summary>
+        <div class="row" style="margin-top:8px;font-size:12px;color:var(--dim)">
+          RAM buffer: 0x34 | Flash base: 0x00000000 | Applet: 52B ARM
+        </div>
+      </details>
+</div>
+
+<div class="panel">
+  <strong>Log:</strong>
+  <div id="log">Conectá el R4, seleccioná puerto, compilá y flasheá.</div>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const $$ = s => document.querySelectorAll(s);
+
+let port = null, loadedBin = null;
+
+function log(msg, cls = '') {
+  const el = $('#log');
+  if (el.firstChild && el.firstChild.nodeType === 3) el.textContent = '';
+  const line = document.createElement('div');
+  line.className = cls;
+  line.innerHTML = msg;
+  el.appendChild(line);
+  el.scrollTop = el.scrollHeight;
+}
+
+function hexView(bytes) {
+  if (!bytes || bytes.length === 0) return '<span class="fail">(vacío)</span>';
+  if (bytes.length <= 32) {
+    const hex = Array.from(bytes).map(b => b.toString(16).padStart(2,'0')).join(' ');
+    const ascii = Array.from(bytes).map(b => (b >= 32 && b < 127) ? String.fromCharCode(b) : '.').join('');
+    return `<span class="hex">${hex}</span> <span class="ascii">|${ascii}|</span> (${bytes.length}B)`;
+  }
+  const head = Array.from(bytes.slice(0,8)).map(b => b.toString(16).padStart(2,'0')).join(' ');
+  return `(${bytes.length} bytes — ${head}...)`;
+}
+
+function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// ── Conexión ──────────────────────────────────
+
+async function connect() {
+  try {
+    port = await navigator.serial.requestPort();
+    log('→ Puerto seleccionado, abriendo a 230400 baud...', 'info');
+    await port.open({ baudRate: 230400 });
+    log('✓ Puerto abierto a 230400 baud', 'ok');
+    await delay(500);
+
+    $('#btnConnect').disabled = true;
+    $('#btnDisconnect').disabled = false;
+    $('#cmdInput').disabled = false;
+    $('#btnSend').disabled = false;
+    $$('.preset').forEach(b => b.disabled = false);
+    $('#status').textContent = '✓ Conectado — 230400 baud';
+
+    port.ondisconnect = () => { log('⚠ Puerto desconectado', 'fail'); resetUI(); };
+  } catch (e) {
+    log(`✕ Error: ${e.message}`, 'fail');
+  }
+}
+
+async function disconnect() {
+  try { await port?.close(); } catch(_) {}
+  port = null;
+  resetUI();
+  log('🔌 Desconectado', 'info');
+}
+
+function resetUI() {
+  $('#btnConnect').disabled = false;
+  $('#btnDisconnect').disabled = true;
+  $('#cmdInput').disabled = true;
+  $('#btnSend').disabled = true;
+  $$('.preset').forEach(b => b.disabled = true);
+  $('#status').textContent = 'Sin puerto';
+  $('#progress').style.display = 'none';
+}
+
+// ── Comandos ──────────────────────────────────
+
+async function sendCmd(command) {
+  if (!port) { log('✕ Sin puerto', 'fail'); return null; }
+  log(`>> ${command.length > 40 ? command.slice(0,40) + '…' : command}`, 'cmd');
+
+  const writer = port.writable.getWriter();
+  try { await writer.write(new TextEncoder().encode(command)); }
+  finally { writer.releaseLock(); }
+
+  return await readLine(3000);
+}
+
+async function readLine(timeoutMs) {
+  const start = Date.now();
+  const chunks = [];
+  const rd = port.readable.getReader();
+  try {
+    while (Date.now() - start < timeoutMs) {
+      const { value, done } = await rd.read();
+      if (value && value.length > 0) {
+        chunks.push(value);
+        const total = chunks.reduce((s, c) => s + c.length, 0);
+        const all = new Uint8Array(total);
+        let off = 0;
+        for (const c of chunks) { all.set(c, off); off += c.length; }
+        if (all.includes(0x0a)) return all;
+      }
+      if (done) break;
+      await delay(30);
+    }
+    if (chunks.length === 0) return new Uint8Array(0);
+    const total = chunks.reduce((s, c) => s + c.length, 0);
+    const all = new Uint8Array(total);
+    let off = 0;
+    for (const c of chunks) { all.set(c, off); off += c.length; }
+    return all;
+  } finally {
+    try { rd.releaseLock(); } catch (_) {}
+  }
+}
+
+// ── Compilación ───────────────────────────────
+
+async function compile() {
+  const code = $('#codeInput').value;
+  if (!code.trim()) { log('✕ Código vacío', 'fail'); return; }
+
+  $('#btnCompile').disabled = true;
+  $('#compileStatus').textContent = 'Compilando...';
+  log('🔨 Compilando vía arduino-cli (R4 WiFi)...', 'info');
+
+  try {
+    const resp = await fetch('/api/compile-hex', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code })
+    });
+    const data = await resp.json();
+
+    if (!data.success) {
+      log('✕ Error de compilación:', 'fail');
+      if (data.stdout) {
+        for (const line of data.stdout.split('\n').filter(l => l.trim())) {
+          log(line, 'stderr');
+        }
+      }
+      if (data.stderr) {
+        for (const line of data.stderr.split('\n').filter(l => l.trim())) {
+          log(line, 'stderr');
+        }
+      }
+      $('#compileStatus').textContent = '✕ Falló';
+      return;
+    }
+
+    loadedBin = Uint8Array.from(atob(data.bin), c => c.charCodeAt(0));
+    const pages = Math.ceil(loadedBin.length / 4096);
+    log(`✓ Compilado: ${loadedBin.length} bytes (${pages} páginas)`, 'ok');
+    $('#compileStatus').textContent = `✓ ${loadedBin.length} bytes`;
+    $('#binInfo').textContent = `✓ ${loadedBin.length} bytes (${pages} páginas)`;
+    $('#btnFlash').disabled = !port;
+
+  } catch (e) {
+    log(`✕ Error: ${e.message}`, 'fail');
+    $('#compileStatus').textContent = '✕ Error';
+  } finally {
+    $('#btnCompile').disabled = false;
+  }
+}
+
+// ── Applet ARM (52 bytes) extraído de bossac ──
+const SAMBA_APPLET = new Uint8Array([
+  0x09, 0x48, 0x0a, 0x49, 0x0a, 0x4a, 0x02, 0xe0,
+  0x08, 0xc9, 0x08, 0xc0, 0x01, 0x3a, 0x00, 0x2a,
+  0xfa, 0xd1, 0x04, 0x48, 0x00, 0x28, 0x01, 0xd1,
+  0x01, 0x48, 0x85, 0x46, 0x70, 0x47, 0xc0, 0x46,
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+  0x00, 0x00, 0x00, 0x00,
+]);
+
+// ── Flasheo (replicación exacta de bossac) ──────
+
+async function flashBinary(binData) {
+  const PAGE_SIZE = 0x1000;  // 4096
+  const BUF_ADDR   = 0x34;   // RAM buffer (bossac)
+  const APPLET_ADDR = 0x00000000;
+  const totalPages = Math.ceil(binData.length / PAGE_SIZE);
+
+  $('#progress').style.display = 'block';
+  $('#btnFlash').disabled = true;
+
+  log(`📦 ${binData.length} bytes → ${totalPages} páginas`, 'info');
+  log(`   Applet ARM + S/W/X/Y (réplica bossac)`, 'dim');
+
+  // ── Init ──
+  log('🔄 Init...', 'info');
+  let resp = await sendCmd('N#');
+  if (!resp || resp.length < 2) throw new Error('N# sin respuesta');
+  log(`   N# → ${hexView(resp)}`);
+
+  resp = await sendCmd('V#');
+  log(`   ${new TextDecoder().decode(resp).trim()}`, 'ok');
+
+  resp = await sendCmd('I#');
+  log(`   Chip: ${new TextDecoder().decode(resp).trim()}`, 'dim');
+
+  // ── Subir applet a RAM ──
+  log('📟 Subiendo applet ARM (52 bytes)...', 'info');
+  const appletCmd = `S${APPLET_ADDR.toString(16).padStart(8,'0').toUpperCase()},00000034#`;
+  let w = port.writable.getWriter();
+  try {
+    await w.write(new TextEncoder().encode(appletCmd));
+    await delay(15);
+    await w.write(SAMBA_APPLET);
+  } finally { w.releaseLock(); }
+
+  resp = await readLine(3000);
+  log(`   Applet → ${hexView(resp)}`, resp.length >= 2 ? 'ok' : 'fail');
+  if (resp.length < 2) throw new Error('Applet sin respuesta');
+
+  // ── Configurar applet ──
+  log('⚙ Configurando applet...', 'info');
+  resp = await sendCmd('W00000030,00000400#');
+  log(`   W(0x30, 0x400) → ${hexView(resp)}`);
+  resp = await sendCmd('W00000020,00000000#');
+  log(`   W(0x20, 0) → ${hexView(resp)}`);
+
+  // ── Chip erase vía applet ──
+  log('🗑️ Chip erase vía applet...', 'info');
+  resp = await sendCmd('X00000000#');
+  log(`   X(0) → ${hexView(resp)}`, resp.length >= 2 ? 'ok' : 'fail');
+
+  // ── Flash pages ──
+  let offset = 0, pageNum = 0;
+  const pageBuf = new Uint8Array(PAGE_SIZE);
+
+  while (offset < binData.length) {
+    const chunkSize = Math.min(PAGE_SIZE, binData.length - offset);
+    pageBuf.fill(0x00);
+    pageBuf.set(binData.slice(offset, offset + chunkSize));
+
+    const flashAddr = offset;  // bossac usa offset desde 0 (applet maneja +0x4000)
+
+    // 1. S upload a RAM: S<addr>,<size># + datos
+    const sCmd = `S${BUF_ADDR.toString(16).padStart(8,'0').toUpperCase()},${PAGE_SIZE.toString(16).padStart(8,'0').toUpperCase()}#`;
+    w = port.writable.getWriter();
+    try {
+      await w.write(new TextEncoder().encode(sCmd));
+      await delay(15);
+      await w.write(pageBuf);
+    } finally { w.releaseLock(); }
+
+    resp = await readLine(3000);
+    log(`   ↑ S 0x${flashAddr.toString(16).toUpperCase()} [${pageNum+1}/${totalPages}] → ${hexView(resp)}`, resp.length >= 2 ? 'dim' : 'fail');
+
+    if (resp.length < 2) {
+      log('   ⚠ S upload sin respuesta, reintentando...', 'warn');
+      await delay(1000);
+      continue;
+    }
+
+    // 2. Y checksum
+    resp = await sendCmd(`Y${BUF_ADDR.toString(16).padStart(8,'0').toUpperCase()},0#`);
+    log(`   Y cksum → ${hexView(resp)}`, 'dim');
+
+    // 3. Y flash write
+    resp = await sendCmd(`Y${flashAddr.toString(16).padStart(8,'0').toUpperCase()},00001000#`);
+    log(`   Y flash → ${hexView(resp)}`, resp.length >= 2 ? 'ok' : 'fail');
+
+    offset += PAGE_SIZE;
+    pageNum++;
+    $('#progressBar').style.width = Math.round(pageNum / totalPages * 100) + '%';
+    await delay(200);
+  }
+
+  log(`✅ ${offset} bytes flasheados`, 'ok');
+
+  // Reset
+  log('🔄 Reset...', 'info');
+  try { await sendCmd('Z#'); } catch(_) {}
+  log('✓ ¡Sketch flasheado! LED: 200ms ON, 800ms OFF', 'ok');
+
+  $('#btnFlash').disabled = false;
+}
+
+// ── Events ────────────────────────────────────
+
+$('#btnConnect').addEventListener('click', connect);
+$('#btnDisconnect').addEventListener('click', disconnect);
+$('#btnCompile').addEventListener('click', compile);
+
+$('#btnFlash').addEventListener('click', async () => {
+  if (!loadedBin) { log('✕ Compilá primero', 'fail'); return; }
+  try { await flashBinary(loadedBin); }
+  catch(e) { log(`✕ ${e.message}`, 'fail'); $('#btnFlash').disabled = false; }
+});
+
+$('#btnSend').addEventListener('click', async () => {
+  const cmd = $('#cmdInput').value.trim();
+  if (!cmd) return;
+  const resp = await sendCmd(cmd);
+  if (resp) log(`  << ${hexView(resp)}`);
+  else log('  << (timeout)', 'fail');
+});
+
+$$('.preset').forEach(b => {
+  b.addEventListener('click', async () => {
+    const resp = await sendCmd(b.dataset.cmd);
+    if (resp) log(`  << ${hexView(resp)}`);
+    else log('  << (timeout)', 'fail');
+  });
+});
+
+$('#cmdInput').addEventListener('keydown', async e => {
+  if (e.key === 'Enter') {
+    const cmd = $('#cmdInput').value.trim();
+    if (!cmd) return;
+    const resp = await sendCmd(cmd);
+    if (resp) log(`  << ${hexView(resp)}`);
+    else log('  << (timeout)', 'fail');
+  }
+});
+</script>
+</body>
+</html>
