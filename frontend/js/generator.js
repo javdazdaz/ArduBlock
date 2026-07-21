@@ -572,12 +572,21 @@ export function generateArduinoCode(workspace) {
     sketch += '#include "Arduino_LED_Matrix.h"\n';
     sketch += 'ArduinoLEDMatrix matrix;\n';
 
-    // Emitir frames usados
+    // Emitir frames usados (predefinidos + custom de localStorage)
     const frameNames = cppGenerator._matrixFrameNames;
     if (frameNames && frameNames.size > 0) {
       sketch += '\n';
+      // Cargar frames custom una sola vez
+      let customFrames = null;
       for (const name of frameNames) {
-        const frame = MATRIX_FRAMES[name];
+        let frame = MATRIX_FRAMES[name];
+        if (!frame) {
+          if (!customFrames) {
+            try { customFrames = JSON.parse(typeof localStorage !== 'undefined' ? (localStorage.getItem('ardublock:matrix-frames') || '{}') : '{}'); }
+            catch (_) { customFrames = {}; }
+          }
+          frame = customFrames[name];
+        }
         if (frame) {
           sketch += 'const uint32_t frame_' + name + '[] = { '
                   + '0x' + frame[0].toString(16) + ', '
@@ -587,12 +596,20 @@ export function generateArduinoCode(workspace) {
       }
     }
 
-    // Emitir animaciones usadas
+    // Emitir animaciones usadas (predefinidas + custom de localStorage)
     const animNames = cppGenerator._matrixAnimNames;
     if (animNames && animNames.size > 0) {
       sketch += '\n';
+      let customAnims = null;
       for (const name of animNames) {
-        const anim = MATRIX_ANIMATIONS[name];
+        let anim = MATRIX_ANIMATIONS[name];
+        if (!anim) {
+          if (!customAnims) {
+            try { customAnims = JSON.parse(typeof localStorage !== 'undefined' ? (localStorage.getItem('ardublock:matrix-animations') || '{}') : '{}'); }
+            catch (_) { customAnims = {}; }
+          }
+          anim = customAnims[name];
+        }
         if (anim) {
           sketch += 'const uint32_t anim_' + name + '[' + anim.length + '][4] = {\n';
           for (let i = 0; i < anim.length; i++) {

@@ -138,21 +138,34 @@ export const blocks = [
       {
         type: 'field_dropdown',
         name: 'ICON',
-        options: [
-          ['\u2764 ' + Blockly.Msg.OPT_MATRIX_HEART, 'heart'],
-          ['\u263A ' + Blockly.Msg.OPT_MATRIX_SMILEY, 'smiley'],
-          ['\u2639 ' + Blockly.Msg.OPT_MATRIX_SAD, 'sad'],
-          ['\u2713 ' + Blockly.Msg.OPT_MATRIX_CHECK, 'check'],
-          ['\u2717 ' + Blockly.Msg.OPT_MATRIX_CROSS, 'cross'],
-          ['\u2191 ' + Blockly.Msg.OPT_MATRIX_ARROW_UP, 'arrow_up'],
-          ['\u2193 ' + Blockly.Msg.OPT_MATRIX_ARROW_DOWN, 'arrow_down'],
-          ['\u2190 ' + Blockly.Msg.OPT_MATRIX_ARROW_LEFT, 'arrow_left'],
-          ['\u2192 ' + Blockly.Msg.OPT_MATRIX_ARROW_RIGHT, 'arrow_right'],
-          ['\u2605 ' + Blockly.Msg.OPT_MATRIX_STAR, 'star'],
-          ['\uD83D\uDE00 ' + Blockly.Msg.OPT_MATRIX_HAPPY, 'happy'],
-          ['\uD83D\uDCBE ' + Blockly.Msg.OPT_MATRIX_CHIP, 'chip'],
-          ['\u26A0 ' + Blockly.Msg.OPT_MATRIX_DANGER, 'danger'],
-        ],
+        options: function() {
+          const opts = [
+            ['\u2764 ' + Blockly.Msg.OPT_MATRIX_HEART, 'heart'],
+            ['\u263A ' + Blockly.Msg.OPT_MATRIX_SMILEY, 'smiley'],
+            ['\u2639 ' + Blockly.Msg.OPT_MATRIX_SAD, 'sad'],
+            ['\u2713 ' + Blockly.Msg.OPT_MATRIX_CHECK, 'check'],
+            ['\u2717 ' + Blockly.Msg.OPT_MATRIX_CROSS, 'cross'],
+            ['\u2191 ' + Blockly.Msg.OPT_MATRIX_ARROW_UP, 'arrow_up'],
+            ['\u2193 ' + Blockly.Msg.OPT_MATRIX_ARROW_DOWN, 'arrow_down'],
+            ['\u2190 ' + Blockly.Msg.OPT_MATRIX_ARROW_LEFT, 'arrow_left'],
+            ['\u2192 ' + Blockly.Msg.OPT_MATRIX_ARROW_RIGHT, 'arrow_right'],
+            ['\u2605 ' + Blockly.Msg.OPT_MATRIX_STAR, 'star'],
+            ['\uD83D\uDE00 ' + Blockly.Msg.OPT_MATRIX_HAPPY, 'happy'],
+            ['\uD83D\uDCBE ' + Blockly.Msg.OPT_MATRIX_CHIP, 'chip'],
+            ['\u26A0 ' + Blockly.Msg.OPT_MATRIX_DANGER, 'danger'],
+          ];
+          try {
+            const saved = JSON.parse(localStorage.getItem('ardublock:matrix-frames') || '{}');
+            const names = Object.keys(saved).sort();
+            if (names.length > 0) {
+              opts.push(['──────────', '']);
+              for (const name of names) {
+                opts.push(['📁 ' + name, name]);
+              }
+            }
+          } catch (_) { /* ignore */ }
+          return opts;
+        },
       },
     ],
     inputsInline: true,
@@ -169,12 +182,25 @@ export const blocks = [
       {
         type: 'field_dropdown',
         name: 'ANIM',
-        options: [
-          [Blockly.Msg.OPT_MATRIX_ANIM_BLINK, 'blink'],
-          [Blockly.Msg.OPT_MATRIX_ANIM_PULSE, 'pulse'],
-          [Blockly.Msg.OPT_MATRIX_ANIM_ANIMATION, 'animation'],
-          [Blockly.Msg.OPT_MATRIX_ANIM_FRAMES, 'frames'],
-        ],
+        options: function() {
+          const opts = [
+            [Blockly.Msg.OPT_MATRIX_ANIM_BLINK, 'blink'],
+            [Blockly.Msg.OPT_MATRIX_ANIM_PULSE, 'pulse'],
+            [Blockly.Msg.OPT_MATRIX_ANIM_ANIMATION, 'animation'],
+            [Blockly.Msg.OPT_MATRIX_ANIM_FRAMES, 'frames'],
+          ];
+          try {
+            const saved = JSON.parse(localStorage.getItem('ardublock:matrix-animations') || '{}');
+            const names = Object.keys(saved).sort();
+            if (names.length > 0) {
+              opts.push(['──────────', '']);
+              for (const name of names) {
+                opts.push(['🎬 ' + name, name]);
+              }
+            }
+          } catch (_) { /* ignore */ }
+          return opts;
+        },
       },
       {
         type: 'field_checkbox',
