@@ -1,0 +1,39 @@
+{
+  "blocks": {
+    "languageVersion": 0,
+    "blocks": [
+      {
+        "type": "arduino_setup",
+        "id": "b1",
+        "x": 20,
+        "y": 20,
+        "inputs": {
+          "BODY": {
+            "block": {
+              "type": "matrix_init",
+              "id": "m1"
+            }
+          }
+        }
+      },
+      {
+        "type": "arduino_loop",
+        "id": "b2",
+        "x": 20,
+        "y": 160,
+        "inputs": {
+          "BODY": {
+            "block": {
+              "type": "matrix_play_animation",
+              "id": "m2",
+              "fields": {
+                "ANIM": "blink",
+                "LOOP": true
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}

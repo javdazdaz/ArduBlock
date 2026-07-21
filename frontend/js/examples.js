@@ -16,6 +16,7 @@ import { communicationExamples } from './examples-communication.js';
 import { controlExamples }  from './examples-control.js';
 import { remainingExamples } from './examples-remaining.js';
 import { missingExamples }   from './examples-missing.js';
+import { matrixExamples }   from './examples-matrix.js';
 import { escapeHtml, cancelAutoSave } from './project-manager.js';
 import * as Blockly from 'blockly';
 
@@ -30,6 +31,7 @@ const allExamples = [
   ...controlExamples,
   ...remainingExamples,
   ...missingExamples,
+  ...matrixExamples,
 ];
 
 let workspace, examplesModal, examplesList, showToast, updateCodeFn, projectInput;

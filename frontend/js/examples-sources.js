@@ -20,7 +20,15 @@ export const sources = [
       { id: '05.Control',       label: { es: '05. Control',          en: '05. Control' } },
     ]
   },
-  // Futuras fuentes:
-  // { id: 'mis-proyectos', label: { es: '📁 Mis proyectos', en: '📁 My projects' }, ... },
-  // { id: 'clase-2026',    label: { es: '🏫 Clase 2026',   en: '🏫 Class 2026' }, ... },
+  {
+    id: 'ardublock-examples',
+    label: { es: '🧩 Ejemplos ArduBlock', en: '🧩 ArduBlock Examples' },
+    description: {
+      es: 'Ejemplos creados específicamente para ArduBlock',
+      en: 'Examples created specifically for ArduBlock'
+    },
+    categories: [
+      { id: 'matrix', label: { es: 'Matriz LED R4', en: 'LED Matrix R4' } },
+    ]
+  },
 ];
