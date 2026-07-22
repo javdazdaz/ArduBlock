@@ -514,7 +514,6 @@ function _updateInsertIndicator(clientX) {
 function _clearInsertIndicator() {
   const track = document.getElementById('matrix-timeline-track');
   track.querySelectorAll('.insert-before').forEach(el => el.classList.remove('insert-before'));
-  insertIdx = -1;
 }
 
 function _playTimeline() {
