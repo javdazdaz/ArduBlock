@@ -402,10 +402,8 @@ function _renderTimeline() {
 }
 
 function _addCurrentToTimeline() {
-  const u32 = _encodeFrame();
   const dur = parseInt(document.getElementById('matrix-timeline-duration').value) || 200;
-  const label = selectedFrame || 'frame' + (timeline.length + 1);
-  timeline.push({ name: label, u32: [...u32], dur });
+  timeline.push({ name: 'blank', u32: [0, 0, 0], dur });
   _renderTimeline();
 }
 
