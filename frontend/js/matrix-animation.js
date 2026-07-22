@@ -685,8 +685,8 @@ export function initPanelModeTabs() {
       if (codePanel) codePanel.style.flex = '1';
     }
 
-    const lc = document.getElementById('line-count');
-    if (lc) lc.style.display = mode === 'code' ? '' : 'none';
+    const collapseBtn = document.getElementById('btn-collapse-code');
+    if (collapseBtn) collapseBtn.style.display = mode === 'code' ? '' : 'none';
   }
 
   tabCode.addEventListener('click', () => switchMode('code'));
