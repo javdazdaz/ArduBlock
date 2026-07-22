@@ -1008,11 +1008,6 @@ main {
   font-weight: normal;
 }
 
-/* ── Timeline drop zone highlight ─────────── */
-.matrix-timeline-track.drag-over {
-  background: rgba(39,174,96,0.1); border-radius: 4px;
-}
-
 /* ── Timeline ───────────────────────────────── */
 .matrix-timeline {
   flex-shrink: 0; border-top: 1px solid var(--border);

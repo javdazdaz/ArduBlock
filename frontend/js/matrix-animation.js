@@ -417,25 +417,22 @@ function _setupTimelineDrop() {
   track.addEventListener('dragover', (e) => {
     e.preventDefault();
 
-    // Si es arrastre interno (reorden), calcular posición de inserción
+    // Calcular posición de inserción para cualquier drag
     const srcIdx = e.dataTransfer.getData('application/x-timeline-idx');
     if (srcIdx !== '') {
       e.dataTransfer.dropEffect = 'move';
-      _updateInsertIndicator(e.clientX);
     } else {
       e.dataTransfer.dropEffect = 'copy';
-      track.classList.add('drag-over');
     }
+    _updateInsertIndicator(e.clientX);
   });
 
   track.addEventListener('dragleave', () => {
-    track.classList.remove('drag-over');
     _clearInsertIndicator();
   });
 
   track.addEventListener('drop', (e) => {
     e.preventDefault();
-    track.classList.remove('drag-over');
     _clearInsertIndicator();
 
     // Reorden interno
@@ -461,14 +458,8 @@ function _setupTimelineDrop() {
       if (!frame) frame = MATRIX_FRAMES[frameName];
       if (frame) {
         const dur = parseInt(document.getElementById('matrix-timeline-duration').value) || 200;
-        const target = document.elementFromPoint(e.clientX, e.clientY);
-        const frameEl = target?.closest('.matrix-timeline-frame');
-        if (frameEl) {
-          const idx = parseInt(frameEl.dataset.idx);
-          timeline.splice(idx, 0, { name: frameName, u32: [...frame], dur });
-        } else {
-          timeline.push({ name: frameName, u32: [...frame], dur });
-        }
+        const idx = insertIdx >= 0 ? insertIdx : timeline.length;
+        timeline.splice(idx, 0, { name: frameName, u32: [...frame], dur });
         _renderTimeline();
         return;
       }
