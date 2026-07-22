@@ -344,7 +344,7 @@ function _renderTimeline() {
     const f = timeline[i];
     const sel = i === timelineSelected ? ' selected' : '';
     html += `<div class="matrix-timeline-frame${sel}" data-idx="${i}" draggable="true">
-      <canvas width="50" height="50"></canvas>
+      <canvas width="90" height="60"></canvas>
       <span class="frame-dur">${f.dur}ms</span>
       <span class="timeline-frame-del" data-del="${i}">✕</span>
     </div>`;
