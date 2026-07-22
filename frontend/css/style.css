@@ -1053,6 +1053,17 @@ main {
   position: absolute; bottom: -14px; left: 0; right: 0;
   text-align: center; font-size: 0.6rem; color: var(--text-dim);
 }
+.timeline-frame-del {
+  position: absolute; top: -4px; right: -4px;
+  width: 14px; height: 14px; display: flex;
+  align-items: center; justify-content: center;
+  opacity: 0; font-size: 0.55rem; cursor: pointer;
+  background: rgba(0,0,0,0.7); color: #e94560;
+  border-radius: 50%; transition: opacity 0.1s;
+  line-height: 1;
+}
+.matrix-timeline-frame:hover .timeline-frame-del { opacity: 0.8; }
+.timeline-frame-del:hover { opacity: 1 !important; background: #e94560; color: #fff; }
 .matrix-timeline-add {
   width: 50px; height: 50px; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;

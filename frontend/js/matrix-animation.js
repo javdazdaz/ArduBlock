@@ -345,6 +345,7 @@ function _renderTimeline() {
     html += `<div class="matrix-timeline-frame${sel}" data-idx="${i}" draggable="true">
       <canvas width="50" height="50"></canvas>
       <span class="frame-dur">${f.dur}ms</span>
+      <span class="timeline-frame-del" data-del="${i}">✕</span>
     </div>`;
   }
   html += '<div class="matrix-timeline-add" title="Añadir frame actual">+</div>';
@@ -376,6 +377,19 @@ function _renderTimeline() {
     });
     el.addEventListener('dragend', () => {
       el.classList.remove('dragging');
+    });
+  });
+
+  // Botón ✕: borrar frame individual
+  track.querySelectorAll('.timeline-frame-del').forEach(el => {
+    el.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const idx = parseInt(el.dataset.del);
+      if (idx >= 0 && idx < timeline.length) {
+        timeline.splice(idx, 1);
+        if (timelineSelected >= timeline.length) timelineSelected = timeline.length - 1;
+        _renderTimeline();
+      }
     });
   });
 
