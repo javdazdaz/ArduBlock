@@ -503,17 +503,22 @@ function _updateInsertIndicator(clientX) {
     if (clientX < mid) {
       insertIdx = i;
       frames[i].classList.add('insert-before');
+      // Barra dummy a la derecha del frame anterior
+      if (i > 0) frames[i - 1].classList.add('insert-after');
       return;
     }
   }
-  // Al final: iluminar el botón +
+  // Al final: iluminar botón + y último frame
   const addBtn = track.querySelector('.matrix-timeline-add');
   if (addBtn) addBtn.classList.add('insert-before');
+  if (frames.length > 0) frames[frames.length - 1].classList.add('insert-after');
 }
 
 function _clearInsertIndicator() {
   const track = document.getElementById('matrix-timeline-track');
-  track.querySelectorAll('.insert-before').forEach(el => el.classList.remove('insert-before'));
+  track.querySelectorAll('.insert-before, .insert-after').forEach(el => {
+    el.classList.remove('insert-before', 'insert-after');
+  });
 }
 
 function _playTimeline() {

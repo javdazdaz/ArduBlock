@@ -1048,6 +1048,9 @@ main {
 .matrix-timeline-frame.insert-before {
   border-left: 3px solid #27ae60; margin-left: 2px;
 }
+.matrix-timeline-frame.insert-after {
+  border-right: 3px solid #27ae60; margin-right: 2px;
+}
 .matrix-timeline-add.insert-before {
   border: 2px solid #27ae60; border-style: solid;
 }
