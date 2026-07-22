@@ -1,5 +1,6 @@
 import * as Blockly from 'blockly';
 import '../i18n.js';  // side-effect: puebla Blockly.Msg
+import badapple_frames from './ledmatrix-badapple.js';
 /**
  * ArduBlock — Bloques: Matriz LED (UNO R4)
  *
@@ -227,6 +228,7 @@ export const MATRIX_ANIMATIONS = {
     [ 0x0, 0x0, 0x0, 66 ],
     [ 0x0, 0x0, 0x0, 66 ],
   ],
+  badapple: badapple_frames,
 };
 
 // ═══ Bloques ═══════════════════════════════════
@@ -308,6 +310,12 @@ export const blocks = [
               const label = k.replace('upiir_', '');
               opts.push(['📦 ' + label, k]);
             }
+          }
+          // Otras animaciones built-in (badapple, etc.)
+          const otherBuiltin = Object.keys(MATRIX_ANIMATIONS).filter(k =>
+            !['blink','pulse','animation','frames'].includes(k) && !k.startsWith('upiir_'));
+          for (const k of otherBuiltin.sort()) {
+            opts.push(['🎬 ' + k, k]);
           }
           // Animaciones custom del usuario (localStorage)
           try {
