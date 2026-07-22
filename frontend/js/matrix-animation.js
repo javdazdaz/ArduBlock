@@ -5,7 +5,7 @@
  * línea de tiempo para crear animaciones.
  */
 
-import { MATRIX_FRAMES } from './blocks/ledmatrix.js';
+import { MATRIX_FRAMES, MATRIX_ANIMATIONS } from './blocks/ledmatrix.js';
 
 const STORAGE_KEY_FRAMES = 'ardublock:matrix-frames';
 const STORAGE_KEY_ANIMS = 'ardublock:matrix-animations';
@@ -250,33 +250,50 @@ function _renderFrameList() {
 
 function _renderAnimList() {
   const list = document.getElementById('matrix-anim-list');
-  const names = Object.keys(savedAnims).sort();
+  const customNames = Object.keys(savedAnims).sort();
+  const builtinNames = Object.keys(MATRIX_ANIMATIONS);
+  const total = builtinNames.length + customNames.length;
 
   const cat = list.previousElementSibling;
   if (cat && cat.classList.contains('matrix-sidebar-cat')) {
-    cat.innerHTML = `🎬 Animaciones <span class="matrix-frame-count">${names.length}</span>`;
+    cat.innerHTML = `🎬 Animaciones <span class="matrix-frame-count">${total}</span>`;
   }
 
-  if (names.length === 0) {
+  if (total === 0) {
     list.innerHTML = '<div class="matrix-frame-empty">Sin animaciones</div>';
     return;
   }
 
-  list.innerHTML = names.map(name => {
+  let html = '';
+
+  // Predefinidas (no eliminables)
+  for (const name of builtinNames) {
+    const anim = MATRIX_ANIMATIONS[name];
+    const fc = anim ? anim.length : 0;
+    html += `<div class="matrix-frame-item" data-anim="${name}" draggable="true">
+      <span class="frame-item-name">📦 ${_esc(name)}</span>
+      <span style="font-size:0.6rem;opacity:0.5;margin-left:auto">${fc}f</span>
+    </div>`;
+  }
+
+  // Custom del usuario (eliminables)
+  for (const name of customNames) {
     const anim = savedAnims[name];
     const fc = anim ? anim.length : 0;
-    return `<div class="matrix-frame-item" data-anim="${name}" draggable="true">
+    html += `<div class="matrix-frame-item" data-anim="${name}" data-custom="1" draggable="true">
       <span class="frame-item-name">🎞 ${_esc(name)}</span>
       <span style="font-size:0.6rem;opacity:0.5;margin-left:auto">${fc}f</span>
       <span class="frame-item-del" data-del-anim="${name}">✕</span>
     </div>`;
-  }).join('');
+  }
+
+  list.innerHTML = html;
 
   list.querySelectorAll('.matrix-frame-item').forEach(el => {
     el.addEventListener('click', (e) => {
       if (e.target.classList.contains('frame-item-del')) return;
       const name = el.dataset.anim;
-      const anim = savedAnims[name];
+      const anim = el.dataset.custom ? savedAnims[name] : MATRIX_ANIMATIONS[name];
       if (anim && anim.length > 0) {
         timeline = anim.map(f => ({
           name, u32: [f[0], f[1], f[2]], dur: f[3] || 200
@@ -288,6 +305,7 @@ function _renderAnimList() {
 
     el.addEventListener('dragstart', (e) => {
       e.dataTransfer.setData('application/x-matrix-anim', el.dataset.anim);
+      e.dataTransfer.setData('application/x-matrix-anim-custom', el.dataset.custom || '');
       e.dataTransfer.effectAllowed = 'copy';
       el.classList.add('dragging');
     });
@@ -296,6 +314,7 @@ function _renderAnimList() {
     });
   });
 
+  // Eliminar (solo custom)
   list.querySelectorAll('.frame-item-del').forEach(el => {
     el.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -411,29 +430,35 @@ function _setupTimelineDrop() {
 
     // Frame individual (desde sidebar)
     const frameName = e.dataTransfer.getData('text/plain');
-    if (frameName && savedFrames[frameName]) {
-      const dur = parseInt(document.getElementById('matrix-timeline-duration').value) || 200;
-      // Insertar en la posición donde se soltó
-      const target = document.elementFromPoint(e.clientX, e.clientY);
-      const frameEl = target?.closest('.matrix-timeline-frame');
-      if (frameEl) {
-        const idx = parseInt(frameEl.dataset.idx);
-        timeline.splice(idx, 0, { name: frameName, u32: [...savedFrames[frameName]], dur });
-      } else {
-        timeline.push({ name: frameName, u32: [...savedFrames[frameName]], dur });
+    if (frameName) {
+      let frame = savedFrames[frameName];
+      if (!frame) frame = MATRIX_FRAMES[frameName];
+      if (frame) {
+        const dur = parseInt(document.getElementById('matrix-timeline-duration').value) || 200;
+        const target = document.elementFromPoint(e.clientX, e.clientY);
+        const frameEl = target?.closest('.matrix-timeline-frame');
+        if (frameEl) {
+          const idx = parseInt(frameEl.dataset.idx);
+          timeline.splice(idx, 0, { name: frameName, u32: [...frame], dur });
+        } else {
+          timeline.push({ name: frameName, u32: [...frame], dur });
+        }
+        _renderTimeline();
+        return;
       }
-      _renderTimeline();
-      return;
     }
     // Animación completa (desde sidebar)
     const animName = e.dataTransfer.getData('application/x-matrix-anim');
-    if (animName && savedAnims[animName]) {
-      const anim = savedAnims[animName];
-      timeline = anim.map(f => ({
-        name: animName, u32: [f[0], f[1], f[2]], dur: f[3] || 200
-      }));
-      _renderTimeline();
-      _toast(`Animación "${animName}" cargada (${timeline.length} frames)`);
+    if (animName) {
+      const isCustom = e.dataTransfer.getData('application/x-matrix-anim-custom') === '1';
+      const anim = isCustom ? savedAnims[animName] : MATRIX_ANIMATIONS[animName];
+      if (anim && anim.length > 0) {
+        timeline = anim.map(f => ({
+          name: animName, u32: [f[0], f[1], f[2]], dur: f[3] || 200
+        }));
+        _renderTimeline();
+        _toast(`Animación "${animName}" cargada (${timeline.length} frames)`);
+      }
     }
   });
 }
