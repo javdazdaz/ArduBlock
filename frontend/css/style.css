@@ -436,7 +436,7 @@ main {
 }
 .panel-header-actions {
   display: flex; align-items: center; gap: 0.5rem;
-  flex-shrink: 0;
+  flex-shrink: 0; margin-left: auto;
 }
 .panel-action-btn {
   background: none; border: none; color: var(--text-dim);
