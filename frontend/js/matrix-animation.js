@@ -412,27 +412,39 @@ function _addCurrentToTimeline() {
 
 function _setupTimelineDrop() {
   const track = document.getElementById('matrix-timeline-track');
+  let insertIdx = -1;    // posición calculada durante dragover
 
   track.addEventListener('dragover', (e) => {
     e.preventDefault();
-    e.dataTransfer.dropEffect = 'copy';
-    track.classList.add('drag-over');
+
+    // Si es arrastre interno (reorden), calcular posición de inserción
+    const srcIdx = e.dataTransfer.getData('application/x-timeline-idx');
+    if (srcIdx !== '') {
+      e.dataTransfer.dropEffect = 'move';
+      _updateInsertIndicator(e.clientX);
+    } else {
+      e.dataTransfer.dropEffect = 'copy';
+      track.classList.add('drag-over');
+    }
   });
+
   track.addEventListener('dragleave', () => {
     track.classList.remove('drag-over');
+    _clearInsertIndicator();
   });
+
   track.addEventListener('drop', (e) => {
     e.preventDefault();
     track.classList.remove('drag-over');
+    _clearInsertIndicator();
 
-    // Reorden interno: mover frame dentro de la timeline
+    // Reorden interno
     const srcIdx = e.dataTransfer.getData('application/x-timeline-idx');
     if (srcIdx !== '') {
       const from = parseInt(srcIdx);
-      // Encontrar posición destino (sobre qué frame se soltó)
-      const target = document.elementFromPoint(e.clientX, e.clientY);
-      const frameEl = target?.closest('.matrix-timeline-frame');
-      let to = frameEl ? parseInt(frameEl.dataset.idx) : timeline.length - 1;
+      let to = insertIdx >= 0 ? insertIdx : timeline.length;
+      // Ajustar: si movemos hacia la derecha, el índice se desplaza
+      if (from < to) to--;
       if (from >= 0 && from < timeline.length && to >= 0 && to < timeline.length && from !== to) {
         const [moved] = timeline.splice(from, 1);
         timeline.splice(to, 0, moved);
@@ -475,6 +487,34 @@ function _setupTimelineDrop() {
       }
     }
   });
+}
+
+// ── Indicador de inserción para reorden ──
+
+function _updateInsertIndicator(clientX) {
+  const track = document.getElementById('matrix-timeline-track');
+  const frames = track.querySelectorAll('.matrix-timeline-frame');
+  _clearInsertIndicator();
+
+  insertIdx = timeline.length; // default: al final
+  for (let i = 0; i < frames.length; i++) {
+    const rect = frames[i].getBoundingClientRect();
+    const mid = rect.left + rect.width / 2;
+    if (clientX < mid) {
+      insertIdx = i;
+      frames[i].classList.add('insert-before');
+      return;
+    }
+  }
+  // Al final: iluminar el botón +
+  const addBtn = track.querySelector('.matrix-timeline-add');
+  if (addBtn) addBtn.classList.add('insert-before');
+}
+
+function _clearInsertIndicator() {
+  const track = document.getElementById('matrix-timeline-track');
+  track.querySelectorAll('.insert-before').forEach(el => el.classList.remove('insert-before'));
+  insertIdx = -1;
 }
 
 function _playTimeline() {
