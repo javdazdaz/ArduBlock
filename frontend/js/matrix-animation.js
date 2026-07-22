@@ -19,6 +19,7 @@ let selectedFrame = null;   // nombre del frame seleccionado en sidebar
 let timelineSelected = -1;  // índice en timeline
 let playTimer = null;
 let playIndex = 0;
+let insertIdx = -1;         // posición de inserción en timeline durante drag
 
 export function initMatrixEditor() {
   grid = document.getElementById('matrix-grid');
@@ -412,7 +413,6 @@ function _addCurrentToTimeline() {
 
 function _setupTimelineDrop() {
   const track = document.getElementById('matrix-timeline-track');
-  let insertIdx = -1;    // posición calculada durante dragover
 
   track.addEventListener('dragover', (e) => {
     e.preventDefault();
