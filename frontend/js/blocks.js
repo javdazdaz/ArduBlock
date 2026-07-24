@@ -233,6 +233,7 @@ const _FULL_TOOLBOX_TEMPLATE = [
   { kind: 'block', type: 'serial_parse_float', level: 3 },
   { kind: 'block', type: 'serial_read_string', level: 3 },
   { kind: 'block', type: 'serial_read_line', level: 3 },
+  { kind: 'block', type: 'serial_read_latest', level: 3 },
   { kind: 'block', type: 'serial_write', level: 3 },
   { kind: 'block', type: 'controls_if', level: 2 },
   { kind: 'block', type: 'logic_compare', level: 2 },
@@ -391,6 +392,7 @@ export function buildToolboxForBoard(fqbn, level) {
           { 'kind': 'block', 'type': 'serial_parse_float', 'level': 3 },
           { 'kind': 'block', 'type': 'serial_read_string', 'level': 3 },
           { 'kind': 'block', 'type': 'serial_read_line', 'level': 3 },
+          { 'kind': 'block', 'type': 'serial_read_latest', 'level': 3 },
           { 'kind': 'block', 'type': 'serial_write', 'level': 3 }
         ]},
       { 'kind': 'sep' },

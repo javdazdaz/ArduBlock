@@ -667,6 +667,11 @@ export function generateArduinoCode(workspace) {
     sketch += '  s.replace("\\n", "");\n';
     sketch += '  return s;\n';
     sketch += '}\n\n';
+    sketch += '// Helper — descarta buffer y lee la última línea fresca\n';
+    sketch += 'String _ardublock_readLatest() {\n';
+    sketch += '  while (Serial.available()) Serial.read();\n';
+    sketch += '  return _ardublock_readLine();\n';
+    sketch += '}\n\n';
   }
 
   // ── Includes de archivos .h del proyecto ──
