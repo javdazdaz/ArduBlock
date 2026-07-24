@@ -91,7 +91,20 @@ export async function connectSerial() {
     return;
   }
 
-  // Modo 2: Backend
+  // Modo 2: Web Serial (solicitar puerto ahora — sin flash previo)
+  if ('serial' in navigator) {
+    try {
+      _webSerialPort = await navigator.serial.requestPort();
+      await _connectWebSerial(baud);
+      return;
+    } catch (_) {
+      // Usuario canceló o no hay puerto → caer a backend
+      _webSerialPort = null;
+      consoleLog('ℹ No se seleccionó puerto, probando backend...', 'dim');
+    }
+  }
+
+  // Modo 3: Backend
   try {
     const res = await fetch('/api/serial/open', {
       method: 'POST',
