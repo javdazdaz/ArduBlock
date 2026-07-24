@@ -7,9 +7,6 @@ Sirve el frontend estático y expone endpoints para:
 """
 
 from flask import Flask, send_from_directory, request, jsonify
-from flask_cors import CORS
-from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
 import json
 import os
 import re
@@ -74,15 +71,17 @@ def _run_arduino_cli(args, **kwargs):
     return subprocess.run(cmd, **kwargs)
 
 app = Flask(__name__, static_folder=None)
-CORS(app, origins=['http://localhost:5000', 'http://127.0.0.1:5000'])
+
+# CORS manual (evita dependencia flask-cors no disponible en Gentoo)
+@app.after_request
+def _add_cors_headers(response):
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
+    return response
 
 # ── Rate Limiting ────────────────────────────────
-limiter = Limiter(
-    key_func=get_remote_address,
-    app=app,
-    default_limits=["200 per day", "50 per hour"],
-    storage_uri="memory://",
-)
+# Deshabilitado — flask_limiter no disponible en este entorno
 
 # ── Serial Monitor State ────────────────────────
 serial_port = None
@@ -666,7 +665,6 @@ def serial_open():
         return jsonify({'error': f'No se pudo abrir {port}: {str(e)}'}), 500
 
 @app.route('/api/serial/read')
-@limiter.exempt
 def serial_read():
     """Lee datos del buffer serial"""
     global serial_buffer

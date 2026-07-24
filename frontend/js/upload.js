@@ -15,7 +15,7 @@
 
 import { generateArduinoCode } from './generator.js';
 import { getSetting } from './settings.js';
-import { consoleLog, disconnectSerial, connectSerial } from './serial.js';
+import { consoleLog, disconnectSerial, connectSerial, setWebSerialPort } from './serial.js';
 import { STK500Flasher, getDeviceCode } from './web-serial-flasher.js';
 import { SAMBAFlasher } from './samba-flasher-vA.js';
 
@@ -290,6 +290,7 @@ async function _pathB1_optiboot(code, fqbn, tabs, deviceCode, port) {
       consoleLog('  ¿El Arduino está en modo programación? Probá presionar RESET.', 'info');
     }
   } finally {
+    setWebSerialPort(port);  // Guardar para monitor serial Web Serial
     await flasher.disconnect();
   }
 }
@@ -335,6 +336,7 @@ async function _pathB2_samba(code, fqbn, tabs, port) {
       consoleLog('  ¿Hiciste doble-RESET? El LED L debe estar pulsando.', 'info');
     }
   } finally {
+    setWebSerialPort(port);  // Guardar para monitor serial Web Serial
     await flasher.disconnect();
   }
 }
