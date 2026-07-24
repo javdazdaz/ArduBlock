@@ -107,6 +107,15 @@ export const blocks = [
     "helpUrl": ""
   },
 {
+    "type": "serial_read_line",
+    "message0": Blockly.Msg.MSG_SERIAL_READ_LINE,
+    "args0": [],
+    "output": "String",
+    "colour": 20,
+    "tooltip": Blockly.Msg.TOOLTIP_SERIAL_READ_LINE,
+    "helpUrl": ""
+  },
+{
     "type": "serial_write",
     "message0": Blockly.Msg.MSG_SERIAL_WRITE,
     "args0": [
@@ -160,6 +169,12 @@ cppGenerator.forBlock['serial_parse_float'] = function(_block) {
 // ── serial_read_string ───────────────────────
 cppGenerator.forBlock['serial_read_string'] = function(_block) {
   return ['Serial.readString()', cppGenerator.ORDER_ATOMIC];
+};
+// ── serial_read_line ─────────────────────────
+cppGenerator.forBlock['serial_read_line'] = function(_block) {
+  // Lee hasta newline y recorta \r (carriage return de Serial.println)
+  cppGenerator._serialReadLineUsed = true;
+  return ['_ardublock_readLine()', cppGenerator.ORDER_ATOMIC];
 };
 // ── serial_write ─────────────────────────────
 cppGenerator.forBlock['serial_write'] = function(block) {

@@ -431,6 +431,7 @@ export function generateArduinoCode(workspace) {
   cppGenerator._afmotorDcInstances = [];
   cppGenerator._afmotorStepperInstances = [];
   cppGenerator._needsIsPrime = false;
+  cppGenerator._serialReadLineUsed = false;
   cppGenerator._matrixUsed = false;
   cppGenerator._matrixFrameNames = null;
   cppGenerator._matrixAnimNames = null;
@@ -654,6 +655,17 @@ export function generateArduinoCode(workspace) {
     sketch += '    if (n % i == 0) return false;\n';
     sketch += '  }\n';
     sketch += '  return true;\n';
+    sketch += '}\n\n';
+  }
+
+  // Helper: _ardublock_readLine() — lee línea serial sin \r\n
+  if (cppGenerator._serialReadLineUsed) {
+    sketch += '// Helper — lee una línea del puerto serial sin \\r\\n\n';
+    sketch += 'String _ardublock_readLine() {\n';
+    sketch += '  String s = Serial.readStringUntil(\'\\n\');\n';
+    sketch += '  s.replace("\\r", "");\n';
+    sketch += '  s.replace("\\n", "");\n';
+    sketch += '  return s;\n';
     sketch += '}\n\n';
   }
 
