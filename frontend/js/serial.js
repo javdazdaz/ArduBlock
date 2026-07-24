@@ -13,7 +13,7 @@ import { escapeHtml } from './project-manager.js';
 import { getSetting } from './settings.js';
 import { t } from './i18n.js';
 
-let arduinoConsole, consoleOutput, btnConnect, btnConsoleToggle, serialBaud;
+let arduinoConsole, consoleOutput, btnConnect, btnConsoleToggle, serialBaud, serialInput, btnSend;
 let serialPollTimer = null;
 let serialConnected = false;
 
@@ -21,6 +21,7 @@ let serialConnected = false;
 let _webSerialPort = null;
 let _webSerialConnected = false;
 const _textDecoder = new TextDecoder('utf-8');
+const _textEncoder = new TextEncoder();
 
 export function initSerial(deps) {
   arduinoConsole    = deps.arduinoConsole;
@@ -28,6 +29,9 @@ export function initSerial(deps) {
   btnConnect        = deps.btnConnect;
   btnConsoleToggle  = deps.btnConsoleToggle;
   serialBaud        = deps.serialBaud;
+
+  serialInput = document.getElementById('serial-input');
+  btnSend     = document.getElementById('serial-send');
 
   document.getElementById('console-close').addEventListener('click', toggleConsole);
   btnConsoleToggle.addEventListener('click', toggleConsole);
@@ -37,6 +41,12 @@ export function initSerial(deps) {
   btnConnect.addEventListener('click', () => {
     if (serialConnected || _webSerialConnected) disconnectSerial();
     else connectSerial();
+  });
+
+  // Enviar texto
+  btnSend.addEventListener('click', _sendSerial);
+  serialInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); _sendSerial(); }
   });
 }
 
@@ -74,6 +84,53 @@ export function setWebSerialPort(port) {
  */
 export function hasWebSerialPort() {
   return _webSerialPort !== null;
+}
+
+// ── Envío ──────────────────────────────────────
+
+async function _sendSerial() {
+  const text = serialInput.value;
+  if (!text) return;
+
+  // Web Serial
+  if (_webSerialConnected && _webSerialPort) {
+    try {
+      const writer = _webSerialPort.writable.getWriter();
+      try { await writer.write(_textEncoder.encode(text)); }
+      finally { writer.releaseLock(); }
+    } catch (e) {
+      consoleLog('✕ Error al enviar: ' + e.message, 'error');
+    }
+    serialInput.value = '';
+    return;
+  }
+
+  // Backend
+  if (serialConnected) {
+    try {
+      const res = await fetch('/api/serial/write', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ data: text })
+      });
+      const data = await res.json();
+      if (data.error) consoleLog(data.error, 'error');
+    } catch (e) {
+      consoleLog('✕ Error al enviar: ' + e.message, 'error');
+    }
+    serialInput.value = '';
+    return;
+  }
+}
+
+function _enableInput() {
+  serialInput.disabled = false;
+  btnSend.disabled = false;
+}
+
+function _disableInput() {
+  serialInput.disabled = true;
+  btnSend.disabled = true;
 }
 
 // ── Conexión ───────────────────────────────────
@@ -123,6 +180,7 @@ export async function connectSerial() {
     btnConnect.disabled = false;
     btnConnect.textContent = t('serial_disconnect');
     btnConnect.className = 'console-btn connected';
+    _enableInput();
     consoleLog(`✓ Conectado a ${data.port || '?'} @ ${data.baud || '?'} baud`, 'success');
 
     // Polling cada 200ms
@@ -162,6 +220,7 @@ async function _connectWebSerial(baud) {
     btnConnect.disabled = false;
     btnConnect.textContent = t('serial_disconnect');
     btnConnect.className = 'console-btn connected';
+    _enableInput();
     consoleLog(`✓ Conectado vía Web Serial @ ${baud} baud`, 'success');
 
     // Iniciar loop de lectura en background (no await — corre independiente)
@@ -224,6 +283,7 @@ export async function disconnectSerial(quiet = false) {
   btnConnect.disabled = false;
   btnConnect.textContent = t('serial_connect');
   btnConnect.className = 'console-btn connect';
+  _disableInput();
   if (wasConnected && !quiet) consoleLog('Desconectado', 'info');
 }
 

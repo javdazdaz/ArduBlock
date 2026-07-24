@@ -676,6 +676,22 @@ def serial_read():
         serial_buffer = []
     return jsonify({'connected': True, 'data': data})
 
+@app.route('/api/serial/write', methods=['POST'])
+def serial_write():
+    """Escribe datos al puerto serial"""
+    global serial_port, serial_running
+    if not serial_running or not serial_port:
+        return jsonify({'error': 'No conectado'}), 400
+    data = request.get_json()
+    text = data.get('data', '') if data else ''
+    if not text:
+        return jsonify({'error': 'Sin datos'}), 400
+    try:
+        serial_port.write(text.encode('utf-8'))
+        return jsonify({'status': 'ok', 'bytes': len(text)})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/api/serial/close', methods=['POST'])
 def serial_close():
     """Cierra el puerto serial"""

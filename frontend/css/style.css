@@ -260,6 +260,18 @@ header .subtitle {
 #console-output .error { color: #e94560; }
 #console-output .success { color: #27ae60; }
 #console-output .info { color: #00b4d8; }
+.console-input-row {
+  display: flex; gap: 6px; padding: 6px 1rem;
+  background: var(--bg-input); border-top: 1px solid var(--console-border);
+}
+.console-input {
+  flex: 1; padding: 5px 8px;
+  font-family: "Fira Code", monospace; font-size: 0.72rem;
+  background: #0a0a14; color: #a8d8a8; border: 1px solid var(--console-border);
+  border-radius: 4px;
+}
+.console-input:focus { outline: none; border-color: var(--accent); }
+.console-input:disabled { opacity: 0.4; }
 
 /* ── Project bar ──────────────────────────────── */
 .project-bar {
