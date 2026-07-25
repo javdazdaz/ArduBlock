@@ -679,10 +679,15 @@ export function generateArduinoCode(workspace) {
 
   // ── Matriz LED Directa (sin driver, multiplexado) ──
   if (cppGenerator._directUsed) {
-    // Pines por defecto 1088AS
-    sketch += '// Matriz directa 8×8 — pines 1088AS\n';
-    sketch += 'const byte _md_rows[8] = {10, 11, 12, 13, A0, A1, A2, A3};\n';
-    sketch += 'const byte _md_cols[8] = {2, 3, 4, 5, 6, 7, 8, 9};\n\n';
+    const configs = cppGenerator._directConfigs || [];
+    const cfg = configs.length > 0 ? configs[0] : {
+      rows: ['10','11','12','13','14','15','16','17'],
+      cols: ['2','3','4','5','6','7','8','9']
+    };
+
+    sketch += '// Matriz directa 8×8 — pines configurables\n';
+    sketch += 'const byte _md_rows[8] = {' + cfg.rows.join(', ') + '};\n';
+    sketch += 'const byte _md_cols[8] = {' + cfg.cols.join(', ') + '};\n\n';
 
     // Helper de multiplexado
     sketch += 'void _direct_show(const byte frame[8], int duration_ms) {\n';

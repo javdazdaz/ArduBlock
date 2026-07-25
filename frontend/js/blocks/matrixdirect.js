@@ -4,10 +4,10 @@ import '../i18n.js';
 /**
  * ArduBlock — Bloques: Matriz LED Directa 8×8 (sin driver)
  *
- * Conexión directa al Arduino con 16 pines (8 filas + 8 columnas).
+ * Conexión directa al Arduino con 16 pines configurables (8 filas + 8 columnas).
  * Pinout por defecto 1088AS:
- *   Filas (ánodos): 10, 11, 12, 13, A0, A1, A2, A3
- *   Columnas (cátodos): 2, 3, 4, 5, 6, 7, 8, 9
+ *   Filas (ánodos):   10, 11, 12, 13, 14, 15, 16, 17  (A0-A3 = 14-17)
+ *   Columnas (cátodos): 2,  3,  4,  5,  6,  7,  8,  9
  *
  * Multiplexado por software: se activa una fila a la vez,
  * se encienden las columnas correspondientes (LOW = encendido),
@@ -21,7 +21,34 @@ export const blocks = [
   {
     type: 'matrixdirect_create',
     message0: Blockly.Msg.MSG_DIRECT_CREATE,
-    inputsInline: true,
+    message1: '%{BKY_MSG_DIRECT_ROWS1} %1 %2 %3 %4',
+    message2: '%{BKY_MSG_DIRECT_ROWS2} %5 %6 %7 %8',
+    message3: '%{BKY_MSG_DIRECT_COLS1} %9 %10 %11 %12',
+    message4: '%{BKY_MSG_DIRECT_COLS2} %13 %14 %15 %16',
+    args1: [
+      { type: 'input_value', name: 'R1' },
+      { type: 'input_value', name: 'R2' },
+      { type: 'input_value', name: 'R3' },
+      { type: 'input_value', name: 'R4' },
+    ],
+    args2: [
+      { type: 'input_value', name: 'R5' },
+      { type: 'input_value', name: 'R6' },
+      { type: 'input_value', name: 'R7' },
+      { type: 'input_value', name: 'R8' },
+    ],
+    args3: [
+      { type: 'input_value', name: 'C1' },
+      { type: 'input_value', name: 'C2' },
+      { type: 'input_value', name: 'C3' },
+      { type: 'input_value', name: 'C4' },
+    ],
+    args4: [
+      { type: 'input_value', name: 'C5' },
+      { type: 'input_value', name: 'C6' },
+      { type: 'input_value', name: 'C7' },
+      { type: 'input_value', name: 'C8' },
+    ],
     previousStatement: null,
     nextStatement: null,
     colour: 35,
@@ -97,10 +124,27 @@ export const blocks = [
 
 export function registerGenerators(cppGenerator) {
 
+  // Defaults 1088AS (A0-A3 → 14-17 en Uno)
+  const DEFAULT_ROWS = [10, 11, 12, 13, 14, 15, 16, 17];
+  const DEFAULT_COLS = [2, 3, 4, 5, 6, 7, 8, 9];
+
   // ── matrixdirect_create ────────────────────
-  cppGenerator.forBlock['matrixdirect_create'] = function(_block) {
+  cppGenerator.forBlock['matrixdirect_create'] = function(block) {
     cppGenerator._directUsed = true;
-    return '// matriz directa inicializada (pines configurados en setup)\n';
+
+    const rows = [];
+    const cols = [];
+    for (let i = 1; i <= 8; i++) {
+      const rCode = cppGenerator.valueToCode(block, 'R' + i, cppGenerator.ORDER_ATOMIC);
+      const cCode = cppGenerator.valueToCode(block, 'C' + i, cppGenerator.ORDER_ATOMIC);
+      rows.push(rCode || String(DEFAULT_ROWS[i - 1]));
+      cols.push(cCode || String(DEFAULT_COLS[i - 1]));
+    }
+
+    if (!cppGenerator._directConfigs) cppGenerator._directConfigs = [];
+    cppGenerator._directConfigs.push({ rows, cols });
+
+    return '// matriz directa inicializada (pines configurables)\n';
   };
 
   // ── matrixdirect_show ──────────────────────
