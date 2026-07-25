@@ -95,6 +95,13 @@
       <!-- Editor visual de matriz LED (12×8) -->
       <div id="code-view-animation" style="display:none">
         <div class="matrix-editor-toolbar">
+          <!-- Tabs de modo: R4 vs MAX7219 -->
+          <div class="matrix-mode-tabs">
+            <button class="matrix-mode-tab active" data-mode="r4">R4 12×8</button>
+            <button class="matrix-mode-tab" data-mode="max7219">MAX7219 8×8</button>
+            <button class="matrix-mode-tab" data-mode="direct">Directa 8×8</button>
+          </div>
+          <span class="matrix-toolbar-sep">|</span>
           <select id="matrix-preset" class="matrix-preset-select">
             <option value="">— Cargar ícono —</option>
           </select>
@@ -116,12 +123,15 @@
           <div class="matrix-editor-main">
             <div id="matrix-grid" class="matrix-grid"></div>
             <div class="matrix-info">
-              <div class="matrix-hex">
+              <div id="matrix-hex-r4" class="matrix-hex">
                 <label>uint32_t frame[] = {</label>
                 <code id="matrix-hex-0">0x0</code><span>, </span>
                 <code id="matrix-hex-1">0x0</code><span>, </span>
                 <code id="matrix-hex-2">0x0</code>
                 <label>};</label>
+              </div>
+              <div id="matrix-hex-max7219" class="matrix-hex" style="display:none">
+                <code id="matrix-hex-all">byte frame[8] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};</code>
               </div>
               <button id="matrix-use-frame" class="matrix-btn-use">📋 Copiar C++</button>
             </div>

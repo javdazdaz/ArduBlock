@@ -132,6 +132,8 @@ import { blocks as arraysBlocks }     from './blocks/arrays.js';
 import { blocks as buclesBlocks }     from './blocks/bucles.js';
 import { blocks as afmotorBlocks }    from './blocks/afmotor.js';
 import { blocks as ledmatrixBlocks } from './blocks/ledmatrix.js';
+import { blocks as max7219Blocks } from './blocks/max7219.js';
+import { blocks as matrixdirectBlocks } from './blocks/matrixdirect.js';
 
 // ═══ Registrar todos los bloques ═══════════════
 
@@ -152,6 +154,8 @@ const allBlocks = [
   ...buclesBlocks,
   ...afmotorBlocks,
   ...ledmatrixBlocks,
+  ...max7219Blocks,
+  ...matrixdirectBlocks,
 ];
 
 Blockly.common.defineBlocksWithJsonArray(allBlocks);
@@ -275,6 +279,14 @@ const _FULL_TOOLBOX_TEMPLATE = [
   { kind: 'block', type: 'matrix_play_animation', level: 2 },
   { kind: 'block', type: 'matrix_clear', level: 2 },
   { kind: 'block', type: 'matrix_sequence_done', level: 3 },
+  { kind: 'block', type: 'max7219_create', level: 2 },
+  { kind: 'block', type: 'max7219_set_led', level: 2 },
+  { kind: 'block', type: 'max7219_clear', level: 2 },
+  { kind: 'block', type: 'max7219_set_brightness', level: 3 },
+  { kind: 'block', type: 'max7219_draw_frame', level: 2 },
+  { kind: 'block', type: 'matrixdirect_create', level: 2 },
+  { kind: 'block', type: 'matrixdirect_show', level: 2 },
+  { kind: 'block', type: 'matrixdirect_clear', level: 2 },
 ];
 
 export const BLOCK_LEVELS = _buildBlockLevelMap(_FULL_TOOLBOX_TEMPLATE);
@@ -469,6 +481,20 @@ export function buildToolboxForBoard(fqbn, level) {
           { 'kind': 'block', 'type': 'matrix_play_animation', 'level': 2 },
           { 'kind': 'block', 'type': 'matrix_clear', 'level': 2 },
           { 'kind': 'block', 'type': 'matrix_sequence_done', 'level': 3 },
+        ]},
+      { 'kind': 'category', 'name': '%{BKY_CAT_MAX7219}', 'colour': '35', 'level': 2,
+        'contents': [
+          { 'kind': 'block', 'type': 'max7219_create', 'level': 2 },
+          { 'kind': 'block', 'type': 'max7219_set_led', 'level': 2 },
+          { 'kind': 'block', 'type': 'max7219_clear', 'level': 2 },
+          { 'kind': 'block', 'type': 'max7219_set_brightness', 'level': 3 },
+          { 'kind': 'block', 'type': 'max7219_draw_frame', 'level': 2 },
+        ]},
+      { 'kind': 'category', 'name': '%{BKY_CAT_DIRECT}', 'colour': '35', 'level': 2,
+        'contents': [
+          { 'kind': 'block', 'type': 'matrixdirect_create', 'level': 2 },
+          { 'kind': 'block', 'type': 'matrixdirect_show', 'level': 2 },
+          { 'kind': 'block', 'type': 'matrixdirect_clear', 'level': 2 },
         ]},
       { 'kind': 'search', 'name': '%{BKY_CAT_BUSCAR}', 'contents': [] }
     ]

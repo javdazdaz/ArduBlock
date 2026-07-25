@@ -49,6 +49,9 @@ import { registerGenerators as regBucles }     from './blocks/bucles.js';
 import { registerGenerators as regAfmotor }    from './blocks/afmotor.js';
 import { registerGenerators as regLedmatrix,
          MATRIX_FRAMES, MATRIX_ANIMATIONS } from './blocks/ledmatrix.js';
+import { registerGenerators as regMax7219,
+         MAX7219_FRAMES } from './blocks/max7219.js';
+import { registerGenerators as regMatrixdirect } from './blocks/matrixdirect.js';
 
 regEstructura(cppGenerator);
 regDigital(cppGenerator);
@@ -66,6 +69,8 @@ regArrays(cppGenerator);
 regBucles(cppGenerator);
 regAfmotor(cppGenerator);
 regLedmatrix(cppGenerator);
+regMax7219(cppGenerator);
+regMatrixdirect(cppGenerator);
 
 // ═══ Generadores built-in de Blockly ═══════════
 
@@ -435,6 +440,11 @@ export function generateArduinoCode(workspace) {
   cppGenerator._matrixUsed = false;
   cppGenerator._matrixFrameNames = null;
   cppGenerator._matrixAnimNames = null;
+  cppGenerator._max7219Used = false;
+  cppGenerator._max7219Configs = null;
+  cppGenerator._max7219FrameNames = null;
+  cppGenerator._directUsed = false;
+  cppGenerator._directFrameNames = null;
 
   const topBlocks = workspace.getTopBlocks(true);
 
@@ -630,6 +640,94 @@ export function generateArduinoCode(workspace) {
     sketch += '\n';
   }
 
+  // ── Matriz LED MAX7219 ──
+  if (cppGenerator._max7219Used) {
+    sketch += '#include "LedControl.h"\n';
+
+    // Objeto global: usar la primera config (solo soportamos una por sketch)
+    const configs = cppGenerator._max7219Configs || [];
+    const cfg = configs.length > 0 ? configs[0] : { din: 12, cs: 10, clk: 11, num: 1 };
+    sketch += 'LedControl lc(' + cfg.din + ', ' + cfg.clk + ', ' + cfg.cs + ', ' + cfg.num + ');\n';
+
+    // Emitir frames usados (predefinidos + custom de localStorage)
+    const frameNames = cppGenerator._max7219FrameNames;
+    if (frameNames && frameNames.size > 0) {
+      sketch += '\n';
+      let customFrames = null;
+      for (const name of frameNames) {
+        let frame = MAX7219_FRAMES[name];
+        if (!frame) {
+          if (!customFrames) {
+            try { customFrames = JSON.parse(typeof localStorage !== 'undefined' ? (localStorage.getItem('ardublock:max7219-frames') || '{}') : '{}'); }
+            catch (_) { customFrames = {}; }
+          }
+          frame = customFrames[name];
+        }
+        if (frame) {
+          sketch += 'const byte frame_' + name + '[8] = { ';
+          for (let i = 0; i < 8; i++) {
+            sketch += '0x' + frame[i].toString(16);
+            if (i < 7) sketch += ', ';
+          }
+          sketch += ' };\n';
+        }
+      }
+    }
+
+    sketch += '\n';
+  }
+
+  // ── Matriz LED Directa (sin driver, multiplexado) ──
+  if (cppGenerator._directUsed) {
+    // Pines por defecto 1088AS
+    sketch += '// Matriz directa 8×8 — pines 1088AS\n';
+    sketch += 'const byte _md_rows[8] = {10, 11, 12, 13, A0, A1, A2, A3};\n';
+    sketch += 'const byte _md_cols[8] = {2, 3, 4, 5, 6, 7, 8, 9};\n\n';
+
+    // Helper de multiplexado
+    sketch += 'void _direct_show(const byte frame[8], int duration_ms) {\n';
+    sketch += '  unsigned long _start = millis();\n';
+    sketch += '  while (millis() - _start < duration_ms) {\n';
+    sketch += '    for (int r = 0; r < 8; r++) {\n';
+    sketch += '      digitalWrite(_md_rows[r], HIGH);  // activar fila\n';
+    sketch += '      for (int c = 0; c < 8; c++) {\n';
+    sketch += '        // LOW = LED encendido (cátodo común)\n';
+    sketch += '        digitalWrite(_md_cols[c], (frame[r] & (1 << (7 - c))) ? LOW : HIGH);\n';
+    sketch += '      }\n';
+    sketch += '      delayMicroseconds(500);\n';
+    sketch += '      digitalWrite(_md_rows[r], LOW);   // desactivar fila\n';
+    sketch += '    }\n';
+    sketch += '  }\n';
+    sketch += '}\n\n';
+
+    // Emitir frames usados
+    const frameNames = cppGenerator._directFrameNames;
+    if (frameNames && frameNames.size > 0) {
+      let customFrames = null;
+      for (const name of frameNames) {
+        let frame = MAX7219_FRAMES[name];
+        if (!frame) {
+          if (!customFrames) {
+            try { customFrames = JSON.parse(typeof localStorage !== 'undefined' ? (localStorage.getItem('ardublock:direct-frames') || '{}') : '{}'); }
+            catch (_) { customFrames = {}; }
+          }
+          frame = customFrames[name];
+        }
+        if (frame) {
+          sketch += 'const byte frame_' + name + '[8] = { ';
+          for (let i = 0; i < 8; i++) {
+            sketch += '0x' + frame[i].toString(16);
+            if (i < 7) sketch += ', ';
+          }
+          sketch += ' };\n';
+        }
+      }
+      sketch += '\n';
+    }
+
+    sketch += '\n';
+  }
+
   // ── Ultrasonic helpers ──
   if (usNames.size > 0) {
     for (const inst of cppGenerator._usInstances) {
@@ -720,6 +818,50 @@ export function generateArduinoCode(workspace) {
     } else if (!setupBody) {
       setupBody = beginStmt;
     }
+  }
+
+  // ── Matriz LED MAX7219: auto-inyectar init en setup ──
+  if (cppGenerator._max7219Used && setupBody && !setupBody.includes('lc.shutdown')) {
+    const configs = cppGenerator._max7219Configs || [];
+    const num = configs.length > 0 ? configs[0].num : 1;
+    let init = '';
+    for (let i = 0; i < num; i++) {
+      init += '  lc.shutdown(' + i + ', false);\n';
+      init += '  lc.setIntensity(' + i + ', 8);\n';
+    }
+    init += '  lc.clearDisplay(0);\n';
+    setupBody = init + setupBody;
+  } else if (cppGenerator._max7219Used && !setupBody) {
+    const configs = cppGenerator._max7219Configs || [];
+    const num = configs.length > 0 ? configs[0].num : 1;
+    let init = '';
+    for (let i = 0; i < num; i++) {
+      init += '  lc.shutdown(' + i + ', false);\n';
+      init += '  lc.setIntensity(' + i + ', 8);\n';
+    }
+    init += '  lc.clearDisplay(0);\n';
+    setupBody = init;
+  }
+
+  // ── Matriz LED Directa: auto-inyectar pinMode en setup ──
+  if (cppGenerator._directUsed && setupBody && !setupBody.includes('_md_rows')) {
+    const init = '  // matriz directa: configurar 16 pines como salida\n'
+               + '  for (int _d = 0; _d < 8; _d++) {\n'
+               + '    pinMode(_md_rows[_d], OUTPUT);\n'
+               + '    pinMode(_md_cols[_d], OUTPUT);\n'
+               + '    digitalWrite(_md_rows[_d], LOW);\n'
+               + '    digitalWrite(_md_cols[_d], HIGH);\n'
+               + '  }\n';
+    setupBody = init + setupBody;
+  } else if (cppGenerator._directUsed && !setupBody) {
+    const init = '  // matriz directa: configurar 16 pines como salida\n'
+               + '  for (int _d = 0; _d < 8; _d++) {\n'
+               + '    pinMode(_md_rows[_d], OUTPUT);\n'
+               + '    pinMode(_md_cols[_d], OUTPUT);\n'
+               + '    digitalWrite(_md_rows[_d], LOW);\n'
+               + '    digitalWrite(_md_cols[_d], HIGH);\n'
+               + '  }\n';
+    setupBody = init;
   }
 
   if (globals.trim()) {

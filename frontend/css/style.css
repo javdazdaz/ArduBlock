@@ -908,6 +908,21 @@ main {
   padding: 0.4rem 1rem; border-bottom: 1px solid var(--border);
   background: var(--bg-panel); flex-shrink: 0;
 }
+.matrix-mode-tabs { display: flex; gap: 0; }
+.matrix-mode-tab {
+  padding: 0.25rem 0.75rem; font-size: 0.78rem;
+  font-family: inherit; font-weight: 500;
+  background: transparent; color: var(--text-dim);
+  border: 1px solid var(--border); cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.matrix-mode-tab:first-child { border-radius: 3px 0 0 3px; }
+.matrix-mode-tab:last-child  { border-radius: 0 3px 3px 0; margin-left: -1px; }
+.matrix-mode-tab.active {
+  background: var(--accent); color: #fff; border-color: var(--accent);
+  z-index: 1;
+}
+.matrix-mode-tab:hover:not(.active) { background: var(--bg-input); }
 .matrix-preset-select, .matrix-name-input {
   padding: 0.25rem 0.5rem; font-size: 0.78rem;
   font-family: inherit; background: var(--bg-input);

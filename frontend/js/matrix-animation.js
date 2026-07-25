@@ -1,29 +1,172 @@
 /**
- * ArduBlock — Editor visual de Matriz LED (12×8)
+ * ArduBlock — Editor visual de Matriz LED (dual mode)
+ *
+ * Soporta dos modos:
+ *   - R4 12×8 (UNO R4 WiFi, Arduino_LED_Matrix.h)
+ *   - MAX7219 8×8 (LedControl.h, SPI)
  *
  * Grid interactivo, frames guardados en localStorage,
  * línea de tiempo para crear animaciones.
  */
 
 import { MATRIX_FRAMES, MATRIX_ANIMATIONS } from './blocks/ledmatrix.js';
+import { MAX7219_FRAMES } from './blocks/max7219.js';
 
-const STORAGE_KEY_FRAMES = 'ardublock:matrix-frames';
-const STORAGE_KEY_ANIMS = 'ardublock:matrix-animations';
+// ═══ Configuración por modo ════════════════════
 
+const MODES = {
+  r4: {
+    label: 'R4 12×8',
+    cols: 12,
+    framesKey: 'ardublock:matrix-frames',
+    animsKey: 'ardublock:matrix-animations',
+    presets: () => MATRIX_FRAMES,
+    animPresets: () => MATRIX_ANIMATIONS,
+    encode(frameData) {
+      let bits = 0n;
+      for (let row = 0; row < 8; row++) {
+        let rowVal = 0;
+        for (let col = 0; col < 12; col++)
+          if (frameData[row][col]) rowVal |= (1 << (11 - col));
+        bits |= BigInt(rowVal) << BigInt((7 - row) * 12);
+      }
+      return [
+        Number((bits >> 64n) & 0xFFFFFFFFn),
+        Number((bits >> 32n) & 0xFFFFFFFFn),
+        Number(bits & 0xFFFFFFFFn),
+      ];
+    },
+    decode(u32) {
+      const bits = (BigInt(u32[0]) << 64n) | (BigInt(u32[1]) << 32n) | BigInt(u32[2]);
+      const data = [];
+      for (let row = 0; row < 8; row++) {
+        const rowVal = Number((bits >> BigInt((7 - row) * 12)) & 0xFFFn);
+        const cols = [];
+        for (let col = 0; col < 12; col++)
+          cols.push((rowVal >> (11 - col)) & 1);
+        data.push(cols);
+      }
+      return data;
+    },
+    renderHex(u32) {
+      document.getElementById('matrix-hex-0').textContent = '0x' + u32[0].toString(16);
+      document.getElementById('matrix-hex-1').textContent = '0x' + u32[1].toString(16);
+      document.getElementById('matrix-hex-2').textContent = '0x' + u32[2].toString(16);
+    },
+    copyCode(u32) {
+      return `matrix.loadFrame({0x${u32[0].toString(16)}, 0x${u32[1].toString(16)}, 0x${u32[2].toString(16)}});`;
+    },
+    fromStorageFrame(entry) { return entry; },        // [u32_0, u32_1, u32_2]
+    toStorageFrame(u32)   { return [...u32]; },
+    fromAnimFrame(f)      { return { name: f[4] || '', u32: [f[0], f[1], f[2]], dur: f[3] || 200 }; },
+    toAnimFrame(item)     { return [...item.u32, item.dur, item.name || '']; },
+    playCode(frameVar)    { return 'matrix.loadFrame(' + frameVar + ');\n'; },
+  },
+
+  max7219: {
+    label: 'MAX7219 8×8',
+    cols: 8,
+    framesKey: 'ardublock:max7219-frames',
+    animsKey: 'ardublock:max7219-animations',
+    presets: () => MAX7219_FRAMES,
+    animPresets: () => ({}),  // sin anims predefinidas aún
+    encode(frameData) {
+      const bytes = [];
+      for (let row = 0; row < 8; row++) {
+        let b = 0;
+        for (let col = 0; col < 8; col++)
+          if (frameData[row][col]) b |= (1 << (7 - col));
+        bytes.push(b);
+      }
+      return bytes;
+    },
+    decode(bytes) {
+      const data = [];
+      for (let row = 0; row < 8; row++) {
+        const cols = [];
+        for (let col = 0; col < 8; col++)
+          cols.push((bytes[row] >> (7 - col)) & 1);
+        data.push(cols);
+      }
+      return data;
+    },
+    renderHex(bytes) {
+      document.getElementById('matrix-hex-0').textContent = '0x' + bytes[0].toString(16).padStart(2, '0');
+      document.getElementById('matrix-hex-1').textContent = '0x' + bytes[1].toString(16).padStart(2, '0');
+      document.getElementById('matrix-hex-2').textContent = '0x' + bytes[2].toString(16).padStart(2, '0');
+      // Show all 8 bytes inline
+      const hexAll = document.getElementById('matrix-hex-all');
+      if (hexAll) {
+        hexAll.textContent = 'byte frame[8] = {' +
+          bytes.map(b => '0x' + b.toString(16).padStart(2, '0')).join(', ') + '};';
+      }
+    },
+    copyCode(bytes) {
+      const hex = bytes.map(b => '0x' + b.toString(16).padStart(2, '0')).join(', ');
+      return `const byte frame[8] = {${hex}};\nfor (int r=0; r<8; r++) lc.setRow(0, r, frame[r]);`;
+    },
+    fromStorageFrame(entry) { return entry; },        // [b0..b7]
+    toStorageFrame(bytes)   { return [...bytes]; },
+    fromAnimFrame(f)        { return { name: f[8] || '', bytes: f.slice(0, 8), dur: f[8] || 200 }; },
+    toAnimFrame(item)       { return [...item.bytes, item.dur, item.name || '']; },
+    playCode(frameVar) {
+      let c = '';
+      for (let r = 0; r < 8; r++)
+        c += 'lc.setRow(0, ' + r + ', ' + frameVar + '[' + r + ']);\n';
+      return c;
+    },
+  },
+
+  direct: {
+    label: 'Directa 8×8',
+    cols: 8,
+    framesKey: 'ardublock:direct-frames',
+    animsKey: 'ardublock:direct-animations',
+    presets: () => MAX7219_FRAMES,  // mismos frames 8×8
+    animPresets: () => ({}),
+    encode: null,   // heredado de max7219 abajo
+    decode: null,   // heredado de max7219 abajo
+    renderHex: null,
+    copyCode(bytes) {
+      const hex = bytes.map(b => '0x' + b.toString(16).padStart(2, '0')).join(', ');
+      return `const byte frame[8] = {${hex}};\n_direct_show(frame, 500);  // multiplexado`;
+    },
+    fromStorageFrame(entry) { return entry; },
+    toStorageFrame(bytes)   { return [...bytes]; },
+    fromAnimFrame(f)        { return { name: f[8] || '', bytes: f.slice(0, 8), dur: f[8] || 200 }; },
+    toAnimFrame(item)       { return [...item.bytes, item.dur, item.name || '']; },
+    playCode(frameVar) {
+      return '_direct_show(' + frameVar + ', 100);  // mostrar frame por 100ms\n';
+    },
+  },
+};
+
+// Heredar encode/decode/renderHex de max7219 para direct
+MODES.direct.encode = MODES.max7219.encode;
+MODES.direct.decode = MODES.max7219.decode;
+MODES.direct.renderHex = MODES.max7219.renderHex;
+
+// ═══ Estado global ═══════════════════════════════
+
+let mode = 'r4';             // 'r4' | 'max7219'
+let cfg = MODES.r4;
 let grid, cells;
-let frameData = new Array(8).fill(0).map(() => new Array(12).fill(0));
-let savedFrames = {};      // { name: [u32_0, u32_1, u32_2] }
-let savedAnims = {};       // { name: [[u32_0,u32_1,u32_2,dur], ...] }
-let timeline = [];          // [{ name, u32, dur }]
-let selectedFrame = null;   // nombre del frame seleccionado en sidebar
-let timelineSelected = -1;  // índice en timeline
+let frameData;               // 8×cols (cols depends on mode)
+let savedFrames = {};        // formato depende del modo
+let savedAnims = {};
+let timeline = [];           // { name, data: [u32]|[bytes], dur }
+let selectedFrame = null;
+let timelineSelected = -1;
 let playTimer = null;
 let playIndex = 0;
-let insertIdx = -1;         // posición de inserción en timeline durante drag
+let insertIdx = -1;
+
+// ═══ API pública ════════════════════════════════
 
 export function initMatrixEditor() {
   grid = document.getElementById('matrix-grid');
 
+  _initMode();
   _loadStorage();
   _buildGrid();
   _populatePresets();
@@ -32,15 +175,125 @@ export function initMatrixEditor() {
   _renderTimeline();
   _setupTimelineDrop();
   _bindEvents();
+  _bindModeTabs();
   _update();
+}
+
+export function initPanelModeTabs() {
+  const tabCode = document.getElementById('panel-tab-code');
+  const tabAnim = document.getElementById('panel-tab-anim');
+  const codeViews = document.getElementById('code-view-ino');
+  const hView = document.getElementById('code-edit-h');
+  const animView = document.getElementById('code-view-animation');
+  const codeTabs = document.getElementById('code-tabs');
+  const arduinoToolbar = document.querySelector('.arduino-toolbar');
+  const headerTitle = document.querySelector('.panel-header h2');
+
+  function switchMode(mode) {
+    tabCode.classList.toggle('active', mode === 'code');
+    tabAnim.classList.toggle('active', mode === 'animation');
+
+    const editorPanel = document.getElementById('editor-panel');
+    const resizer = document.getElementById('panel-resizer');
+    const codePanel = document.getElementById('code-panel');
+
+    if (mode === 'code') {
+      headerTitle.textContent = 'Código Arduino (C++)';
+      codeTabs.style.display = '';
+      if (arduinoToolbar) arduinoToolbar.style.display = '';
+      animView.style.display = 'none';
+      if (editorPanel) editorPanel.style.display = '';
+      if (resizer) resizer.style.display = '';
+      if (codePanel) codePanel.style.flex = '';
+      const activeTab = document.querySelector('.code-tab.active');
+      if (activeTab && activeTab.dataset.readonly === 'true') {
+        codeViews.style.display = '';
+        hView.style.display = 'none';
+      } else if (activeTab) {
+        codeViews.style.display = 'none';
+        hView.style.display = '';
+      }
+    } else {
+      headerTitle.textContent = 'Matriz LED — Editor de frames';
+      codeTabs.style.display = 'none';
+      if (arduinoToolbar) arduinoToolbar.style.display = 'none';
+      codeViews.style.display = 'none';
+      hView.style.display = 'none';
+      animView.style.display = '';
+      if (editorPanel) editorPanel.style.display = 'none';
+      if (resizer) resizer.style.display = 'none';
+      if (codePanel) codePanel.style.flex = '1';
+    }
+
+    const lc = document.getElementById('line-count');
+    if (lc) lc.style.display = mode === 'code' ? '' : 'none';
+    const collapseBtn = document.getElementById('btn-collapse-code');
+    if (collapseBtn) collapseBtn.style.display = mode === 'code' ? '' : 'none';
+  }
+
+  tabCode.addEventListener('click', () => switchMode('code'));
+  tabAnim.addEventListener('click', () => switchMode('animation'));
+}
+
+// ═══ Modo ════════════════════════════════════════
+
+function _initMode() {
+  try {
+    const saved = localStorage.getItem('ardublock:matrix-editor-mode');
+    if (saved === 'max7219' || saved === 'r4' || saved === 'direct') mode = saved;
+  } catch (_) {}
+  _applyMode();
+}
+
+function _applyMode() {
+  cfg = MODES[mode];
+  frameData = new Array(8).fill(0).map(() => new Array(cfg.cols).fill(0));
+
+  // Actualizar tabs visuales
+  document.querySelectorAll('.matrix-mode-tab').forEach(tab => {
+    tab.classList.toggle('active', tab.dataset.mode === mode);
+  });
+
+  // Mostrar/ocultar hex display según modo
+  const hexR4 = document.getElementById('matrix-hex-r4');
+  const hex7219 = document.getElementById('matrix-hex-max7219');
+  if (hexR4) hexR4.style.display = mode === 'r4' ? '' : 'none';
+  if (hex7219) hex7219.style.display = (mode === 'max7219' || mode === 'direct') ? '' : 'none';
+
+  // Guardar preferencia
+  localStorage.setItem('ardublock:matrix-editor-mode', mode);
+
+  _loadStorage();
+  _buildGrid();
+  _populatePresets();
+  _renderFrameList();
+  _renderAnimList();
+  _renderTimeline();
+  _update();
+}
+
+function _bindModeTabs() {
+  document.querySelectorAll('.matrix-mode-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      const newMode = tab.dataset.mode;
+      if (newMode !== mode) {
+        mode = newMode;
+        // Resetear estado del editor al cambiar de modo
+        selectedFrame = null;
+        timelineSelected = -1;
+        timeline = [];
+        _applyMode();
+      }
+    });
+  });
 }
 
 // ═══ Storage ═══════════════════════════════════
 
 function _loadStorage() {
   try {
-    savedFrames = JSON.parse(localStorage.getItem(STORAGE_KEY_FRAMES)) || {};
-    savedAnims = JSON.parse(localStorage.getItem(STORAGE_KEY_ANIMS)) || {};
+    savedFrames = JSON.parse(localStorage.getItem(cfg.framesKey)) || {};
+    savedAnims = JSON.parse(localStorage.getItem(cfg.animsKey)) || {};
   } catch (_) {
     savedFrames = {};
     savedAnims = {};
@@ -48,21 +301,22 @@ function _loadStorage() {
 }
 
 function _saveFrames() {
-  localStorage.setItem(STORAGE_KEY_FRAMES, JSON.stringify(savedFrames));
+  localStorage.setItem(cfg.framesKey, JSON.stringify(savedFrames));
 }
 
 function _saveAnims() {
-  localStorage.setItem(STORAGE_KEY_ANIMS, JSON.stringify(savedAnims));
+  localStorage.setItem(cfg.animsKey, JSON.stringify(savedAnims));
 }
 
 // ═══ Grid ═══════════════════════════════════════
 
 function _buildGrid() {
   grid.innerHTML = '';
+  grid.style.gridTemplateColumns = `repeat(${cfg.cols}, 28px)`;
   cells = [];
   for (let row = 0; row < 8; row++) {
     cells[row] = [];
-    for (let col = 0; col < 12; col++) {
+    for (let col = 0; col < cfg.cols; col++) {
       const cell = document.createElement('div');
       cell.className = 'matrix-cell';
       cell.dataset.row = row;
@@ -86,70 +340,37 @@ function _toggleCell(row, col) {
 
 function _clearAll() {
   for (let row = 0; row < 8; row++)
-    for (let col = 0; col < 12; col++)
+    for (let col = 0; col < cfg.cols; col++)
       frameData[row][col] = 0;
 }
 
 function _invertAll() {
   for (let row = 0; row < 8; row++)
-    for (let col = 0; col < 12; col++)
+    for (let col = 0; col < cfg.cols; col++)
       frameData[row][col] = frameData[row][col] ? 0 : 1;
 }
 
-// ═══ Frame encoding (MSB-first, row-major) ═════
-
-function _encodeFrame() {
-  let bits = 0n;
-  for (let row = 0; row < 8; row++) {
-    let rowVal = 0;
-    for (let col = 0; col < 12; col++) {
-      if (frameData[row][col]) rowVal |= (1 << (11 - col));
-    }
-    bits |= BigInt(rowVal) << BigInt((7 - row) * 12);
-  }
-  return [
-    Number((bits >> 64n) & 0xFFFFFFFFn),
-    Number((bits >> 32n) & 0xFFFFFFFFn),
-    Number(bits & 0xFFFFFFFFn),
-  ];
-}
-
-function _decodeFrame(u32) {
-  const bits = (BigInt(u32[0]) << 64n) | (BigInt(u32[1]) << 32n) | BigInt(u32[2]);
-  const data = [];
-  for (let row = 0; row < 8; row++) {
-    const rowVal = Number((bits >> BigInt((7 - row) * 12)) & 0xFFFn);
-    const cols = [];
-    for (let col = 0; col < 12; col++) {
-      cols.push((rowVal >> (11 - col)) & 1);
-    }
-    data.push(cols);
-  }
-  return data;
-}
-
-function _loadFrameToGrid(u32) {
-  frameData = _decodeFrame(u32);
+function _loadFrameToGrid(data) {
+  // data is the encoded format (u32 array or byte array)
+  frameData = cfg.decode(data);
 }
 
 // ═══ Render ═════════════════════════════════════
 
 function _update() {
-  const u32 = _encodeFrame();
+  const data = cfg.encode(frameData);
 
   // Grid cells
   for (let row = 0; row < 8; row++)
-    for (let col = 0; col < 12; col++)
+    for (let col = 0; col < cfg.cols; col++)
       cells[row][col].classList.toggle('on', frameData[row][col] === 1);
 
   // Hex display
-  document.getElementById('matrix-hex-0').textContent = '0x' + u32[0].toString(16);
-  document.getElementById('matrix-hex-1').textContent = '0x' + u32[1].toString(16);
-  document.getElementById('matrix-hex-2').textContent = '0x' + u32[2].toString(16);
+  cfg.renderHex(data);
 
-  // Two-way binding: si hay frame seleccionado en timeline, sincronizar
+  // Two-way binding: sincronizar timeline selection
   if (timelineSelected >= 0 && timelineSelected < timeline.length) {
-    timeline[timelineSelected].u32 = [...u32];
+    timeline[timelineSelected].data = cfg.toStorageFrame(data);
     _syncTimelineCanvas(timelineSelected);
   }
 }
@@ -159,31 +380,30 @@ function _syncTimelineCanvas(idx) {
   const frameEl = track.querySelector(`.matrix-timeline-frame[data-idx="${idx}"]`);
   if (frameEl) {
     const canvas = frameEl.querySelector('canvas');
-    if (canvas) _drawTimelineCanvas(canvas, timeline[idx].u32);
+    if (canvas) _drawTimelineCanvas(canvas, timeline[idx].data);
   }
 }
 
-function _drawTimelineCanvas(canvas, u32) {
+function _drawTimelineCanvas(canvas, data) {
   const ctx = canvas.getContext('2d');
   const w = canvas.width, h = canvas.height;
   ctx.clearRect(0, 0, w, h);
-  const cw = w / 12, ch = h / 8;
-  const data = _decodeFrame(u32);
+  const cw = w / cfg.cols, ch = h / 8;
+  const fd = cfg.decode(data);
   for (let row = 0; row < 8; row++) {
-    for (let col = 0; col < 12; col++) {
-      ctx.fillStyle = data[row][col] ? '#e94560' : '#1a1a2e';
+    for (let col = 0; col < cfg.cols; col++) {
+      ctx.fillStyle = fd[row][col] ? '#e94560' : '#1a1a2e';
       ctx.fillRect(col * cw, row * ch, cw - 0.5, ch - 0.5);
     }
   }
 }
 
-// ═══ Sidebar: frames guardados + drag & drop ══
+// ═══ Sidebar: frames ════════════════════════════
 
 function _renderFrameList() {
   const list = document.getElementById('matrix-frame-list');
   const names = Object.keys(savedFrames).sort();
 
-  // Update count in category header
   const cat = list.previousElementSibling;
   if (cat && cat.classList.contains('matrix-sidebar-cat')) {
     cat.innerHTML = `📁 Frames <span class="matrix-frame-count">${names.length}</span>`;
@@ -247,12 +467,13 @@ function _renderFrameList() {
   });
 }
 
-// ═══ Sidebar: animaciones guardadas ═════════════
+// ═══ Sidebar: animaciones ═══════════════════════
 
 function _renderAnimList() {
   const list = document.getElementById('matrix-anim-list');
+  const animPresets = cfg.animPresets();
   const customNames = Object.keys(savedAnims).sort();
-  const builtinNames = Object.keys(MATRIX_ANIMATIONS);
+  const builtinNames = Object.keys(animPresets);
   const total = builtinNames.length + customNames.length;
 
   const cat = list.previousElementSibling;
@@ -269,7 +490,7 @@ function _renderAnimList() {
 
   // Predefinidas (no eliminables)
   for (const name of builtinNames) {
-    const anim = MATRIX_ANIMATIONS[name];
+    const anim = animPresets[name];
     const fc = anim ? anim.length : 0;
     html += `<div class="matrix-frame-item" data-anim="${name}" draggable="true">
       <span class="frame-item-name">📦 ${_esc(name)}</span>
@@ -294,11 +515,18 @@ function _renderAnimList() {
     el.addEventListener('click', (e) => {
       if (e.target.classList.contains('frame-item-del')) return;
       const name = el.dataset.anim;
-      const anim = el.dataset.custom ? savedAnims[name] : MATRIX_ANIMATIONS[name];
+      const isCustom = el.dataset.custom === '1';
+      const anim = isCustom ? savedAnims[name] : animPresets[name];
       if (anim && anim.length > 0) {
-        timeline = anim.map(f => ({
-          name, u32: [f[0], f[1], f[2]], dur: f[3] || 200
-        }));
+        timeline = anim.map((f, i) => {
+          // R4 format: [u32_0, u32_1, u32_2, dur]
+          // MAX7219 format: [b0..b7, dur]
+          const dur = f[cfg.cols === 12 ? 3 : 8] || 200;
+          const data = cfg.cols === 12
+            ? [f[0], f[1], f[2]]
+            : f.slice(0, 8);
+          return { name, data, dur };
+        });
         _renderTimeline();
         _toast(`Animación "${name}" cargada (${timeline.length} frames)`);
       }
@@ -354,23 +582,22 @@ function _renderTimeline() {
 
   // Dibujar canvas de cada frame
   track.querySelectorAll('.matrix-timeline-frame canvas').forEach((canvas, i) => {
-    if (i < timeline.length) _drawTimelineCanvas(canvas, timeline[i].u32);
+    if (i < timeline.length) _drawTimelineCanvas(canvas, timeline[i].data);
   });
 
-  // Click en frame: seleccionar + dragstart para reordenar
+  // Click en frame
   track.querySelectorAll('.matrix-timeline-frame').forEach(el => {
     el.addEventListener('click', () => {
       timelineSelected = parseInt(el.dataset.idx);
       _renderTimeline();
       const f = timeline[timelineSelected];
       if (f) {
-        _loadFrameToGrid(f.u32);
+        _loadFrameToGrid(f.data);
         _update();
         document.getElementById('matrix-timeline-duration').value = f.dur;
       }
     });
 
-    // Drag para reordenar
     el.addEventListener('dragstart', (e) => {
       e.dataTransfer.setData('application/x-timeline-idx', el.dataset.idx);
       e.dataTransfer.effectAllowed = 'move';
@@ -381,7 +608,7 @@ function _renderTimeline() {
     });
   });
 
-  // Botón ✕: borrar frame individual
+  // Botón ✕
   track.querySelectorAll('.timeline-frame-del').forEach(el => {
     el.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -396,38 +623,29 @@ function _renderTimeline() {
 
   // Botón +
   const addBtn = track.querySelector('.matrix-timeline-add');
-  if (addBtn) {
-    addBtn.addEventListener('click', _addCurrentToTimeline);
-  }
+  if (addBtn) addBtn.addEventListener('click', _addCurrentToTimeline);
 }
 
 function _addCurrentToTimeline() {
   const dur = parseInt(document.getElementById('matrix-timeline-duration').value) || 200;
-  timeline.push({ name: 'blank', u32: [0, 0, 0], dur });
+  const empty = cfg.cols === 12 ? [0, 0, 0] : [0,0,0,0,0,0,0,0];
+  timeline.push({ name: 'blank', data: [...empty], dur });
   _renderTimeline();
 }
 
-// ── Drop handlers (se registran una sola vez) ──
+// ── Drop handlers ──
 
 function _setupTimelineDrop() {
   const track = document.getElementById('matrix-timeline-track');
 
   track.addEventListener('dragover', (e) => {
     e.preventDefault();
-
-    // Calcular posición de inserción para cualquier drag
     const srcIdx = e.dataTransfer.getData('application/x-timeline-idx');
-    if (srcIdx !== '') {
-      e.dataTransfer.dropEffect = 'move';
-    } else {
-      e.dataTransfer.dropEffect = 'copy';
-    }
+    e.dataTransfer.dropEffect = srcIdx !== '' ? 'move' : 'copy';
     _updateInsertIndicator(e.clientX);
   });
 
-  track.addEventListener('dragleave', () => {
-    _clearInsertIndicator();
-  });
+  track.addEventListener('dragleave', () => _clearInsertIndicator());
 
   track.addEventListener('drop', (e) => {
     e.preventDefault();
@@ -438,7 +656,6 @@ function _setupTimelineDrop() {
     if (srcIdx !== '') {
       const from = parseInt(srcIdx);
       let to = insertIdx >= 0 ? insertIdx : timeline.length;
-      // Ajustar: si movemos hacia la derecha, el índice se desplaza
       if (from < to) to--;
       if (from >= 0 && from < timeline.length && to >= 0 && to < timeline.length && from !== to) {
         const [moved] = timeline.splice(from, 1);
@@ -453,24 +670,28 @@ function _setupTimelineDrop() {
     const frameName = e.dataTransfer.getData('text/plain');
     if (frameName) {
       let frame = savedFrames[frameName];
-      if (!frame) frame = MATRIX_FRAMES[frameName];
+      if (!frame) frame = cfg.presets()[frameName];
       if (frame) {
         const dur = parseInt(document.getElementById('matrix-timeline-duration').value) || 200;
         const idx = insertIdx >= 0 ? insertIdx : timeline.length;
-        timeline.splice(idx, 0, { name: frameName, u32: [...frame], dur });
+        timeline.splice(idx, 0, { name: frameName, data: cfg.toStorageFrame(frame), dur });
         _renderTimeline();
         return;
       }
     }
+
     // Animación completa (desde sidebar)
     const animName = e.dataTransfer.getData('application/x-matrix-anim');
     if (animName) {
       const isCustom = e.dataTransfer.getData('application/x-matrix-anim-custom') === '1';
-      const anim = isCustom ? savedAnims[animName] : MATRIX_ANIMATIONS[animName];
+      const animPresets = cfg.animPresets();
+      const anim = isCustom ? savedAnims[animName] : animPresets[animName];
       if (anim && anim.length > 0) {
-        timeline = anim.map(f => ({
-          name: animName, u32: [f[0], f[1], f[2]], dur: f[3] || 200
-        }));
+        timeline = anim.map((f) => {
+          const dur = f[cfg.cols === 12 ? 3 : 8] || 200;
+          const data = cfg.cols === 12 ? [f[0], f[1], f[2]] : f.slice(0, 8);
+          return { name: animName, data, dur };
+        });
         _renderTimeline();
         _toast(`Animación "${animName}" cargada (${timeline.length} frames)`);
       }
@@ -478,26 +699,23 @@ function _setupTimelineDrop() {
   });
 }
 
-// ── Indicador de inserción para reorden ──
+// ── Insert indicator ──
 
 function _updateInsertIndicator(clientX) {
   const track = document.getElementById('matrix-timeline-track');
   const frames = track.querySelectorAll('.matrix-timeline-frame');
   _clearInsertIndicator();
 
-  insertIdx = timeline.length; // default: al final
+  insertIdx = timeline.length;
   for (let i = 0; i < frames.length; i++) {
     const rect = frames[i].getBoundingClientRect();
-    const mid = rect.left + rect.width / 2;
-    if (clientX < mid) {
+    if (clientX < rect.left + rect.width / 2) {
       insertIdx = i;
       frames[i].classList.add('insert-before');
-      // Barra dummy a la derecha del frame anterior
       if (i > 0) frames[i - 1].classList.add('insert-after');
       return;
     }
   }
-  // Al final: iluminar botón + y último frame
   const addBtn = track.querySelector('.matrix-timeline-add');
   if (addBtn) addBtn.classList.add('insert-before');
   if (frames.length > 0) frames[frames.length - 1].classList.add('insert-after');
@@ -510,6 +728,8 @@ function _clearInsertIndicator() {
   });
 }
 
+// ═══ Playback ═══════════════════════════════════
+
 function _playTimeline() {
   if (timeline.length === 0) return;
   _stopTimeline();
@@ -517,10 +737,7 @@ function _playTimeline() {
   _showTimelineFrame(playIndex);
   playTimer = setInterval(() => {
     playIndex++;
-    if (playIndex >= timeline.length) {
-      _stopTimeline();
-      return;
-    }
+    if (playIndex >= timeline.length) { _stopTimeline(); return; }
     _showTimelineFrame(playIndex);
   }, timeline[playIndex].dur || 200);
 }
@@ -533,7 +750,7 @@ function _stopTimeline() {
 function _showTimelineFrame(idx) {
   if (idx < 0 || idx >= timeline.length) return;
   const f = timeline[idx];
-  _loadFrameToGrid(f.u32);
+  _loadFrameToGrid(f.data);
   _update();
   timelineSelected = idx;
   document.getElementById('matrix-timeline-duration').value = f.dur;
@@ -556,8 +773,8 @@ function _bindEvents() {
     const name = nameInput.value.trim();
     if (!name) { _toast('Escribe un nombre para el frame'); return; }
     if (!/^[a-zA-Z0-9_]+$/.test(name)) { _toast('Solo letras, números y _'); return; }
-    const u32 = _encodeFrame();
-    savedFrames[name] = [...u32];
+    const data = cfg.encode(frameData);
+    savedFrames[name] = cfg.toStorageFrame(data);
     _saveFrames();
     selectedFrame = name;
     _renderFrameList();
@@ -567,12 +784,12 @@ function _bindEvents() {
 
   // Copiar C++
   document.getElementById('matrix-use-frame').addEventListener('click', () => {
-    const u32 = _encodeFrame();
-    const code = `matrix.loadFrame({0x${u32[0].toString(16)}, 0x${u32[1].toString(16)}, 0x${u32[2].toString(16)}});`;
+    const data = cfg.encode(frameData);
+    const code = cfg.copyCode(data);
     navigator.clipboard.writeText(code).then(() => _toast('Copiado: ' + code));
   });
 
-  // Timeline: añadir frame actual
+  // Timeline duration
   document.getElementById('matrix-timeline-duration').addEventListener('change', function() {
     if (timelineSelected >= 0 && timelineSelected < timeline.length) {
       timeline[timelineSelected].dur = parseInt(this.value) || 200;
@@ -580,7 +797,7 @@ function _bindEvents() {
     }
   });
 
-  // Timeline: play/stop/clear
+  // Timeline play/stop/clear
   document.getElementById('matrix-timeline-play').addEventListener('click', _playTimeline);
   document.getElementById('matrix-timeline-stop').addEventListener('click', _stopTimeline);
   document.getElementById('matrix-timeline-clear').addEventListener('click', () => {
@@ -596,7 +813,7 @@ function _bindEvents() {
     if (!name) { _toast('Escribe un nombre para la animación'); return; }
     if (!/^[a-zA-Z0-9_]+$/.test(name)) { _toast('Solo letras, números y _'); return; }
     if (timeline.length === 0) { _toast('La línea de tiempo está vacía'); return; }
-    savedAnims[name] = timeline.map(f => [...f.u32, f.dur]);
+    savedAnims[name] = timeline.map(f => cfg.toAnimFrame(f));
     _saveAnims();
     _renderAnimList();
     nameInput.value = '';
@@ -608,20 +825,22 @@ function _bindEvents() {
 
 function _populatePresets() {
   const select = document.getElementById('matrix-preset');
-  const names = Object.keys(MATRIX_FRAMES);
+  select.innerHTML = '<option value="">— Cargar ícono —</option>';
+  const presets = cfg.presets();
+  const names = Object.keys(presets);
   for (const name of names) {
     const opt = document.createElement('option');
     opt.value = name;
     opt.textContent = name;
     select.appendChild(opt);
   }
-  select.addEventListener('change', () => {
+  select.onchange = () => {
     const key = select.value;
-    if (key && MATRIX_FRAMES[key]) {
-      _loadFrameToGrid(MATRIX_FRAMES[key]);
+    if (key && presets[key]) {
+      _loadFrameToGrid(presets[key]);
       _update();
     }
-  });
+  };
 }
 
 // ═══ Helpers ════════════════════════════════════
@@ -632,67 +851,4 @@ function _toast(msg) {
 
 function _esc(s) {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
-
-// ═══ Panel toggle ══════════════════════════════
-
-let currentMode = 'code';
-
-export function initPanelModeTabs() {
-  const tabCode = document.getElementById('panel-tab-code');
-  const tabAnim = document.getElementById('panel-tab-anim');
-  const codeViews = document.getElementById('code-view-ino');
-  const hView = document.getElementById('code-edit-h');
-  const animView = document.getElementById('code-view-animation');
-  const codeTabs = document.getElementById('code-tabs');
-  const arduinoToolbar = document.querySelector('.arduino-toolbar');
-  const headerTitle = document.querySelector('.panel-header h2');
-
-  function switchMode(mode) {
-    currentMode = mode;
-    tabCode.classList.toggle('active', mode === 'code');
-    tabAnim.classList.toggle('active', mode === 'animation');
-
-    const editorPanel = document.getElementById('editor-panel');
-    const resizer = document.getElementById('panel-resizer');
-    const codePanel = document.getElementById('code-panel');
-
-    if (mode === 'code') {
-      headerTitle.textContent = 'Código Arduino (C++)';
-      codeTabs.style.display = '';
-      if (arduinoToolbar) arduinoToolbar.style.display = '';
-      animView.style.display = 'none';
-      if (editorPanel) editorPanel.style.display = '';
-      if (resizer) resizer.style.display = '';
-      if (codePanel) codePanel.style.flex = '';
-      const activeTab = document.querySelector('.code-tab.active');
-      if (activeTab && activeTab.dataset.readonly === 'true') {
-        codeViews.style.display = '';
-        hView.style.display = 'none';
-      } else if (activeTab) {
-        codeViews.style.display = 'none';
-        hView.style.display = '';
-      }
-    } else {
-      headerTitle.textContent = 'Matriz LED — Editor de frames';
-      codeTabs.style.display = 'none';
-      if (arduinoToolbar) arduinoToolbar.style.display = 'none';
-      codeViews.style.display = 'none';
-      hView.style.display = 'none';
-      animView.style.display = '';
-      if (editorPanel) editorPanel.style.display = 'none';
-      if (resizer) resizer.style.display = 'none';
-      if (codePanel) codePanel.style.flex = '1';
-    }
-
-    const lc = document.getElementById('line-count');
-    if (lc) lc.style.display = mode === 'code' ? '' : 'none';
-    const collapseBtn = document.getElementById('btn-collapse-code');
-    if (collapseBtn) collapseBtn.style.display = mode === 'code' ? '' : 'none';
-  }
-
-  tabCode.addEventListener('click', () => switchMode('code'));
-  tabAnim.addEventListener('click', () => switchMode('animation'));
-
-  return { switchMode, getMode: () => currentMode };
 }
