@@ -22,9 +22,9 @@ export const blocks = [
     type: 'matrixdirect_create',
     message0: Blockly.Msg.MSG_DIRECT_CREATE,
     message1: '%{BKY_MSG_DIRECT_ROWS1} %1 %2 %3 %4',
-    message2: '%{BKY_MSG_DIRECT_ROWS2} %5 %6 %7 %8',
-    message3: '%{BKY_MSG_DIRECT_COLS1} %9 %10 %11 %12',
-    message4: '%{BKY_MSG_DIRECT_COLS2} %13 %14 %15 %16',
+    message2: '%{BKY_MSG_DIRECT_ROWS2} %1 %2 %3 %4',
+    message3: '%{BKY_MSG_DIRECT_COLS1} %1 %2 %3 %4',
+    message4: '%{BKY_MSG_DIRECT_COLS2} %1 %2 %3 %4',
     args1: [
       { type: 'input_value', name: 'R1' },
       { type: 'input_value', name: 'R2' },
