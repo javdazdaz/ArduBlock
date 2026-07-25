@@ -260,6 +260,10 @@ function _applyMode() {
   if (hexR4) hexR4.style.display = mode === 'r4' ? '' : 'none';
   if (hex7219) hex7219.style.display = (mode === 'max7219' || mode === 'direct') ? '' : 'none';
 
+  // Leyenda de pines solo en modo directa
+  const pinLegend = document.getElementById('matrix-pin-legend');
+  if (pinLegend) pinLegend.style.display = mode === 'direct' ? '' : 'none';
+
   // Guardar preferencia
   localStorage.setItem('ardublock:matrix-editor-mode', mode);
 
@@ -402,31 +406,50 @@ function _drawTimelineCanvas(canvas, data) {
 
 function _renderFrameList() {
   const list = document.getElementById('matrix-frame-list');
-  const names = Object.keys(savedFrames).sort();
+  const presets = cfg.presets();
+  const presetNames = Object.keys(presets).sort();
+  const customNames = Object.keys(savedFrames).sort();
+  const total = presetNames.length + customNames.length;
 
   const cat = list.previousElementSibling;
   if (cat && cat.classList.contains('matrix-sidebar-cat')) {
-    cat.innerHTML = `📁 Frames <span class="matrix-frame-count">${names.length}</span>`;
+    cat.innerHTML = `📁 Frames <span class="matrix-frame-count">${total}</span>`;
   }
 
-  if (names.length === 0) {
+  if (total === 0) {
     list.innerHTML = '<div class="matrix-frame-empty">Sin frames</div>';
     return;
   }
 
-  list.innerHTML = names.map(name => {
+  let html = '';
+
+  // Predefinidos (📦, no eliminables)
+  for (const name of presetNames) {
     const sel = name === selectedFrame ? ' selected' : '';
-    return `<div class="matrix-frame-item${sel}" data-name="${name}" draggable="true">
+    html += `<div class="matrix-frame-item${sel}" data-name="${name}" data-preset="1" draggable="true">
       <canvas class="frame-preview" width="54" height="36"></canvas>
-      <span class="frame-item-name">${_esc(name)}</span>
+      <span class="frame-item-name">📦 ${_esc(name)}</span>
+    </div>`;
+  }
+
+  // Custom del usuario (🎞, eliminables)
+  for (const name of customNames) {
+    const sel = name === selectedFrame ? ' selected' : '';
+    html += `<div class="matrix-frame-item${sel}" data-name="${name}" draggable="true">
+      <canvas class="frame-preview" width="54" height="36"></canvas>
+      <span class="frame-item-name">🎞 ${_esc(name)}</span>
       <span class="frame-item-del" data-del="${name}">✕</span>
     </div>`;
-  }).join('');
+  }
+
+  list.innerHTML = html;
 
   // Dibujar mini previews
   list.querySelectorAll('.frame-preview').forEach(canvas => {
     const name = canvas.parentElement.dataset.name;
-    _drawTimelineCanvas(canvas, savedFrames[name]);
+    const data = canvas.parentElement.dataset.preset === '1'
+      ? presets[name] : savedFrames[name];
+    _drawTimelineCanvas(canvas, data);
   });
 
   // Click: seleccionar y cargar en grid
@@ -434,8 +457,9 @@ function _renderFrameList() {
     el.addEventListener('click', (e) => {
       if (e.target.classList.contains('frame-item-del')) return;
       const name = el.dataset.name;
+      const isPreset = el.dataset.preset === '1';
       selectedFrame = name;
-      _loadFrameToGrid(savedFrames[name]);
+      _loadFrameToGrid(isPreset ? presets[name] : savedFrames[name]);
       _update();
       _renderFrameList();
     });
@@ -443,6 +467,7 @@ function _renderFrameList() {
     // Drag & drop
     el.addEventListener('dragstart', (e) => {
       e.dataTransfer.setData('text/plain', el.dataset.name);
+      e.dataTransfer.setData('application/x-frame-preset', el.dataset.preset || '');
       e.dataTransfer.effectAllowed = 'copy';
       el.classList.add('dragging');
     });
@@ -451,7 +476,7 @@ function _renderFrameList() {
     });
   });
 
-  // Click en ✕: eliminar
+  // Click en ✕: eliminar (solo custom)
   list.querySelectorAll('.frame-item-del').forEach(el => {
     el.addEventListener('click', (e) => {
       e.stopPropagation();

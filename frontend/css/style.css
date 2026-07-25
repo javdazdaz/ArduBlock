@@ -923,6 +923,14 @@ main {
   z-index: 1;
 }
 .matrix-mode-tab:hover:not(.active) { background: var(--bg-input); }
+.matrix-pin-legend {
+  display: flex; align-items: center; gap: 0.4rem;
+  padding: 0.3rem 0.6rem; font-size: 0.72rem;
+  background: rgba(233,69,96,0.08); border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.pin-legend-label { color: var(--text-dim); font-weight: 600; }
+.pin-legend-note { color: var(--text-dim); opacity: 0.6; margin-left: auto; }
 .matrix-preset-select, .matrix-name-input {
   padding: 0.25rem 0.5rem; font-size: 0.78rem;
   font-family: inherit; background: var(--bg-input);
