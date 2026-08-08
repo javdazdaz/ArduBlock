@@ -256,6 +256,7 @@ const _FULL_TOOLBOX_TEMPLATE = [
   { kind: 'block', type: 'math_constrain', level: 3 },
   { kind: 'block', type: 'map_value', level: 3 },
   { kind: 'block', type: 'math_number_property', level: 3 },
+  { kind: 'block', type: 'variable_global', level: 3 },
   { kind: 'block', type: 'variable_declare', level: 3 },
   { kind: 'block', type: 'variable_set', level: 3 },
   { kind: 'block', type: 'variable_get', level: 3 },
@@ -411,6 +412,7 @@ export function buildToolboxForBoard(fqbn, level) {
       // ── SECCIÓN 3: VARIABLES (Arduino Reference) ──
       { 'kind': 'category', 'name': '%{BKY_CAT_VARIABLES}', 'colour': '#db743a', 'level': 3,
         'contents': [
+          { 'kind': 'block', 'type': 'variable_global', 'level': 3 },
           { 'kind': 'block', 'type': 'variable_declare', 'level': 3 },
           { 'kind': 'block', 'type': 'variable_set', 'level': 3 },
           { 'kind': 'block', 'type': 'variable_get', 'level': 3 }

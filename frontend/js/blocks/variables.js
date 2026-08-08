@@ -6,6 +6,31 @@ import '../i18n.js';  // side-effect: puebla Blockly.Msg
 
 export const blocks = [
 {
+    "type": "variable_global",
+    "message0": Blockly.Msg.MSG_VARIABLE_GLOBAL,
+    "args0": [
+      { "type": "field_input", "name": "NAME", "text": "a" },
+      { "type": "field_dropdown", "name": "TYPE",
+        "options": [
+          ["int", "int"],
+          ["float", "float"],
+          ["char", "char"],
+          ["String", "String"],
+          ["bool", "bool"],
+          ["byte", "byte"],
+          ["long", "long"],
+          ["unsigned int", "unsigned int"],
+          ["unsigned long", "unsigned long"],
+          ["double", "double"]
+        ]
+      },
+      { "type": "input_value", "name": "VALUE", "check": ["Number", "String", "Boolean"] }
+    ],
+    "style": "variable_blocks",
+    "tooltip": Blockly.Msg.TOOLTIP_VARIABLE_GLOBAL,
+    "helpUrl": ""
+  },
+{
     "type": "variable_declare",
     "message0": Blockly.Msg.MSG_VARIABLE_DECLARE,
     "args0": [
@@ -59,6 +84,16 @@ export const blocks = [
 ];
 
 export function registerGenerators(cppGenerator) {
+// ── variable_global ─────────────────────────────
+cppGenerator.forBlock['variable_global'] = function(block) {
+  const name  = block.getFieldValue('NAME') || 'a';
+  const type  = block.getFieldValue('TYPE') || 'int';
+  const value = cppGenerator.valueToCode(block, 'VALUE', cppGenerator.ORDER_NONE);
+  if (value) {
+    return type + ' ' + name + ' = ' + value + ';\n';
+  }
+  return type + ' ' + name + ' {};\n';
+};
 // ── variable_declare ───────────────────────────
 cppGenerator.forBlock['variable_declare'] = function(block) {
   const name  = block.getFieldValue('NAME') || 'a';

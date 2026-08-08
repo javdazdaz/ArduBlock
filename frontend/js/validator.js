@@ -118,7 +118,9 @@ function validateWorkspace(workspace) {
   const topBlocks = workspace.getTopBlocks(true);
   for (const block of topBlocks) {
     if (block.type === 'arduino_setup' || block.type === 'arduino_loop') continue;
-    if (block.type === 'include_header') continue; // va suelto, los recolecta el generador
+    if (block.type === 'include_header') continue;
+    if (block.type === 'library_include') continue;
+    if (block.type === 'variable_global') continue; // va suelto, los recolecta el generador
     const statementTypes = [
       'pin_mode', 'digital_write', 'analog_write',
       'delay_ms', 'serial_print', 'serial_println', 'serial_write',
@@ -421,7 +423,8 @@ function getBlockLabel(block) {
     'stepper_speed': 'velocidad motor',
     'stepper_step': 'girar motor',
     'text_print': 'imprimir texto',
-    'variable_declare': 'iniciar variable',
+    'variable_global': 'variable global',
+    'variable_declare': 'crear variable local',
     'variable_set': 'asignar variable',
     'variable_get': 'leer variable'
   };
