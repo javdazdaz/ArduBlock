@@ -266,8 +266,9 @@ async function _webSerialReadLoop() {
 export async function disconnectSerial(quiet = false) {
   const wasConnected = serialConnected || _webSerialConnected;
 
-  // Web Serial mode
-  if (_webSerialConnected) {
+  // Web Serial mode — cerrar puerto siempre que exista,
+  // incluso si _webSerialConnected es false (puerto abierto por PATH B upload)
+  if (_webSerialPort) {
     _webSerialConnected = false;
     try { await _webSerialPort.close(); } catch (_) {}
     _webSerialPort = null;
