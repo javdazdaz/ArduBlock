@@ -122,9 +122,9 @@ function validateWorkspace(workspace) {
     if (block.type === 'library_include') continue;
     if (block.type === 'variable_global') continue; // va suelto, los recolecta el generador
     const statementTypes = [
-      'pin_mode', 'digital_write', 'analog_write',
       'delay_ms', 'serial_print', 'serial_println', 'serial_write',
       'tone_output', 'tone_duration', 'no_tone_output',
+      'tone_duration_basic', 'attach_interrupt_basic',
       'servo_write', 'servo_write_us', 'attach_interrupt',
       'lcd_print', 'lcd_set_cursor', 'lcd_clear',
       'stepper_speed', 'stepper_step',
@@ -235,15 +235,10 @@ function validateWorkspace(workspace) {
   }
 
   const pinConsumers = {
-    'digital_write':  { pinField: 'PIN', mode: 'OUTPUT', label: 'digitalWrite' },
-    'analog_write':   { pinField: 'PIN', mode: 'OUTPUT', label: 'analogWrite' },
-    'tone_output':    { pinField: 'PIN', mode: 'OUTPUT', label: 'tone' },
-    'tone_duration':  { pinField: 'PIN', mode: 'OUTPUT', label: 'tone' },
-    'no_tone_output': { pinField: 'PIN', mode: 'OUTPUT', label: 'noTone' },
-    'digital_read':   { pinField: 'PIN', mode: 'INPUT',  label: 'digitalRead' },
-    'analog_read':    { pinField: 'PIN', mode: 'INPUT',  label: 'analogRead' },
-    'pulse_in':       { pinField: 'PIN', mode: 'INPUT',  label: 'pulseIn' },
-    'attach_interrupt': { pinField: 'PIN', mode: 'INPUT', label: 'attachInterrupt' }
+    'tone_duration_basic': { pinField: 'PIN', mode: 'OUTPUT', label: 'tone' },
+    'analog_read_basic': { pinField: 'PIN', mode: 'INPUT', label: 'analogRead', optional: true },
+    'analog_read_advanced': { pinField: 'PIN', mode: 'INPUT', label: 'analogRead', optional: true },
+    'attach_interrupt_basic': { pinField: 'PIN', mode: 'INPUT', label: 'attachInterrupt' }
   };
 
   const compatibleModes = {
@@ -260,11 +255,12 @@ function validateWorkspace(workspace) {
       const declared = pinModes[pin];
 
       if (!declared) {
+        const sev = cfg.optional ? 'info' : 'warning';
         const dir = cfg.mode === 'OUTPUT' ? t('val_pin_dir_out') : t('val_pin_dir_in');
         warnings.push({
           type: 'pin_not_configured',
-          severity: 'warning',
-          message: `Pin ${pin}: ${cfg.label}() ` + t('val_pin_not_conf_suffix') + ` ${dir}.`,
+          severity: sev,
+          message: `Pin ${pin}: ${cfg.label}() ` + t('val_pin_not_conf_suffix') + ` ${dir}.` + (cfg.optional ? ' ' + t('val_pin_optional') : ''),
           blocks: [block]
         });
       } else if (!compatibleModes[cfg.mode].includes(declared.mode)) {
@@ -285,22 +281,16 @@ function validateWorkspace(workspace) {
   const board = getBoardConfig(fqbn);
 
   const pinBlocks = [
-    { type: 'pin_mode', field: 'PIN', label: 'pinMode', kind: 'digital' },
-    { type: 'digital_write', field: 'PIN', label: 'digitalWrite', kind: 'digital' },
-    { type: 'digital_read', field: 'PIN', label: 'digitalRead', kind: 'digital' },
-    { type: 'analog_write', field: 'PIN', label: 'analogWrite', kind: 'pwm' },
-    { type: 'analog_read', field: 'PIN', label: 'analogRead', kind: 'analog' },
-    { type: 'pulse_in', field: 'PIN', label: 'pulseIn', kind: 'digital' },
-    { type: 'attach_interrupt', field: 'PIN', label: 'attachInterrupt', kind: 'digital' },
-    { type: 'tone_output', field: 'PIN', label: 'tone', kind: 'digital' },
-    { type: 'tone_duration', field: 'PIN', label: 'tone', kind: 'digital' },
-    { type: 'no_tone_output', field: 'PIN', label: 'noTone', kind: 'digital' },
+    { type: 'analog_read_basic', field: 'PIN', label: 'analogRead', kind: 'analog' },
+    { type: 'analog_read_advanced', field: 'PIN', label: 'analogRead', kind: 'analog' },
+    { type: 'tone_duration_basic', field: 'PIN', label: 'tone', kind: 'digital' },
     // Bloques de librerías con pines
     { type: 'servo_create', field: 'PIN', label: 'servo.attach', kind: 'digital' },
     { type: 'lcd_create', multiField: ['RS', 'EN', 'D4', 'D5', 'D6', 'D7'], label: 'LCD', kind: 'digital' },
     { type: 'dht_create', field: 'PIN', label: 'sensor DHT', kind: 'digital' },
     { type: 'ultrasonic_create', multiField: ['TRIG', 'ECHO'], label: 'ultrasónico', kind: 'digital' },
-    { type: 'stepper_create', multiField: ['P1', 'P2', 'P3', 'P4'], label: 'motor paso a paso', kind: 'digital' }
+    { type: 'stepper_create', multiField: ['P1', 'P2', 'P3', 'P4'], label: 'motor paso a paso', kind: 'digital' },
+    { type: 'attach_interrupt_basic', field: 'PIN', label: 'attachInterrupt', kind: 'digital' }
   ];
 
   for (const cfg of pinBlocks) {
@@ -376,6 +366,69 @@ function validateWorkspace(workspace) {
     });
   }
 
+  // ═══ R11: Conflicto Serial → pines 0/1 ════════
+  const hasSerialActive = workspace.getAllBlocks(false).some(
+    b => b.type === 'serial_begin' || b.type === 'serial_begin_advanced'
+  );
+  if (hasSerialActive) {
+    const serialPinBlocks = [
+      'pin_mode_basic', 'pin_mode_advanced',
+      'digital_write_basic', 'digital_write_advanced',
+      'digital_read_basic', 'digital_read_advanced',
+      'tone_output_basic', 'tone_output_advanced',
+      'tone_duration_basic', 'tone_duration_advanced',
+      'pulse_in_basic', 'pulse_in_advanced'
+    ];
+    for (const bt of serialPinBlocks) {
+      for (const block of findAllBlocksOfType(workspace, bt)) {
+        const pinField = block.getField('PIN');
+        if (!pinField) continue;
+        const pin = parseInt(pinField.getValue(), 10);
+        if (pin === 0 || pin === 1) {
+          warnings.push({
+            type: 'serial_pin_conflict',
+            severity: 'warning',
+            message: 'Pin ' + pin + ': reservado para Serial (RX/TX). Al usar Serial, este pin puede interferir con la comunicación y la carga de sketches.',
+            blocks: [block]
+          });
+        }
+      }
+    }
+  }
+
+  // ═══ R12: Conflicto LCD I2C → pines A4/A5 ═════
+  const hasLcdI2c = workspace.getAllBlocks(false).some(
+    b => b.type === 'lcd_i2c_create' || b.type === 'lcd_i2c_create_advanced'
+  );
+  if (hasLcdI2c) {
+    const i2cPinBlocks = [
+      'pin_mode_basic', 'pin_mode_advanced',
+      'digital_write_basic', 'digital_write_advanced',
+      'digital_read_basic', 'digital_read_advanced',
+      'analog_read_basic', 'analog_read_advanced',
+      'tone_output_basic', 'tone_output_advanced',
+      'tone_duration_basic', 'tone_duration_advanced',
+      'pulse_in_basic', 'pulse_in_advanced'
+    ];
+    for (const bt of i2cPinBlocks) {
+      for (const block of findAllBlocksOfType(workspace, bt)) {
+        const pinField = block.getField('PIN');
+        if (!pinField) continue;
+        const pinStr = String(pinField.getValue());
+        // Check for A4/A5 (analog or digital pin 4/5 when used as digital)
+        if (pinStr === 'A4' || pinStr === 'A5' || pinStr === '4' || pinStr === '5') {
+          warnings.push({
+            type: 'i2c_pin_conflict',
+            severity: 'warning',
+            message: 'Pin ' + pinStr + ': el LCD I2C usa SDA=A4 y SCL=A5. Usar estos pines puede causar conflictos con la pantalla.',
+            blocks: [block]
+          });
+        }
+      }
+    }
+  }
+
+
   return warnings;
 }
 
@@ -385,11 +438,8 @@ function getBlockLabel(block) {
   const labels = {
     'arduino_setup': 'al iniciar (setup)',
     'arduino_loop': 'repetir siempre (loop)',
-    'pin_mode': 'configurar pin',
     'digital_write': 'escribir digital',
-    'digital_read': 'leer pin digital',
     'analog_write': 'escribir analógico',
-    'analog_read': 'leer pin analógico',
     'delay_ms': 'esperar',
     'serial_begin': 'iniciar Serial',
     'serial_print': 'enviar por Serial',

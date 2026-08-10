@@ -6,29 +6,16 @@ import '../i18n.js';  // side-effect: puebla Blockly.Msg
 
 export const blocks = [
 {
-    "type": "analog_write",
-    "message0": Blockly.Msg.MSG_ANALOG_WRITE,
-    "args0": [
-      { "type": "field_number", "name": "PIN", "value": 9, "min": 0, "max": 54 },
-      { "type": "input_value", "name": "VALUE", "check": "Number" }
-    ],
-    "previousStatement": null,
-    "nextStatement": null,
-    "colour": 40,
-    "tooltip": Blockly.Msg.TOOLTIP_ANALOG_WRITE,
-    "helpUrl": ""
-  },
-{
     "type": "analog_write_advanced",
     "message0": Blockly.Msg.MSG_ANALOG_WRITE,
     "args0": [
       { "type": "input_value", "name": "PIN", "check": "Number" },
-      { "type": "input_value", "name": "VALUE", "check": "Number" }
+      { "type": "field_number", "name": "VALUE", "value": 128, "min": 0, "max": 255 }
     ],
     "previousStatement": null,
     "nextStatement": null,
     "colour": 40,
-    "tooltip": "Nivel Avanzado. El pin y el valor PWM pueden ser variables o expresiones. Permite control PWM completamente dinámico.",
+    "tooltip": "El pin puede ser una variable o expresión. El valor PWM se ingresa como número (0-255).",
     "helpUrl": ""
   },
 {
@@ -46,18 +33,7 @@ export const blocks = [
     "previousStatement": null,
     "nextStatement": null,
     "colour": 40,
-    "tooltip": "Nivel Básico. Elige el pin PWM de una lista (solo los pines con ~). En Intermedio puedes escribir el número.",
-    "helpUrl": ""
-  },
-{
-    "type": "analog_read",
-    "message0": Blockly.Msg.MSG_ANALOG_READ,
-    "args0": [
-      { "type": "field_number", "name": "PIN", "value": 0, "min": 0, "max": 15 }
-    ],
-    "output": "Number",
-    "colour": 40,
-    "tooltip": Blockly.Msg.TOOLTIP_ANALOG_READ,
+    "tooltip": "Elige el pin PWM de una lista (solo los pines con ~ en la placa). El valor va de 0 a 255.",
     "helpUrl": ""
   },
 {
@@ -75,7 +51,7 @@ export const blocks = [
     ],
     "output": "Number",
     "colour": 40,
-    "tooltip": "Nivel Básico. Elige el pin analógico de una lista. En Intermedio puedes escribir el número.",
+    "tooltip": "Elige el pin analógico de una lista (A0-A15). Lee valores de 0 a 1023 sin necesidad de pinMode.",
     "helpUrl": ""
   },
 {
@@ -86,22 +62,16 @@ export const blocks = [
     ],
     "output": "Number",
     "colour": 40,
-    "tooltip": "Nivel Avanzado. El pin analógico puede ser una variable. Permite leer sensores en pines dinámicos.",
+    "tooltip": "El pin analógico puede ser una variable o expresión. Permite leer sensores en pines dinámicos.",
     "helpUrl": ""
   }
 ];
 
 export function registerGenerators(cppGenerator) {
-// ── analog_write ─────────────────────────────
-cppGenerator.forBlock['analog_write'] = function(block) {
-  const pin   = block.getFieldValue('PIN');
-  const value = cppGenerator.valueToCode(block, 'VALUE', cppGenerator.ORDER_ATOMIC) || '0';
-  return 'analogWrite(' + pin + ', ' + value + ');\n';
-};
 // ── analog_write_advanced (N3) ───────────────
 cppGenerator.forBlock['analog_write_advanced'] = function(block) {
   const pin   = cppGenerator.valueToCode(block, 'PIN', cppGenerator.ORDER_ATOMIC) || '9';
-  const value = cppGenerator.valueToCode(block, 'VALUE', cppGenerator.ORDER_ATOMIC) || '0';
+  const value = block.getFieldValue('VALUE');
   return 'analogWrite(' + pin + ', ' + value + ');\n';
 };
 // ── analog_write_basic (N1) ───────────────────
@@ -109,11 +79,6 @@ cppGenerator.forBlock['analog_write_basic'] = function(block) {
   const pin   = block.getFieldValue('PIN');
   const value = cppGenerator.valueToCode(block, 'VALUE', cppGenerator.ORDER_ATOMIC) || '0';
   return 'analogWrite(' + pin + ', ' + value + ');\n';
-};
-// ── analog_read ──────────────────────────────
-cppGenerator.forBlock['analog_read'] = function(block) {
-  const pin = block.getFieldValue('PIN');
-  return ['analogRead(A' + pin + ')', cppGenerator.ORDER_ATOMIC];
 };
 // ── analog_read_basic (N1) ────────────────────
 cppGenerator.forBlock['analog_read_basic'] = function(block) {

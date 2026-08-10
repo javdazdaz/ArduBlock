@@ -6,30 +6,12 @@ import '../i18n.js';  // side-effect: puebla Blockly.Msg
 
 export const blocks = [
 {
-    "type": "pin_mode",
-    "message0": Blockly.Msg.MSG_PIN_MODE,
-    "args0": [
-      { "type": "field_number", "name": "PIN", "value": 13, "min": 0, "max": 54 },
-      { "type": "field_dropdown", "name": "MODE",
-        "options": [
-          ["ENTRADA", "INPUT"],
-          ["SALIDA", "OUTPUT"],
-          ["ENTRADA_PULLUP", "INPUT_PULLUP"]
-        ]
-      }
-    ],
-    "previousStatement": null,
-    "nextStatement": null,
-    "colour": 60,
-    "tooltip": Blockly.Msg.TOOLTIP_PIN_MODE,
-    "helpUrl": ""
-  },
-{
     "type": "pin_mode_basic",
     "message0": Blockly.Msg.MSG_PIN_MODE,
     "args0": [
       { "type": "field_dropdown", "name": "PIN",
         "options": [
+          ["0", "0"], ["1", "1"],
           ["2", "2"], ["3", "3"], ["4", "4"], ["5", "5"],
           ["6", "6"], ["7", "7"], ["8", "8"], ["9", "9"],
           ["10", "10"], ["11", "11"], ["12", "12"], ["13", "13"],
@@ -39,16 +21,16 @@ export const blocks = [
       },
       { "type": "field_dropdown", "name": "MODE",
         "options": [
-          ["ENTRADA", "INPUT"],
-          ["SALIDA", "OUTPUT"],
-          ["ENTRADA_PULLUP", "INPUT_PULLUP"]
+          [Blockly.Msg.INPUT, "INPUT"],
+          [Blockly.Msg.OUTPUT, "OUTPUT"],
+          [Blockly.Msg.INPUT_PULLUP, "INPUT_PULLUP"]
         ]
       }
     ],
     "previousStatement": null,
     "nextStatement": null,
     "colour": 60,
-    "tooltip": "Nivel Básico. Elige el pin de una lista. En Intermedio puedes escribir el número y en Avanzado usar una variable.",
+    "tooltip": "Elige el pin de una lista y configura si es de entrada o salida.",
     "helpUrl": ""
   },
 {
@@ -58,34 +40,16 @@ export const blocks = [
       { "type": "input_value", "name": "PIN", "check": "Number" },
       { "type": "field_dropdown", "name": "MODE",
         "options": [
-          ["ENTRADA", "INPUT"],
-          ["SALIDA", "OUTPUT"],
-          ["ENTRADA_PULLUP", "INPUT_PULLUP"]
+          [Blockly.Msg.INPUT, "INPUT"],
+          [Blockly.Msg.OUTPUT, "OUTPUT"],
+          [Blockly.Msg.INPUT_PULLUP, "INPUT_PULLUP"]
         ]
       }
     ],
     "previousStatement": null,
     "nextStatement": null,
     "colour": 60,
-    "tooltip": "Nivel Avanzado. El pin puede ser una variable o expresión matemática. Permite controlar pines dinámicamente desde un bucle o arreglo.",
-    "helpUrl": ""
-  },
-{
-    "type": "digital_write",
-    "message0": Blockly.Msg.MSG_DIGITAL_WRITE,
-    "args0": [
-      { "type": "field_number", "name": "PIN", "value": 13, "min": 0, "max": 54 },
-      { "type": "field_dropdown", "name": "VALUE",
-        "options": [
-          ["HIGH", "HIGH"],
-          ["LOW", "LOW"]
-        ]
-      }
-    ],
-    "previousStatement": null,
-    "nextStatement": null,
-    "colour": 60,
-    "tooltip": Blockly.Msg.TOOLTIP_DIGITAL_WRITE,
+    "tooltip": "El pin puede ser una variable o expresión matemática. Útil para configurar pines desde un bucle.",
     "helpUrl": ""
   },
 {
@@ -94,6 +58,7 @@ export const blocks = [
     "args0": [
       { "type": "field_dropdown", "name": "PIN",
         "options": [
+          ["0", "0"], ["1", "1"],
           ["2", "2"], ["3", "3"], ["4", "4"], ["5", "5"],
           ["6", "6"], ["7", "7"], ["8", "8"], ["9", "9"],
           ["10", "10"], ["11", "11"], ["12", "12"], ["13", "13"],
@@ -111,7 +76,7 @@ export const blocks = [
     "previousStatement": null,
     "nextStatement": null,
     "colour": 60,
-    "tooltip": "Nivel Básico. Elige el pin de una lista. En Intermedio puedes escribir el número y en Avanzado usar una variable.",
+    "tooltip": "Elige el pin de una lista y escribe HIGH (encendido) o LOW (apagado).",
     "helpUrl": ""
   },
 {
@@ -129,18 +94,7 @@ export const blocks = [
     "previousStatement": null,
     "nextStatement": null,
     "colour": 60,
-    "tooltip": "Nivel Avanzado. El pin puede ser una variable o expresión matemática. Permite controlar pines dinámicamente desde un bucle o arreglo.",
-    "helpUrl": ""
-  },
-{
-    "type": "digital_read",
-    "message0": Blockly.Msg.MSG_DIGITAL_READ,
-    "args0": [
-      { "type": "field_number", "name": "PIN", "value": 2, "min": 0, "max": 54 }
-    ],
-    "output": "Number",
-    "colour": 60,
-    "tooltip": Blockly.Msg.TOOLTIP_DIGITAL_READ,
+    "tooltip": "El pin puede ser una variable o expresión. Útil para controlar pines desde un bucle o arreglo.",
     "helpUrl": ""
   },
 {
@@ -149,6 +103,7 @@ export const blocks = [
     "args0": [
       { "type": "field_dropdown", "name": "PIN",
         "options": [
+          ["0", "0"], ["1", "1"],
           ["2", "2"], ["3", "3"], ["4", "4"], ["5", "5"],
           ["6", "6"], ["7", "7"], ["8", "8"], ["9", "9"],
           ["10", "10"], ["11", "11"], ["12", "12"], ["13", "13"],
@@ -159,7 +114,7 @@ export const blocks = [
     ],
     "output": "Boolean",
     "colour": 60,
-    "tooltip": "Nivel Básico. Elige el pin de una lista. En Intermedio puedes escribir el número y en Avanzado usar una variable.",
+    "tooltip": "Elige el pin de una lista y lee su valor digital (HIGH o LOW).",
     "helpUrl": ""
   },
 {
@@ -170,18 +125,12 @@ export const blocks = [
     ],
     "output": "Boolean",
     "colour": 60,
-    "tooltip": "Nivel Avanzado. El pin puede ser una variable o expresión. Permite leer pines dinámicamente desde un bucle.",
+    "tooltip": "El pin puede ser una variable o expresión. Útil para leer pines desde un bucle.",
     "helpUrl": ""
   }
 ];
 
 export function registerGenerators(cppGenerator) {
-// ── pin_mode ────────────────────────────────
-cppGenerator.forBlock['pin_mode'] = function(block) {
-  const pin  = block.getFieldValue('PIN');
-  const mode = block.getFieldValue('MODE');
-  return 'pinMode(' + pin + ', ' + mode + ');\n';
-};
 // ── pin_mode_basic (N1) ──────────────────────
 cppGenerator.forBlock['pin_mode_basic'] = function(block) {
   const pin  = block.getFieldValue('PIN');
@@ -194,12 +143,6 @@ cppGenerator.forBlock['pin_mode_advanced'] = function(block) {
   const mode = block.getFieldValue('MODE');
   return 'pinMode(' + pin + ', ' + mode + ');\n';
 };
-// ── digital_write ────────────────────────────
-cppGenerator.forBlock['digital_write'] = function(block) {
-  const pin   = block.getFieldValue('PIN');
-  const value = block.getFieldValue('VALUE');
-  return 'digitalWrite(' + pin + ', ' + value + ');\n';
-};
 // ── digital_write_basic (N1) ──────────────────
 cppGenerator.forBlock['digital_write_basic'] = function(block) {
   const pin   = block.getFieldValue('PIN');
@@ -211,11 +154,6 @@ cppGenerator.forBlock['digital_write_advanced'] = function(block) {
   const pin   = cppGenerator.valueToCode(block, 'PIN', cppGenerator.ORDER_ATOMIC) || '0';
   const value = block.getFieldValue('VALUE');
   return 'digitalWrite(' + pin + ', ' + value + ');\n';
-};
-// ── digital_read ─────────────────────────────
-cppGenerator.forBlock['digital_read'] = function(block) {
-  const pin = block.getFieldValue('PIN');
-  return ['digitalRead(' + pin + ')', cppGenerator.ORDER_ATOMIC];
 };
 // ── digital_read_basic (N1) ───────────────────
 cppGenerator.forBlock['digital_read_basic'] = function(block) {
