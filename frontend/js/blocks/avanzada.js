@@ -6,6 +6,7 @@ import '../i18n.js';  // side-effect: puebla Blockly.Msg
 
 export const blocks = [
 {
+    "type": "tone_output",
     "message0": Blockly.Msg.MSG_TONE_OUTPUT,
     "args0": [
       { "type": "field_number", "name": "PIN", "value": 8, "min": 0, "max": 54 },
@@ -102,6 +103,7 @@ export const blocks = [
     "helpUrl": ""
   },
 {
+    "type": "tone_duration",
     "message0": Blockly.Msg.MSG_TONE_DURATION,
     "args0": [
       { "type": "field_number", "name": "PIN", "value": 8, "min": 0, "max": 54 },
@@ -133,6 +135,7 @@ export const blocks = [
     "helpUrl": ""
   },
 {
+    "type": "no_tone_output",
     "message0": Blockly.Msg.MSG_NO_TONE_OUTPUT,
     "args0": [
       { "type": "field_number", "name": "PIN", "value": 8, "min": 0, "max": 54 }
@@ -156,6 +159,7 @@ export const blocks = [
     "helpUrl": ""
   },
 {
+    "type": "pulse_in",
     "message0": Blockly.Msg.MSG_PULSE_IN,
     "args0": [
       { "type": "field_number", "name": "PIN", "value": 7, "min": 0, "max": 54 },
@@ -222,6 +226,7 @@ export const blocks = [
     "helpUrl": ""
   },
 {
+    "type": "attach_interrupt",
     "message0": Blockly.Msg.MSG_ATTACH_INTERRUPT,
     "args0": [
       { "type": "field_number", "name": "PIN", "value": 2, "min": 0, "max": 54 },

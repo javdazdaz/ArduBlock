@@ -111,10 +111,7 @@ class TypedParameterModel extends ObservableParameterModel {
   }
 }
 
-// Redefinir procedures_mutatorarg con dropdown de tipo
-delete Blockly.Blocks['procedures_mutatorarg'];
-
-// ═══ Importar bloques por categoría ══════════════
+// NOTA: procedures_mutatorarg con dropdown de tipo (TypedParameterModel)\n// queda pendiente para futura implementación.\n// Por ahora usamos el bloque estándar de Blockly.\n\n// ═══ Importar bloques por categoría ══════════════
 
 import { blocks as estructuraBlocks } from './blocks/estructura.js';
 import { blocks as digitalBlocks }    from './blocks/digital.js';
