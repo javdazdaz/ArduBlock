@@ -329,7 +329,7 @@ function getDefaultState() {
                 next: {
                   block: {
                     type: 'pin_mode_basic', id: 'S3',
-                    fields: { PIN: 13, MODE: 'OUTPUT' }
+                    fields: { PIN: '13', MODE: 'OUTPUT' }
                   }
                 }
               }
@@ -342,7 +342,7 @@ function getDefaultState() {
             BODY: {
               block: {
                 type: 'digital_write_basic', id: 'L2',
-                fields: { PIN: 13, VALUE: 'HIGH' },
+                fields: { PIN: '13', VALUE: 'HIGH' },
                 next: {
                   block: {
                     type: 'delay_ms', id: 'L3',
@@ -350,7 +350,7 @@ function getDefaultState() {
                     next: {
                       block: {
                         type: 'digital_write_basic', id: 'L4',
-                        fields: { PIN: 13, VALUE: 'LOW' },
+                        fields: { PIN: '13', VALUE: 'LOW' },
                         next: {
                           block: { type: 'delay_ms', id: 'L5', fields: { MS: 1000 } }
                         }
