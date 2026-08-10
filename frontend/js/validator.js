@@ -225,7 +225,7 @@ function validateWorkspace(workspace) {
 
   // ═══ R7: Validación de pines ═══════════════════
   const pinModes = {};
-  const pinModeBlocks = findAllBlocksOfType(workspace, 'pin_mode');
+  const pinModeBlocks = findAllBlocksOfType(workspace, 'pin_mode_basic');
   for (const block of pinModeBlocks) {
     if (isInsideBlockType(workspace, block, 'arduino_setup')) {
       const pin  = parseInt(block.getFieldValue('PIN'), 10);

@@ -11,21 +11,6 @@
  *   validator.js       — validación pedagógica de bloques
  */
 
-// ── Suppress known library warnings ────────────
-(function() {
-  const _warn = console.warn.bind(console);
-  console.warn = function(...args) {
-    const msg = args.join(' ');
-    if (msg.includes('[procedures][serializer]')) return;
-    _warn(...args);
-  };
-  const _gEBI = document.getElementById.bind(document);
-  document.getElementById = function(id) {
-    if (id === '' || id == null) return null;
-    return _gEBI(id);
-  };
-})();
-
 import * as Blockly from 'blockly';
 import DarkTheme from '@blockly/theme-dark';
 import './blocks.js';
@@ -343,7 +328,7 @@ function getDefaultState() {
                 fields: { BAUD: '9600' },
                 next: {
                   block: {
-                    type: 'pin_mode', id: 'S3',
+                    type: 'pin_mode_basic', id: 'S3',
                     fields: { PIN: 13, MODE: 'OUTPUT' }
                   }
                 }
@@ -356,7 +341,7 @@ function getDefaultState() {
           inputs: {
             BODY: {
               block: {
-                type: 'digital_write', id: 'L2',
+                type: 'digital_write_basic', id: 'L2',
                 fields: { PIN: 13, VALUE: 'HIGH' },
                 next: {
                   block: {
@@ -364,7 +349,7 @@ function getDefaultState() {
                     fields: { MS: 1000 },
                     next: {
                       block: {
-                        type: 'digital_write', id: 'L4',
+                        type: 'digital_write_basic', id: 'L4',
                         fields: { PIN: 13, VALUE: 'LOW' },
                         next: {
                           block: { type: 'delay_ms', id: 'L5', fields: { MS: 1000 } }

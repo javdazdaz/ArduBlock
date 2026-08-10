@@ -5,6 +5,7 @@
  * setup/loop, pines digitales/analógicos, Serial, delays.
  */
 
+import './suppress-warnings.js';  // must be first — suppresses library noise
 import * as Blockly from 'blockly';
 import { registerFieldAngle } from '@blockly/field-angle';
 import { initLanguage } from './i18n.js';
