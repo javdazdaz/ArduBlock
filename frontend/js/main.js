@@ -17,6 +17,38 @@ import './blocks.js';
 import { generateArduinoCode } from './generator.js';
 import { initValidator }       from './validator.js';
 
+// ═══ Modo invitado vs usuario logueado ═════════
+let IS_GUEST_MODE = true;
+window.IS_GUEST_MODE = true;
+let USER_NAME = '';
+
+(async function detectMode() {
+  try {
+    const res = await fetch('/api/session');
+    const data = await res.json();
+    IS_GUEST_MODE = !data.authenticated;
+    window.IS_GUEST_MODE = IS_GUEST_MODE;
+    USER_NAME = data.user_name || '';
+  } catch (_) {
+    IS_GUEST_MODE = true;
+  }
+
+  const brand = document.querySelector('.header-brand');
+  if (brand) {
+    const badge = document.createElement('span');
+    badge.style.cssText = 'font-size:0.8rem;opacity:0.7;margin-left:0.5rem';
+    if (IS_GUEST_MODE) {
+      badge.textContent = '👤 Invitado';
+      brand.appendChild(badge);
+      const uploadBtn = document.getElementById('btn-upload');
+      if (uploadBtn) uploadBtn.style.display = 'none';
+    } else {
+      badge.textContent = '👤 ' + USER_NAME;
+      brand.appendChild(badge);
+    }
+  }
+})();
+
 // Plugins
 import { WorkspaceSearch }     from '@blockly/plugin-workspace-search';
 import { Backpack }            from '@blockly/workspace-backpack';
@@ -79,7 +111,7 @@ class FixedEdgesScrollMetricsManager extends ScrollMetricsManager {
 FixedEdgesScrollMetricsManager.setFixedEdges({ top: true, left: true });
 
 // Módulos de la aplicación
-import { initProjectManager, lsKey, isWorkspaceDirty } from './project-manager.js';
+import { initProjectManager, lsKey, isWorkspaceDirty, resetCurrentProject } from './project-manager.js';
 import { initSettings, getSetting } from './settings.js';
 import { initSerial }        from './serial.js';
 import { initUpload }         from './upload.js';
@@ -264,6 +296,7 @@ document.getElementById('hmenu-settings').addEventListener('click', () => {
 
 document.getElementById('btn-new').addEventListener('click', () => {
   resetTree();
+  resetCurrentProject();
   workspace.clear();
   Blockly.serialization.workspaces.load(getDefaultState(), workspace);
   projectInput.value = '';

@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ classroom.name }} — ArduBlock</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: system-ui, sans-serif; background: #1a1a2e; color: #eee; min-height: 100vh; }
+    nav { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.5rem; background: #16213e; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    nav h1 { font-size: 1.2rem; }
+    nav a { color: #a0a0b0; text-decoration: none; font-size: 0.9rem; margin-left: 1rem; }
+    nav a:hover { color: #e94560; }
+    main { max-width: 700px; margin: 2rem auto; padding: 0 1.5rem; }
+    .panel { background: #16213e; border-radius: 10px; padding: 1.5rem; border: 1px solid rgba(255,255,255,0.05); margin-bottom: 1.5rem; }
+    .panel h2 { font-size: 1.1rem; margin-bottom: 1rem; color: #e94560; }
+    .code-big {
+      font-family: monospace; font-size: 1.5rem; letter-spacing: 3px;
+      background: rgba(233,69,96,0.15); padding: 0.8rem 1.5rem; border-radius: 8px;
+      color: #e94560; display: inline-block; margin-bottom: 0.5rem;
+    }
+    .instructions { color: #a0a0b0; font-size: 0.85rem; margin-bottom: 1.5rem; line-height: 1.6; }
+    .student-list { list-style: none; }
+    .student-list li { padding: 0.6rem 0; border-bottom: 1px solid rgba(255,255,255,0.03); font-size: 0.9rem; }
+    .student-list li:last-child { border-bottom: none; }
+    .back { color: #a0a0b0; text-decoration: none; font-size: 0.85rem; display: inline-block; margin-bottom: 1rem; }
+    .back:hover { color: #e94560; }
+    .empty { color: #666; font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <h1>⚡ ArduBlock</h1>
+  <div>
+    <a href="/teacher">← Mis aulas</a>
+  </div>
+</nav>
+
+<main>
+  <a href="/teacher" class="back">← Volver</a>
+
+  <div class="panel">
+    <h2>{{ classroom.name }}</h2>
+    <div class="instructions">
+      <p>Comparte este código con tus estudiantes:</p>
+      <div class="code-big">{{ classroom.join_code }}</div>
+      <p style="margin-top:0.8rem">
+        Los estudiantes deben entrar a <strong>ardublock.matemancia.net/register</strong><br>
+        e ingresar este código junto con su nombre, email y contraseña.
+      </p>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>👥 Estudiantes ({{ students|length }})</h2>
+    {% if students %}
+      <ul class="student-list">
+        {% for s in students %}
+          <li>{{ s.name }} — {{ s.email }}</li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="empty">Ningún estudiante se ha unido todavía.</p>
+    {% endif %}
+  </div>
+</main>
+
+</body>
+</html>

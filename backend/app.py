@@ -2,14 +2,11 @@
 ArduBlock Backend — Servidor Flask
 
 Factory que crea la aplicación, registra blueprints y configura CORS.
-El script de servicio (ardublock.sh) corre este archivo directamente.
 """
 
 import os
 import sys
 
-# Asegurar que el directorio padre (raíz del proyecto) esté en sys.path
-# para que los imports 'from backend.xxx' funcionen al ejecutar desde backend/
 _src_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if _src_dir not in sys.path:
     sys.path.insert(0, _src_dir)
@@ -17,9 +14,16 @@ if _src_dir not in sys.path:
 import signal
 from pathlib import Path
 
-from flask import Flask, send_from_directory
+from flask import Flask, send_from_directory, session, redirect, url_for
+from flask_login import current_user
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 
-from backend.config import FRONTEND_DIR, HOST, PORT, get_arduino_cli_path
+from backend.config import (
+    FRONTEND_DIR, TEMPLATES_DIR, HOST, PORT, SECRET_KEY, DATABASE_PATH,
+    get_arduino_cli_path,
+)
+from backend.models import Base
 from backend.services.serial_manager import SerialManager
 
 # ── Blueprints ──────────────────────────────────
@@ -32,14 +36,32 @@ from backend.routes.examples import examples_bp
 from backend.routes.arduino_cli import arduino_cli_bp
 from backend.routes.drivers import drivers_bp
 from backend.routes.health import health_bp
+from backend.routes.auth import auth_bp, init_auth, _ensure_teacher
+
+# ── Database ────────────────────────────────────
+_engine = create_engine(f"sqlite:///{DATABASE_PATH}", echo=False)
+_SessionFactory = sessionmaker(bind=_engine)
+
+
+def init_db():
+    """Crea las tablas si no existen."""
+    Base.metadata.create_all(_engine)
 
 
 def create_app() -> Flask:
     """Crea y configura la aplicación Flask."""
-    app = Flask(__name__, static_folder=None)
+    init_db()
+    _ensure_teacher()
+
+    app = Flask(__name__, static_folder=None, template_folder=str(TEMPLATES_DIR))
+    app.secret_key = SECRET_KEY
+    app.config["WTF_CSRF_SECRET_KEY"] = os.environ.get("WTF_CSRF_KEY", SECRET_KEY)
     app.config["PROPAGATE_EXCEPTIONS"] = True
 
-    # ── CORS manual ──────────────────────────────
+    # ── Auth ──────────────────────────────────────
+    init_auth(app, _SessionFactory)
+
+    # ── CORS ──────────────────────────────────────
     @app.after_request
     def _add_cors_headers(response):
         response.headers["Access-Control-Allow-Origin"] = "*"
@@ -51,7 +73,7 @@ def create_app() -> Flask:
     serial_manager = SerialManager()
     init_serial_manager(serial_manager)
 
-    # ── Registrar blueprints ──────────────────────
+    # ── Blueprints ────────────────────────────────
     app.register_blueprint(projects_bp)
     app.register_blueprint(compile_bp)
     app.register_blueprint(upload_bp)
@@ -61,19 +83,30 @@ def create_app() -> Flask:
     app.register_blueprint(arduino_cli_bp)
     app.register_blueprint(drivers_bp)
     app.register_blueprint(health_bp)
+    app.register_blueprint(auth_bp)
 
-    # ── Rutas del frontend estático ───────────────
+    # ── Rutas de frontend ────────────────────────
     @app.route("/")
-    def index():
+    def frontpage():
+        """Dashboard si está logueado, landing page si no."""
+        if current_user.is_authenticated:
+            return redirect(url_for("auth.dashboard"))
+        return send_from_directory(str(FRONTEND_DIR), "frontpage.html")
+
+    @app.route("/app")
+    @app.route("/app/")
+    def editor():
         return send_from_directory(str(FRONTEND_DIR), "index.html")
 
-    @app.route("/<path:filename>")
+    @app.route("/<path:filename>", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"])
     def static_files(filename):
+        if filename.startswith("admin"):
+            return "", 404
         return send_from_directory(str(FRONTEND_DIR), filename)
 
-    # ── Graceful shutdown ─────────────────────────
+    # ── Shutdown ─────────────────────────────────
     def _handle_shutdown(signum, frame):
-        print("\n⏳ Recibida señal de parada. Cerrando servidor...", file=sys.stderr)
+        print("\n⏳ Cerrando servidor...", file=sys.stderr)
         serial_manager.close()
         sys.exit(0)
 
@@ -83,20 +116,14 @@ def create_app() -> Flask:
     return app
 
 
-# ── Main ────────────────────────────────────────
-
 if __name__ == "__main__":
     app = create_app()
-
     cli_path = get_arduino_cli_path()
-    cli_ok = cli_path is not None
-
     print("⚡ ArduBlock backend iniciado")
     print(f"   Host:      {HOST}:{PORT}")
     print(f"   Frontend:  {FRONTEND_DIR}")
-    if cli_ok:
+    if cli_path:
         print(f"   arduino-cli: ✓ {cli_path}")
     else:
-        print("   arduino-cli: ✕ NO ENCONTRADO (compilar/subir requiere arduino-cli)")
-
+        print("   arduino-cli: ✕ NO ENCONTRADO")
     app.run(host=HOST, port=PORT, debug=False)

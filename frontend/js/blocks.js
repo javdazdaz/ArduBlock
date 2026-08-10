@@ -319,7 +319,7 @@ export function buildToolboxForBoard(fqbn, level) {
           { 'kind': 'block', 'type': 'arduino_for_index', 'level': 3 },
           { 'kind': 'block', 'type': 'controls_flow_statements', 'level': 3 }
         ]},
-      { 'kind': 'category', 'name': '%{BKY_CAT_LOGICA}', 'colour': '#88b652', 'level': 2,
+      { 'kind': 'category', 'name': '%{BKY_CAT_LOGICA}', 'colour': '#88b652', 'level': 1,
         'contents': [
           { 'kind': 'block', 'type': 'logic_compare', 'level': 2 },
           { 'kind': 'block', 'type': 'logic_boolean', 'level': 2 },
@@ -461,7 +461,7 @@ export function buildToolboxForBoard(fqbn, level) {
           { 'kind': 'block', 'type': 'lcd_set_cursor_advanced', 'level': 3 },
           { 'kind': 'block', 'type': 'lcd_clear', 'level': 3 }
         ]},
-      { 'kind': 'category', 'name': '%{BKY_CAT_SERVO}', 'colour': '300', 'level': 2,
+      { 'kind': 'category', 'name': '%{BKY_CAT_SERVO}', 'colour': '300', 'level': 1,
         'contents': [
           { 'kind': 'block', 'type': 'servo_create', 'level': 2 },
           { 'kind': 'block', 'type': 'servo_create_advanced', 'level': 3 },

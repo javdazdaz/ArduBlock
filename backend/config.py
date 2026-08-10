@@ -8,6 +8,7 @@ No depende de Flask — seguro importar desde cualquier módulo.
 import os
 import re
 import sys
+import secrets
 import shutil
 import platform
 from pathlib import Path
@@ -21,14 +22,17 @@ FRONTEND_DIR = (
     if os.environ.get("ARDUBLOCK_PRODUCTION")
     else _FRONTEND_BASE
 )
+TEMPLATES_DIR = _FRONTEND_BASE / "templates"
 PROJECTS_DIR = Path(__file__).resolve().parent / "projects"
 EXAMPLES_DIR = _BASE_DIR / "examples" / "arduino"
 PROJECTS_DIR.mkdir(exist_ok=True)
+DATABASE_PATH = Path(__file__).resolve().parent / "ardublock.db"
 
 # ═══ Servidor ═════════════════════════════════════
 
 HOST = os.environ.get("ARDUBLOCK_HOST", "0.0.0.0")
 PORT = int(os.environ.get("ARDUBLOCK_PORT", "5001"))
+SECRET_KEY = os.environ.get("ARDUBLOCK_SECRET_KEY", secrets.token_hex(32))
 
 # ═══ Validación de project_id ═════════════════════
 

@@ -47,3 +47,5 @@ ANALISIS.md
 # ── Misc ─────────────────────────────────────────
 *.bak
 start.sh
+backend/lti_key.json
+backend/ardublock.db

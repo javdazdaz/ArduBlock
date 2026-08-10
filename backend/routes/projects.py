@@ -1,16 +1,30 @@
 """
-ArduBlock — Rutas de proyectos (CRUD)
+ArduBlock — Rutas de proyectos (CRUD con SQLite)
+
+Modos:
+  - Usuario logueado: proyectos en DB (user_id)
+  - Guest mode: el frontend usa localStorage (estas rutas no se usan)
 """
 
 import json
 import os
 from pathlib import Path
 
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, session
+from flask_login import current_user, login_required
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 
-from backend.config import PROJECTS_DIR, validate_project_id
+from backend.models import Project
+from backend.config import DATABASE_PATH, validate_project_id
 
 projects_bp = Blueprint("projects", __name__)
+_engine = create_engine(f"sqlite:///{DATABASE_PATH}", echo=False)
+_SessionFactory = sessionmaker(bind=_engine)
+
+
+def _get_session():
+    return _SessionFactory()
 
 
 def _write_tabs(sketch_dir: Path, tabs: list[dict]) -> None:
@@ -29,46 +43,88 @@ def _write_tabs(sketch_dir: Path, tabs: list[dict]) -> None:
 
 
 @projects_bp.route("/api/projects", methods=["GET"])
+@login_required
 def list_projects():
-    projects = []
-    for f in PROJECTS_DIR.glob("*.json"):
-        projects.append(
-            {"id": f.stem, "name": f.stem, "modified": os.path.getmtime(str(f))}
+    s = _get_session()
+    try:
+        projects = (
+            s.query(Project)
+            .filter_by(user_id=current_user.id)
+            .order_by(Project.updated_at.desc())
+            .all()
         )
-    return jsonify(projects)
+        return jsonify([p.to_dict() for p in projects])
+    finally:
+        s.close()
 
 
-@projects_bp.route("/api/projects/<project_id>", methods=["GET"])
+@projects_bp.route("/api/projects/<int:project_id>", methods=["GET"])
+@login_required
 def load_project(project_id):
-    if not validate_project_id(project_id):
-        return jsonify({"error": "ID de proyecto inválido"}), 400
-    path = PROJECTS_DIR / f"{project_id}.json"
-    if not path.exists():
-        return jsonify({"error": "Proyecto no encontrado"}), 404
-    with open(path) as f:
-        data = json.load(f)
-    return jsonify(data)
+    s = _get_session()
+    try:
+        p = s.get(Project, project_id)
+        if not p or p.user_id != current_user.id:
+            return jsonify({"error": "Proyecto no encontrado"}), 404
+        return jsonify(p.to_dict())
+    finally:
+        s.close()
 
 
-@projects_bp.route("/api/projects/<project_id>", methods=["PUT"])
-def save_project(project_id):
-    if not validate_project_id(project_id):
-        return jsonify({"error": "ID de proyecto inválido"}), 400
+@projects_bp.route("/api/projects", methods=["POST"])
+@login_required
+def create_project():
     data = request.get_json()
     if not data:
         return jsonify({"error": "Datos inválidos"}), 400
-    path = PROJECTS_DIR / f"{project_id}.json"
-    with open(path, "w") as f:
-        json.dump(data, f, indent=2)
-    return jsonify({"status": "ok", "id": project_id})
+
+    s = _get_session()
+    try:
+        p = Project(
+            user_id=current_user.id,
+            name=data.get("name", "Sin título"),
+            data=json.dumps(data.get("data", {})),
+            board=data.get("board", "arduino:avr:uno"),
+        )
+        s.add(p)
+        s.commit()
+        return jsonify(p.to_dict()), 201
+    finally:
+        s.close()
 
 
-@projects_bp.route("/api/projects/<project_id>", methods=["DELETE"])
+@projects_bp.route("/api/projects/<int:project_id>", methods=["PUT"])
+@login_required
+def save_project(project_id):
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "Datos inválidos"}), 400
+
+    s = _get_session()
+    try:
+        p = s.get(Project, project_id)
+        if not p or p.user_id != current_user.id:
+            return jsonify({"error": "Proyecto no encontrado"}), 404
+
+        p.name = data.get("name", p.name)
+        p.data = json.dumps(data.get("data", {}))
+        p.board = data.get("board", p.board)
+        s.commit()
+        return jsonify(p.to_dict())
+    finally:
+        s.close()
+
+
+@projects_bp.route("/api/projects/<int:project_id>", methods=["DELETE"])
+@login_required
 def delete_project(project_id):
-    if not validate_project_id(project_id):
-        return jsonify({"error": "ID de proyecto inválido"}), 400
-    path = PROJECTS_DIR / f"{project_id}.json"
-    if not path.exists():
-        return jsonify({"error": "Proyecto no encontrado"}), 404
-    path.unlink()
-    return jsonify({"status": "ok", "id": project_id})
+    s = _get_session()
+    try:
+        p = s.get(Project, project_id)
+        if not p or p.user_id != current_user.id:
+            return jsonify({"error": "Proyecto no encontrado"}), 404
+        s.delete(p)
+        s.commit()
+        return jsonify({"status": "ok"})
+    finally:
+        s.close()

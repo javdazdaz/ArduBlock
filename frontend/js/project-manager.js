@@ -1,19 +1,20 @@
 /**
- * ArduBlock — Gestión de Proyectos (localStorage)
+ * ArduBlock — Gestión de Proyectos (localStorage + servidor)
  *
- * saveProject, loadProject, deleteProject, renderProjectList.
- * Recibe dependencias vía init() para evitar acoplamiento circular.
+ * Guest mode: localStorage en el navegador.
+ * Usuario logueado: API REST del servidor (/api/projects).
  */
 
 import * as Blockly from 'blockly';
 
 let workspace, projectInput, projectList, showToast;
 let LS_PREFIX, LAST_KEY, autoSaveTimer;
-let workspaceDirty = false;   // cambios desde el último autosave
+let workspaceDirty = false;
+let currentProjectId = null;  // ID del proyecto actual en servidor
 
-export function cancelAutoSave() {
-  clearTimeout(autoSaveTimer);
-}
+export function cancelAutoSave() { clearTimeout(autoSaveTimer); }
+
+export function resetCurrentProject() { currentProjectId = null; delete projectInput?.dataset?.projectId; }
 
 export function initProjectManager(deps) {
   workspace     = deps.workspace;
@@ -23,28 +24,21 @@ export function initProjectManager(deps) {
   LS_PREFIX     = deps.LS_PREFIX;
   LAST_KEY      = deps.LAST_KEY;
 
-  // Event listeners
   document.getElementById('btn-save').addEventListener('click', () => saveProject());
   document.getElementById('btn-load').addEventListener('click', toggleProjectList);
   document.getElementById('btn-delete').addEventListener('click', () => {
     const name = getProjectName();
-    if (!projectInput.value.trim()) {
-      showToast('Escribí el nombre del proyecto a eliminar');
-      return;
-    }
+    if (!projectInput.value.trim()) { showToast('Escribí el nombre del proyecto a eliminar'); return; }
     deleteProject(name);
   });
 
-  // Cerrar dropdown al clickear afuera
   document.addEventListener('click', (e) => {
     if (!projectList.classList.contains('hidden') &&
-        !e.target.closest('#btn-load') &&
-        !e.target.closest('#project-list')) {
+        !e.target.closest('#btn-load') && !e.target.closest('#project-list')) {
       projectList.classList.add('hidden');
     }
   });
 
-  // Auto-guardar con debounce 2s
   autoSaveTimer = null;
   workspace.addChangeListener(() => {
     workspaceDirty = true;
@@ -55,34 +49,19 @@ export function initProjectManager(deps) {
     }, 2000);
   });
 
-  // Sincronizar nombre del tab .ino con el input
   projectInput.addEventListener('input', () => {
     const name = projectInput.value.trim();
-    if (name && window._tabManager) {
-      const withIno = name.endsWith('.ino') ? name : name + '.ino';
-      window._tabManager.setSketchName(withIno);
-    }
+    if (window._tabManager && name) window._tabManager.setSketchName(name);
   });
 }
 
-export function isWorkspaceDirty() {
-  return workspaceDirty;
-}
 
-export function getProjectName() {
-  const raw = projectInput.value.trim();
-  let name = raw || 'sin-nombre';
-  if (!name.endsWith('.ino')) name += '.ino';
-  return name;
-}
+// ═══ Helpers ═════════════════════════════════════
 
-export function lsKey(name) {
-  const sanitized = name
-    .trim()
-    .replace(/\s+/g, '_')
-    .replace(/[^a-zA-Z0-9_\-.]/g, '')
-    .substring(0, 64)
-    || 'sin-nombre';
+export function getProjectName() { return projectInput.value.trim(); }
+
+function lsKey(name) {
+  const sanitized = name.trim().replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_\-.]/g, '').substring(0, 64) || 'sin-nombre';
   return LS_PREFIX + sanitized;
 }
 
@@ -92,86 +71,145 @@ export function escapeHtml(str) {
   return div.innerHTML;
 }
 
-export function saveProject(name) {
+function isGuest() { return window.IS_GUEST_MODE !== false; }
+
+
+// ═══ Save ════════════════════════════════════════
+
+export async function saveProject(name) {
   name = name || getProjectName();
   if (!name.endsWith('.ino')) name += '.ino';
   projectInput.value = name;
 
   const state = Blockly.serialization.workspaces.save(workspace);
   const tabs = window._tabManager ? window._tabManager.getTabs() : [];
-  const activityMeta = window._activityMeta ? window._activityMeta() : null;
-  const record = { name, saved: Date.now(), state, tabs };
-  if (activityMeta) record.activityMeta = activityMeta;
-  try {
-    localStorage.setItem(lsKey(name), JSON.stringify(record));
-    localStorage.setItem(LAST_KEY, name);
-    showToast(`Proyecto "${name}" guardado`);
-  } catch (e) {
-    showToast('Error al guardar: memoria llena');
+  const record = { name, state, tabs };
+
+  if (isGuest()) {
+    record.saved = Date.now();
+    try {
+      localStorage.setItem(lsKey(name), JSON.stringify(record));
+      localStorage.setItem(LAST_KEY, name);
+      showToast(`Proyecto "${name}" guardado (local)`);
+    } catch (e) { showToast('Error al guardar: memoria llena'); }
+    return;
   }
+
+  // Usuario logueado: API
+  try {
+    const method = currentProjectId ? 'PUT' : 'POST';
+    const url = currentProjectId ? `/api/projects/${currentProjectId}` : '/api/projects';
+    const res = await fetch(url, {
+      method, headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, data: record }),
+    });
+    if (res.ok) {
+      const saved = await res.json();
+      if (!currentProjectId) currentProjectId = saved.id;
+      projectInput.dataset.projectId = currentProjectId;
+      showToast(`Proyecto "${name}" guardado en servidor`);
+      localStorage.setItem(LAST_KEY, name);
+    } else {
+      showToast('Error al guardar en servidor');
+    }
+  } catch (e) { showToast('Error de conexión al guardar'); }
 }
 
-export function loadProject(name) {
-  if (!name) return;
-  try {
-    const raw = localStorage.getItem(lsKey(name));
-    if (!raw) { showToast(`Proyecto "${name}" no encontrado`); return; }
-    const record = JSON.parse(raw);
-    // Guardar estado actual en el árbol de undo antes de limpiar
-    if (window._forceUndoPush) window._forceUndoPush();
-    workspace.clear();
-    Blockly.serialization.workspaces.load(record.state, workspace);
-    let displayName = record.name;
-    if (!displayName.endsWith('.ino')) displayName += '.ino';
-    projectInput.value = displayName;
-    window._exampleComment = null;
 
-    // Restaurar tabs .h del proyecto
-    if (window._tabManager && record.tabs) {
-      window._tabManager.loadTabs(record.tabs, displayName);
-    }
+// ═══ Load ════════════════════════════════════════
 
-    // Restaurar metadatos de actividad
-    if (window._clearActivityMeta) window._clearActivityMeta();
-    if (record.activityMeta && window._applyActivityMeta) {
-      window._applyActivityMeta(record.activityMeta);
-    }
+export function loadProjectByName(name) { loadProject(name); }
 
-    localStorage.setItem(LAST_KEY, record.name);
-    showToast(`Proyecto "${record.name}" cargado`);
-  } catch (e) {
-    showToast(`Error al cargar: ${e.message}`);
+export async function loadProject(idOrName) {
+  if (!idOrName) return;
+
+  let record;
+  if (isGuest() || typeof idOrName === 'string') {
+    // localStorage
+    try {
+      const raw = localStorage.getItem(lsKey(idOrName));
+      if (!raw) { showToast(`Proyecto "${idOrName}" no encontrado`); return; }
+      record = JSON.parse(raw).state ? JSON.parse(raw) : JSON.parse(raw).data;
+      if (!record.state) record = JSON.parse(raw);
+    } catch (e) { showToast(`Error al cargar`); return; }
+  } else {
+    // Servidor
+    try {
+      const res = await fetch(`/api/projects/${idOrName}`);
+      if (!res.ok) { showToast('Proyecto no encontrado'); return; }
+      const p = await res.json();
+      record = typeof p.data === 'string' ? JSON.parse(p.data) : p.data;
+    } catch (e) { showToast('Error de conexión al cargar'); return; }
   }
+
+  if (window._forceUndoPush) window._forceUndoPush();
+  workspace.clear();
+  Blockly.serialization.workspaces.load(record.state, workspace);
+  currentProjectId = (typeof idOrName === 'number') ? idOrName : null;
+  let displayName = record.name || 'sin-nombre';
+  if (!displayName.endsWith('.ino')) displayName += '.ino';
+  projectInput.value = displayName;
+  window._exampleComment = null;
+
+  if (window._tabManager && record.tabs) {
+    window._tabManager.loadTabs(record.tabs, displayName);
+  }
+  localStorage.setItem(LAST_KEY, displayName);
+  showToast(`Proyecto "${displayName}" cargado`);
   projectList.classList.add('hidden');
 }
 
-export function deleteProject(name) {
-  if (!name) return;
-  if (!confirm(`¿Eliminar proyecto "${name}"?`)) return;
-  localStorage.removeItem(lsKey(name));
-  if (localStorage.getItem(LAST_KEY) === name) {
-    localStorage.removeItem(LAST_KEY);
+
+// ═══ Delete ══════════════════════════════════════
+
+export async function deleteProject(idOrName) {
+  if (!idOrName) return;
+  if (!confirm(`¿Eliminar proyecto "${idOrName}"?`)) return;
+
+  if (isGuest()) {
+    localStorage.removeItem(lsKey(idOrName));
+    if (localStorage.getItem(LAST_KEY) === idOrName) localStorage.removeItem(LAST_KEY);
+  } else {
+    try {
+      await fetch(`/api/projects/${idOrName}`, { method: 'DELETE' });
+    } catch (e) { /* ignore */ }
   }
-  if (projectInput.value.trim() === name) {
+
+  if (projectInput.value.trim() === idOrName || String(idOrName) === String(projectInput.dataset.projectId)) {
     workspace.clear();
     projectInput.value = '';
     if (window._tabManager) window._tabManager.loadTabs([]);
   }
-  showToast(`Proyecto "${name}" eliminado`);
+  showToast(`Proyecto eliminado`);
   projectList.classList.add('hidden');
 }
 
-export function renderProjectList() {
-  projectList.innerHTML = '';
-  const items = [];
 
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i);
-    if (!key.startsWith(LS_PREFIX) || key === LAST_KEY) continue;
+// ═══ List ════════════════════════════════════════
+
+export async function renderProjectList() {
+  projectList.innerHTML = '';
+  let items = [];
+
+  if (isGuest()) {
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (!key.startsWith(LS_PREFIX) || key === LAST_KEY) continue;
+      try {
+        const record = JSON.parse(localStorage.getItem(key));
+        items.push({ name: record.name, saved: record.saved, id: record.name });
+      } catch (e) { /* skip */ }
+    }
+  } else {
     try {
-      const record = JSON.parse(localStorage.getItem(key));
-      items.push({ name: record.name, saved: record.saved });
-    } catch (e) { /* skip corrupted */ }
+      const res = await fetch('/api/projects');
+      if (res.ok) {
+        const serverProjects = await res.json();
+        items = serverProjects.map(p => ({
+          id: p.id, name: p.name, saved: new Date(p.updated_at).getTime()
+        }));
+      }
+    } catch (e) { showToast('Error al cargar lista de proyectos'); return; }
   }
 
   items.sort((a, b) => b.saved - a.saved);
@@ -187,7 +225,7 @@ export function renderProjectList() {
     const div = document.createElement('div');
     div.className = 'project-dropdown-item';
     div.innerHTML = `<span>${escapeHtml(p.name)}</span><span class="project-date">${dateStr}</span>`;
-    div.addEventListener('click', () => loadProject(p.name));
+    div.addEventListener('click', () => loadProject(p.id || p.name));
     projectList.appendChild(div);
   }
 }
@@ -204,3 +242,6 @@ function toggleProjectList() {
     projectList.classList.add('hidden');
   }
 }
+
+export function isWorkspaceDirty() { return workspaceDirty; }
+export { lsKey };
