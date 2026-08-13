@@ -20,7 +20,7 @@ nav {
   border-bottom: 1px solid var(--border);
 }
 nav h1 { font-size: 1.2rem; }
-nav a { color: var(--text-muted); text-decoration: none; font-size: 0.9rem; margin-left: 1rem; }
+nav a { color: var(--text); text-decoration: none; font-size: 0.9rem; margin-left: 1rem; }
 nav a:hover { color: var(--brand); }
 .nav-user { color: var(--text-muted); font-size: 0.9rem; }
 

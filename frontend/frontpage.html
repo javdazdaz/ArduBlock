@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ArduBlock — Programación Visual para Arduino en el Aula</title>
-  <meta name="description" content="Entorno de programación visual basado en bloques para Arduino. Arrastra bloques, genera C++, compila y sube a la placa. Diseñado para educación.">
+  <title>ArduBlock — Programación visual para Arduino</title>
+  <meta name="description" content="Editor de bloques que genera C++ y compila/subir a la placa desde el navegador. Aulas con código de acceso y dashboard para el profesor.">
   <link rel="canonical" href="https://ardublock.matemancia.net/">
-  <meta property="og:title" content="ArduBlock — Programación Visual para Arduino">
-  <meta property="og:description" content="Del bloque al código C++. Programa Arduino arrastrando bloques. Para el aula y el taller de robótica.">
+  <meta property="og:title" content="ArduBlock — Programación visual para Arduino">
+  <meta property="og:description" content="Editor de bloques para Arduino: genera C++, compila y sube a la placa. Aulas con código de acceso y dashboard del profesor.">
   <meta property="og:type" content="website">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
   <script>
@@ -30,213 +30,195 @@
       min-height: 100vh;
       display: flex;
       flex-direction: column;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
     }
 
-    /* ── Nav ──────────────────────────────── */
+    .container { width: 100%; max-width: 960px; margin: 0 auto; padding: 0 1.5rem; }
+
+    /* ── Nav ──────────────────────────────────── */
     nav {
+      position: sticky;
+      top: 0;
+      z-index: 50;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 1rem 1.5rem;
+      padding: 0.85rem 1.5rem;
+      background: var(--bg-surface);
       border-bottom: 1px solid var(--border);
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
     }
     nav .logo {
-      font-weight: 800;
-      font-size: 1.1rem;
+      font-weight: 700;
+      font-size: 1.05rem;
+      letter-spacing: -0.01em;
       color: var(--text);
       text-decoration: none;
     }
-    nav .links {
-      display: flex;
-      gap: 1rem;
-      align-items: center;
-    }
-    nav .links a {
-      color: var(--text-muted);
+    nav .links { display: flex; gap: 1.25rem; align-items: center; }
+    nav .links a:not(.btn) {
+      color: var(--text);
       text-decoration: none;
       font-size: 0.9rem;
-      transition: color 0.15s;
+      font-weight: 500;
     }
-    nav .links a:hover { color: var(--text); }
+    nav .links a:not(.btn):hover { color: var(--brand); }
 
+    /* ── Botones ──────────────────────────────── */
     .btn {
       display: inline-block;
-      padding: 0.55rem 1.4rem;
-      border-radius: 6px;
+      padding: 0.6rem 1.25rem;
+      border-radius: 8px;
       font-weight: 600;
       font-size: 0.9rem;
       text-decoration: none;
       cursor: pointer;
-      border: none;
-      transition: opacity 0.15s, transform 0.1s;
+      border: 1px solid transparent;
+      transition: opacity 0.15s, border-color 0.15s, background 0.15s;
     }
-    .btn:hover { opacity: 0.85; transform: translateY(-1px); }
+    .btn:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
     .btn-primary { background: var(--brand); color: var(--on-brand); }
+    .btn-primary:hover { opacity: 0.9; }
     .btn-outline {
       background: transparent;
-      color: var(--text-muted);
-      border: 1px solid var(--border-input);
+      color: var(--text);
+      border-color: var(--border-input);
     }
-    .btn-outline:hover { border-color: var(--brand); color: var(--text); }
-    .btn-large { padding: 0.75rem 2rem; font-size: 1rem; }
+    .btn-outline:hover { border-color: var(--brand); color: var(--brand); }
+    .btn-inverse { background: var(--on-brand); color: var(--brand); }
+    .btn-inverse:hover { opacity: 0.9; }
 
-    /* ── Sections ─────────────────────────── */
-    section {
-      padding: 4rem 1.5rem;
-      max-width: 960px;
-      margin: 0 auto;
-      width: 100%;
+    /* ── Intro ────────────────────────────────── */
+    .intro {
+      padding: 4.5rem 0 3.5rem;
+      border-bottom: 1px solid var(--border);
     }
-
-    /* ── Hero ─────────────────────────────── */
-    .hero {
-      text-align: center;
-      padding-top: 5rem;
-      padding-bottom: 5rem;
-    }
-    .hero .badge {
+    .intro .eyebrow {
       display: inline-block;
-      background: var(--brand-soft);
-      color: var(--brand);
-      font-size: 0.8rem;
+      font-size: 0.78rem;
       font-weight: 600;
-      padding: 0.35rem 0.9rem;
-      border-radius: 20px;
-      margin-bottom: 1.5rem;
-      letter-spacing: 0.5px;
-    }
-    .hero h1 {
-      font-size: clamp(2rem, 5vw, 3.2rem);
-      font-weight: 800;
-      line-height: 1.15;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--brand);
       margin-bottom: 1rem;
     }
-    .hero h1 span { color: var(--brand); }
-    .hero p {
-      font-size: 1.1rem;
+    .intro h1 {
+      font-size: clamp(1.9rem, 4.5vw, 2.6rem);
+      font-weight: 750;
+      line-height: 1.15;
+      letter-spacing: -0.02em;
+      margin-bottom: 1rem;
+      max-width: 16ch;
+    }
+    .intro p {
       color: var(--text-muted);
-      max-width: 560px;
-      margin: 0 auto 2rem;
+      max-width: 640px;
+      font-size: 1.05rem;
       line-height: 1.7;
     }
-    .hero .actions {
+    .intro .actions { display: flex; gap: 0.75rem; margin-top: 2rem; flex-wrap: wrap; }
+
+    /* ── Secciones ────────────────────────────── */
+    section { padding: 3.5rem 0; }
+    section.alt { background: var(--bg-surface); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+
+    h2 {
+      font-size: 1.35rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      margin-bottom: 1.5rem;
+    }
+    .section-sub { color: var(--text-muted); font-size: 0.92rem; margin: -1rem 0 1.75rem; }
+
+    /* ── Funcionalidades ──────────────────────── */
+    .features { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
+    .feature {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .feature:hover {
+      border-color: var(--border-input);
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+    }
+    .feature h3 { font-size: 0.98rem; font-weight: 650; margin-bottom: 0.4rem; }
+    .feature p { font-size: 0.88rem; color: var(--text-muted); line-height: 1.6; }
+
+    /* ── Cómo funciona ────────────────────────── */
+    .steps { counter-reset: step; max-width: 720px; }
+    .step {
       display: flex;
-      gap: 0.75rem;
-      justify-content: center;
-      flex-wrap: wrap;
-    }
-
-    /* ── Features grid ────────────────────── */
-    .features {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
       gap: 1.25rem;
+      padding: 1.1rem 0;
+      border-bottom: 1px solid var(--border);
     }
-    .feature-card {
-      background: var(--bg-surface);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 1.75rem;
-      transition: border-color 0.2s;
-    }
-    .feature-card:hover { border-color: var(--border-input); }
-    .feature-card .icon {
-      font-size: 1.5rem;
-      margin-bottom: 0.75rem;
-    }
-    .feature-card h3 {
-      font-size: 1rem;
-      margin-bottom: 0.5rem;
-    }
-    .feature-card p {
-      font-size: 0.85rem;
-      color: var(--text-muted);
-      line-height: 1.6;
-    }
-
-    .section-label {
-      text-align: center;
-      font-size: 0.8rem;
-      font-weight: 600;
-      color: var(--brand);
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      margin-bottom: 0.75rem;
-    }
-    .section-title {
-      text-align: center;
-      font-size: 1.6rem;
-      font-weight: 700;
-      margin-bottom: 2.5rem;
-    }
-
-    /* ── How it works ─────────────────────── */
-    .steps {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 1.5rem;
-    }
-    .step-card {
-      background: var(--bg-surface);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 2rem;
-    }
-    .step-card .role {
-      font-size: 0.75rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      color: var(--brand);
-      margin-bottom: 0.75rem;
-    }
-    .step-card h3 {
-      font-size: 1.15rem;
-      margin-bottom: 1rem;
-    }
-    .step-card ol {
-      list-style: none;
-      counter-reset: step;
-      padding: 0;
-    }
-    .step-card ol li {
+    .step:last-child { border-bottom: none; }
+    .step .num {
       counter-increment: step;
-      position: relative;
-      padding-left: 2rem;
-      margin-bottom: 0.85rem;
-      font-size: 0.9rem;
-      color: var(--text-muted);
-      line-height: 1.5;
-    }
-    .step-card ol li::before {
-      content: counter(step);
-      position: absolute;
-      left: 0;
-      top: 0;
-      width: 1.35rem;
-      height: 1.35rem;
+      flex-shrink: 0;
+      width: 2rem;
+      height: 2rem;
       border-radius: 50%;
-      background: var(--brand-soft);
-      color: var(--brand);
-      font-size: 0.75rem;
+      background: var(--brand);
+      color: var(--on-brand);
       font-weight: 700;
+      font-size: 0.95rem;
       display: flex;
       align-items: center;
       justify-content: center;
     }
+    .step .num::before { content: counter(step); }
+    .step h3 { font-size: 1rem; font-weight: 650; margin-bottom: 0.2rem; }
+    .step p { font-size: 0.9rem; color: var(--text-muted); }
 
-    /* ── Guest CTA ────────────────────────── */
-    .guest-cta {
-      text-align: center;
+    /* ── Roles ────────────────────────────────── */
+    .roles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem; }
+    .role {
       background: var(--bg-surface);
       border: 1px solid var(--border);
       border-radius: 12px;
-      padding: 3rem 2rem;
+      padding: 1.5rem;
     }
-    .guest-cta h2 { font-size: 1.4rem; margin-bottom: 0.75rem; }
-    .guest-cta p { color: var(--text-muted); font-size: 0.95rem; max-width: 500px; margin: 0 auto 1.5rem; line-height: 1.6; }
+    .role h3 { font-size: 0.98rem; font-weight: 650; margin-bottom: 0.75rem; }
+    .role ul { list-style: none; }
+    .role li {
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      padding: 0.28rem 0;
+      padding-left: 1.1rem;
+      position: relative;
+      line-height: 1.5;
+    }
+    .role li::before { content: "—"; position: absolute; left: 0; color: var(--text-faint); }
 
-    /* ── Footer ───────────────────────────── */
+    /* ── Placas ───────────────────────────────── */
+    .boards { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+    .board-chip {
+      font-size: 0.86rem;
+      font-weight: 500;
+      padding: 0.4rem 0.95rem;
+      border-radius: 20px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-input);
+      color: var(--text);
+    }
+
+    /* ── CTA final ────────────────────────────── */
+    .cta-band {
+      background: var(--brand);
+      color: var(--on-brand);
+      padding: 3.5rem 0;
+    }
+    .cta-band h2 { margin-bottom: 0.5rem; }
+    .cta-band p { opacity: 0.9; font-size: 0.98rem; margin-bottom: 1.5rem; max-width: 560px; }
+    .cta-band .actions { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+    .cta-band .btn-outline { color: var(--on-brand); border-color: var(--on-brand); }
+    .cta-band .btn-outline:hover { background: rgba(255,255,255,0.12); border-color: var(--on-brand); color: var(--on-brand); }
+
+    /* ── Footer ───────────────────────────────── */
     footer {
       text-align: center;
       padding: 1.5rem;
@@ -249,127 +231,166 @@
     footer a:hover { color: var(--text); }
     footer .sep { margin: 0 0.5rem; color: var(--text-faint); }
 
-    /* ── Responsive ───────────────────────── */
-    @media (max-width: 640px) {
-      .steps { grid-template-columns: 1fr; }
-      nav { flex-direction: column; gap: 0.75rem; }
-      .hero { padding-top: 3rem; padding-bottom: 3rem; }
-      section { padding: 2.5rem 1rem; }
+    /* ── Responsive ───────────────────────────── */
+    @media (max-width: 680px) {
+      .features, .roles { grid-template-columns: 1fr; }
+      nav { flex-direction: column; gap: 0.6rem; }
+      .intro h1 { font-size: 1.7rem; }
+      section, .intro { padding: 2.5rem 0; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      * { transition: none !important; }
     }
   </style>
 </head>
 <body>
 
-<!-- ═══ NAV ══════════════════════════════════════════ -->
 <nav>
   <a href="/" class="logo">⚡ ArduBlock</a>
   <div class="links">
     <a href="/login">Iniciar sesión</a>
-    <a href="/register">Crear cuenta</a>
+    <a href="/register" class="btn btn-outline">Registro con código</a>
     <a href="/app" class="btn btn-primary">Abrir editor</a>
   </div>
 </nav>
 
-<!-- ═══ HERO ═════════════════════════════════════════ -->
-<section class="hero">
-  <div class="badge">Beta · Educación</div>
-  <h1>Del bloque al <span>Arduino</span></h1>
-  <p>
-    Programa microcontroladores arrastrando bloques.
-    Sin sintaxis, sin punto y coma. Diseñado para el aula de robótica,
-    con aulas virtuales, dashboards y compilación directa a la placa.
-  </p>
-  <div class="actions">
-    <a href="/app" class="btn btn-primary btn-large">Probar editor →</a>
-    <a href="/register" class="btn btn-outline btn-large">Crear cuenta gratis</a>
+<div class="intro">
+  <div class="container">
+    <span class="eyebrow">Programación visual · Arduino</span>
+    <h1>Programación visual para Arduino</h1>
+    <p>ArduBlock genera código C++ a partir de bloques, compila y sube el programa a la placa desde el navegador. Incluye crear aulas con estudiantes para monitorear su trabajo. Los proyectos se guardan local en el navegador o con cuenta.</p>
+    <div class="actions">
+      <a href="/app" class="btn btn-primary">Abrir editor</a>
+    </div>
   </div>
-</section>
+</div>
 
-<!-- ═══ FEATURES ═════════════════════════════════════ -->
 <section>
-  <div class="section-label">¿Qué puedes hacer?</div>
-  <h2 class="section-title">Todo en un solo lugar</h2>
-
-  <div class="features">
-    <div class="feature-card">
-      <div class="icon">🧩</div>
-      <h3>Editor visual por bloques</h3>
-      <p>Arrastra y suelta bloques Blockly. Entrada/salida digital, analógica, servo, pantalla LCD, sensores y más. Sin escribir una línea de código.</p>
-    </div>
-
-    <div class="feature-card">
-      <div class="icon">⚡</div>
-      <h3>Compila y sube directo</h3>
-      <p>C++ generado en tiempo real. Compilación con arduino-cli integrado. Subida a la placa por USB sin salir del navegador.</p>
-    </div>
-
-    <div class="feature-card">
-      <div class="icon">🏫</div>
-      <h3>Aulas virtuales</h3>
-      <p>Crea cursos con código de acceso. Tus estudiantes se unen con un código de 6 caracteres. Modelo simple, sin LMS obligatorio.</p>
-    </div>
-
-    <div class="feature-card">
-      <div class="icon">📊</div>
-      <h3>Dashboard del profesor</h3>
-      <p>Ve los proyectos de cada estudiante, revisa su progreso, accede al código generado. Todo desde un panel.</p>
-    </div>
-
-    <div class="feature-card">
-      <div class="icon">👤</div>
-      <h3>Modo invitado</h3>
-      <p>¿Sin cuenta? Programa igual. El editor funciona con proyectos guardados en tu navegador. Ideal para probar antes de registrarse.</p>
-    </div>
-
-    <div class="feature-card">
-      <div class="icon">🔗</div>
-      <h3>Integración LTI 1.3</h3>
-      <p>Conecta ArduBlock con Chamilo u otros LMS compatibles con LTI. Single sign-on, calificaciones automáticas, experiencia unificada.</p>
+  <div class="container">
+    <h2>Funcionalidades</h2>
+    <div class="features">
+      <div class="feature">
+        <h3>Editor por bloques</h3>
+        <p>Interfaz Blockly: entrada/salida digital y analógica, servo, LCD, sensores, variables y estructuras de control.</p>
+      </div>
+      <div class="feature">
+        <h3>Código C++ en vivo</h3>
+        <p>Cada bloque genera su equivalente en C++ al instante, con pestañas .ino y .h editables.</p>
+      </div>
+      <div class="feature">
+        <h3>Compilar y subir</h3>
+        <p>Un botón detecta la placa, compila con arduino-cli y sube por USB. Instala automáticamente los cores que falten.</p>
+      </div>
+      <div class="feature">
+        <h3>Monitor serial</h3>
+        <p>Consola integrada con selector de baud rate para leer y enviar datos a la placa.</p>
+      </div>
+      <div class="feature">
+        <h3>Aulas con código de acceso</h3>
+        <p>El profesor crea un aula y obtiene un código de 6 caracteres. Los estudiantes se unen con ese código.</p>
+      </div>
+      <div class="feature">
+        <h3>Dashboard del profesor</h3>
+        <p>Ver la lista de estudiantes de cada aula y revisar sus proyectos y el código generado.</p>
+      </div>
+      <div class="feature">
+        <h3>Modo invitado</h3>
+        <p>El editor funciona sin cuenta; los proyectos se guardan en el navegador.</p>
+      </div>
+      <div class="feature">
+        <h3>Validación pedagógica</h3>
+        <p>Avisos sobre los bloques antes de compilar: errores como pines sin configurar o bloques sueltos.</p>
+      </div>
     </div>
   </div>
 </section>
 
-<!-- ═══ HOW IT WORKS ═════════════════════════════════ -->
+<section class="alt">
+  <div class="container">
+    <h2>Cómo funciona</h2>
+    <div class="steps">
+      <div class="step">
+        <div class="num"></div>
+        <div>
+          <h3>El profesor crea un aula</h3>
+          <p>Desde el dashboard obtiene un código de acceso de 6 caracteres.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="num"></div>
+        <div>
+          <h3>Los estudiantes se unen y programan</h3>
+          <p>Se registran con el código del aula y arman el programa arrastrando bloques.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="num"></div>
+        <div>
+          <h3>Suben a la placa y el profesor revisa</h3>
+          <p>Conectan el Arduino, suben el sketch y el profesor revisa el avance desde su panel.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
 <section>
-  <div class="section-label">¿Cómo funciona?</div>
-  <h2 class="section-title">Dos caminos, misma herramienta</h2>
-
-  <div class="steps">
-    <div class="step-card">
-      <div class="role">👩‍🏫 Profesor</div>
-      <h3>En 3 pasos</h3>
-      <ol>
-        <li><strong>Crea un aula</strong> desde tu dashboard. Obtienes un código de acceso de 6 caracteres.</li>
-        <li><strong>Comparte el código</strong> con tus estudiantes. Ellos se registran con ese código.</li>
-        <li><strong>Revisa sus proyectos</strong> desde el panel. Código C++, bloques, progreso — todo visible.</li>
-      </ol>
-    </div>
-
-    <div class="step-card">
-      <div class="role">🧑‍🎓 Estudiante</div>
-      <h3>En 3 pasos</h3>
-      <ol>
-        <li><strong>Regístrate</strong> con el código de aula que te dio tu profesor.</li>
-        <li><strong>Abre el editor</strong> y empieza a arrastrar bloques. El código C++ se genera solo.</li>
-        <li><strong>Conecta tu Arduino</strong> y sube el programa. Tu profe puede ver tu avance.</li>
-      </ol>
+  <div class="container">
+    <h2>Roles</h2>
+    <div class="roles">
+      <div class="role">
+        <h3>Profesor</h3>
+        <ul>
+          <li>Crea aulas y obtiene códigos de acceso</li>
+          <li>Revisa proyectos y código C++ de cada estudiante</li>
+          <li>Para probar la plataforma, escribí a javier@matemancia.net</li>
+        </ul>
+      </div>
+      <div class="role">
+        <h3>Estudiante</h3>
+        <ul>
+          <li>Se registra con el código de clase que le da su profesor</li>
+          <li>Programa con bloques y sube a la placa</li>
+          <li>Guarda sus proyectos con su cuenta</li>
+        </ul>
+      </div>
+      <div class="role">
+        <h3>Invitado</h3>
+        <ul>
+          <li>Usa el editor sin cuenta</li>
+          <li>Los proyectos quedan guardados en el navegador</li>
+        </ul>
+      </div>
     </div>
   </div>
 </section>
 
-<!-- ═══ GUEST CTA ════════════════════════════════════ -->
-<section>
-  <div class="guest-cta">
-    <h2>¿Sin aula? Prueba igual</h2>
-    <p>
-      Abre el editor en modo invitado. Programa con bloques, explora los ejemplos,
-      genera C++. Tus proyectos se guardan en el navegador. Sin registro, sin compromiso.
-    </p>
-    <a href="/app" class="btn btn-primary btn-large">Abrir editor invitado →</a>
+<section class="alt">
+  <div class="container">
+    <h2>Placas soportadas</h2>
+    <div class="boards">
+      <span class="board-chip">Arduino Uno R3</span>
+      <span class="board-chip">Arduino Nano</span>
+      <span class="board-chip">Arduino Mega</span>
+      <span class="board-chip">Uno R4 Minima</span>
+      <span class="board-chip">Uno R4 WiFi</span>
+      <span class="board-chip">Nano ESP32</span>
+    </div>
   </div>
 </section>
 
-<!-- ═══ FOOTER ══════════════════════════════════════ -->
+<div class="cta-band">
+  <div class="container">
+    <h2>Acceso</h2>
+    <p>El registro está habilitado para estudiantes, con el código de clase que les entrega su profesor. Los profesores que quieran probar la plataforma pueden escribir a javier@matemancia.net.</p>
+    <div class="actions">
+      <a href="/register" class="btn btn-inverse">Registrarse con código de clase</a>
+      <a href="mailto:javier@matemancia.net" class="btn btn-outline">Escribir a javier@matemancia.net</a>
+    </div>
+  </div>
+</div>
+
 <footer>
   ArduBlock · Prototipo en desarrollo
   <span class="sep">·</span>
