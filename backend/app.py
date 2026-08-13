@@ -14,7 +14,7 @@ if _src_dir not in sys.path:
 import signal
 from pathlib import Path
 
-from flask import Flask, send_from_directory, session, redirect, url_for
+from flask import Flask, g, request, send_from_directory, session, redirect, url_for
 from flask_login import current_user
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -24,6 +24,7 @@ from backend.config import (
     get_arduino_cli_path,
 )
 from backend.models import Base
+from backend.messages import get_message, SUPPORTED_LANGS, DEFAULT_LANG
 from backend.services.serial_manager import SerialManager
 
 # ── Blueprints ──────────────────────────────────
@@ -68,6 +69,19 @@ def create_app() -> Flask:
         response.headers["Access-Control-Allow-Headers"] = "Content-Type"
         response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
         return response
+
+    # ── i18n (idioma vía cookie) ──────────────────
+    @app.before_request
+    def _detect_language():
+        lang = request.cookies.get("lang", DEFAULT_LANG)
+        g.lang = lang if lang in SUPPORTED_LANGS else DEFAULT_LANG
+
+    @app.context_processor
+    def _inject_i18n():
+        lang = g.lang
+        def _(key, **kwargs):
+            return get_message(lang, key, **kwargs)
+        return {"_": _, "lang": lang}
 
     # ── Serial manager ────────────────────────────
     serial_manager = SerialManager()

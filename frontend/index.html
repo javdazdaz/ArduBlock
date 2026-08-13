@@ -324,10 +324,14 @@
 <div class="palette-switcher">
   <button id="palette-btn" class="palette-btn" title="Cambiar paleta" aria-label="Cambiar paleta">🎨</button>
   <div id="palette-menu" class="palette-menu hidden">
+    <div class="palette-group-label" data-i18n="settings_theme">Tema</div>
     <button class="palette-option" data-palette="calcite">Calcite</button>
     <button class="palette-option" data-palette="calcite-dark">Calcite Dark</button>
     <button class="palette-option" data-palette="dracula">Dracula</button>
     <button class="palette-option" data-palette="legacy">ArduBlock</button>
+    <div class="palette-group-label" data-i18n="settings_language">Idioma</div>
+    <button class="lang-option" data-lang="es">Español</button>
+    <button class="lang-option" data-lang="en">English</button>
   </div>
 </div>
 <script>
@@ -340,6 +344,16 @@
       try { localStorage.setItem(KEY, p); } catch (e) {}
       if (window.__applyPaletteTheme) window.__applyPaletteTheme(p);
     }
+    function setLang(lang) {
+      document.cookie = "lang=" + lang + "; path=/; max-age=31536000; SameSite=Lax";
+      try {
+        var raw = localStorage.getItem("ardublock:settings") || "{}";
+        var s = JSON.parse(raw);
+        s.language = lang;
+        localStorage.setItem("ardublock:settings", JSON.stringify(s));
+      } catch (e) {}
+      location.reload();
+    }
     var btn = document.getElementById("palette-btn");
     var menu = document.getElementById("palette-menu");
     btn.addEventListener("click", function (e) {
@@ -351,6 +365,11 @@
       opt.addEventListener("click", function () {
         apply(opt.getAttribute("data-palette"));
         menu.classList.add("hidden");
+      });
+    });
+    Array.prototype.forEach.call(menu.querySelectorAll(".lang-option"), function (opt) {
+      opt.addEventListener("click", function () {
+        setLang(opt.getAttribute("data-lang"));
       });
     });
   })();

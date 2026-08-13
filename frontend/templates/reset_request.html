@@ -1,20 +1,20 @@
 {% extends "base.html" %}
-{% block title %}Recuperar contraseña — ArduBlock{% endblock %}
+{% block title %}{{ _('reset_title') }} — ArduBlock{% endblock %}
 {% block body_class %}auth{% endblock %}
 {% block content %}
 <div class="card">
-  <h1>🔑 Recuperar contraseña</h1>
+  <h1>🔑 {{ _('reset_title') }}</h1>
   {{ render_flash() }}
   <form method="POST">
     {{ form.hidden_tag() }}
     <div class="field">
-      <label for="email">Email de tu cuenta</label>
+      <label for="email">{{ _('reset_email_label') }}</label>
       {{ form.email() }}
     </div>
-    <button type="submit" class="btn btn-block">Enviar instrucciones</button>
+    <button type="submit" class="btn btn-block">{{ _('reset_send_button') }}</button>
   </form>
   <div class="footer">
-    <a href="{{ url_for('auth.login') }}">← Volver al login</a>
+    <a href="{{ url_for('auth.login') }}">{{ _('back_to_login') }}</a>
   </div>
 </div>
 {% endblock %}

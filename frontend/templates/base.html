@@ -8,7 +8,7 @@
   {% endwith %}
 {% endmacro %}
 <!DOCTYPE html>
-<html lang="es" data-theme="calcite">
+<html lang="{{ lang }}" data-theme="calcite">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -30,12 +30,16 @@
 {% block content %}{% endblock %}
 
 <div class="palette-switcher">
-  <button id="palette-btn" class="palette-btn" title="Cambiar paleta" aria-label="Cambiar paleta">🎨</button>
+  <button id="palette-btn" class="palette-btn" title="{{ _('change_palette') }}" aria-label="{{ _('change_palette') }}">🎨</button>
   <div id="palette-menu" class="palette-menu hidden">
+    <div class="palette-group-label">{{ _('theme') }}</div>
     <button class="palette-option" data-palette="calcite">Calcite</button>
     <button class="palette-option" data-palette="calcite-dark">Calcite Dark</button>
     <button class="palette-option" data-palette="dracula">Dracula</button>
     <button class="palette-option" data-palette="legacy">ArduBlock</button>
+    <div class="palette-group-label">{{ _('language') }}</div>
+    <button class="lang-option" data-lang="es">Español</button>
+    <button class="lang-option" data-lang="en">English</button>
   </div>
 </div>
 <script>
@@ -46,6 +50,16 @@
       if (PALETTES.indexOf(p) === -1) p = "calcite";
       document.documentElement.setAttribute("data-theme", p);
       try { localStorage.setItem(KEY, p); } catch (e) {}
+    }
+    function setLang(lang) {
+      document.cookie = "lang=" + lang + "; path=/; max-age=31536000; SameSite=Lax";
+      try {
+        var raw = localStorage.getItem("ardublock:settings") || "{}";
+        var s = JSON.parse(raw);
+        s.language = lang;
+        localStorage.setItem("ardublock:settings", JSON.stringify(s));
+      } catch (e) {}
+      location.reload();
     }
     var btn = document.getElementById("palette-btn");
     var menu = document.getElementById("palette-menu");
@@ -58,6 +72,11 @@
       opt.addEventListener("click", function () {
         apply(opt.getAttribute("data-palette"));
         menu.classList.add("hidden");
+      });
+    });
+    Array.prototype.forEach.call(menu.querySelectorAll(".lang-option"), function (opt) {
+      opt.addEventListener("click", function () {
+        setLang(opt.getAttribute("data-lang"));
       });
     });
   })();

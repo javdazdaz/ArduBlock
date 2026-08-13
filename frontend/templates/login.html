@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Iniciar sesión — ArduBlock{% endblock %}
+{% block title %}{{ _('login_title') }} — ArduBlock{% endblock %}
 {% block body_class %}auth{% endblock %}
 {% block content %}
 <div class="card">
@@ -8,18 +8,18 @@
   <form method="POST">
     {{ form.hidden_tag() }}
     <div class="field">
-      <label for="email">Email</label>
+      <label for="email">{{ _('email') }}</label>
       {{ form.email() }}
     </div>
     <div class="field">
-      <label for="password">Contraseña</label>
+      <label for="password">{{ _('password') }}</label>
       {{ form.password() }}
     </div>
-    <button type="submit" class="btn btn-block">Iniciar sesión</button>
+    <button type="submit" class="btn btn-block">{{ _('login_title') }}</button>
   </form>
   <div class="footer">
-    ¿No tienes cuenta? <a href="{{ url_for('auth.register') }}">Regístrate</a><br>
-    <a href="{{ url_for('auth.reset_request') }}">¿Olvidaste tu contraseña?</a>
+    {{ _('no_account') }} <a href="{{ url_for('auth.register') }}">{{ _('register_link') }}</a><br>
+    <a href="{{ url_for('auth.reset_request') }}">{{ _('forgot_password') }}</a>
   </div>
 </div>
 {% endblock %}

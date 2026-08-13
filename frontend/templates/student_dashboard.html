@@ -1,17 +1,17 @@
 {% extends "base.html" %}
-{% block title %}Mis proyectos — ArduBlock{% endblock %}
+{% block title %}{{ _('my_projects') }} — ArduBlock{% endblock %}
 {% block content %}
 <nav>
   <h1>⚡ ArduBlock</h1>
   <div>
     <span class="nav-user">{{ user.name }}</span>
-    <a href="{{ url_for('auth.logout') }}">Salir</a>
+    <a href="{{ url_for('auth.logout') }}">{{ _('logout') }}</a>
   </div>
 </nav>
 <main>
   <div class="header">
-    <h2>Mis proyectos</h2>
-    <a href="/app" class="btn-new">+ Nuevo proyecto</a>
+    <h2>{{ _('my_projects') }}</h2>
+    <a href="/app" class="btn-new">{{ _('new_project') }}</a>
   </div>
   {% if projects %}
     <div class="project-grid">
@@ -25,8 +25,8 @@
     </div>
   {% else %}
     <div class="empty">
-      <p>Aún no tienes proyectos.</p>
-      <a href="/app" class="btn-new">Crear mi primer proyecto</a>
+      <p>{{ _('no_projects') }}</p>
+      <a href="/app" class="btn-new">{{ _('first_project') }}</a>
     </div>
   {% endif %}
 </main>

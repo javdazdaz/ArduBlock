@@ -11,12 +11,15 @@
   <meta property="og:type" content="website">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
   <script>
-    /* Aplicar paleta guardada antes de pintar (evita parpadeo) */
+    /* Aplicar paleta + idioma guardados antes de pintar (evita parpadeo) */
     try {
       var p = localStorage.getItem("ardublock-palette");
       if (["calcite", "calcite-dark", "dracula", "legacy"].indexOf(p) !== -1) {
         document.documentElement.setAttribute("data-theme", p);
       }
+      var m = document.cookie.match(/(?:^|; )lang=([^;]*)/);
+      var l = m ? decodeURIComponent(m[1]) : null;
+      if (l === "es" || l === "en") document.documentElement.lang = l;
     } catch (e) {}
   </script>
   <link rel="stylesheet" href="/css/palettes.css">
@@ -80,11 +83,7 @@
     .btn:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
     .btn-primary { background: var(--brand); color: var(--on-brand); }
     .btn-primary:hover { opacity: 0.9; }
-    .btn-outline {
-      background: transparent;
-      color: var(--text);
-      border-color: var(--border-input);
-    }
+    .btn-outline { background: transparent; color: var(--text); border-color: var(--border-input); }
     .btn-outline:hover { border-color: var(--brand); color: var(--brand); }
     .btn-inverse { background: var(--on-brand); color: var(--brand); }
     .btn-inverse:hover { opacity: 0.9; }
@@ -129,7 +128,6 @@
       letter-spacing: -0.01em;
       margin-bottom: 1.5rem;
     }
-    .section-sub { color: var(--text-muted); font-size: 0.92rem; margin: -1rem 0 1.75rem; }
 
     /* ── Funcionalidades ──────────────────────── */
     .features { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
@@ -249,58 +247,58 @@
 <nav>
   <a href="/" class="logo">⚡ ArduBlock</a>
   <div class="links">
-    <a href="/login">Iniciar sesión</a>
-    <a href="/register" class="btn btn-outline">Registro con código</a>
-    <a href="/app" class="btn btn-primary">Abrir editor</a>
+    <a href="/login" data-i18n="nav_login">Iniciar sesión</a>
+    <a href="/register" class="btn btn-outline" data-i18n="nav_register">Registro con código</a>
+    <a href="/app" class="btn btn-primary" data-i18n="open_editor">Abrir editor</a>
   </div>
 </nav>
 
 <div class="intro">
   <div class="container">
-    <span class="eyebrow">Programación visual · Arduino</span>
-    <h1>Programación visual para Arduino</h1>
-    <p>ArduBlock genera código C++ a partir de bloques, compila y sube el programa a la placa desde el navegador. Incluye crear aulas con estudiantes para monitorear su trabajo. Los proyectos se guardan local en el navegador o con cuenta.</p>
+    <span class="eyebrow" data-i18n="eyebrow">Programación visual · Arduino</span>
+    <h1 data-i18n="headline">Programación visual para Arduino</h1>
+    <p data-i18n="intro_text">ArduBlock genera código C++ a partir de bloques, compila y sube el programa a la placa desde el navegador. Incluye crear aulas con estudiantes para monitorear su trabajo. Los proyectos se guardan local en el navegador o con cuenta.</p>
     <div class="actions">
-      <a href="/app" class="btn btn-primary">Abrir editor</a>
+      <a href="/app" class="btn btn-primary" data-i18n="open_editor">Abrir editor</a>
     </div>
   </div>
 </div>
 
 <section>
   <div class="container">
-    <h2>Funcionalidades</h2>
+    <h2 data-i18n="features_title">Funcionalidades</h2>
     <div class="features">
       <div class="feature">
-        <h3>Editor por bloques</h3>
-        <p>Interfaz Blockly: entrada/salida digital y analógica, servo, LCD, sensores, variables y estructuras de control.</p>
+        <h3 data-i18n="feat_blocks_title">Editor por bloques</h3>
+        <p data-i18n="feat_blocks_desc">Interfaz Blockly: entrada/salida digital y analógica, servo, LCD, sensores, variables y estructuras de control.</p>
       </div>
       <div class="feature">
-        <h3>Código C++ en vivo</h3>
-        <p>Cada bloque genera su equivalente en C++ al instante, con pestañas .ino y .h editables.</p>
+        <h3 data-i18n="feat_code_title">Código C++ en vivo</h3>
+        <p data-i18n="feat_code_desc">Cada bloque genera su equivalente en C++ al instante, con pestañas .ino y .h editables.</p>
       </div>
       <div class="feature">
-        <h3>Compilar y subir</h3>
-        <p>Un botón detecta la placa, compila con arduino-cli y sube por USB. Instala automáticamente los cores que falten.</p>
+        <h3 data-i18n="feat_compile_title">Compilar y subir</h3>
+        <p data-i18n="feat_compile_desc">Un botón detecta la placa, compila con arduino-cli y sube por USB. Instala automáticamente los cores que falten.</p>
       </div>
       <div class="feature">
-        <h3>Monitor serial</h3>
-        <p>Consola integrada con selector de baud rate para leer y enviar datos a la placa.</p>
+        <h3 data-i18n="feat_serial_title">Monitor serial</h3>
+        <p data-i18n="feat_serial_desc">Consola integrada con selector de baud rate para leer y enviar datos a la placa.</p>
       </div>
       <div class="feature">
-        <h3>Aulas con código de acceso</h3>
-        <p>El profesor crea un aula y obtiene un código de 6 caracteres. Los estudiantes se unen con ese código.</p>
+        <h3 data-i18n="feat_class_title">Aulas con código de acceso</h3>
+        <p data-i18n="feat_class_desc">El profesor crea un aula y obtiene un código de 6 caracteres. Los estudiantes se unen con ese código.</p>
       </div>
       <div class="feature">
-        <h3>Dashboard del profesor</h3>
-        <p>Ver la lista de estudiantes de cada aula y revisar sus proyectos y el código generado.</p>
+        <h3 data-i18n="feat_dash_title">Dashboard del profesor</h3>
+        <p data-i18n="feat_dash_desc">Ver la lista de estudiantes de cada aula y revisar sus proyectos y el código generado.</p>
       </div>
       <div class="feature">
-        <h3>Modo invitado</h3>
-        <p>El editor funciona sin cuenta; los proyectos se guardan en el navegador.</p>
+        <h3 data-i18n="feat_guest_title">Modo invitado</h3>
+        <p data-i18n="feat_guest_desc">El editor funciona sin cuenta; los proyectos se guardan en el navegador.</p>
       </div>
       <div class="feature">
-        <h3>Validación pedagógica</h3>
-        <p>Avisos sobre los bloques antes de compilar: errores como pines sin configurar o bloques sueltos.</p>
+        <h3 data-i18n="feat_valid_title">Validación pedagógica</h3>
+        <p data-i18n="feat_valid_desc">Avisos sobre los bloques antes de compilar: errores como pines sin configurar o bloques sueltos.</p>
       </div>
     </div>
   </div>
@@ -308,27 +306,27 @@
 
 <section class="alt">
   <div class="container">
-    <h2>Cómo funciona</h2>
+    <h2 data-i18n="how_title">Cómo funciona</h2>
     <div class="steps">
       <div class="step">
         <div class="num"></div>
         <div>
-          <h3>El profesor crea un aula</h3>
-          <p>Desde el dashboard obtiene un código de acceso de 6 caracteres.</p>
+          <h3 data-i18n="step1_title">El profesor crea un aula</h3>
+          <p data-i18n="step1_desc">Desde el dashboard obtiene un código de acceso de 6 caracteres.</p>
         </div>
       </div>
       <div class="step">
         <div class="num"></div>
         <div>
-          <h3>Los estudiantes se unen y programan</h3>
-          <p>Se registran con el código del aula y arman el programa arrastrando bloques.</p>
+          <h3 data-i18n="step2_title">Los estudiantes se unen y programan</h3>
+          <p data-i18n="step2_desc">Se registran con el código del aula y arman el programa arrastrando bloques.</p>
         </div>
       </div>
       <div class="step">
         <div class="num"></div>
         <div>
-          <h3>Suben a la placa y el profesor revisa</h3>
-          <p>Conectan el Arduino, suben el sketch y el profesor revisa el avance desde su panel.</p>
+          <h3 data-i18n="step3_title">Suben a la placa y el profesor revisa</h3>
+          <p data-i18n="step3_desc">Conectan el Arduino, suben el sketch y el profesor revisa el avance desde su panel.</p>
         </div>
       </div>
     </div>
@@ -337,29 +335,29 @@
 
 <section>
   <div class="container">
-    <h2>Roles</h2>
+    <h2 data-i18n="roles_title">Roles</h2>
     <div class="roles">
       <div class="role">
-        <h3>Profesor</h3>
+        <h3 data-i18n="role_teacher">Profesor</h3>
         <ul>
-          <li>Crea aulas y obtiene códigos de acceso</li>
-          <li>Revisa proyectos y código C++ de cada estudiante</li>
-          <li>Para probar la plataforma, escribí a javier@matemancia.net</li>
+          <li data-i18n="role_teacher_1">Crea aulas y obtiene códigos de acceso</li>
+          <li data-i18n="role_teacher_2">Revisa proyectos y código C++ de cada estudiante</li>
+          <li data-i18n="role_teacher_3">Para probar la plataforma, escribí a javier@matemancia.net</li>
         </ul>
       </div>
       <div class="role">
-        <h3>Estudiante</h3>
+        <h3 data-i18n="role_student">Estudiante</h3>
         <ul>
-          <li>Se registra con el código de clase que le da su profesor</li>
-          <li>Programa con bloques y sube a la placa</li>
-          <li>Guarda sus proyectos con su cuenta</li>
+          <li data-i18n="role_student_1">Se registra con el código de clase que le da su profesor</li>
+          <li data-i18n="role_student_2">Programa con bloques y sube a la placa</li>
+          <li data-i18n="role_student_3">Guarda sus proyectos con su cuenta</li>
         </ul>
       </div>
       <div class="role">
-        <h3>Invitado</h3>
+        <h3 data-i18n="role_guest">Invitado</h3>
         <ul>
-          <li>Usa el editor sin cuenta</li>
-          <li>Los proyectos quedan guardados en el navegador</li>
+          <li data-i18n="role_guest_1">Usa el editor sin cuenta</li>
+          <li data-i18n="role_guest_2">Los proyectos quedan guardados en el navegador</li>
         </ul>
       </div>
     </div>
@@ -368,7 +366,7 @@
 
 <section class="alt">
   <div class="container">
-    <h2>Placas soportadas</h2>
+    <h2 data-i18n="boards_title">Placas soportadas</h2>
     <div class="boards">
       <span class="board-chip">Arduino Uno R3</span>
       <span class="board-chip">Arduino Nano</span>
@@ -382,34 +380,180 @@
 
 <div class="cta-band">
   <div class="container">
-    <h2>Acceso</h2>
-    <p>El registro está habilitado para estudiantes, con el código de clase que les entrega su profesor. Los profesores que quieran probar la plataforma pueden escribir a javier@matemancia.net.</p>
+    <h2 data-i18n="access_title">Acceso</h2>
+    <p data-i18n="access_text">El registro está habilitado para estudiantes, con el código de clase que les entrega su profesor. Los profesores que quieran probar la plataforma pueden escribir a javier@matemancia.net.</p>
     <div class="actions">
-      <a href="/register" class="btn btn-inverse">Registrarse con código de clase</a>
-      <a href="mailto:javier@matemancia.net" class="btn btn-outline">Escribir a javier@matemancia.net</a>
+      <a href="/register" class="btn btn-inverse" data-i18n="register_code_btn">Registrarse con código de clase</a>
+      <a href="mailto:javier@matemancia.net" class="btn btn-outline" data-i18n="email_teacher_btn">Escribir a javier@matemancia.net</a>
     </div>
   </div>
 </div>
 
 <footer>
-  ArduBlock · Prototipo en desarrollo
+  <span data-i18n="footer_note">ArduBlock · Prototipo en desarrollo</span>
   <span class="sep">·</span>
   <a href="https://ardublock.matemancia.net">ardublock.matemancia.net</a>
   <span class="sep">·</span>
-  <a href="/login">Login</a>
+  <a href="/login" data-i18n="footer_login">Login</a>
   <span class="sep">·</span>
-  <a href="/register">Registro</a>
+  <a href="/register" data-i18n="footer_register">Registro</a>
 </footer>
 
 <div class="palette-switcher">
-  <button id="palette-btn" class="palette-btn" title="Cambiar paleta" aria-label="Cambiar paleta">🎨</button>
+  <button id="palette-btn" class="palette-btn" title="Cambiar paleta" aria-label="Cambiar paleta" data-i18n-title="change_palette" data-i18n-aria="change_palette">🎨</button>
   <div id="palette-menu" class="palette-menu hidden">
+    <div class="palette-group-label" data-i18n="theme_label">Tema</div>
     <button class="palette-option" data-palette="calcite">Calcite</button>
     <button class="palette-option" data-palette="calcite-dark">Calcite Dark</button>
     <button class="palette-option" data-palette="dracula">Dracula</button>
     <button class="palette-option" data-palette="legacy">ArduBlock</button>
+    <div class="palette-group-label" data-i18n="lang_label">Idioma</div>
+    <button class="lang-option" data-lang="es">Español</button>
+    <button class="lang-option" data-lang="en">English</button>
   </div>
 </div>
+
+<script>
+  window.UI_I18N = {
+    es: {
+      nav_login: "Iniciar sesión",
+      nav_register: "Registro con código",
+      open_editor: "Abrir editor",
+      eyebrow: "Programación visual · Arduino",
+      headline: "Programación visual para Arduino",
+      intro_text: "ArduBlock genera código C++ a partir de bloques, compila y sube el programa a la placa desde el navegador. Incluye crear aulas con estudiantes para monitorear su trabajo. Los proyectos se guardan local en el navegador o con cuenta.",
+      features_title: "Funcionalidades",
+      feat_blocks_title: "Editor por bloques",
+      feat_blocks_desc: "Interfaz Blockly: entrada/salida digital y analógica, servo, LCD, sensores, variables y estructuras de control.",
+      feat_code_title: "Código C++ en vivo",
+      feat_code_desc: "Cada bloque genera su equivalente en C++ al instante, con pestañas .ino y .h editables.",
+      feat_compile_title: "Compilar y subir",
+      feat_compile_desc: "Un botón detecta la placa, compila con arduino-cli y sube por USB. Instala automáticamente los cores que falten.",
+      feat_serial_title: "Monitor serial",
+      feat_serial_desc: "Consola integrada con selector de baud rate para leer y enviar datos a la placa.",
+      feat_class_title: "Aulas con código de acceso",
+      feat_class_desc: "El profesor crea un aula y obtiene un código de 6 caracteres. Los estudiantes se unen con ese código.",
+      feat_dash_title: "Dashboard del profesor",
+      feat_dash_desc: "Ver la lista de estudiantes de cada aula y revisar sus proyectos y el código generado.",
+      feat_guest_title: "Modo invitado",
+      feat_guest_desc: "El editor funciona sin cuenta; los proyectos se guardan en el navegador.",
+      feat_valid_title: "Validación pedagógica",
+      feat_valid_desc: "Avisos sobre los bloques antes de compilar: errores como pines sin configurar o bloques sueltos.",
+      how_title: "Cómo funciona",
+      step1_title: "El profesor crea un aula",
+      step1_desc: "Desde el dashboard obtiene un código de acceso de 6 caracteres.",
+      step2_title: "Los estudiantes se unen y programan",
+      step2_desc: "Se registran con el código del aula y arman el programa arrastrando bloques.",
+      step3_title: "Suben a la placa y el profesor revisa",
+      step3_desc: "Conectan el Arduino, suben el sketch y el profesor revisa el avance desde su panel.",
+      roles_title: "Roles",
+      role_teacher: "Profesor",
+      role_teacher_1: "Crea aulas y obtiene códigos de acceso",
+      role_teacher_2: "Revisa proyectos y código C++ de cada estudiante",
+      role_teacher_3: "Para probar la plataforma, escribí a javier@matemancia.net",
+      role_student: "Estudiante",
+      role_student_1: "Se registra con el código de clase que le da su profesor",
+      role_student_2: "Programa con bloques y sube a la placa",
+      role_student_3: "Guarda sus proyectos con su cuenta",
+      role_guest: "Invitado",
+      role_guest_1: "Usa el editor sin cuenta",
+      role_guest_2: "Los proyectos quedan guardados en el navegador",
+      boards_title: "Placas soportadas",
+      access_title: "Acceso",
+      access_text: "El registro está habilitado para estudiantes, con el código de clase que les entrega su profesor. Los profesores que quieran probar la plataforma pueden escribir a javier@matemancia.net.",
+      register_code_btn: "Registrarse con código de clase",
+      email_teacher_btn: "Escribir a javier@matemancia.net",
+      footer_note: "ArduBlock · Prototipo en desarrollo",
+      footer_login: "Login",
+      footer_register: "Registro",
+      change_palette: "Cambiar paleta",
+      theme_label: "Tema",
+      lang_label: "Idioma"
+    },
+    en: {
+      nav_login: "Log in",
+      nav_register: "Register with code",
+      open_editor: "Open editor",
+      eyebrow: "Visual programming · Arduino",
+      headline: "Visual programming for Arduino",
+      intro_text: "ArduBlock generates C++ code from blocks, compiles and uploads the program to the board from the browser. Includes creating classrooms with students to monitor their work. Projects are saved locally in the browser or with an account.",
+      features_title: "Features",
+      feat_blocks_title: "Block editor",
+      feat_blocks_desc: "Blockly interface: digital and analog I/O, servo, LCD, sensors, variables and control structures.",
+      feat_code_title: "Live C++ code",
+      feat_code_desc: "Each block generates its C++ equivalent instantly, with editable .ino and .h tabs.",
+      feat_compile_title: "Compile and upload",
+      feat_compile_desc: "One button detects the board, compiles with arduino-cli and uploads over USB. Automatically installs any missing cores.",
+      feat_serial_title: "Serial monitor",
+      feat_serial_desc: "Built-in console with a baud rate selector to read from and write to the board.",
+      feat_class_title: "Classrooms with access code",
+      feat_class_desc: "The teacher creates a classroom and gets a 6-character code. Students join with that code.",
+      feat_dash_title: "Teacher dashboard",
+      feat_dash_desc: "See the student list for each classroom and review their projects and generated code.",
+      feat_guest_title: "Guest mode",
+      feat_guest_desc: "The editor works without an account; projects are saved in the browser.",
+      feat_valid_title: "Pedagogical validation",
+      feat_valid_desc: "Warnings about blocks before compiling: errors like unconfigured pins or loose blocks.",
+      how_title: "How it works",
+      step1_title: "The teacher creates a classroom",
+      step1_desc: "From the dashboard they get a 6-character access code.",
+      step2_title: "Students join and code",
+      step2_desc: "They register with the classroom code and build the program by dragging blocks.",
+      step3_title: "They upload to the board and the teacher reviews",
+      step3_desc: "They connect the Arduino, upload the sketch, and the teacher reviews progress from their panel.",
+      roles_title: "Roles",
+      role_teacher: "Teacher",
+      role_teacher_1: "Creates classrooms and gets access codes",
+      role_teacher_2: "Reviews each student's projects and C++ code",
+      role_teacher_3: "To try the platform, write to javier@matemancia.net",
+      role_student: "Student",
+      role_student_1: "Registers with the class code given by their teacher",
+      role_student_2: "Codes with blocks and uploads to the board",
+      role_student_3: "Saves projects with their account",
+      role_guest: "Guest",
+      role_guest_1: "Uses the editor without an account",
+      role_guest_2: "Projects are kept in the browser",
+      boards_title: "Supported boards",
+      access_title: "Access",
+      access_text: "Registration is enabled for students, with the class code given by their teacher. Teachers who want to try the platform can write to javier@matemancia.net.",
+      register_code_btn: "Register with class code",
+      email_teacher_btn: "Write to javier@matemancia.net",
+      footer_note: "ArduBlock · Prototype in development",
+      footer_login: "Login",
+      footer_register: "Register",
+      change_palette: "Change palette",
+      theme_label: "Theme",
+      lang_label: "Language"
+    }
+  };
+</script>
+<script>
+  (function () {
+    var LANGS = ["es", "en"];
+    function readCookie(name) {
+      try {
+        var m = document.cookie.match(new RegExp("(?:^|; )" + name + "=([^;]*)"));
+        return m ? decodeURIComponent(m[1]) : null;
+      } catch (e) { return null; }
+    }
+    var lang = readCookie("lang");
+    if (LANGS.indexOf(lang) === -1) lang = "es";
+    var msgs = window.UI_I18N[lang] || window.UI_I18N.es;
+    document.documentElement.lang = lang;
+    document.querySelectorAll("[data-i18n]").forEach(function (el) {
+      var k = el.getAttribute("data-i18n");
+      if (msgs[k]) el.textContent = msgs[k];
+    });
+    document.querySelectorAll("[data-i18n-title]").forEach(function (el) {
+      var k = el.getAttribute("data-i18n-title");
+      if (msgs[k]) el.setAttribute("title", msgs[k]);
+    });
+    document.querySelectorAll("[data-i18n-aria]").forEach(function (el) {
+      var k = el.getAttribute("data-i18n-aria");
+      if (msgs[k]) el.setAttribute("aria-label", msgs[k]);
+    });
+  })();
+</script>
 <script>
   (function () {
     var PALETTES = ["calcite", "calcite-dark", "dracula", "legacy"];
@@ -418,6 +562,10 @@
       if (PALETTES.indexOf(p) === -1) p = "calcite";
       document.documentElement.setAttribute("data-theme", p);
       try { localStorage.setItem(KEY, p); } catch (e) {}
+    }
+    function setLang(lang) {
+      document.cookie = "lang=" + lang + "; path=/; max-age=31536000; SameSite=Lax";
+      location.reload();
     }
     var btn = document.getElementById("palette-btn");
     var menu = document.getElementById("palette-menu");
@@ -430,6 +578,11 @@
       opt.addEventListener("click", function () {
         apply(opt.getAttribute("data-palette"));
         menu.classList.add("hidden");
+      });
+    });
+    Array.prototype.forEach.call(menu.querySelectorAll(".lang-option"), function (opt) {
+      opt.addEventListener("click", function () {
+        setLang(opt.getAttribute("data-lang"));
       });
     });
   })();

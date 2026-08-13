@@ -1,43 +1,43 @@
 {% extends "base.html" %}
-{% block title %}Mis cursos — ArduBlock{% endblock %}
+{% block title %}{{ _('my_classrooms') }} — ArduBlock{% endblock %}
 {% block content %}
 <nav>
-  <h1>⚡ ArduBlock · Profesor</h1>
+  <h1>⚡ ArduBlock · {{ _('teacher_label') }}</h1>
   <div>
     <span class="nav-user">{{ user.name }}</span>
-    <a href="/app">Editor</a>
-    <a href="{{ url_for('auth.logout') }}">Salir</a>
+    <a href="/app">{{ _('editor_link') }}</a>
+    <a href="{{ url_for('auth.logout') }}">{{ _('logout') }}</a>
   </div>
 </nav>
 <main>
   {{ render_flash() }}
   <div class="panel">
-    <h2>➕ Nueva aula</h2>
+    <h2>➕ {{ _('new_classroom') }}</h2>
     <form method="POST" action="{{ url_for('auth.create_classroom') }}">
       {{ form.hidden_tag() }}
       <div class="field">
-        <label>Nombre del curso (ej: Robótica 2025 - 3°A)</label>
+        <label>{{ _('course_name_label') }}</label>
         {{ form.name() }}
       </div>
-      <button type="submit" class="btn">Crear aula</button>
+      <button type="submit" class="btn">{{ _('create_classroom') }}</button>
     </form>
   </div>
   <div class="panel">
-    <h2>📚 Mis aulas</h2>
+    <h2>📚 {{ _('my_classrooms') }}</h2>
     {% if classrooms %}
       {% for c in classrooms %}
         <a href="/teacher/classroom/{{ c.id }}" class="card-link">
           <div class="classroom-card">
             <div>
               <h3>{{ c.name }}</h3>
-              <div class="meta">{{ c.students|length }} estudiantes</div>
+              <div class="meta">{{ _('students_count', n=c.students|length) }}</div>
             </div>
             <div class="code">{{ c.join_code }}</div>
           </div>
         </a>
       {% endfor %}
     {% else %}
-      <p class="muted">No hay aulas todavía. Crea una arriba ↑</p>
+      <p class="muted">{{ _('no_classrooms') }}</p>
     {% endif %}
   </div>
 </main>

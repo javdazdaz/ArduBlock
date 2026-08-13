@@ -12,7 +12,7 @@ import smtplib
 from email.mime.text import MIMEText
 from datetime import datetime, timedelta, timezone
 
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask import Blueprint, g, render_template, request, redirect, url_for, flash
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, EmailField
@@ -23,6 +23,7 @@ from sqlalchemy.orm import sessionmaker
 
 from backend.models import User, Classroom, ClassroomStudent, Project
 from backend.config import DATABASE_PATH
+from backend.messages import get_message
 
 auth_bp = Blueprint("auth", __name__)
 login_manager = LoginManager()
@@ -165,7 +166,7 @@ def login():
                 return redirect(url_for("auth.dashboard"))
         finally:
             s.close()
-        flash("Email o contraseña incorrectos.", "error")
+        flash(get_message(g.lang, "invalid_credentials"), "error")
     return render_template("login.html", form=form)
 
 
@@ -182,10 +183,10 @@ def register():
         try:
             classroom = s.query(Classroom).filter_by(join_code=code).first()
             if not classroom:
-                flash("Código de clase inválido.", "error")
+                flash(get_message(g.lang, "invalid_class_code"), "error")
                 return render_template("register.html", form=form)
             if s.query(User).filter_by(email=email).first():
-                flash("Ese email ya está registrado.", "error")
+                flash(get_message(g.lang, "email_registered"), "error")
                 return render_template("register.html", form=form)
 
             user = User(
@@ -201,13 +202,10 @@ def register():
             # Welcome email
             send_email(
                 email,
-                f"¡Bienvenido a ArduBlock, {name}!",
-                f"Hola {name},\n\n"
-                f"Tu cuenta en ArduBlock ha sido creada.\n"
-                f"Aula: {classroom.name}\n"
-                f"Profesor: {classroom.teacher.name}\n\n"
-                f"Accede en: https://ardublock.matemancia.net/app\n\n"
-                f"— ArduBlock",
+                get_message(g.lang, "welcome_subject", name=name),
+                get_message(g.lang, "welcome_body",
+                            name=name, classroom=classroom.name,
+                            teacher=classroom.teacher.name),
             )
 
             login_user(user, remember=True)
@@ -252,17 +250,15 @@ def reset_request():
                 reset_url = url_for("auth.reset_password", token=token, _external=True)
                 if send_email(
                     email,
-                    "Recuperación de contraseña — ArduBlock",
-                    f"Hola {user.name},\n\n"
-                    f"Para restablecer tu contraseña, visita:\n{reset_url}\n\n"
-                    f"Este enlace expira en 1 hora.\n\n"
-                    f"— ArduBlock",
+                    get_message(g.lang, "reset_email_subject"),
+                    get_message(g.lang, "reset_email_body",
+                                name=user.name, url=reset_url),
                 ):
-                    flash("Te hemos enviado un correo con instrucciones.", "success")
+                    flash(get_message(g.lang, "reset_sent"), "success")
                 else:
-                    flash("No se pudo enviar el correo. Intenta más tarde.", "error")
+                    flash(get_message(g.lang, "reset_failed"), "error")
             else:
-                flash("Si el email existe, recibirás instrucciones.", "success")
+                flash(get_message(g.lang, "reset_if_exists"), "success")
         finally:
             s.close()
         return redirect(url_for("auth.login"))
@@ -278,7 +274,7 @@ def reset_password(token):
     try:
         user = s.query(User).filter_by(reset_token=token).first()
         if not user or not user.reset_token_expires or user.reset_token_expires < datetime.utcnow():
-            flash("Enlace inválido o expirado.", "error")
+            flash(get_message(g.lang, "reset_invalid"), "error")
             return redirect(url_for("auth.reset_request"))
     finally:
         s.close()
@@ -292,7 +288,7 @@ def reset_password(token):
             user.reset_token = None
             user.reset_token_expires = None
             s.commit()
-            flash("Contraseña actualizada. Inicia sesión.", "success")
+            flash(get_message(g.lang, "password_updated"), "success")
             return redirect(url_for("auth.login"))
         finally:
             s.close()
@@ -342,7 +338,7 @@ def create_classroom():
             )
             s.add(classroom)
             s.commit()
-            flash(f"Aula creada. Código: {classroom.join_code}", "success")
+            flash(get_message(g.lang, "classroom_created", code=classroom.join_code), "success")
         finally:
             s.close()
     return redirect(url_for("auth.teacher_dashboard"))
@@ -357,7 +353,7 @@ def view_classroom(classroom_id):
     try:
         classroom = s.get(Classroom, classroom_id)
         if not classroom or classroom.teacher_id != current_user.id:
-            flash("Aula no encontrada.", "error")
+            flash(get_message(g.lang, "classroom_not_found"), "error")
             return redirect(url_for("auth.teacher_dashboard"))
         students = (
             s.query(User)

@@ -724,17 +724,32 @@ let currentLang = 'es';
 
 // ═══ API pública ══════════════════════════════
 
+function readCookie(name) {
+  try {
+    const m = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'));
+    return m ? decodeURIComponent(m[1]) : null;
+  } catch (_) { return null; }
+}
+
 export function initLanguage() {
   let lang = 'es';
-  try {
-    const raw = localStorage.getItem('ardublock:settings');
-    if (raw) {
-      const s = JSON.parse(raw);
-      if (s.language && messages[s.language]) lang = s.language;
-    }
-  } catch (_) { /* usar default */ }
+  // 1) Cookie (fuente de verdad compartida con Flask)
+  const ck = readCookie('lang');
+  if (ck && messages[ck]) {
+    lang = ck;
+  } else {
+    // 2) localStorage (cache del editor, retrocompatibilidad)
+    try {
+      const raw = localStorage.getItem('ardublock:settings');
+      if (raw) {
+        const s = JSON.parse(raw);
+        if (s.language && messages[s.language]) lang = s.language;
+      }
+    } catch (_) { /* usar default */ }
+  }
 
   currentLang = lang;
+  document.documentElement.lang = lang;
   const msgs = messages[lang];
   Object.assign(Blockly.Msg, msgs);
 }
@@ -742,6 +757,7 @@ export function initLanguage() {
 export function setLanguage(lang) {
   if (!messages[lang]) return;
   try {
+    document.cookie = 'lang=' + lang + '; path=/; max-age=31536000; SameSite=Lax';
     const raw = localStorage.getItem('ardublock:settings') || '{}';
     const s = JSON.parse(raw);
     s.language = lang;
