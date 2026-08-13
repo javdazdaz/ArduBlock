@@ -6,12 +6,39 @@ No depende de Flask — seguro importar desde cualquier módulo.
 """
 
 import os
-import re
 import sys
 import secrets
 import shutil
 import platform
 from pathlib import Path
+
+
+def _load_dotenv(path: Path) -> None:
+    """Carga variables de un archivo .env (solo si no están ya definidas).
+
+    Prioridad: el entorno real gana; .env solo rellena lo que falta.
+    Sin dependencias externas (equivalente mínimo a python-dotenv).
+    """
+    if not path.is_file():
+        return
+    try:
+        for line in path.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            key, _, value = line.partition("=")
+            key = key.strip()
+            value = value.strip()
+            if len(value) >= 2 and value[0] == value[-1] and value[0] in ("'", '"'):
+                value = value[1:-1]
+            if key and key not in os.environ:
+                os.environ[key] = value
+    except OSError:
+        pass
+
+
+# El .env vive en la raíz del repo (junto a frontend/ y backend/).
+_load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 
 # ═══ Directorios ═════════════════════════════════
 
@@ -23,30 +50,16 @@ FRONTEND_DIR = (
     else _FRONTEND_BASE
 )
 TEMPLATES_DIR = _FRONTEND_BASE / "templates"
-PROJECTS_DIR = Path(__file__).resolve().parent / "projects"
 EXAMPLES_DIR = _BASE_DIR / "examples" / "arduino"
-PROJECTS_DIR.mkdir(exist_ok=True)
-DATABASE_PATH = Path(__file__).resolve().parent / "ardublock.db"
+DATABASE_PATH = Path(os.environ.get(
+    "ARDUBLOCK_DB", Path(__file__).resolve().parent / "ardublock.db"
+))
 
 # ═══ Servidor ═════════════════════════════════════
 
 HOST = os.environ.get("ARDUBLOCK_HOST", "0.0.0.0")
 PORT = int(os.environ.get("ARDUBLOCK_PORT", "5001"))
 SECRET_KEY = os.environ.get("ARDUBLOCK_SECRET_KEY", secrets.token_hex(32))
-
-# ═══ Validación de project_id ═════════════════════
-
-_PROJECT_ID_RE = re.compile(r"^[a-zA-Z0-9_-]{1,64}$")
-
-
-def validate_project_id(project_id: str) -> bool:
-    """Valida que el ID del proyecto sea seguro (sin path traversal)."""
-    if not _PROJECT_ID_RE.match(project_id):
-        return False
-    if ".." in project_id or "/" in project_id or "\\" in project_id:
-        return False
-    return True
-
 
 # ═══ Detección de arduino-cli ═════════════════════
 

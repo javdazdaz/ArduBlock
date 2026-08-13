@@ -2,33 +2,45 @@
 ArduBlock — Rutas de proyectos (CRUD con SQLite)
 
 Modos:
-  - Usuario logueado: proyectos en DB (user_id)
-  - Guest mode: el frontend usa localStorage (estas rutas no se usan)
+  - Usuario logueado: proyectos en DB (user_id).
+  - Guest mode: el frontend usa localStorage (estas rutas no se usan).
 """
 
 import json
 import os
 from pathlib import Path
 
-from flask import Blueprint, jsonify, request, session
+from flask import Blueprint, jsonify, request
 from flask_login import current_user, login_required
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 
 from backend.models import Project
-from backend.config import DATABASE_PATH, validate_project_id
+from backend.db import get_session as _get_session
 
 projects_bp = Blueprint("projects", __name__)
-_engine = create_engine(f"sqlite:///{DATABASE_PATH}", echo=False)
-_SessionFactory = sessionmaker(bind=_engine)
+
+MAX_NAME_LEN = 100
 
 
-def _get_session():
-    return _SessionFactory()
+def _clean_name(value, fallback="Sin título"):
+    name = (value or "").strip()
+    if not name:
+        name = fallback
+    return name[:MAX_NAME_LEN]
+
+
+def _coerce_data(value):
+    """Normaliza `data`: acepta dict (lo serializa) o string ya serializado."""
+    if isinstance(value, str):
+        return value
+    return json.dumps(value)
 
 
 def _write_tabs(sketch_dir: Path, tabs: list[dict]) -> None:
-    """Escribe archivos .h de los tabs en el directorio del sketch."""
+    """Escribe archivos .h de los tabs en el directorio del sketch.
+
+    Usado por el blueprint de compilación (routes/compile.py) para volcar
+    los tabs antes de invocar arduino-cli.
+    """
     if not tabs:
         return
     for tab in tabs:
@@ -75,15 +87,19 @@ def load_project(project_id):
 @login_required
 def create_project():
     data = request.get_json()
-    if not data:
+    if not isinstance(data, dict):
         return jsonify({"error": "Datos inválidos"}), 400
+
+    project_data = _coerce_data(data.get("data", {}))
+    if not project_data:
+        return jsonify({"error": "Datos inválidos: falta 'data'"}), 400
 
     s = _get_session()
     try:
         p = Project(
             user_id=current_user.id,
-            name=data.get("name", "Sin título"),
-            data=json.dumps(data.get("data", {})),
+            name=_clean_name(data.get("name")),
+            data=project_data,
             board=data.get("board", "arduino:avr:uno"),
         )
         s.add(p)
@@ -97,7 +113,7 @@ def create_project():
 @login_required
 def save_project(project_id):
     data = request.get_json()
-    if not data:
+    if not isinstance(data, dict):
         return jsonify({"error": "Datos inválidos"}), 400
 
     s = _get_session()
@@ -106,9 +122,17 @@ def save_project(project_id):
         if not p or p.user_id != current_user.id:
             return jsonify({"error": "Proyecto no encontrado"}), 404
 
-        p.name = data.get("name", p.name)
-        p.data = json.dumps(data.get("data", {}))
-        p.board = data.get("board", p.board)
+        # Solo actualiza campos presentes: un PUT parcial (ej. renombrar)
+        # no debe pisar el sketch con datos vacíos.
+        if "name" in data:
+            p.name = _clean_name(data.get("name"))
+        if "data" in data:
+            new_data = _coerce_data(data.get("data"))
+            if not new_data:
+                return jsonify({"error": "'data' inválido"}), 400
+            p.data = new_data
+        if "board" in data:
+            p.board = data.get("board", p.board)
         s.commit()
         return jsonify(p.to_dict())
     finally:

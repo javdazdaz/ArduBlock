@@ -16,14 +16,11 @@ from pathlib import Path
 
 from flask import Flask, g, request, send_from_directory, session, redirect, url_for, Response
 from flask_login import current_user
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-
 from backend.config import (
-    FRONTEND_DIR, TEMPLATES_DIR, HOST, PORT, SECRET_KEY, DATABASE_PATH,
+    FRONTEND_DIR, TEMPLATES_DIR, HOST, PORT, SECRET_KEY,
     get_arduino_cli_path,
 )
-from backend.models import Base
+from backend.db import SessionFactory, init_db
 from backend.messages import get_message, SUPPORTED_LANGS, DEFAULT_LANG
 from backend.services.serial_manager import SerialManager
 
@@ -40,13 +37,8 @@ from backend.routes.health import health_bp
 from backend.routes.auth import auth_bp, init_auth, _ensure_teacher
 
 # ── Database ────────────────────────────────────
-_engine = create_engine(f"sqlite:///{DATABASE_PATH}", echo=False)
-_SessionFactory = sessionmaker(bind=_engine)
-
-
-def init_db():
-    """Crea las tablas si no existen."""
-    Base.metadata.create_all(_engine)
+# Engine + SessionFactory únicos en backend/db.py (antes se duplicaban
+# en app.py, auth.py y projects.py).
 
 
 def create_app() -> Flask:
@@ -60,7 +52,7 @@ def create_app() -> Flask:
     app.config["PROPAGATE_EXCEPTIONS"] = True
 
     # ── Auth ──────────────────────────────────────
-    init_auth(app, _SessionFactory)
+    init_auth(app, SessionFactory)
 
     # ── CORS ──────────────────────────────────────
     @app.after_request

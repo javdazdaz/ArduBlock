@@ -1,0 +1,85 @@
+"""
+Tests de proyectos (CRUD + ownership).
+
+Cubre: crear/listar/leer/actualizar/eliminar, el PUT parcial (que no pisa el
+sketch al renombrar) y el aislamiento entre usuarios.
+"""
+
+from backend.db import get_session
+
+
+def _register(client, email, code="ABC123", password="secreto123"):
+    client.post("/register", data={
+        "join_code": code, "name": "Alumno", "email": email, "password": password,
+    }, follow_redirects=True)
+
+
+def _create(client, name="proyecto1", data=None):
+    payload = {"name": name, "data": data or {"state": {"blocks": {}}, "tabs": []}}
+    return client.post("/api/projects", json=payload)
+
+
+def test_create_and_list(client, seed_classroom):
+    seed_classroom("ABC123")
+    _register(client, "a@example.com")
+
+    r = _create(client)
+    assert r.status_code == 201
+    pid = r.get_json()["id"]
+
+    items = client.get("/api/projects").get_json()
+    assert len(items) == 1
+    assert items[0]["id"] == pid
+
+
+def test_load_project(client, seed_classroom):
+    seed_classroom("ABC123")
+    _register(client, "a@example.com")
+    pid = _create(client, data={"state": {"x": 1}}).get_json()["id"]
+
+    r = client.get(f"/api/projects/{pid}")
+    assert r.status_code == 200
+    assert r.get_json()["data"] == '{"state": {"x": 1}}'
+
+
+def test_partial_update_keeps_data(client, seed_classroom):
+    seed_classroom("ABC123")
+    _register(client, "a@example.com")
+    pid = _create(client).get_json()["id"]
+
+    # Renombrar SIN tocar data no debe pisar el sketch.
+    r = client.put(f"/api/projects/{pid}", json={"name": "renombrado.ino"})
+    assert r.status_code == 200
+    body = r.get_json()
+    assert body["name"] == "renombrado.ino"
+    assert "blocks" in body["data"]
+
+    # Actualizar data sí la reemplaza.
+    r = client.put(f"/api/projects/{pid}", json={"data": {"state": {"x": 1}}})
+    assert r.get_json()["data"] == '{"state": {"x": 1}}'
+
+
+def test_ownership_isolation(app, client, seed_classroom):
+    seed_classroom("ABC123")
+    _register(client, "a@example.com")
+    pid = _create(client).get_json()["id"]
+
+    # Segundo estudiante en otro client (cookie propia).
+    client2 = app.test_client()
+    _register(client2, "b@example.com")
+
+    assert client2.get(f"/api/projects/{pid}").status_code == 404
+    assert client2.put(f"/api/projects/{pid}", json={"name": "x"}).status_code == 404
+    assert client2.delete(f"/api/projects/{pid}").status_code == 404
+
+    # El dueño sigue viéndolo.
+    assert client.get(f"/api/projects/{pid}").status_code == 200
+
+
+def test_delete_project(client, seed_classroom):
+    seed_classroom("ABC123")
+    _register(client, "a@example.com")
+    pid = _create(client).get_json()["id"]
+
+    assert client.delete(f"/api/projects/{pid}").status_code == 200
+    assert client.get("/api/projects").get_json() == []

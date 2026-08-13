@@ -6,40 +6,42 @@ Student: se registra con código de aula. Recibe email de bienvenida.
 Password reset vía email.
 """
 
+import hashlib
 import os
 import secrets
 import smtplib
 from email.mime.text import MIMEText
-from datetime import datetime, timedelta, timezone
+from datetime import timedelta
 
-from flask import Blueprint, g, render_template, request, redirect, url_for, flash
+from flask import Blueprint, g, render_template, redirect, url_for, flash
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, EmailField
 from wtforms.validators import DataRequired, Email, Length
 from werkzeug.security import generate_password_hash, check_password_hash
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.exc import IntegrityError
 
-from backend.models import User, Classroom, ClassroomStudent, Project
-from backend.config import DATABASE_PATH
+from backend.models import User, Classroom, ClassroomStudent, Project, utcnow
+from backend.db import get_session
 from backend.messages import get_message
 
 auth_bp = Blueprint("auth", __name__)
 login_manager = LoginManager()
 
-_engine = create_engine(f"sqlite:///{DATABASE_PATH}", echo=False)
-_SessionFactory = sessionmaker(bind=_engine)
-
 # ═══ Config ══════════════════════════════════════
 
-TEACHER_EMAIL = os.environ.get("TEACHER_EMAIL", "teacher@example.com")
-TEACHER_PASSWORD = os.environ.get("TEACHER_PASSWORD", "ardublock")
+TEACHER_EMAIL = os.environ.get("TEACHER_EMAIL", "").strip()
+TEACHER_PASSWORD = os.environ.get("TEACHER_PASSWORD", "")
 
 SMTP_HOST = os.environ.get("SMTP_HOST", "mail.mortem.technology")
-SMTP_PORT = int(os.environ.get("SMTP_PORT", "587"))
+SMTP_PORT = int(os.environ.get("SMTP_PORT", "465"))
 SMTP_USER = os.environ.get("SMTP_USER", "")
 SMTP_PASS = os.environ.get("SMTP_PASS", "")
+
+
+def _hash_token(token: str) -> str:
+    """Hash del token de reset (nunca se guarda el token en claro)."""
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()
 
 
 # ═══ Email ═══════════════════════════════════════
@@ -131,10 +133,19 @@ def init_auth(app, session_factory):
 # ═══ Helpers ════════════════════════════════════
 
 def _get_session():
-    return _SessionFactory()
+    """Sesión única compartida (backend.db)."""
+    return get_session()
 
 
 def _ensure_teacher():
+    if not TEACHER_EMAIL or not TEACHER_PASSWORD:
+        import sys
+        print(
+            "[WARN] TEACHER_EMAIL / TEACHER_PASSWORD sin definir: no se crea "
+            "cuenta teacher por defecto.",
+            file=sys.stderr,
+        )
+        return
     s = _get_session()
     try:
         if not s.query(User).filter_by(role="teacher").first():
@@ -197,7 +208,12 @@ def register():
             s.add(user)
             s.flush()
             s.add(ClassroomStudent(classroom_id=classroom.id, user_id=user.id))
-            s.commit()
+            try:
+                s.commit()
+            except IntegrityError:
+                s.rollback()
+                flash(get_message(g.lang, "email_registered"), "error")
+                return render_template("register.html", form=form)
 
             # Welcome email
             send_email(
@@ -244,8 +260,8 @@ def reset_request():
             user = s.query(User).filter_by(email=email).first()
             if user:
                 token = secrets.token_urlsafe(32)
-                user.reset_token = token
-                user.reset_token_expires = datetime.utcnow() + timedelta(hours=1)
+                user.reset_token = _hash_token(token)
+                user.reset_token_expires = utcnow() + timedelta(hours=1)
                 s.commit()
                 reset_url = url_for("auth.reset_password", token=token, _external=True)
                 if send_email(
@@ -270,17 +286,23 @@ def reset_password(token):
     if current_user.is_authenticated:
         return redirect(url_for("auth.dashboard"))
 
-    s = _get_session()
-    try:
-        user = s.query(User).filter_by(reset_token=token).first()
-        if not user or not user.reset_token_expires or user.reset_token_expires < datetime.utcnow():
-            flash(get_message(g.lang, "reset_invalid"), "error")
-            return redirect(url_for("auth.reset_request"))
-    finally:
-        s.close()
+    def _valid_user():
+        """Usuario válido para este token (existe y no expirado)."""
+        s = _get_session()
+        try:
+            user = s.query(User).filter_by(reset_token=_hash_token(token)).first()
+            if not user or not user.reset_token_expires or user.reset_token_expires < utcnow():
+                return None
+            return user
+        finally:
+            s.close()
 
     form = ResetPasswordForm()
     if form.validate_on_submit():
+        user = _valid_user()
+        if not user:
+            flash(get_message(g.lang, "reset_invalid"), "error")
+            return redirect(url_for("auth.reset_request"))
         s = _get_session()
         try:
             user = s.get(User, user.id)
@@ -293,6 +315,9 @@ def reset_password(token):
         finally:
             s.close()
 
+    if not _valid_user():
+        flash(get_message(g.lang, "reset_invalid"), "error")
+        return redirect(url_for("auth.reset_request"))
     return render_template("reset_password.html", form=form)
 
 
@@ -331,9 +356,14 @@ def create_classroom():
     if form.validate_on_submit():
         s = _get_session()
         try:
+            code = Classroom.generate_code()
+            for _ in range(10):
+                if not s.query(Classroom).filter_by(join_code=code).first():
+                    break
+                code = Classroom.generate_code()
             classroom = Classroom(
                 name=form.name.data.strip(),
-                join_code=Classroom.generate_code(),
+                join_code=code,
                 teacher_id=current_user.id,
             )
             s.add(classroom)
