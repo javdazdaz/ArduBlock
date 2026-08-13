@@ -14,7 +14,7 @@ if _src_dir not in sys.path:
 import signal
 from pathlib import Path
 
-from flask import Flask, g, request, send_from_directory, session, redirect, url_for
+from flask import Flask, g, request, send_from_directory, session, redirect, url_for, Response
 from flask_login import current_user
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -106,6 +106,38 @@ def create_app() -> Flask:
         if current_user.is_authenticated:
             return redirect(url_for("auth.dashboard"))
         return send_from_directory(str(FRONTEND_DIR), "frontpage.html")
+
+    # ── SEO: robots.txt y sitemap ─────────────────
+    _SITE_URL = "https://ardublock.matemancia.net"
+
+    @app.route("/robots.txt")
+    def robots_txt():
+        body = (
+            "User-agent: *\n"
+            "Allow: /\n"
+            "Disallow: /api/\n"
+            "Disallow: /login\n"
+            "Disallow: /register\n"
+            "Disallow: /reset\n"
+            "Disallow: /teacher\n"
+            "Disallow: /student\n"
+            "\n"
+            f"Sitemap: {_SITE_URL}/sitemap.xml\n"
+        )
+        return Response(body, mimetype="text/plain")
+
+    @app.route("/sitemap.xml")
+    def sitemap_xml():
+        xml = f"""<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>{_SITE_URL}/</loc>
+    <lastmod>2026-08-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+</urlset>"""
+        return Response(xml, mimetype="application/xml")
 
     @app.route("/app")
     @app.route("/app/")
