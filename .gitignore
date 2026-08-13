@@ -44,9 +44,12 @@ docs/
 INTERNO.md
 ANALISIS.md
 TODO.md
+.hermes/
 
 # ── Misc ─────────────────────────────────────────
 *.bak
 start.sh
+# Deploy local (propio de la instancia; plantilla en deploy.sh.example)
+deploy.sh
 backend/lti_key.json
 backend/ardublock.db

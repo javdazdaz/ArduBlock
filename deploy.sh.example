@@ -1,0 +1,49 @@
+#!/bin/bash
+# ArduBlock — Script de deploy (plantilla)
+#
+# Copiar a `deploy.sh` (que está en .gitignore, porque contiene rutas y
+# nombres propios de la instancia) y ajustar los valores por defecto:
+#   ARDU_BLOCK_DIR        → ruta del repo en el servidor
+#   ARDU_BLOCK_SERVICE    → nombre del unit systemd
+#   ARDU_BLOCK_HEALTH_URL → endpoint de health check
+#
+# Uso: ./deploy.sh
+set -eo pipefail
+
+PROJECT_DIR="${ARDU_BLOCK_DIR:-/opt/ardublock}"
+SERVICE_NAME="${ARDU_BLOCK_SERVICE:-ardublock}"
+HEALTH_URL="${ARDU_BLOCK_HEALTH_URL:-http://localhost:5000/api/health}"
+
+cd "$PROJECT_DIR"
+
+echo '→ Pulling latest...'
+# --ff-only: falla limpio si la historia divergió (en vez de crear merge commit).
+# Si ocurre, reconciliar con: git fetch origin && git reset --hard origin/main
+git pull --ff-only origin main
+
+echo '→ Installing dependencies...'
+npm ci --prefer-offline
+
+echo '→ Building frontend...'
+npm run build
+
+echo '→ Installing Python deps...'
+cd backend
+source .venv/bin/activate
+pip install -r requirements.txt -q
+cd "$PROJECT_DIR"
+
+echo '→ Restarting service...'
+systemctl restart "$SERVICE_NAME"
+
+echo '→ Waiting for health check...'
+for i in $(seq 1 15); do
+  if curl -sf "$HEALTH_URL" | grep -q '"status":"ok"'; then
+    echo "✓ Deploy complete (${i}s)"
+    exit 0
+  fi
+  sleep 1
+done
+echo '✕ Health check failed after 15s'
+systemctl status "$SERVICE_NAME" --no-pager -l
+exit 1
