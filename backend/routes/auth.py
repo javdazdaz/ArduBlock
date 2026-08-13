@@ -33,7 +33,7 @@ _SessionFactory = sessionmaker(bind=_engine)
 
 # ═══ Config ══════════════════════════════════════
 
-TEACHER_EMAIL = os.environ.get("TEACHER_EMAIL", "teacher@ardublock.local")
+TEACHER_EMAIL = os.environ.get("TEACHER_EMAIL", "teacher@example.com")
 TEACHER_PASSWORD = os.environ.get("TEACHER_PASSWORD", "ardublock")
 
 SMTP_HOST = os.environ.get("SMTP_HOST", "mail.mortem.technology")

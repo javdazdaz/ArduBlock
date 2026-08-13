@@ -235,6 +235,8 @@ function validateWorkspace(workspace) {
   }
 
   const pinConsumers = {
+    'digital_write_basic': { pinField: 'PIN', mode: 'OUTPUT', label: 'digitalWrite' },
+    'digital_write_advanced': { pinField: 'PIN', mode: 'OUTPUT', label: 'digitalWrite' },
     'tone_duration_basic': { pinField: 'PIN', mode: 'OUTPUT', label: 'tone' },
     'analog_read_basic': { pinField: 'PIN', mode: 'INPUT', label: 'analogRead', optional: true },
     'analog_read_advanced': { pinField: 'PIN', mode: 'INPUT', label: 'analogRead', optional: true },

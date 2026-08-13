@@ -83,12 +83,12 @@ describe('generadores C++ — Digital I/O', () => {
   });
 
   it('pin_mode OUTPUT', () => {
-    const code = cppGenerator.forBlock['pin_mode'](b('pin_mode', { PIN: '13', MODE: 'OUTPUT' }));
+    const code = cppGenerator.forBlock['pin_mode_basic'](b('pin_mode_basic', { PIN: '13', MODE: 'OUTPUT' }));
     expect(code).toBe('pinMode(13, OUTPUT);\n');
   });
 
   it('pin_mode INPUT_PULLUP', () => {
-    const code = cppGenerator.forBlock['pin_mode'](b('pin_mode', { PIN: '7', MODE: 'INPUT_PULLUP' }));
+    const code = cppGenerator.forBlock['pin_mode_basic'](b('pin_mode_basic', { PIN: '7', MODE: 'INPUT_PULLUP' }));
     expect(code).toBe('pinMode(7, INPUT_PULLUP);\n');
   });
 
@@ -101,17 +101,17 @@ describe('generadores C++ — Digital I/O', () => {
   });
 
   it('digital_write HIGH', () => {
-    const code = cppGenerator.forBlock['digital_write'](b('digital_write', { PIN: '13', VALUE: 'HIGH' }));
+    const code = cppGenerator.forBlock['digital_write_basic'](b('digital_write_basic', { PIN: '13', VALUE: 'HIGH' }));
     expect(code).toBe('digitalWrite(13, HIGH);\n');
   });
 
   it('digital_write LOW', () => {
-    const code = cppGenerator.forBlock['digital_write'](b('digital_write', { PIN: '8', VALUE: 'LOW' }));
+    const code = cppGenerator.forBlock['digital_write_basic'](b('digital_write_basic', { PIN: '8', VALUE: 'LOW' }));
     expect(code).toBe('digitalWrite(8, LOW);\n');
   });
 
   it('digital_read devuelve digitalRead(pin)', () => {
-    const [code, order] = cppGenerator.forBlock['digital_read'](b('digital_read', { PIN: '2' }));
+    const [code, order] = cppGenerator.forBlock['digital_read_basic'](b('digital_read_basic', { PIN: '2' }));
     expect(code).toBe('digitalRead(2)');
     expect(order).toBe(cppGenerator.ORDER_ATOMIC);
   });
@@ -197,15 +197,15 @@ describe('generadores C++ — Analógico', () => {
   });
 
   it('analog_write: VALUE viene de valueToCode', () => {
-    const block = b('analog_write', { PIN: '9' });
+    const block = b('analog_write_basic', { PIN: '9' });
     const code = withValueToCode(cppGenerator, ['128'], () => {
-      return cppGenerator.forBlock['analog_write'](block);
+      return cppGenerator.forBlock['analog_write_basic'](block);
     });
     expect(code).toBe('analogWrite(9, 128);\n');
   });
 
   it('analog_read: el generador agrega prefijo A al pin numérico', () => {
-    const [code, order] = cppGenerator.forBlock['analog_read'](b('analog_read', { PIN: '0' }));
+    const [code, order] = cppGenerator.forBlock['analog_read_basic'](b('analog_read_basic', { PIN: '0' }));
     expect(code).toBe('analogRead(A0)');
     expect(order).toBe(cppGenerator.ORDER_ATOMIC);
   });
@@ -556,12 +556,14 @@ describe('generadores C++ — Avanzado (tone)', () => {
   });
 
   it('tone_output genera tone(pin, freq)', () => {
-    const code = cppGenerator.forBlock['tone_output'](b('tone_output', { PIN: '8', FREQ: '440' }));
+    const code = cppGenerator.forBlock['tone_output_basic'](b('tone_output_basic', { PIN: '8', FREQ: '440' }));
     expect(code).toBe('tone(8, 440);\n');
   });
 
   it('no_tone_output genera noTone(pin)', () => {
-    const code = cppGenerator.forBlock['no_tone_output'](b('no_tone_output', { PIN: '8' }));
+    const code = withValueToCode(cppGenerator, ['8'], () => {
+      return cppGenerator.forBlock['no_tone_output_advanced'](b('no_tone_output_advanced'));
+    });
     expect(code).toBe('noTone(8);\n');
   });
 });

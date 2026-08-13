@@ -181,7 +181,7 @@ describe('validator — reglas de validación', () => {
       const ws = mw([
         mb('arduino_setup'),
         mb('arduino_loop'),
-        mb('digital_write', { PIN: '13', VALUE: 'HIGH' }),
+        mb('digital_write_basic', { PIN: '13', VALUE: 'HIGH' }),
       ]);
       const w = validateWorkspace(ws);
       expect(w.some(x => x.type === 'pin_not_configured')).toBe(true);
@@ -189,18 +189,14 @@ describe('validator — reglas de validación', () => {
 
     it('no advierte si el pin está configurado en setup', () => {
       const setup = mb('arduino_setup');
-      const pm = mb('pin_mode', { PIN: '13', MODE: 'OUTPUT' }, { parent: setup });
+      const pm = mb('pin_mode_basic', { PIN: '13', MODE: 'OUTPUT' }, { parent: setup });
+      const dw = mb('digital_write_basic', { PIN: '13', VALUE: 'HIGH' });
       const ws = {
         getTopBlocks: () => [setup, mb('arduino_loop')],
-        getAllBlocks: () => [setup, pm, mb('arduino_loop'), mb('digital_write', { PIN: '13', VALUE: 'HIGH' })],
+        getAllBlocks: () => [setup, pm, mb('arduino_loop'), dw],
       };
-      // R7 requiere que pin_mode esté dentro de setup vía isInsideBlockType.
-      // Sin padres reales, pinModes queda vacío → advertirá.
-      // Testeamos que al menos no crashea:
       const w = validateWorkspace(ws);
-      const pinWarn = w.filter(x => x.type === 'pin_not_configured');
-      // Esperamos advertencia porque el pin_mode no tiene parent real
-      expect(pinWarn.length).toBeGreaterThanOrEqual(0);
+      expect(w.some(x => x.type === 'pin_not_configured')).toBe(false);
     });
   });
 
