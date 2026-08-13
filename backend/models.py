@@ -65,10 +65,25 @@ class Classroom(Base):
     students = relationship(
         "User", secondary="classroom_students", backref="classrooms",
     )
+    classes = relationship(
+        "Class", back_populates="classroom", cascade="all, delete-orphan",
+    )
 
     @staticmethod
     def generate_code():
         return secrets.token_hex(3).upper()[:6]  # ej: "A1B2C3"
+
+
+class Class(Base):
+    """Clase dentro de un curso (Classroom). Agrupa proyectos por tema/sesión."""
+    __tablename__ = "classes"
+
+    id = Column(Integer, primary_key=True)
+    classroom_id = Column(Integer, ForeignKey("classrooms.id"), nullable=False, index=True)
+    name = Column(String(200), nullable=False)
+    created_at = Column(DateTime, default=utcnow)
+
+    classroom = relationship("Classroom", back_populates="classes")
 
 
 class ClassroomStudent(Base):
@@ -88,6 +103,7 @@ class Project(Base):
     name = Column(String(100), nullable=False)
     data = Column(Text, nullable=False)
     board = Column(String(50), default="arduino:avr:uno")
+    class_id = Column(Integer, ForeignKey("classes.id"), nullable=True, index=True)
     created_at = Column(DateTime, default=utcnow)
     updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)
 
@@ -97,6 +113,7 @@ class Project(Base):
         return {
             "id": self.id, "name": self.name, "board": self.board,
             "data": self.data,
+            "class_id": self.class_id,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }

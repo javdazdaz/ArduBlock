@@ -36,6 +36,11 @@ let USER_NAME = '';
   const params = new URLSearchParams(window.location.search);
   const pid = params.get('project');
   const isView = params.get('view') === '1';
+  const cid = params.get('class');
+  if (cid) {
+    const c = Number(cid);
+    if (Number.isInteger(c) && c > 0) setClassId(c);
+  }
 
   const brand = document.querySelector('.header-brand');
   if (brand) {
@@ -123,7 +128,7 @@ class FixedEdgesScrollMetricsManager extends ScrollMetricsManager {
 FixedEdgesScrollMetricsManager.setFixedEdges({ top: true, left: true });
 
 // Módulos de la aplicación
-import { initProjectManager, lsKey, isWorkspaceDirty, resetCurrentProject, loadProject, loadTeacherProject } from './project-manager.js';
+import { initProjectManager, lsKey, isWorkspaceDirty, resetCurrentProject, loadProject, loadTeacherProject, setClassId } from './project-manager.js';
 import { initSettings, getSetting } from './settings.js';
 import { initSerial }        from './serial.js';
 import { initUpload }         from './upload.js';

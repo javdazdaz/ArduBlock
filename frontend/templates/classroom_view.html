@@ -25,18 +25,45 @@
         </form>
       </div>
     </div>
-
     <div class="instructions">
       <p>{{ _('share_code') }}</p>
       <div class="code-row">
         <div class="code-big" id="join-code">{{ classroom.join_code }}</div>
         <button type="button" class="btn btn-ghost" id="copy-code">{{ _('copy_code') }}</button>
       </div>
-      <p class="mt">
-        {{ _('students_enter') }} <strong>ardublock.matemancia.net/register</strong><br>
-        {{ _('and_enter_code') }}
-      </p>
+      <p class="mt">{{ _('students_enter') }} <strong>ardublock.matemancia.net/register</strong><br>{{ _('and_enter_code') }}</p>
     </div>
+  </div>
+
+  <div class="panel">
+    <div class="page-header">
+      <h2>📚 {{ _('classes') }}</h2>
+      <button type="button" class="btn" id="toggle-class">{{ _('new_class') }}</button>
+    </div>
+    <div class="hidden" id="new-class">
+      <form method="POST" action="{{ url_for('auth.create_class', classroom_id=classroom.id) }}">
+        {{ class_form.hidden_tag() }}
+        <div class="field">
+          <label>{{ _('class_name_label') }}</label>
+          {{ class_form.name() }}
+        </div>
+        <button type="submit" class="btn">{{ _('create_class') }}</button>
+      </form>
+    </div>
+    {% if classes %}
+      <div class="classroom-grid">
+        {% for cl in classes %}
+          <a href="/teacher/class/{{ cl.id }}" class="card-link">
+            <div class="classroom-card">
+              <h3>{{ cl.name }}</h3>
+              <div class="meta">{{ _('students_count', n=students|length) }}</div>
+            </div>
+          </a>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="muted">{{ _('no_classes') }}</p>
+    {% endif %}
   </div>
 
   <div class="panel">
@@ -48,19 +75,6 @@
             <div class="student-info">
               <div class="student-name">{{ s.name }}</div>
               <div class="student-email">{{ s.email }}</div>
-              {% set sprojects = projects_by_student.get(s.id, []) %}
-              {% if sprojects %}
-                <div class="student-projects">
-                  <span class="student-projects-label">{{ _('student_projects') }} ({{ sprojects|length }})</span>
-                  {% for p in sprojects %}
-                    <a href="/app?project={{ p.id }}&view=1" class="project-chip" title="{{ _('open_project') }}">
-                      {{ p.name }} <span class="chip-date">{{ p.updated_at.strftime('%d/%m/%Y') if p.updated_at else '' }}</span>
-                    </a>
-                  {% endfor %}
-                </div>
-              {% else %}
-                <div class="student-projects muted">{{ _('no_student_projects') }}</div>
-              {% endif %}
             </div>
             <form method="POST" action="{{ url_for('auth.remove_student', classroom_id=classroom.id, student_id=s.id) }}" onsubmit="return confirm('{{ _('confirm_remove_student') }}')">
               {{ delete_form.hidden_tag() }}
@@ -75,25 +89,15 @@
   </div>
 </main>
 <script>
+  document.getElementById('toggle-class').addEventListener('click', function () {
+    document.getElementById('new-class').classList.toggle('hidden');
+  });
   document.getElementById('copy-code').addEventListener('click', function () {
     var code = document.getElementById('join-code').textContent.trim();
     var btn = this;
-    function done() {
-      var old = btn.textContent;
-      btn.textContent = '✓ {{ _('copied') }}';
-      setTimeout(function () { btn.textContent = old; }, 1500);
-    }
-    function fallback(text) {
-      var ta = document.createElement('textarea');
-      ta.value = text; document.body.appendChild(ta); ta.select();
-      try { document.execCommand('copy'); done(); } catch (e) {}
-      document.body.removeChild(ta);
-    }
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(code).then(done).catch(function () { fallback(code); });
-    } else {
-      fallback(code);
-    }
+    function done() { var o = btn.textContent; btn.textContent = '✓ {{ _('copied') }}'; setTimeout(function(){ btn.textContent = o; }, 1500); }
+    function fallback(t) { var ta = document.createElement('textarea'); ta.value = t; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); done(); } catch(e){} document.body.removeChild(ta); }
+    if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(code).then(done).catch(function(){ fallback(code); }); } else { fallback(code); }
   });
 </script>
 {% endblock %}

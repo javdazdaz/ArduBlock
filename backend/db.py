@@ -22,7 +22,25 @@ def get_session():
 
 
 def init_db():
-    """Crea las tablas si no existen."""
+    """Crea las tablas si no existen y aplica migraciones ligeras."""
     from backend.models import Base
 
     Base.metadata.create_all(engine)
+    _migrate()
+
+
+def _migrate():
+    """Migraciones idempotentes para columnas añadidas a tablas existentes.
+
+    create_all() solo crea tablas nuevas, no columnas nuevas en tablas ya
+    existentes. Aquí se aplican los ALTER necesarios sin depender de Alembic.
+    """
+    from sqlalchemy import inspect, text
+
+    insp = inspect(engine)
+    if "projects" not in insp.get_table_names():
+        return
+    cols = {c["name"] for c in insp.get_columns("projects")}
+    if "class_id" not in cols:
+        with engine.begin() as conn:
+            conn.execute(text("ALTER TABLE projects ADD COLUMN class_id INTEGER"))

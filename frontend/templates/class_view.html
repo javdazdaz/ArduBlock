@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}{{ cls.name }} — ArduBlock{% endblock %}
+{% block content %}
+<nav>
+  <h1 class="nav-brand">⚡ ArduBlock</h1>
+  <div class="nav-links">
+    <a href="/teacher/classroom/{{ cls.classroom_id }}" class="nav-btn">{{ _('back') }}</a>
+  </div>
+</nav>
+<main>
+  <a href="/teacher/classroom/{{ cls.classroom_id }}" class="back">{{ _('back') }}</a>
+  {{ render_flash() }}
+
+  <div class="panel">
+    <div class="panel-head">
+      <h2>{{ cls.name }}</h2>
+      <div class="panel-actions">
+        <form method="POST" action="{{ url_for('auth.rename_class', class_id=cls.id) }}" class="inline-form">
+          {{ rename_form.hidden_tag() }}
+          <input type="text" name="name" value="{{ cls.name }}" maxlength="200" required>
+          <button type="submit" class="btn btn-ghost">{{ _('rename') }}</button>
+        </form>
+        <form method="POST" action="{{ url_for('auth.delete_class', class_id=cls.id) }}" onsubmit="return confirm('{{ _('confirm_delete_class') }}')">
+          {{ delete_form.hidden_tag() }}
+          <button type="submit" class="btn btn-danger">{{ _('delete_class') }}</button>
+        </form>
+      </div>
+    </div>
+    <p class="muted">{{ _('students_title') }}: {{ students|length }}</p>
+  </div>
+
+  <div class="panel">
+    <h2>👥 {{ _('students_title') }}</h2>
+    {% if students %}
+      <div class="classroom-grid">
+        {% for s in students %}
+          <a href="/teacher/class/{{ cls.id }}/student/{{ s.id }}" class="card-link">
+            <div class="classroom-card">
+              <h3>{{ s.name }}</h3>
+              <div class="meta">{{ _('student_projects') }}: {{ counts.get(s.id, 0) }}</div>
+            </div>
+          </a>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="muted">{{ _('no_students') }}</p>
+    {% endif %}
+  </div>
+</main>
+{% endblock %}

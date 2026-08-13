@@ -1,32 +1,42 @@
 {% extends "base.html" %}
-{% block title %}{{ _('my_projects') }} — ArduBlock{% endblock %}
+{% block title %}{{ _('my_courses') }} — ArduBlock{% endblock %}
 {% block content %}
 <nav>
-  <h1>⚡ ArduBlock</h1>
-  <div>
+  <h1 class="nav-brand">⚡ ArduBlock</h1>
+  <div class="nav-links">
     <span class="nav-user">{{ user.name }}</span>
-    <a href="{{ url_for('auth.logout') }}">{{ _('logout') }}</a>
+    <a href="{{ url_for('auth.logout') }}" class="nav-btn">{{ _('logout') }}</a>
   </div>
 </nav>
 <main>
-  <div class="header">
-    <h2>{{ _('my_projects') }}</h2>
-    <a href="/app" class="btn-new">{{ _('new_project') }}</a>
+  <div class="page-header">
+    <h2>🎓 {{ _('my_courses') }}</h2>
   </div>
-  {% if projects %}
+  {% if classrooms %}
+    <div class="classroom-grid">
+      {% for c in classrooms %}
+        <a href="/student/classroom/{{ c.id }}" class="card-link">
+          <div class="classroom-card">
+            <h3>{{ c.name }}</h3>
+            <div class="meta">{{ c.teacher.name }}</div>
+          </div>
+        </a>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty"><p>{{ _('no_courses') }}</p></div>
+  {% endif %}
+
+  {% if unassigned %}
+    <div class="page-header"><h2>{{ _('unassigned_projects') }}</h2></div>
     <div class="project-grid">
-      {% for p in projects %}
+      {% for p in unassigned %}
         <a href="/app?project={{ p.id }}" class="project-card">
           <h3>{{ p.name }}</h3>
           <div class="board">{{ p.board }}</div>
           <div class="meta">{{ p.updated_at.strftime('%d/%m/%Y %H:%M') if p.updated_at else '' }}</div>
         </a>
       {% endfor %}
-    </div>
-  {% else %}
-    <div class="empty">
-      <p>{{ _('no_projects') }}</p>
-      <a href="/app" class="btn-new">{{ _('first_project') }}</a>
     </div>
   {% endif %}
 </main>

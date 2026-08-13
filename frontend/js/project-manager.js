@@ -12,10 +12,13 @@ let LS_PREFIX, LAST_KEY, autoSaveTimer;
 let workspaceDirty = false;
 let currentProjectId = null;  // ID del proyecto actual en servidor
 let readOnly = false;         // modo solo-lectura (profesor viendo proyecto de alumno)
+let currentClassId = null;    // clase en la que se crean proyectos (?class=)
 
 export function cancelAutoSave() { clearTimeout(autoSaveTimer); }
 
 export function resetCurrentProject() { currentProjectId = null; delete projectInput?.dataset?.projectId; }
+
+export function setClassId(id) { currentClassId = id; }
 
 export function isReadOnly() { return readOnly; }
 
@@ -112,9 +115,11 @@ export async function saveProject(name) {
   try {
     const method = currentProjectId ? 'PUT' : 'POST';
     const url = currentProjectId ? `/api/projects/${currentProjectId}` : '/api/projects';
+    const body = { name, data: record };
+    if (!currentProjectId && currentClassId) body.class_id = currentClassId;
     const res = await fetch(url, {
       method, headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, data: record }),
+      body: JSON.stringify(body),
     });
     if (res.ok) {
       const saved = await res.json();

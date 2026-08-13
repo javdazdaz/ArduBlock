@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}{{ classroom.name }} — ArduBlock{% endblock %}
+{% block content %}
+<nav>
+  <h1 class="nav-brand">⚡ ArduBlock</h1>
+  <div class="nav-links">
+    <a href="/student" class="nav-btn">{{ _('back') }}</a>
+  </div>
+</nav>
+<main>
+  <a href="/student" class="back">{{ _('back') }}</a>
+  <div class="page-header"><h2>📚 {{ classroom.name }}</h2></div>
+  {% if classes %}
+    <div class="classroom-grid">
+      {% for cl in classes %}
+        <a href="/student/class/{{ cl.id }}" class="card-link">
+          <div class="classroom-card"><h3>{{ cl.name }}</h3></div>
+        </a>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty"><p>{{ _('no_classes') }}</p></div>
+  {% endif %}
+</main>
+{% endblock %}

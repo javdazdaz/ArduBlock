@@ -13,7 +13,7 @@ from pathlib import Path
 from flask import Blueprint, jsonify, request
 from flask_login import current_user, login_required
 
-from backend.models import Project, Classroom, ClassroomStudent
+from backend.models import Project, Classroom, ClassroomStudent, Class
 from backend.db import get_session as _get_session
 
 projects_bp = Blueprint("projects", __name__)
@@ -121,13 +121,26 @@ def create_project():
     if not project_data:
         return jsonify({"error": "Datos inválidos: falta 'data'"}), 400
 
+    class_id = data.get("class_id")
     s = _get_session()
     try:
+        if class_id is not None:
+            cls = s.get(Class, class_id)
+            if not cls:
+                return jsonify({"error": "Clase no encontrada"}), 404
+            enrolled = (
+                s.query(ClassroomStudent)
+                .filter_by(classroom_id=cls.classroom_id, user_id=current_user.id)
+                .first()
+            )
+            if not enrolled:
+                return jsonify({"error": "No autorizado"}), 403
         p = Project(
             user_id=current_user.id,
             name=_clean_name(data.get("name")),
             data=project_data,
             board=data.get("board", "arduino:avr:uno"),
+            class_id=class_id,
         )
         s.add(p)
         s.commit()

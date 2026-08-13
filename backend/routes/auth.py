@@ -19,9 +19,11 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, EmailField
 from wtforms.validators import DataRequired, Email, Length
 from werkzeug.security import generate_password_hash, check_password_hash
+from sqlalchemy import func
+from sqlalchemy.orm import joinedload
 from sqlalchemy.exc import IntegrityError
 
-from backend.models import User, Classroom, ClassroomStudent, Project, utcnow
+from backend.models import User, Classroom, ClassroomStudent, Project, Class, utcnow
 from backend.db import get_session
 from backend.messages import get_message
 
@@ -114,6 +116,10 @@ class RenameClassroomForm(FlaskForm):
 class EmptyForm(FlaskForm):
     """Form solo-CSRF para acciones destructivas (eliminar aula, quitar alumno)."""
     pass
+
+
+class ClassNameForm(FlaskForm):
+    name = StringField("Nombre de la clase", validators=[DataRequired(), Length(max=200)])
 
 
 class ResetRequestForm(FlaskForm):
@@ -390,12 +396,19 @@ def view_classroom(classroom_id):
         return redirect(url_for("auth.dashboard"))
     rename_form = RenameClassroomForm()
     delete_form = EmptyForm()
+    class_form = ClassNameForm()
     s = _get_session()
     try:
         classroom = s.get(Classroom, classroom_id)
         if not classroom or classroom.teacher_id != current_user.id:
             flash(get_message(g.lang, "classroom_not_found"), "error")
             return redirect(url_for("auth.teacher_dashboard"))
+        classes = (
+            s.query(Class)
+            .filter_by(classroom_id=classroom_id)
+            .order_by(Class.created_at.asc())
+            .all()
+        )
         students = (
             s.query(User)
             .join(ClassroomStudent)
@@ -403,23 +416,12 @@ def view_classroom(classroom_id):
             .order_by(User.name.asc())
             .all()
         )
-        student_ids = [st.id for st in students]
-        projects = (
-            s.query(Project)
-            .filter(Project.user_id.in_(student_ids))
-            .order_by(Project.updated_at.desc())
-            .all()
-        ) if student_ids else []
-        projects_by_student = {}
-        for p in projects:
-            projects_by_student.setdefault(p.user_id, []).append(p)
     finally:
         s.close()
     return render_template(
         "classroom_view.html",
-        classroom=classroom, students=students, user=current_user,
-        rename_form=rename_form, delete_form=delete_form,
-        projects_by_student=projects_by_student,
+        classroom=classroom, students=students, classes=classes, user=current_user,
+        rename_form=rename_form, delete_form=delete_form, class_form=class_form,
     )
 
 
@@ -490,6 +492,143 @@ def remove_student(classroom_id, student_id):
     return redirect(url_for("auth.view_classroom", classroom_id=classroom_id))
 
 
+# ═══ Clases (dentro de un curso) ══════════════════
+
+@auth_bp.route("/teacher/classroom/<int:classroom_id>/classes", methods=["POST"])
+@login_required
+def create_class(classroom_id):
+    if not current_user.is_teacher:
+        return redirect(url_for("auth.dashboard"))
+    form = ClassNameForm()
+    s = _get_session()
+    try:
+        classroom = s.get(Classroom, classroom_id)
+        if not classroom or classroom.teacher_id != current_user.id:
+            flash(get_message(g.lang, "classroom_not_found"), "error")
+            return redirect(url_for("auth.teacher_dashboard"))
+        if form.validate_on_submit():
+            s.add(Class(name=form.name.data.strip(), classroom_id=classroom.id))
+            s.commit()
+            flash(get_message(g.lang, "class_created"), "success")
+    finally:
+        s.close()
+    return redirect(url_for("auth.view_classroom", classroom_id=classroom_id))
+
+
+@auth_bp.route("/teacher/class/<int:class_id>")
+@login_required
+def view_class(class_id):
+    if not current_user.is_teacher:
+        return redirect(url_for("auth.dashboard"))
+    rename_form = ClassNameForm()
+    delete_form = EmptyForm()
+    s = _get_session()
+    try:
+        cls = s.get(Class, class_id)
+        if not cls or cls.classroom.teacher_id != current_user.id:
+            flash(get_message(g.lang, "classroom_not_found"), "error")
+            return redirect(url_for("auth.teacher_dashboard"))
+        students = (
+            s.query(User)
+            .join(ClassroomStudent)
+            .filter(ClassroomStudent.classroom_id == cls.classroom_id)
+            .order_by(User.name.asc())
+            .all()
+        )
+        student_ids = [st.id for st in students]
+        counts = dict(
+            s.query(Project.user_id, func.count(Project.id))
+            .filter(Project.class_id == class_id, Project.user_id.in_(student_ids))
+            .group_by(Project.user_id)
+            .all()
+        ) if student_ids else {}
+    finally:
+        s.close()
+    return render_template(
+        "class_view.html",
+        cls=cls, students=students, counts=counts, user=current_user,
+        rename_form=rename_form, delete_form=delete_form,
+    )
+
+
+@auth_bp.route("/teacher/class/<int:class_id>/student/<int:student_id>")
+@login_required
+def view_class_student(class_id, student_id):
+    if not current_user.is_teacher:
+        return redirect(url_for("auth.dashboard"))
+    s = _get_session()
+    try:
+        cls = s.get(Class, class_id)
+        if not cls or cls.classroom.teacher_id != current_user.id:
+            flash(get_message(g.lang, "classroom_not_found"), "error")
+            return redirect(url_for("auth.teacher_dashboard"))
+        enrolled = (
+            s.query(ClassroomStudent)
+            .filter_by(classroom_id=cls.classroom_id, user_id=student_id)
+            .first()
+        )
+        if not enrolled:
+            flash(get_message(g.lang, "classroom_not_found"), "error")
+            return redirect(url_for("auth.view_class", class_id=class_id))
+        student = s.get(User, student_id)
+        projects = (
+            s.query(Project)
+            .filter_by(user_id=student_id, class_id=class_id)
+            .order_by(Project.updated_at.desc())
+            .all()
+        )
+    finally:
+        s.close()
+    return render_template(
+        "class_student.html",
+        cls=cls, student=student, projects=projects, user=current_user,
+    )
+
+
+@auth_bp.route("/teacher/class/<int:class_id>/rename", methods=["POST"])
+@login_required
+def rename_class(class_id):
+    if not current_user.is_teacher:
+        return redirect(url_for("auth.dashboard"))
+    form = ClassNameForm()
+    s = _get_session()
+    try:
+        cls = s.get(Class, class_id)
+        if not cls or cls.classroom.teacher_id != current_user.id:
+            flash(get_message(g.lang, "classroom_not_found"), "error")
+            return redirect(url_for("auth.teacher_dashboard"))
+        if form.validate_on_submit():
+            cls.name = form.name.data.strip()
+            s.commit()
+            flash(get_message(g.lang, "class_renamed"), "success")
+    finally:
+        s.close()
+    return redirect(url_for("auth.view_class", class_id=class_id))
+
+
+@auth_bp.route("/teacher/class/<int:class_id>/delete", methods=["POST"])
+@login_required
+def delete_class(class_id):
+    if not current_user.is_teacher:
+        return redirect(url_for("auth.dashboard"))
+    form = EmptyForm()
+    s = _get_session()
+    try:
+        cls = s.get(Class, class_id)
+        if not cls or cls.classroom.teacher_id != current_user.id:
+            flash(get_message(g.lang, "classroom_not_found"), "error")
+            return redirect(url_for("auth.teacher_dashboard"))
+        if form.validate_on_submit():
+            s.query(Project).filter_by(class_id=class_id).update({"class_id": None})
+            s.delete(cls)
+            s.commit()
+            flash(get_message(g.lang, "class_deleted"), "success")
+            return redirect(url_for("auth.view_classroom", classroom_id=cls.classroom_id))
+    finally:
+        s.close()
+    return redirect(url_for("auth.view_class", class_id=class_id))
+
+
 # ═══ Student dashboard ═══════════════════════════
 
 @auth_bp.route("/student")
@@ -499,14 +638,83 @@ def student_dashboard():
         return redirect(url_for("auth.teacher_dashboard"))
     s = _get_session()
     try:
-        projects = (
+        classrooms = (
+            s.query(Classroom)
+            .join(ClassroomStudent, ClassroomStudent.classroom_id == Classroom.id)
+            .filter(ClassroomStudent.user_id == current_user.id)
+            .options(joinedload(Classroom.teacher))
+            .order_by(Classroom.created_at.desc())
+            .all()
+        )
+        unassigned = (
             s.query(Project)
-            .filter_by(user_id=current_user.id)
+            .filter_by(user_id=current_user.id, class_id=None)
             .order_by(Project.updated_at.desc())
             .all()
         )
     finally:
         s.close()
     return render_template(
-        "student_dashboard.html", user=current_user, projects=projects,
+        "student_dashboard.html",
+        user=current_user, classrooms=classrooms, unassigned=unassigned,
+    )
+
+
+@auth_bp.route("/student/classroom/<int:classroom_id>")
+@login_required
+def student_classroom(classroom_id):
+    if current_user.is_teacher:
+        return redirect(url_for("auth.teacher_dashboard"))
+    s = _get_session()
+    try:
+        enrolled = (
+            s.query(ClassroomStudent)
+            .filter_by(classroom_id=classroom_id, user_id=current_user.id)
+            .first()
+        )
+        if not enrolled:
+            return redirect(url_for("auth.dashboard"))
+        classroom = s.get(Classroom, classroom_id)
+        classes = (
+            s.query(Class)
+            .filter_by(classroom_id=classroom_id)
+            .order_by(Class.created_at.asc())
+            .all()
+        )
+    finally:
+        s.close()
+    return render_template(
+        "student_classroom.html",
+        classroom=classroom, classes=classes, user=current_user,
+    )
+
+
+@auth_bp.route("/student/class/<int:class_id>")
+@login_required
+def student_class(class_id):
+    if current_user.is_teacher:
+        return redirect(url_for("auth.teacher_dashboard"))
+    s = _get_session()
+    try:
+        cls = s.get(Class, class_id)
+        if not cls:
+            return redirect(url_for("auth.dashboard"))
+        enrolled = (
+            s.query(ClassroomStudent)
+            .filter_by(classroom_id=cls.classroom_id, user_id=current_user.id)
+            .first()
+        )
+        if not enrolled:
+            return redirect(url_for("auth.dashboard"))
+        projects = (
+            s.query(Project)
+            .filter_by(user_id=current_user.id, class_id=class_id)
+            .order_by(Project.updated_at.desc())
+            .all()
+        )
+    finally:
+        s.close()
+    return render_template(
+        "student_class.html",
+        cls=cls, projects=projects, user=current_user,
     )

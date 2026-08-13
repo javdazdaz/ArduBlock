@@ -150,16 +150,16 @@ def test_student_cannot_manage_classroom(client, seed_classroom):
     assert r.status_code == 302  # no autorizado → redirect a su dashboard
 
 
-def test_view_classroom_renders_with_student_projects(client, seed_classroom):
+def test_view_classroom_renders_with_classes(client, seed_classroom):
     seed_classroom("ABC123")
     _register_student(client, "alumno@example.com")
-    client.post("/api/projects", json={"name": "proyecto.ino", "data": {"state": {"x": 1}}})
     client.get("/logout")
     _login_teacher(client)
     cid = _classroom_id("ABC123")
+    client.post(f"/teacher/classroom/{cid}/classes",
+                data={"name": "Clase 1"}, follow_redirects=True)
 
     r = client.get(f"/teacher/classroom/{cid}")
     assert r.status_code == 200
     assert b"alumno@example.com" in r.data
-    assert b"proyecto.ino" in r.data
-    assert b"/app?project=" in r.data and b"view=1" in r.data
+    assert b"Clase 1" in r.data

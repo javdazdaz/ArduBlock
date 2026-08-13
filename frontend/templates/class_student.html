@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}{{ student.name }} — {{ cls.name }} — ArduBlock{% endblock %}
+{% block content %}
+<nav>
+  <h1 class="nav-brand">⚡ ArduBlock</h1>
+  <div class="nav-links">
+    <a href="/teacher/class/{{ cls.id }}" class="nav-btn">{{ _('back_to_class') }}</a>
+  </div>
+</nav>
+<main>
+  <a href="/teacher/class/{{ cls.id }}" class="back">{{ _('back_to_class') }}</a>
+  <div class="page-header">
+    <h2>{{ student.name }}</h2>
+    <span class="muted">{{ student.email }}</span>
+  </div>
+  {% if projects %}
+    <div class="project-grid">
+      {% for p in projects %}
+        <a href="/app?project={{ p.id }}&view=1" class="project-card">
+          <h3>{{ p.name }}</h3>
+          <div class="board">{{ p.board }}</div>
+          <div class="meta">{{ p.updated_at.strftime('%d/%m/%Y %H:%M') if p.updated_at else '' }}</div>
+        </a>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty"><p>{{ _('no_student_projects') }}</p></div>
+  {% endif %}
+</main>
+{% endblock %}
