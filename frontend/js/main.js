@@ -40,8 +40,6 @@ let USER_NAME = '';
     if (IS_GUEST_MODE) {
       badge.textContent = '👤 Invitado';
       brand.appendChild(badge);
-      const uploadBtn = document.getElementById('btn-upload');
-      if (uploadBtn) uploadBtn.style.display = 'none';
     } else {
       badge.textContent = '👤 ' + USER_NAME;
       brand.appendChild(badge);
