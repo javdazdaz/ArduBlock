@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite frontend",
-    "build": "vite build frontend",
+    "build": "cp frontend/css/palettes.css frontend/public/css/ && cp frontend/css/pages.css frontend/public/css/ && vite build frontend",
     "preview": "vite preview frontend",
     "test": "vitest run",
     "test:watch": "vitest"

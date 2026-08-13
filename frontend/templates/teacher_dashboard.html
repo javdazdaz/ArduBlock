@@ -2,17 +2,21 @@
 {% block title %}{{ _('my_classrooms') }} — ArduBlock{% endblock %}
 {% block content %}
 <nav>
-  <h1>⚡ ArduBlock · {{ _('teacher_label') }}</h1>
-  <div>
+  <h1 class="nav-brand">⚡ ArduBlock <span class="nav-role">{{ _('teacher_label') }}</span></h1>
+  <div class="nav-links">
     <span class="nav-user">{{ user.name }}</span>
-    <a href="/app">{{ _('editor_link') }}</a>
-    <a href="{{ url_for('auth.logout') }}">{{ _('logout') }}</a>
+    <a href="/app" class="nav-btn">{{ _('editor_link') }}</a>
+    <a href="{{ url_for('auth.logout') }}" class="nav-btn">{{ _('logout') }}</a>
   </div>
 </nav>
 <main>
   {{ render_flash() }}
-  <div class="panel">
-    <h2>➕ {{ _('new_classroom') }}</h2>
+  <div class="page-header">
+    <h2>📚 {{ _('my_classrooms') }}</h2>
+    <button type="button" class="btn" id="toggle-new">{{ _('new_classroom') }}</button>
+  </div>
+
+  <div class="panel hidden" id="new-classroom">
     <form method="POST" action="{{ url_for('auth.create_classroom') }}">
       {{ form.hidden_tag() }}
       <div class="field">
@@ -22,23 +26,29 @@
       <button type="submit" class="btn">{{ _('create_classroom') }}</button>
     </form>
   </div>
-  <div class="panel">
-    <h2>📚 {{ _('my_classrooms') }}</h2>
-    {% if classrooms %}
+
+  {% if classrooms %}
+    <div class="classroom-grid">
       {% for c in classrooms %}
         <a href="/teacher/classroom/{{ c.id }}" class="card-link">
           <div class="classroom-card">
-            <div>
-              <h3>{{ c.name }}</h3>
-              <div class="meta">{{ _('students_count', n=c.students|length) }}</div>
-            </div>
+            <h3>{{ c.name }}</h3>
             <div class="code">{{ c.join_code }}</div>
+            <div class="meta">{{ _('students_count', n=c.students|length) }}</div>
           </div>
         </a>
       {% endfor %}
-    {% else %}
-      <p class="muted">{{ _('no_classrooms') }}</p>
-    {% endif %}
-  </div>
+    </div>
+  {% else %}
+    <div class="empty">
+      <p>{{ _('no_classrooms') }}</p>
+      <button type="button" class="btn" onclick="document.getElementById('toggle-new').click()">{{ _('create_classroom') }}</button>
+    </div>
+  {% endif %}
 </main>
+<script>
+  document.getElementById('toggle-new').addEventListener('click', function () {
+    document.getElementById('new-classroom').classList.toggle('hidden');
+  });
+</script>
 {% endblock %}

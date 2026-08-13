@@ -11,10 +11,21 @@ let workspace, projectInput, projectList, showToast;
 let LS_PREFIX, LAST_KEY, autoSaveTimer;
 let workspaceDirty = false;
 let currentProjectId = null;  // ID del proyecto actual en servidor
+let readOnly = false;         // modo solo-lectura (profesor viendo proyecto de alumno)
 
 export function cancelAutoSave() { clearTimeout(autoSaveTimer); }
 
 export function resetCurrentProject() { currentProjectId = null; delete projectInput?.dataset?.projectId; }
+
+export function isReadOnly() { return readOnly; }
+
+export function setReadOnly(v) {
+  readOnly = v;
+  const save = document.getElementById('btn-save');
+  const del = document.getElementById('btn-delete');
+  if (save) save.disabled = v;
+  if (del) del.disabled = v;
+}
 
 export function initProjectManager(deps) {
   workspace     = deps.workspace;
@@ -44,6 +55,7 @@ export function initProjectManager(deps) {
     workspaceDirty = true;
     clearTimeout(autoSaveTimer);
     autoSaveTimer = setTimeout(() => {
+      if (readOnly) { workspaceDirty = false; return; }
       const name = projectInput.value.trim();
       if (name) { saveProject(name); workspaceDirty = false; }
     }, 2000);
@@ -77,6 +89,7 @@ function isGuest() { return window.IS_GUEST_MODE !== false; }
 // ═══ Save ════════════════════════════════════════
 
 export async function saveProject(name) {
+  if (readOnly) { showToast('Solo lectura: no se puede guardar'); return; }
   name = name || getProjectName();
   if (!name.endsWith('.ino')) name += '.ino';
   projectInput.value = name;
@@ -157,6 +170,29 @@ export async function loadProject(idOrName) {
   localStorage.setItem(LAST_KEY, displayName);
   showToast(`Proyecto "${displayName}" cargado`);
   projectList.classList.add('hidden');
+}
+
+export async function loadTeacherProject(id) {
+  setReadOnly(true);
+  try {
+    const res = await fetch(`/api/teacher/projects/${id}`);
+    if (!res.ok) { showToast('No autorizado o proyecto no encontrado'); return; }
+    const p = await res.json();
+    const record = typeof p.data === 'string' ? JSON.parse(p.data) : p.data;
+    if (window._forceUndoPush) window._forceUndoPush();
+    workspace.clear();
+    Blockly.serialization.workspaces.load(record.state, workspace);
+    currentProjectId = null; // proyecto ajeno: no se guarda
+    let displayName = record.name || 'sin-nombre';
+    if (!displayName.endsWith('.ino')) displayName += '.ino';
+    projectInput.value = displayName;
+    window._exampleComment = null;
+    if (window._tabManager && record.tabs) {
+      window._tabManager.loadTabs(record.tabs, displayName);
+    }
+    localStorage.setItem(LAST_KEY, displayName);
+    showToast(`Solo lectura: "${displayName}"`);
+  } catch (e) { showToast('Error de conexión al cargar'); }
 }
 
 

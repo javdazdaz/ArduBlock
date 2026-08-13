@@ -33,16 +33,30 @@ let USER_NAME = '';
     IS_GUEST_MODE = true;
   }
 
+  const params = new URLSearchParams(window.location.search);
+  const pid = params.get('project');
+  const isView = params.get('view') === '1';
+
   const brand = document.querySelector('.header-brand');
   if (brand) {
     const badge = document.createElement('span');
     badge.style.cssText = 'font-size:0.8rem;opacity:0.7;margin-left:0.5rem';
     if (IS_GUEST_MODE) {
       badge.textContent = '👤 Invitado';
-      brand.appendChild(badge);
+    } else if (isView) {
+      badge.textContent = '🔒 Lectura · ' + USER_NAME;
     } else {
       badge.textContent = '👤 ' + USER_NAME;
-      brand.appendChild(badge);
+    }
+    brand.appendChild(badge);
+  }
+
+  // Cargar proyecto por URL: /app?project=<id>  o  /app?project=<id>&view=1 (solo lectura).
+  if (!IS_GUEST_MODE && pid) {
+    const id = Number(pid);
+    if (Number.isInteger(id) && id > 0) {
+      if (isView) { loadTeacherProject(id); }
+      else { loadProject(id); }
     }
   }
 })();
@@ -109,7 +123,7 @@ class FixedEdgesScrollMetricsManager extends ScrollMetricsManager {
 FixedEdgesScrollMetricsManager.setFixedEdges({ top: true, left: true });
 
 // Módulos de la aplicación
-import { initProjectManager, lsKey, isWorkspaceDirty, resetCurrentProject } from './project-manager.js';
+import { initProjectManager, lsKey, isWorkspaceDirty, resetCurrentProject, loadProject, loadTeacherProject } from './project-manager.js';
 import { initSettings, getSetting } from './settings.js';
 import { initSerial }        from './serial.js';
 import { initUpload }         from './upload.js';

@@ -2,35 +2,98 @@
 {% block title %}{{ classroom.name }} — ArduBlock{% endblock %}
 {% block content %}
 <nav>
-  <h1>⚡ ArduBlock</h1>
-  <div>
-    <a href="/teacher">{{ _('back_my_classrooms') }}</a>
+  <h1 class="nav-brand">⚡ ArduBlock</h1>
+  <div class="nav-links">
+    <a href="/teacher" class="nav-btn">{{ _('back_my_classrooms') }}</a>
   </div>
 </nav>
 <main class="narrow">
   <a href="/teacher" class="back">{{ _('back') }}</a>
+
   <div class="panel">
-    <h2>{{ classroom.name }}</h2>
+    <div class="panel-head">
+      <h2>{{ classroom.name }}</h2>
+      <div class="panel-actions">
+        <form method="POST" action="{{ url_for('auth.rename_classroom', classroom_id=classroom.id) }}" class="inline-form">
+          {{ rename_form.hidden_tag() }}
+          <input type="text" name="name" value="{{ classroom.name }}" maxlength="200" required aria-label="{{ _('rename_classroom') }}">
+          <button type="submit" class="btn btn-ghost">{{ _('rename') }}</button>
+        </form>
+        <form method="POST" action="{{ url_for('auth.delete_classroom', classroom_id=classroom.id) }}" onsubmit="return confirm('{{ _('confirm_delete_classroom') }}')">
+          {{ delete_form.hidden_tag() }}
+          <button type="submit" class="btn btn-danger">{{ _('delete_classroom') }}</button>
+        </form>
+      </div>
+    </div>
+
     <div class="instructions">
       <p>{{ _('share_code') }}</p>
-      <div class="code-big">{{ classroom.join_code }}</div>
+      <div class="code-row">
+        <div class="code-big" id="join-code">{{ classroom.join_code }}</div>
+        <button type="button" class="btn btn-ghost" id="copy-code">{{ _('copy_code') }}</button>
+      </div>
       <p class="mt">
         {{ _('students_enter') }} <strong>ardublock.matemancia.net/register</strong><br>
         {{ _('and_enter_code') }}
       </p>
     </div>
   </div>
+
   <div class="panel">
     <h2>👥 {{ _('students_title') }} ({{ students|length }})</h2>
     {% if students %}
-      <ul class="student-list">
+      <div class="student-list">
         {% for s in students %}
-          <li>{{ s.name }} — {{ s.email }}</li>
+          <div class="student-row">
+            <div class="student-info">
+              <div class="student-name">{{ s.name }}</div>
+              <div class="student-email">{{ s.email }}</div>
+              {% set sprojects = projects_by_student.get(s.id, []) %}
+              {% if sprojects %}
+                <div class="student-projects">
+                  <span class="student-projects-label">{{ _('student_projects') }} ({{ sprojects|length }})</span>
+                  {% for p in sprojects %}
+                    <a href="/app?project={{ p.id }}&view=1" class="project-chip" title="{{ _('open_project') }}">
+                      {{ p.name }} <span class="chip-date">{{ p.updated_at.strftime('%d/%m/%Y') if p.updated_at else '' }}</span>
+                    </a>
+                  {% endfor %}
+                </div>
+              {% else %}
+                <div class="student-projects muted">{{ _('no_student_projects') }}</div>
+              {% endif %}
+            </div>
+            <form method="POST" action="{{ url_for('auth.remove_student', classroom_id=classroom.id, student_id=s.id) }}" onsubmit="return confirm('{{ _('confirm_remove_student') }}')">
+              {{ delete_form.hidden_tag() }}
+              <button type="submit" class="btn btn-danger btn-small">{{ _('remove_student') }}</button>
+            </form>
+          </div>
         {% endfor %}
-      </ul>
+      </div>
     {% else %}
       <p class="muted">{{ _('no_students') }}</p>
     {% endif %}
   </div>
 </main>
+<script>
+  document.getElementById('copy-code').addEventListener('click', function () {
+    var code = document.getElementById('join-code').textContent.trim();
+    var btn = this;
+    function done() {
+      var old = btn.textContent;
+      btn.textContent = '✓ {{ _('copied') }}';
+      setTimeout(function () { btn.textContent = old; }, 1500);
+    }
+    function fallback(text) {
+      var ta = document.createElement('textarea');
+      ta.value = text; document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); done(); } catch (e) {}
+      document.body.removeChild(ta);
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(code).then(done).catch(function () { fallback(code); });
+    } else {
+      fallback(code);
+    }
+  });
+</script>
 {% endblock %}

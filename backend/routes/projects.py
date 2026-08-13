@@ -13,7 +13,7 @@ from pathlib import Path
 from flask import Blueprint, jsonify, request
 from flask_login import current_user, login_required
 
-from backend.models import Project
+from backend.models import Project, Classroom, ClassroomStudent
 from backend.db import get_session as _get_session
 
 projects_bp = Blueprint("projects", __name__)
@@ -78,6 +78,33 @@ def load_project(project_id):
         p = s.get(Project, project_id)
         if not p or p.user_id != current_user.id:
             return jsonify({"error": "Proyecto no encontrado"}), 404
+        return jsonify(p.to_dict())
+    finally:
+        s.close()
+
+
+@projects_bp.route("/api/teacher/projects/<int:project_id>", methods=["GET"])
+@login_required
+def load_student_project(project_id):
+    """Profesor: lee (solo lectura) el proyecto de un alumno de sus aulas."""
+    if not current_user.is_teacher:
+        return jsonify({"error": "No autorizado"}), 403
+    s = _get_session()
+    try:
+        p = s.get(Project, project_id)
+        if not p:
+            return jsonify({"error": "Proyecto no encontrado"}), 404
+        enrolled = (
+            s.query(ClassroomStudent)
+            .join(Classroom, Classroom.id == ClassroomStudent.classroom_id)
+            .filter(
+                Classroom.teacher_id == current_user.id,
+                ClassroomStudent.user_id == p.user_id,
+            )
+            .first()
+        )
+        if not enrolled:
+            return jsonify({"error": "No autorizado"}), 403
         return jsonify(p.to_dict())
     finally:
         s.close()

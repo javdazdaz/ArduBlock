@@ -107,6 +107,15 @@ class CreateClassroomForm(FlaskForm):
     name = StringField("Nombre del curso", validators=[DataRequired(), Length(max=200)])
 
 
+class RenameClassroomForm(FlaskForm):
+    name = StringField("Nombre del curso", validators=[DataRequired(), Length(max=200)])
+
+
+class EmptyForm(FlaskForm):
+    """Form solo-CSRF para acciones destructivas (eliminar aula, quitar alumno)."""
+    pass
+
+
 class ResetRequestForm(FlaskForm):
     email = EmailField("Email", validators=[DataRequired(), Email()])
 
@@ -379,6 +388,8 @@ def create_classroom():
 def view_classroom(classroom_id):
     if not current_user.is_teacher:
         return redirect(url_for("auth.dashboard"))
+    rename_form = RenameClassroomForm()
+    delete_form = EmptyForm()
     s = _get_session()
     try:
         classroom = s.get(Classroom, classroom_id)
@@ -389,14 +400,94 @@ def view_classroom(classroom_id):
             s.query(User)
             .join(ClassroomStudent)
             .filter(ClassroomStudent.classroom_id == classroom_id)
+            .order_by(User.name.asc())
             .all()
         )
+        student_ids = [st.id for st in students]
+        projects = (
+            s.query(Project)
+            .filter(Project.user_id.in_(student_ids))
+            .order_by(Project.updated_at.desc())
+            .all()
+        ) if student_ids else []
+        projects_by_student = {}
+        for p in projects:
+            projects_by_student.setdefault(p.user_id, []).append(p)
     finally:
         s.close()
     return render_template(
         "classroom_view.html",
         classroom=classroom, students=students, user=current_user,
+        rename_form=rename_form, delete_form=delete_form,
+        projects_by_student=projects_by_student,
     )
+
+
+@auth_bp.route("/teacher/classroom/<int:classroom_id>/rename", methods=["POST"])
+@login_required
+def rename_classroom(classroom_id):
+    if not current_user.is_teacher:
+        return redirect(url_for("auth.dashboard"))
+    form = RenameClassroomForm()
+    s = _get_session()
+    try:
+        classroom = s.get(Classroom, classroom_id)
+        if not classroom or classroom.teacher_id != current_user.id:
+            flash(get_message(g.lang, "classroom_not_found"), "error")
+            return redirect(url_for("auth.teacher_dashboard"))
+        if form.validate_on_submit():
+            classroom.name = form.name.data.strip()
+            s.commit()
+            flash(get_message(g.lang, "classroom_renamed"), "success")
+    finally:
+        s.close()
+    return redirect(url_for("auth.view_classroom", classroom_id=classroom_id))
+
+
+@auth_bp.route("/teacher/classroom/<int:classroom_id>/delete", methods=["POST"])
+@login_required
+def delete_classroom(classroom_id):
+    if not current_user.is_teacher:
+        return redirect(url_for("auth.dashboard"))
+    form = EmptyForm()
+    s = _get_session()
+    try:
+        classroom = s.get(Classroom, classroom_id)
+        if not classroom or classroom.teacher_id != current_user.id:
+            flash(get_message(g.lang, "classroom_not_found"), "error")
+            return redirect(url_for("auth.teacher_dashboard"))
+        if form.validate_on_submit():
+            s.query(ClassroomStudent).filter_by(classroom_id=classroom_id).delete()
+            s.delete(classroom)
+            s.commit()
+            flash(get_message(g.lang, "classroom_deleted"), "success")
+            return redirect(url_for("auth.teacher_dashboard"))
+    finally:
+        s.close()
+    return redirect(url_for("auth.view_classroom", classroom_id=classroom_id))
+
+
+@auth_bp.route("/teacher/classroom/<int:classroom_id>/students/<int:student_id>/remove", methods=["POST"])
+@login_required
+def remove_student(classroom_id, student_id):
+    if not current_user.is_teacher:
+        return redirect(url_for("auth.dashboard"))
+    form = EmptyForm()
+    s = _get_session()
+    try:
+        classroom = s.get(Classroom, classroom_id)
+        if not classroom or classroom.teacher_id != current_user.id:
+            flash(get_message(g.lang, "classroom_not_found"), "error")
+            return redirect(url_for("auth.teacher_dashboard"))
+        if form.validate_on_submit():
+            s.query(ClassroomStudent).filter_by(
+                classroom_id=classroom_id, user_id=student_id
+            ).delete()
+            s.commit()
+            flash(get_message(g.lang, "student_removed"), "success")
+    finally:
+        s.close()
+    return redirect(url_for("auth.view_classroom", classroom_id=classroom_id))
 
 
 # ═══ Student dashboard ═══════════════════════════
