@@ -1,10 +1,20 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" data-theme="calcite">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ArduBlock — Programación Visual para Arduino</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
+  <script>
+    /* Aplicar paleta guardada antes de pintar (evita parpadeo) */
+    try {
+      var p = localStorage.getItem("ardublock-palette");
+      if (["calcite", "calcite-dark", "dracula", "legacy"].indexOf(p) !== -1) {
+        document.documentElement.setAttribute("data-theme", p);
+      }
+    } catch (e) {}
+  </script>
+  <link rel="stylesheet" href="/css/palettes.css">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -225,13 +235,6 @@
         </div>
         <div class="setting-section" data-i18n="settings_blockly">Blockly</div>
         <div class="setting-row">
-          <label data-i18n="settings_theme">Tema</label>
-          <select id="setting-theme">
-            <option value="dark" data-i18n="settings_dark">Oscuro</option>
-            <option value="light" data-i18n="settings_light">Claro</option>
-          </select>
-        </div>
-        <div class="setting-row">
           <label data-i18n="settings_renderer">Renderer</label>
           <select id="setting-renderer">
             <option value="geras">Geras</option>
@@ -318,5 +321,39 @@
       </div>
     </div>
   </div>
+<div class="palette-switcher">
+  <button id="palette-btn" class="palette-btn" title="Cambiar paleta" aria-label="Cambiar paleta">🎨</button>
+  <div id="palette-menu" class="palette-menu hidden">
+    <button class="palette-option" data-palette="calcite">Calcite</button>
+    <button class="palette-option" data-palette="calcite-dark">Calcite Dark</button>
+    <button class="palette-option" data-palette="dracula">Dracula</button>
+    <button class="palette-option" data-palette="legacy">ArduBlock</button>
+  </div>
+</div>
+<script>
+  (function () {
+    var PALETTES = ["calcite", "calcite-dark", "dracula", "legacy"];
+    var KEY = "ardublock-palette";
+    function apply(p) {
+      if (PALETTES.indexOf(p) === -1) p = "calcite";
+      document.documentElement.setAttribute("data-theme", p);
+      try { localStorage.setItem(KEY, p); } catch (e) {}
+      if (window.__applyPaletteTheme) window.__applyPaletteTheme(p);
+    }
+    var btn = document.getElementById("palette-btn");
+    var menu = document.getElementById("palette-menu");
+    btn.addEventListener("click", function (e) {
+      e.stopPropagation();
+      menu.classList.toggle("hidden");
+    });
+    document.addEventListener("click", function () { menu.classList.add("hidden"); });
+    Array.prototype.forEach.call(menu.querySelectorAll(".palette-option"), function (opt) {
+      opt.addEventListener("click", function () {
+        apply(opt.getAttribute("data-palette"));
+        menu.classList.add("hidden");
+      });
+    });
+  })();
+</script>
 </body>
 </html>

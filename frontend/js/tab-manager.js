@@ -101,11 +101,11 @@ export function initTabManager(_deps = {}) {
     parent: hContainer,
   });
 
-  // Aplicar tema inicial según settings (dark por defecto)
+  // Aplicar tema inicial según la paleta activa (Calcite = claro)
   let isDark = true;
   try {
-    const raw = localStorage.getItem('ardublock:settings');
-    if (raw) isDark = JSON.parse(raw).theme !== 'light';
+    const p = document.documentElement.getAttribute('data-theme') || 'calcite';
+    isDark = p !== 'calcite';
   } catch (_) { /* default dark */ }
   if (!isDark) setCodeTheme(false);
 

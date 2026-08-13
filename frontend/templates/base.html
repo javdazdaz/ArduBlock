@@ -1,0 +1,66 @@
+{% macro render_flash() %}
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="flash {{ category }}">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+{% endmacro %}
+<!DOCTYPE html>
+<html lang="es" data-theme="calcite">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}ArduBlock{% endblock %}</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
+  <script>
+    /* Aplicar paleta guardada antes de pintar (evita parpadeo) */
+    try {
+      var p = localStorage.getItem("ardublock-palette");
+      if (["calcite", "calcite-dark", "dracula", "legacy"].indexOf(p) !== -1) {
+        document.documentElement.setAttribute("data-theme", p);
+      }
+    } catch (e) {}
+  </script>
+  <link rel="stylesheet" href="/css/palettes.css">
+  <link rel="stylesheet" href="/css/pages.css">
+</head>
+<body class="{% block body_class %}{% endblock %}">
+{% block content %}{% endblock %}
+
+<div class="palette-switcher">
+  <button id="palette-btn" class="palette-btn" title="Cambiar paleta" aria-label="Cambiar paleta">🎨</button>
+  <div id="palette-menu" class="palette-menu hidden">
+    <button class="palette-option" data-palette="calcite">Calcite</button>
+    <button class="palette-option" data-palette="calcite-dark">Calcite Dark</button>
+    <button class="palette-option" data-palette="dracula">Dracula</button>
+    <button class="palette-option" data-palette="legacy">ArduBlock</button>
+  </div>
+</div>
+<script>
+  (function () {
+    var PALETTES = ["calcite", "calcite-dark", "dracula", "legacy"];
+    var KEY = "ardublock-palette";
+    function apply(p) {
+      if (PALETTES.indexOf(p) === -1) p = "calcite";
+      document.documentElement.setAttribute("data-theme", p);
+      try { localStorage.setItem(KEY, p); } catch (e) {}
+    }
+    var btn = document.getElementById("palette-btn");
+    var menu = document.getElementById("palette-menu");
+    btn.addEventListener("click", function (e) {
+      e.stopPropagation();
+      menu.classList.toggle("hidden");
+    });
+    document.addEventListener("click", function () { menu.classList.add("hidden"); });
+    Array.prototype.forEach.call(menu.querySelectorAll(".palette-option"), function (opt) {
+      opt.addEventListener("click", function () {
+        apply(opt.getAttribute("data-palette"));
+        menu.classList.add("hidden");
+      });
+    });
+  })();
+</script>
+</body>
+</html>

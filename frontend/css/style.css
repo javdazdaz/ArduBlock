@@ -2,32 +2,31 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 :root {
-  --bg: #1a1a2e;
-  --bg-panel: #16213e;
-  --bg-header: #0f3460;
-  --accent: #e94560;
-  --accent2: #00b4d8;
-  --text: #e0e0e0;
-  --text-dim: #888;
-  --border: #2a2a4a;
-  --bg-input: #2a2a3e;
-  --bg-code: #0d0d1a;
-  --code-text: #a8d8a8;
-  --slider-fill: #00b4d8;
-  --slider-track: #3a3a5a;
-  --slider-thumb: #00b4d8;
-  --status-error: #e94560;
-  --status-error-msg: #ff6b6b;
-  --status-warn: #f0c040;
-  --status-warn-msg: #d4a017;
-  --status-ok: #4caf50;
-  --bg-console: #0a0a14;
-  --bg-dropdown: #1a1a2e;
-  --btn-secondary-bg: #00b4d8;
-  --btn-secondary-text: #000;
-  --btn-danger-bg: #444;
-  --btn-danger-text: #ddd;
-  --console-border: #e67e22;
+  /* alias a tokens de palettes.css (cargada antes que este archivo) */
+  --bg-panel: var(--bg-surface);
+  --bg-header: var(--bg-surface);
+  --accent: var(--brand);
+  --accent2: var(--info);
+  --text-dim: var(--text-muted);
+  --border: var(--border-input);
+  --bg-input: var(--bg-inset);
+  --bg-code: var(--bg-inset);
+  --code-text: var(--text);
+  --slider-fill: var(--brand);
+  --slider-track: var(--border-input);
+  --slider-thumb: var(--brand);
+  --status-error: var(--danger);
+  --status-error-msg: var(--danger);
+  --status-warn: var(--warning);
+  --status-warn-msg: var(--warning);
+  --status-ok: var(--success);
+  --bg-console: var(--bg-inset);
+  --bg-dropdown: var(--bg-surface);
+  --btn-secondary-bg: var(--info);
+  --btn-secondary-text: var(--on-brand);
+  --btn-danger-bg: var(--danger);
+  --btn-danger-text: var(--on-brand);
+  --console-border: var(--warning);
 }
 
 body {

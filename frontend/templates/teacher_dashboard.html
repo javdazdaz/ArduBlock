@@ -1,57 +1,16 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mis cursos — ArduBlock</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: system-ui, sans-serif; background: #1a1a2e; color: #eee; min-height: 100vh; }
-    nav { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.5rem; background: #16213e; border-bottom: 1px solid rgba(255,255,255,0.05); }
-    nav h1 { font-size: 1.2rem; }
-    nav a { color: #a0a0b0; text-decoration: none; font-size: 0.9rem; margin-left: 1rem; }
-    nav a:hover { color: #e94560; }
-    main { max-width: 900px; margin: 2rem auto; padding: 0 1.5rem; }
-    .panel { background: #16213e; border-radius: 10px; padding: 1.5rem; border: 1px solid rgba(255,255,255,0.05); margin-bottom: 1.5rem; }
-    .panel h2 { font-size: 1.1rem; margin-bottom: 1rem; color: #e94560; }
-    .field { margin-bottom: 0.8rem; }
-    .field label { display: block; font-size: 0.8rem; color: #a0a0b0; margin-bottom: 0.2rem; }
-    .field input { width: 100%; padding: 0.5rem; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1); background: #1a1a2e; color: #eee; font-size: 0.9rem; }
-    .field input:focus { outline: none; border-color: #e94560; }
-    .btn { padding: 0.5rem 1.2rem; border: none; border-radius: 6px; background: #e94560; color: #fff; font-weight: 600; cursor: pointer; font-size: 0.85rem; }
-    .btn:hover { opacity: 0.9; }
-    .classroom-card {
-      background: #1a1a2e; border-radius: 8px; padding: 1.2rem; margin-bottom: 0.8rem;
-      border: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center;
-    }
-    .classroom-card h3 { font-size: 1rem; }
-    .classroom-card .code { font-family: monospace; background: rgba(233,69,96,0.15); padding: 0.4rem 0.8rem; border-radius: 6px; color: #e94560; font-size: 1.1rem; letter-spacing: 2px; }
-    .classroom-card .meta { font-size: 0.8rem; color: #666; }
-    .flash { padding: 0.5rem; border-radius: 6px; margin-bottom: 1rem; font-size: 0.85rem; }
-    .flash.success { background: rgba(39,174,96,0.15); color: #27ae60; }
-    .flash.error { background: rgba(233,69,96,0.15); color: #e94560; }
-  </style>
-</head>
-<body>
-
+{% extends "base.html" %}
+{% block title %}Mis cursos — ArduBlock{% endblock %}
+{% block content %}
 <nav>
   <h1>⚡ ArduBlock · Profesor</h1>
   <div>
-    <span style="color:#a0a0b0;font-size:0.9rem">{{ user.name }}</span>
+    <span class="nav-user">{{ user.name }}</span>
     <a href="/app">Editor</a>
     <a href="{{ url_for('auth.logout') }}">Salir</a>
   </div>
 </nav>
-
 <main>
-  {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-      {% for category, message in messages %}
-        <div class="flash {{ category }}">{{ message }}</div>
-      {% endfor %}
-    {% endif %}
-  {% endwith %}
-
+  {{ render_flash() }}
   <div class="panel">
     <h2>➕ Nueva aula</h2>
     <form method="POST" action="{{ url_for('auth.create_classroom') }}">
@@ -63,12 +22,11 @@
       <button type="submit" class="btn">Crear aula</button>
     </form>
   </div>
-
   <div class="panel">
     <h2>📚 Mis aulas</h2>
     {% if classrooms %}
       {% for c in classrooms %}
-        <a href="/teacher/classroom/{{ c.id }}" style="text-decoration:none;color:inherit">
+        <a href="/teacher/classroom/{{ c.id }}" class="card-link">
           <div class="classroom-card">
             <div>
               <h3>{{ c.name }}</h3>
@@ -79,10 +37,8 @@
         </a>
       {% endfor %}
     {% else %}
-      <p style="color:#666">No hay aulas todavía. Crea una arriba ↑</p>
+      <p class="muted">No hay aulas todavía. Crea una arriba ↑</p>
     {% endif %}
   </div>
 </main>
-
-</body>
-</html>
+{% endblock %}

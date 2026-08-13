@@ -1,0 +1,126 @@
+/* ArduBlock — Paletas de color (tokens) + selector de tema.
+ * Fuente única: frontend/css/palettes.css · Copia prod: frontend/public/css/palettes.css
+ * La cargan: base.html (páginas Jinja) y frontpage.html (landing).
+ */
+
+/* ═══ Tokens de color ═══════════════════════════════════ */
+
+:root {
+  /* Calcite (light) — default */
+  --bg: #F8F8F8;
+  --bg-surface: #FFFFFF;
+  --bg-inset: #F3F3F3;
+  --text: #151515;
+  --text-muted: #4A4A4A;
+  --text-faint: #6A6A6A;
+  --brand: #007AC2;
+  --brand-hover: #00619B;
+  --on-brand: #FFFFFF;
+  --brand-soft: rgba(0, 122, 194, 0.12);
+  --border: #DEDEDE;
+  --border-input: #C7C7C7;
+  --success: #1F8A4D;
+  --success-bg: rgba(31, 138, 77, 0.12);
+  --warning: #ED9F00;
+  --warning-bg: rgba(237, 159, 0, 0.12);
+  --danger: #C7461A;
+  --danger-bg: rgba(199, 70, 26, 0.12);
+  --info: #00619B;
+  --info-bg: rgba(0, 97, 155, 0.12);
+}
+
+:root[data-theme="calcite-dark"] {
+  --bg: #353535;
+  --bg-surface: #2B2B2B;
+  --bg-inset: #202020;
+  --text: #FFFFFF;
+  --text-muted: #BFBFBF;
+  --text-faint: #9E9E9E;
+  --brand: #009AF2;
+  --brand-hover: #40B9FF;
+  --on-brand: #FFFFFF;
+  --brand-soft: rgba(0, 154, 242, 0.15);
+  --border: #4A4A4A;
+  --border-input: #545454;
+  --success: #4AD66D;
+  --success-bg: rgba(74, 214, 109, 0.15);
+  --warning: #FFC14D;
+  --warning-bg: rgba(255, 193, 77, 0.15);
+  --danger: #FF5C5C;
+  --danger-bg: rgba(255, 92, 92, 0.15);
+  --info: #40B9FF;
+  --info-bg: rgba(64, 185, 255, 0.15);
+}
+
+:root[data-theme="dracula"] {
+  --bg: #282a36;
+  --bg-surface: #21222c;
+  --bg-inset: #191a21;
+  --text: #f8f8f2;
+  --text-muted: #6272a4;
+  --text-faint: #6272a4;
+  --brand: #bd93f9;
+  --brand-hover: #caa9fa;
+  --on-brand: #282a36;
+  --brand-soft: rgba(189, 147, 249, 0.15);
+  --border: #44475a;
+  --border-input: #44475a;
+  --success: #50fa7b;
+  --success-bg: rgba(80, 250, 123, 0.15);
+  --warning: #f1fa8c;
+  --warning-bg: rgba(241, 250, 140, 0.15);
+  --danger: #ff5555;
+  --danger-bg: rgba(255, 85, 85, 0.15);
+  --info: #8be9fd;
+  --info-bg: rgba(139, 233, 253, 0.15);
+}
+
+:root[data-theme="legacy"] {
+  --bg: #1a1a2e;
+  --bg-surface: #16213e;
+  --bg-inset: #1a1a2e;
+  --text: #eee;
+  --text-muted: #a0a0b0;
+  --text-faint: #666;
+  --brand: #e94560;
+  --brand-hover: #d63a52;
+  --on-brand: #fff;
+  --brand-soft: rgba(233, 69, 96, 0.15);
+  --border: rgba(255, 255, 255, 0.05);
+  --border-input: rgba(255, 255, 255, 0.1);
+  --success: #27ae60;
+  --success-bg: rgba(39, 174, 96, 0.15);
+  --warning: #f1c40f;
+  --warning-bg: rgba(241, 196, 15, 0.15);
+  --danger: #e94560;
+  --danger-bg: rgba(233, 69, 96, 0.15);
+  --info: #3498db;
+  --info-bg: rgba(52, 152, 219, 0.15);
+}
+
+/* ═══ Utilidades ════════════════════════════════════════ */
+
+.hidden { display: none; }
+
+/* ═══ Selector de paleta ════════════════════════════════ */
+
+.palette-switcher { position: fixed; bottom: 1rem; right: 1rem; z-index: 100; }
+.palette-btn {
+  width: 42px; height: 42px; border-radius: 50%;
+  background: var(--bg-surface); color: var(--text);
+  border: 1px solid var(--border-input); font-size: 1.1rem; cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+.palette-btn:hover { border-color: var(--brand); }
+.palette-menu {
+  position: absolute; bottom: 52px; right: 0;
+  background: var(--bg-surface); border: 1px solid var(--border-input);
+  border-radius: 8px; overflow: hidden; min-width: 150px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+.palette-option {
+  display: block; width: 100%; text-align: left; padding: 0.6rem 1rem;
+  background: none; border: none; color: var(--text);
+  font-size: 0.85rem; cursor: pointer;
+}
+.palette-option:hover { background: var(--brand-soft); color: var(--brand); }

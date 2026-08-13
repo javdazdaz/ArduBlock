@@ -1,7 +1,7 @@
 /**
- * ArduBlock — Settings (tema, renderer, fuentes, placa)
+ * ArduBlock — Settings (renderer, fuentes, placa)
  *
- * loadSettings, saveSettings, getSetting, applySettings, applyTheme, applyRenderer.
+ * loadSettings, saveSettings, getSetting, applySettings, applyPaletteTheme, applyRenderer.
  */
 
 import * as Blockly from 'blockly';
@@ -16,7 +16,7 @@ import { setLanguage, getLanguage } from './i18n.js';
 export const SETTINGS_KEY = 'ardublock:settings';
 export const defaultSettings = {
   board: 'arduino:avr:uno', baud: 9600,
-  theme: 'dark', renderer: 'geras', level: 1,
+  renderer: 'geras', level: 1,
   fontUi: 14, fontCode: 13, fontSerial: 12, fontBlocks: 16, fontToolbox: 13
 };
 
@@ -35,7 +35,6 @@ export function initSettings(deps) {
     const s = loadSettings();
     document.getElementById('setting-board').value = s.board;
     document.getElementById('setting-baud').value = s.baud;
-    document.getElementById('setting-theme').value = s.theme;
     document.getElementById('setting-renderer').value = s.renderer;
     document.getElementById('setting-language').value = getLanguage();
     document.getElementById('setting-font-ui').value = s.fontUi;
@@ -71,7 +70,6 @@ export function initSettings(deps) {
     }).catch(e => console.warn('[ArduBlock] board/install:', e));
   });
   document.getElementById('setting-baud').addEventListener('change', function() { onSettingChange('baud', parseInt(this.value)); });
-  document.getElementById('setting-theme').addEventListener('change', function() { onSettingChange('theme', this.value, applyTheme); });
   document.getElementById('setting-renderer').addEventListener('change', function() {
     onSettingChange('renderer', this.value, r => { if (r !== workspace.options.renderer) applyRenderer(r); });
   });
@@ -91,7 +89,7 @@ export function initSettings(deps) {
   serialBaud.value = getSetting('baud');
 
   const s = loadSettings();
-  applyTheme(s.theme);
+  applyPaletteTheme(document.documentElement.getAttribute('data-theme') || 'calcite');
   applySettings(s);
   serialBaud.value = s.baud;
 }
@@ -147,58 +145,16 @@ export function applySettings(s) {
   });
 }
 
-export function applyTheme(theme) {
-  const root = document.documentElement.style;
-  if (theme === 'light') {
-    root.setProperty('--bg', '#f0f0f5');
-    root.setProperty('--bg-panel', '#e8e8f0');
-    root.setProperty('--bg-header', '#d0d0e0');
-    root.setProperty('--bg-input', '#fff');
-    root.setProperty('--bg-code', '#f8f8fc');
-    root.setProperty('--code-text', '#1a6e1a');
-    root.setProperty('--slider-fill', '#0077aa');
-    root.setProperty('--slider-track', '#ccc');
-    root.setProperty('--slider-thumb', '#0077aa');
-    root.setProperty('--status-warn', '#b8860b');
-    root.setProperty('--status-warn-msg', '#8B6914');
-    root.setProperty('--bg-console', '#f0f0f5');
-    root.setProperty('--bg-dropdown', '#fff');
-    root.setProperty('--text', '#1a1a2e');
-    root.setProperty('--text-dim', '#666');
-    root.setProperty('--border', '#ccc');
-    root.setProperty('--btn-secondary-bg', '#0077aa');
-    root.setProperty('--btn-secondary-text', '#fff');
-    root.setProperty('--btn-danger-bg', '#ddd');
-    root.setProperty('--btn-danger-text', '#333');
-    root.setProperty('--console-border', '#e67e22');
-    workspace.setTheme(Blockly.Themes.Classic);
-    if (window._tabManager?.setCodeTheme) window._tabManager.setCodeTheme(false);
-  } else {
-    root.setProperty('--bg', '#1a1a2e');
-    root.setProperty('--bg-panel', '#16213e');
-    root.setProperty('--bg-header', '#0f3460');
-    root.setProperty('--bg-input', '#2a2a3e');
-    root.setProperty('--bg-code', '#0d0d1a');
-    root.setProperty('--code-text', '#a8d8a8');
-    root.setProperty('--slider-fill', '#00b4d8');
-    root.setProperty('--slider-track', '#3a3a5a');
-    root.setProperty('--slider-thumb', '#00b4d8');
-    root.setProperty('--status-warn', '#f0c040');
-    root.setProperty('--status-warn-msg', '#d4a017');
-    root.setProperty('--bg-console', '#0a0a14');
-    root.setProperty('--bg-dropdown', '#1a1a2e');
-    root.setProperty('--text', '#e0e0e0');
-    root.setProperty('--text-dim', '#888');
-    root.setProperty('--border', '#2a2a4a');
-    root.setProperty('--btn-secondary-bg', '#00b4d8');
-    root.setProperty('--btn-secondary-text', '#000');
-    root.setProperty('--btn-danger-bg', '#444');
-    root.setProperty('--btn-danger-text', '#ddd');
-    root.setProperty('--console-border', '#e67e22');
-    workspace.setTheme(DarkTheme);
-    if (window._tabManager?.setCodeTheme) window._tabManager.setCodeTheme(true);
-  }
+/**
+ * Aplica el tema de Blockly + CodeMirror según la paleta activa.
+ * Los colores CSS los maneja palettes.css vía el atributo data-theme.
+ */
+export function applyPaletteTheme(palette) {
+  const isLight = palette === 'calcite';
+  workspace.setTheme(isLight ? Blockly.Themes.Classic : DarkTheme);
+  if (window._tabManager?.setCodeTheme) window._tabManager.setCodeTheme(!isLight);
 }
+if (typeof window !== 'undefined') window.__applyPaletteTheme = applyPaletteTheme;
 
 export function applyRenderer(renderer) {
   const state = Blockly.serialization.workspaces.save(workspace);
