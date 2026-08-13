@@ -9,17 +9,7 @@ import * as Blockly from 'blockly';
 import DarkTheme from '@blockly/theme-dark';
 import './blocks.js';
 import { captureWorkspaceThumbnail } from './thumbnail.js';
-
-// Paleta App Inventor (idéntica a la del editor) para fidelidad de colores.
-const AI = {
-  loop_blocks:      { colourPrimary: '#cfac4b', colourSecondary: '#9b8138', colourTertiary: '#332b12' },
-  logic_blocks:     { colourPrimary: '#88b652', colourSecondary: '#66883d', colourTertiary: '#222d14' },
-  math_blocks:      { colourPrimary: '#4f86c2', colourSecondary: '#3b6491', colourTertiary: '#132130' },
-  text_blocks:      { colourPrimary: '#c24471', colourSecondary: '#913354', colourTertiary: '#30111c' },
-  list_blocks:      { colourPrimary: '#58b5dc', colourSecondary: '#4287a5', colourTertiary: '#162d37' },
-  variable_blocks:  { colourPrimary: '#db743a', colourSecondary: '#a4572b', colourTertiary: '#361d0e' },
-  procedure_blocks: { colourPrimary: '#8f6997', colourSecondary: '#6b4e71', colourTertiary: '#231a25' },
-};
+import { applyAiPalette } from './palette.js';
 
 const workspace = Blockly.inject('regen-workspace', {
   theme: DarkTheme,
@@ -28,10 +18,7 @@ const workspace = Blockly.inject('regen-workspace', {
   scrollbars: false,
 });
 
-const theme = workspace.getTheme();
-for (const [name, style] of Object.entries(AI)) {
-  theme.setBlockStyle(name, style);
-}
+applyAiPalette(workspace);
 
 const btn = document.getElementById('regen-run');
 const listEl = document.getElementById('regen-list');
