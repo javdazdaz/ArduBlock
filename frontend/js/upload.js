@@ -220,7 +220,7 @@ async function _pathB_uploadWebSerial(detection, webSerialPort) {
 
   if (!('serial' in navigator)) {
     consoleLog('✕ Web Serial no soportado en este navegador.', 'error');
-    consoleLog('  Usá Chrome, Edge u Opera para flashear por USB.', 'info');
+    consoleLog('  Use Chrome, Edge u Opera para flashear por USB.', 'info');
     return;
   }
   consoleLog('✓ Web Serial disponible en este navegador', 'dim');
@@ -236,7 +236,7 @@ async function _pathB_uploadWebSerial(detection, webSerialPort) {
     deviceCode = getDeviceCode(fqbn);
   } catch (e) {
     consoleLog('⚠ ' + e.message, 'warn');
-    consoleLog('  Conectá el Arduino a una máquina con arduino-cli para flashear esta placa.', 'info');
+    consoleLog('  Conecte el Arduino a una máquina con arduino-cli para flashear esta placa.', 'info');
     return;
   }
 
@@ -287,7 +287,7 @@ async function _pathB1_optiboot(code, fqbn, tabs, deviceCode, port) {
   } catch (e) {
     consoleLog('✕ Error al flashear: ' + e.message, 'error');
     if (e.message.includes('sincronizar') || e.message.includes('bootloader')) {
-      consoleLog('  ¿El Arduino está en modo programación? Probá presionar RESET.', 'info');
+      consoleLog('  ¿El Arduino está en modo programación? Pruebe presionar RESET.', 'info');
     }
   } finally {
     setWebSerialPort(port);  // Guardar para monitor serial Web Serial
@@ -306,7 +306,7 @@ async function _pathB2_samba(code, fqbn, tabs, port) {
   if (!binBase64) return;
 
   // 2. Doble-reset y abrir puerto
-  consoleLog('🔄 Hacé doble-RESET en el R4 WiFi AHORA.', 'info');
+  consoleLog('🔄 Haga doble-RESET en el R4 WiFi AHORA.', 'info');
   consoleLog('   El LED L debe quedar pulsando (modo bootloader SAM-BA).', 'info');
   consoleLog('🔌 Abriendo puerto a 230400 baud...', 'info');
   try {

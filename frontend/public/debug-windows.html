@@ -197,7 +197,7 @@ document.getElementById('btnFull').addEventListener('click', async () => {
       logMsg('   ⚠ Causas comunes en Windows:', 'warn');
       logMsg('      - Puerto en uso por otro programa (IDE, terminal)', 'warn');
       logMsg('      - Cerrá TODAS las pestañas que usen este puerto', 'warn');
-      logMsg('      - Desconectá y reconectá el Arduino', 'warn');
+      logMsg('      - Desconecte y reconecte el Arduino', 'warn');
       return;
     }
 
@@ -220,7 +220,7 @@ document.getElementById('btnFull').addEventListener('click', async () => {
       } catch (e) {
         logMsg(`   ⚠ setSignals falló: ${e.message}`, 'warn');
         logMsg('   → El driver CH340 puede no soportar control DTR', 'warn');
-        logMsg('   → Probá presionar RESET manual ahora', 'warn');
+        logMsg('   → Pruebe presionar RESET manual ahora', 'warn');
         await delay(1000);
         return false;
       }
@@ -273,7 +273,7 @@ document.getElementById('btnFull').addEventListener('click', async () => {
     if (!synced) {
       logMsg(`   ❌ Sync falló tras ${totalAttempts} intentos en 3 rondas DTR`, 'error');
       logMsg('   ⚠ Diagnóstico:', 'warn');
-      logMsg('      - ¿El Arduino tiene bootloader? (probá con Arduino IDE)', 'warn');
+      logMsg('      - ¿El Arduino tiene bootloader? (pruebe con Arduino IDE)', 'warn');
       logMsg('      - ¿Cable USB de datos? (no solo carga)', 'warn');
       logMsg('      - ¿Otro programa usando el puerto?', 'warn');
       reader.releaseLock();
@@ -434,7 +434,7 @@ document.getElementById('btnSyncOnly').addEventListener('click', async () => {
 document.getElementById('btnManualReset').addEventListener('click', async () => {
   log.innerHTML = '';
   logMsg('═══ Reset Manual + Sync ═══', 'info');
-  logMsg('⚠ NO se usará DTR. Tenés que presionar RESET vos.', 'warn');
+  logMsg('⚠ NO se usará DTR. Tiene que presionar RESET usted.', 'warn');
   logMsg('');
   
   if (!('serial' in navigator)) { logMsg('✕ Web Serial no soportado', 'error'); return; }
@@ -453,7 +453,7 @@ document.getElementById('btnManualReset').addEventListener('click', async () => 
     for (let round = 0; round < 5; round++) {
       logMsg('');
       logMsg(`🔴 Ronda ${round+1}/5: PRESIONÁ RESET en el Arduino AHORA`, 'warn');
-      logMsg('   (tenés 4 segundos para presionar el botón...)', 'dim');
+      logMsg('   (tiene 4 segundos para presionar el botón...)', 'dim');
       
       // Esperar a que el usuario presione reset
       await delay(4000);
@@ -552,7 +552,7 @@ document.getElementById('btnDiag').addEventListener('click', async () => {
   logMsg(`Web Serial: ${'serial' in navigator ? '✅ disponible' : '❌ no disponible'}`, 'dim');
   
   if (!('serial' in navigator)) {
-    logMsg('⚠ Usá Chrome, Edge u Opera para Web Serial', 'warn');
+    logMsg('⚠ Use Chrome, Edge u Opera para Web Serial', 'warn');
     return;
   }
 

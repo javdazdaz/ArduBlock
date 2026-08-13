@@ -20,7 +20,7 @@
 </head>
 <body>
 <h1>🔌 Debug CH340 — Web Serial + stk500v1</h1>
-<p>Conectá tu Arduino Uno R3 (CH340) y seguí los pasos.</p>
+<p>Conecte su Arduino Uno R3 (CH340) y siga los pasos.</p>
 
 <div class="step">
   <strong>Paso 1:</strong> Probar DTR toggle + sync básico
@@ -53,7 +53,7 @@ document.getElementById('btnTestDTR').addEventListener('click', async () => {
   logMsg('=== Test DTR + Sync ===', 'info');
   
   if (!('serial' in navigator)) {
-    logMsg('✕ Web Serial no soportado. Usá Chrome/Edge/Opera.', 'error');
+    logMsg('✕ Web Serial no soportado. Use Chrome/Edge/Opera.', 'error');
     return;
   }
   
@@ -116,7 +116,7 @@ document.getElementById('btnTestDTR').addEventListener('click', async () => {
       logMsg('✕ No se pudo sincronizar con el bootloader', 'error');
       logMsg('  Posibles causas:', 'warn');
       logMsg('  1. El driver CH340 no toggled DTR → el bootloader no se activó', 'warn');
-      logMsg('  2. Probá presionar RESET manualmente justo después de hacer clic en "DTR+Sync"', 'warn');
+      logMsg('  2. Pruebe presionar RESET manualmente justo después de hacer clic en "DTR+Sync"', 'warn');
       logMsg('  3. El cable USB puede ser solo de carga (sin datos)', 'warn');
     }
     
@@ -133,7 +133,7 @@ document.getElementById('btnBlink').addEventListener('click', async () => {
   logMsg('=== Flashear Blink real ===', 'info');
   
   if (!('serial' in navigator)) {
-    logMsg('✕ Web Serial no soportado. Usá Chrome/Edge/Opera.', 'error');
+    logMsg('✕ Web Serial no soportado. Use Chrome/Edge/Opera.', 'error');
     return;
   }
 

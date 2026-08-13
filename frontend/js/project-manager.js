@@ -28,7 +28,7 @@ export function initProjectManager(deps) {
   document.getElementById('btn-load').addEventListener('click', toggleProjectList);
   document.getElementById('btn-delete').addEventListener('click', () => {
     const name = getProjectName();
-    if (!projectInput.value.trim()) { showToast('Escribí el nombre del proyecto a eliminar'); return; }
+    if (!projectInput.value.trim()) { showToast('Escriba el nombre del proyecto a eliminar'); return; }
     deleteProject(name);
   });
 

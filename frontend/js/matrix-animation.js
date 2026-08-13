@@ -588,7 +588,7 @@ function _renderTimeline() {
   const track = document.getElementById('matrix-timeline-track');
 
   if (timeline.length === 0) {
-    track.innerHTML = '<div class="matrix-timeline-empty">Arrastrá frames desde el panel lateral o usá el botón +</div>';
+    track.innerHTML = '<div class="matrix-timeline-empty">Arrastre frames desde el panel lateral o use el botón +</div>';
     return;
   }
 

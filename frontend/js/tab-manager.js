@@ -146,7 +146,7 @@ function _addTab() {
   }
 
   if (!/^[a-zA-Z0-9_-]+\.(h|hpp)$/.test(filename)) {
-    alert('Nombre inválido. Usá solo letras, números, guiones y underscore (ej: config.h).');
+    alert('Nombre inválido. Use solo letras, números, guiones y underscore (ej: config.h).');
     return;
   }
 

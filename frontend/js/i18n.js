@@ -163,7 +163,7 @@ const messages = {
     MSG_VARIABLE_GET: 'valor de %1',
     TOOLTIP_VARIABLE_GET: 'Devuelve el valor actual de la variable.',
     MSG_INCLUDE_HEADER: 'incluir archivo %1',
-    TOOLTIP_INCLUDE_HEADER: 'Incluye un archivo .h del proyecto, fuera de setup() y loop(). Creá el archivo en la barra de tabs.',
+    TOOLTIP_INCLUDE_HEADER: 'Incluye un archivo .h del proyecto, fuera de setup() y loop(). Cree el archivo en la barra de tabs.',
     MSG_LIBRARY_INCLUDE: 'incluir librería %1',
     TOOLTIP_LIBRARY_INCLUDE: 'Incluye una librería de Arduino, fuera de setup() y loop().',
     // ── AFMotor R4 ──
@@ -261,7 +261,7 @@ const messages = {
     OPT_DIRECT_SQUARE: 'cuadrado',
     OPT_DIRECT_ALL: 'todo encendido',
     MSG_ARRAY_DECLARE: 'arreglo de %1 %2 = %3',
-    TOOLTIP_ARRAY_DECLARE: 'Declara un arreglo del tipo elegido con los valores dados. Escribí los valores separados por coma.',
+    TOOLTIP_ARRAY_DECLARE: 'Declara un arreglo del tipo elegido con los valores dados. Escriba los valores separados por coma.',
     MSG_ARRAY_GET: '%1 en posición %2',
     TOOLTIP_ARRAY_GET: 'Devuelve el valor del arreglo en la posición indicada (empieza en 0).',
     MSG_ARRAY_SET: 'asignar en %1 índice %2 el valor %3',
