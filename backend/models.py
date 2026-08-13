@@ -104,6 +104,7 @@ class Project(Base):
     data = Column(Text, nullable=False)
     board = Column(String(50), default="arduino:avr:uno")
     class_id = Column(Integer, ForeignKey("classes.id"), nullable=True, index=True)
+    thumbnail = Column(Text, nullable=True)  # data URI PNG 128x128 del workspace
     created_at = Column(DateTime, default=utcnow)
     updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)
 
@@ -114,6 +115,7 @@ class Project(Base):
             "id": self.id, "name": self.name, "board": self.board,
             "data": self.data,
             "class_id": self.class_id,
+            "thumbnail": self.thumbnail,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }

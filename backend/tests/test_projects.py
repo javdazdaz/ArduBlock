@@ -83,3 +83,21 @@ def test_delete_project(client, seed_classroom):
 
     assert client.delete(f"/api/projects/{pid}").status_code == 200
     assert client.get("/api/projects").get_json() == []
+
+
+def test_project_thumbnail_roundtrip(client, seed_classroom):
+    seed_classroom("ABC123")
+    _register(client, "a@example.com")
+    thumb = "data:image/png;base64,AAAA"
+
+    r = client.post("/api/projects", json={"name": "p.ino", "data": {}, "thumbnail": thumb})
+    assert r.status_code == 201
+    pid = r.get_json()["id"]
+    assert r.get_json()["thumbnail"] == thumb
+
+    # GET devuelve el thumbnail
+    assert client.get(f"/api/projects/{pid}").get_json()["thumbnail"] == thumb
+
+    # PUT lo limpia
+    client.put(f"/api/projects/{pid}", json={"thumbnail": None})
+    assert client.get(f"/api/projects/{pid}").get_json()["thumbnail"] is None

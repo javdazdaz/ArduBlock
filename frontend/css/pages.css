@@ -184,6 +184,12 @@ main.narrow { max-width: 760px; }
 }
 .project-card:hover { border-color: var(--brand); }
 .project-card h3 { font-size: 1rem; margin-bottom: 0.3rem; }
+.project-thumb {
+  width: 128px; height: 128px; object-fit: contain;
+  border-radius: 6px; border: 1px solid var(--border);
+  background: #fff; margin-bottom: 0.6rem; display: block;
+}
+.project-thumb-empty { background: var(--bg-inset); }
 .project-card .board { font-size: 0.75rem; color: var(--brand); margin-bottom: 0.5rem; }
 .project-card .meta { font-size: 0.75rem; color: var(--text-faint); }
 .empty { text-align: center; color: var(--text-faint); padding: 3rem; }

@@ -141,6 +141,7 @@ def create_project():
             data=project_data,
             board=data.get("board", "arduino:avr:uno"),
             class_id=class_id,
+            thumbnail=data.get("thumbnail"),
         )
         s.add(p)
         s.commit()
@@ -173,6 +174,8 @@ def save_project(project_id):
             p.data = new_data
         if "board" in data:
             p.board = data.get("board", p.board)
+        if "thumbnail" in data:
+            p.thumbnail = data.get("thumbnail")
         s.commit()
         return jsonify(p.to_dict())
     finally:

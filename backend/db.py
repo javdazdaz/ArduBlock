@@ -41,6 +41,11 @@ def _migrate():
     if "projects" not in insp.get_table_names():
         return
     cols = {c["name"] for c in insp.get_columns("projects")}
-    if "class_id" not in cols:
-        with engine.begin() as conn:
-            conn.execute(text("ALTER TABLE projects ADD COLUMN class_id INTEGER"))
+    additions = {
+        "class_id": "INTEGER",
+        "thumbnail": "TEXT",
+    }
+    for col, sqltype in additions.items():
+        if col not in cols:
+            with engine.begin() as conn:
+                conn.execute(text(f"ALTER TABLE projects ADD COLUMN {col} {sqltype}"))

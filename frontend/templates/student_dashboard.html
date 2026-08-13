@@ -32,6 +32,11 @@
     <div class="project-grid">
       {% for p in unassigned %}
         <a href="/app?project={{ p.id }}" class="project-card">
+          {% if p.thumbnail %}
+            <img src="{{ p.thumbnail }}" alt="{{ p.name }}" class="project-thumb">
+          {% else %}
+            <div class="project-thumb project-thumb-empty" aria-hidden="true"></div>
+          {% endif %}
           <h3>{{ p.name }}</h3>
           <div class="board">{{ p.board }}</div>
           <div class="meta">{{ p.updated_at.strftime('%d/%m/%Y %H:%M') if p.updated_at else '' }}</div>
