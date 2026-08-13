@@ -8,7 +8,7 @@
   </div>
 </nav>
 <main class="narrow">
-  <a href="/teacher" class="back">{{ _('back') }}</a>
+  <a href="{{ back_url }}" class="back">{{ _('back') }}</a>
   {{ render_flash() }}
 
   <div class="page-header">
@@ -22,7 +22,7 @@
       <div class="project-edit-list">
         {% for p in projects %}
           <div class="project-edit-row">
-            <form method="POST" action="/teacher/student/{{ student.id }}/projects/{{ p.id }}/edit" class="project-edit-form">
+            <form method="POST" action="/teacher/student/{{ student.id }}/projects/{{ p.id }}/edit{% if from_classroom_id %}?from={{ from_classroom_id }}{% endif %}" class="project-edit-form">
               {{ project_form.hidden_tag() }}
               <input type="text" name="name" value="{{ p.name }}" maxlength="100" required aria-label="{{ _('rename') }}">
               <select name="class_id" aria-label="{{ _('location') }}">
@@ -44,7 +44,7 @@
 
   <div class="panel" id="cuenta">
     <h2>⚙️ {{ _('account') }}</h2>
-    <form method="POST" action="/teacher/student/{{ student.id }}/edit" class="account-form">
+    <form method="POST" action="/teacher/student/{{ student.id }}/edit{% if from_classroom_id %}?from={{ from_classroom_id }}{% endif %}" class="account-form">
       {{ account_form.hidden_tag() }}
       <div class="field">
         <label>{{ _('full_name') }}</label>

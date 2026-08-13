@@ -125,3 +125,16 @@ def test_teacher_cannot_view_foreign_student(client, seed_classroom):
     _login_teacher(client)
     r = client.get(f"/teacher/student/{outsider_id}", follow_redirects=False)
     assert r.status_code == 302  # no autorizado
+
+
+def test_profile_back_link_points_to_classroom(client, seed_classroom):
+    seed_classroom("ABC123")
+    _register_student(client, "alumno@example.com")
+    client.get("/logout")
+    _login_teacher(client)
+    sid = _sid("alumno@example.com")
+    cid = _classroom_id("ABC123")
+
+    r = client.get(f"/teacher/student/{sid}?from={cid}")
+    assert r.status_code == 200
+    assert f"/teacher/classroom/{cid}".encode() in r.data

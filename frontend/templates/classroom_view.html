@@ -77,8 +77,8 @@
               <div class="student-email">{{ s.email }}</div>
             </div>
             <div class="student-actions">
-              <a href="/teacher/student/{{ s.id }}" class="btn btn-ghost btn-small">{{ _('view_projects') }}</a>
-              <a href="/teacher/student/{{ s.id }}#cuenta" class="btn btn-ghost btn-small">{{ _('edit_account') }}</a>
+              <a href="/teacher/student/{{ s.id }}?from={{ classroom.id }}" class="btn btn-ghost btn-small">{{ _('view_projects') }}</a>
+              <a href="/teacher/student/{{ s.id }}?from={{ classroom.id }}#cuenta" class="btn btn-ghost btn-small">{{ _('edit_account') }}</a>
               <form method="POST" action="{{ url_for('auth.remove_student', classroom_id=classroom.id, student_id=s.id) }}" onsubmit="return confirm('{{ _('confirm_remove_student') }}')">
                 {{ delete_form.hidden_tag() }}
                 <button type="submit" class="btn btn-danger btn-small">{{ _('remove_student') }}</button>

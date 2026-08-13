@@ -659,11 +659,20 @@ def delete_class(class_id):
 def teacher_student_profile(student_id):
     if not current_user.is_teacher:
         return redirect(url_for("auth.dashboard"))
+    from_classroom_id = request.args.get("from", type=int)
+    back_url = url_for("auth.teacher_dashboard")
     s = _get_session()
     try:
         if not _student_enrolled_in_teacher_classroom(s, student_id):
             flash(get_message(g.lang, "classroom_not_found"), "error")
             return redirect(url_for("auth.teacher_dashboard"))
+        # validar el curso de origen (para el botón "volver")
+        if from_classroom_id:
+            origin = s.get(Classroom, from_classroom_id)
+            if origin and origin.teacher_id == current_user.id:
+                back_url = url_for("auth.view_classroom", classroom_id=from_classroom_id)
+            else:
+                from_classroom_id = None
         student = s.get(User, student_id)
         projects = (
             s.query(Project)
@@ -687,7 +696,17 @@ def teacher_student_profile(student_id):
         class_names=class_names, user=current_user,
         account_form=EditStudentForm(obj=student),
         project_form=ProjectEditForm(),
+        back_url=back_url, from_classroom_id=from_classroom_id,
     )
+
+
+def _profile_redirect(student_id):
+    """Redirige al perfil preservando el parámetro `from` (curso de origen)."""
+    kwargs = {"student_id": student_id}
+    from_id = request.args.get("from", type=int)
+    if from_id:
+        kwargs["from"] = from_id
+    return redirect(url_for("auth.teacher_student_profile", **kwargs))
 
 
 @auth_bp.route("/teacher/student/<int:student_id>/edit", methods=["POST"])
@@ -713,7 +732,7 @@ def teacher_edit_student(student_id):
                 flash(get_message(g.lang, "student_updated"), "success")
     finally:
         s.close()
-    return redirect(url_for("auth.teacher_student_profile", student_id=student_id))
+    return _profile_redirect(student_id)
 
 
 @auth_bp.route("/teacher/student/<int:student_id>/projects/<int:project_id>/edit", methods=["POST"])
@@ -730,7 +749,7 @@ def teacher_edit_project(student_id, project_id):
         p = s.get(Project, project_id)
         if not p or p.user_id != student_id:
             flash(get_message(g.lang, "project_not_found"), "error")
-            return redirect(url_for("auth.teacher_student_profile", student_id=student_id))
+            return _profile_redirect(student_id)
         if form.validate_on_submit():
             p.name = form.name.data.strip()
             new_class_id = request.form.get("class_id", type=int)
@@ -738,7 +757,7 @@ def teacher_edit_project(student_id, project_id):
                 cls = s.get(Class, new_class_id)
                 if not cls or cls.classroom.teacher_id != current_user.id:
                     flash(get_message(g.lang, "class_not_found"), "error")
-                    return redirect(url_for("auth.teacher_student_profile", student_id=student_id))
+                    return _profile_redirect(student_id)
                 p.class_id = new_class_id
             else:
                 p.class_id = None
@@ -746,7 +765,7 @@ def teacher_edit_project(student_id, project_id):
             flash(get_message(g.lang, "project_updated"), "success")
     finally:
         s.close()
-    return redirect(url_for("auth.teacher_student_profile", student_id=student_id))
+    return _profile_redirect(student_id)
 
 
 # ═══ Student dashboard ═══════════════════════════
