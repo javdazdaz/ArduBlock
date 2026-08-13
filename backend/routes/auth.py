@@ -13,7 +13,7 @@ import smtplib
 from email.mime.text import MIMEText
 from datetime import timedelta
 
-from flask import Blueprint, g, render_template, redirect, url_for, flash
+from flask import Blueprint, g, render_template, request, redirect, url_for, flash
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, EmailField
@@ -122,6 +122,15 @@ class ClassNameForm(FlaskForm):
     name = StringField("Nombre de la clase", validators=[DataRequired(), Length(max=200)])
 
 
+class EditStudentForm(FlaskForm):
+    name = StringField("Nombre", validators=[DataRequired(), Length(min=2, max=100)])
+    email = EmailField("Email", validators=[DataRequired(), Email()])
+
+
+class ProjectEditForm(FlaskForm):
+    name = StringField("Nombre", validators=[DataRequired(), Length(max=100)])
+
+
 class ResetRequestForm(FlaskForm):
     email = EmailField("Email", validators=[DataRequired(), Email()])
 
@@ -150,6 +159,20 @@ def init_auth(app, session_factory):
 def _get_session():
     """Sesión única compartida (backend.db)."""
     return get_session()
+
+
+def _student_enrolled_in_teacher_classroom(s, student_id) -> bool:
+    """True si el alumno está matriculado en alguna aula del profesor actual."""
+    return (
+        s.query(ClassroomStudent)
+        .join(Classroom, Classroom.id == ClassroomStudent.classroom_id)
+        .filter(
+            Classroom.teacher_id == current_user.id,
+            ClassroomStudent.user_id == student_id,
+        )
+        .first()
+        is not None
+    )
 
 
 def _ensure_teacher():
@@ -627,6 +650,103 @@ def delete_class(class_id):
     finally:
         s.close()
     return redirect(url_for("auth.view_class", class_id=class_id))
+
+
+# ═══ Perfil de estudiante (vista docente) ═════════
+
+@auth_bp.route("/teacher/student/<int:student_id>")
+@login_required
+def teacher_student_profile(student_id):
+    if not current_user.is_teacher:
+        return redirect(url_for("auth.dashboard"))
+    s = _get_session()
+    try:
+        if not _student_enrolled_in_teacher_classroom(s, student_id):
+            flash(get_message(g.lang, "classroom_not_found"), "error")
+            return redirect(url_for("auth.teacher_dashboard"))
+        student = s.get(User, student_id)
+        projects = (
+            s.query(Project)
+            .filter_by(user_id=student_id)
+            .order_by(Project.updated_at.desc())
+            .all()
+        )
+        classes = (
+            s.query(Class)
+            .join(Classroom, Classroom.id == Class.classroom_id)
+            .filter(Classroom.teacher_id == current_user.id)
+            .order_by(Class.name.asc())
+            .all()
+        )
+        class_names = {c.id: c.name for c in classes}
+    finally:
+        s.close()
+    return render_template(
+        "teacher_student_profile.html",
+        student=student, projects=projects, classes=classes,
+        class_names=class_names, user=current_user,
+        account_form=EditStudentForm(obj=student),
+        project_form=ProjectEditForm(),
+    )
+
+
+@auth_bp.route("/teacher/student/<int:student_id>/edit", methods=["POST"])
+@login_required
+def teacher_edit_student(student_id):
+    if not current_user.is_teacher:
+        return redirect(url_for("auth.dashboard"))
+    form = EditStudentForm()
+    s = _get_session()
+    try:
+        if not _student_enrolled_in_teacher_classroom(s, student_id):
+            flash(get_message(g.lang, "classroom_not_found"), "error")
+            return redirect(url_for("auth.teacher_dashboard"))
+        student = s.get(User, student_id)
+        if form.validate_on_submit():
+            new_email = form.email.data.strip().lower()
+            if new_email != student.email and s.query(User).filter_by(email=new_email).first():
+                flash(get_message(g.lang, "email_registered"), "error")
+            else:
+                student.name = form.name.data.strip()
+                student.email = new_email
+                s.commit()
+                flash(get_message(g.lang, "student_updated"), "success")
+    finally:
+        s.close()
+    return redirect(url_for("auth.teacher_student_profile", student_id=student_id))
+
+
+@auth_bp.route("/teacher/student/<int:student_id>/projects/<int:project_id>/edit", methods=["POST"])
+@login_required
+def teacher_edit_project(student_id, project_id):
+    if not current_user.is_teacher:
+        return redirect(url_for("auth.dashboard"))
+    form = ProjectEditForm()
+    s = _get_session()
+    try:
+        if not _student_enrolled_in_teacher_classroom(s, student_id):
+            flash(get_message(g.lang, "classroom_not_found"), "error")
+            return redirect(url_for("auth.teacher_dashboard"))
+        p = s.get(Project, project_id)
+        if not p or p.user_id != student_id:
+            flash(get_message(g.lang, "project_not_found"), "error")
+            return redirect(url_for("auth.teacher_student_profile", student_id=student_id))
+        if form.validate_on_submit():
+            p.name = form.name.data.strip()
+            new_class_id = request.form.get("class_id", type=int)
+            if new_class_id:
+                cls = s.get(Class, new_class_id)
+                if not cls or cls.classroom.teacher_id != current_user.id:
+                    flash(get_message(g.lang, "class_not_found"), "error")
+                    return redirect(url_for("auth.teacher_student_profile", student_id=student_id))
+                p.class_id = new_class_id
+            else:
+                p.class_id = None
+            s.commit()
+            flash(get_message(g.lang, "project_updated"), "success")
+    finally:
+        s.close()
+    return redirect(url_for("auth.teacher_student_profile", student_id=student_id))
 
 
 # ═══ Student dashboard ═══════════════════════════

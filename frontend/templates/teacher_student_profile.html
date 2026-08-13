@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}{{ student.name }} — ArduBlock{% endblock %}
+{% block content %}
+<nav>
+  <h1 class="nav-brand">⚡ ArduBlock</h1>
+  <div class="nav-links">
+    <a href="/teacher" class="nav-btn">{{ _('back_my_classrooms') }}</a>
+  </div>
+</nav>
+<main class="narrow">
+  <a href="/teacher" class="back">{{ _('back') }}</a>
+  {{ render_flash() }}
+
+  <div class="page-header">
+    <h2>👤 {{ student.name }}</h2>
+    <span class="muted">{{ student.email }}</span>
+  </div>
+
+  <div class="panel" id="proyectos">
+    <h2>📁 {{ _('student_projects') }} ({{ projects|length }})</h2>
+    {% if projects %}
+      <div class="project-edit-list">
+        {% for p in projects %}
+          <div class="project-edit-row">
+            <form method="POST" action="/teacher/student/{{ student.id }}/projects/{{ p.id }}/edit" class="project-edit-form">
+              {{ project_form.hidden_tag() }}
+              <input type="text" name="name" value="{{ p.name }}" maxlength="100" required aria-label="{{ _('rename') }}">
+              <select name="class_id" aria-label="{{ _('location') }}">
+                <option value="">{{ _('no_class') }}</option>
+                {% for c in classes %}
+                  <option value="{{ c.id }}" {% if p.class_id == c.id %}selected{% endif %}>{{ c.name }}</option>
+                {% endfor %}
+              </select>
+              <button type="submit" class="btn btn-small">{{ _('save') }}</button>
+            </form>
+            <a href="/app?project={{ p.id }}&view=1" class="btn btn-ghost btn-small">{{ _('open_editor') }}</a>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="muted">{{ _('no_student_projects') }}</p>
+    {% endif %}
+  </div>
+
+  <div class="panel" id="cuenta">
+    <h2>⚙️ {{ _('account') }}</h2>
+    <form method="POST" action="/teacher/student/{{ student.id }}/edit" class="account-form">
+      {{ account_form.hidden_tag() }}
+      <div class="field">
+        <label>{{ _('full_name') }}</label>
+        {{ account_form.name() }}
+      </div>
+      <div class="field">
+        <label>{{ _('email') }}</label>
+        {{ account_form.email() }}
+      </div>
+      <button type="submit" class="btn">{{ _('save') }}</button>
+    </form>
+  </div>
+</main>
+{% endblock %}

@@ -151,6 +151,8 @@ main.narrow { max-width: 760px; }
   display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem;
 }
 .student-row:last-child { border-bottom: none; }
+.student-actions { display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap; }
+.student-actions form { display: inline; }
 .student-name { font-weight: 600; font-size: 0.95rem; }
 .student-email { font-size: 0.8rem; color: var(--text-faint); margin-bottom: 0.5rem; }
 .student-projects { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; margin-top: 0.25rem; }
@@ -186,3 +188,23 @@ main.narrow { max-width: 760px; }
 .project-card .meta { font-size: 0.75rem; color: var(--text-faint); }
 .empty { text-align: center; color: var(--text-faint); padding: 3rem; }
 .empty p { margin-bottom: 1rem; }
+
+/* ── Perfil de estudiante (vista docente) ─────────────── */
+.project-edit-list { display: flex; flex-direction: column; gap: 0.6rem; }
+.project-edit-row {
+  display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;
+  padding: 0.6rem; border: 1px solid var(--border); border-radius: 8px;
+  background: var(--bg-inset);
+}
+.project-edit-form { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; flex: 1; }
+.project-edit-form input[type="text"] {
+  padding: 0.4rem 0.6rem; border-radius: 6px; border: 1px solid var(--border-input);
+  background: var(--bg); color: var(--text); font-size: 0.85rem; min-width: 180px; flex: 1;
+}
+.project-edit-form select {
+  padding: 0.4rem 0.6rem; border-radius: 6px; border: 1px solid var(--border-input);
+  background: var(--bg); color: var(--text); font-size: 0.85rem;
+}
+.project-edit-form input:focus,
+.project-edit-form select:focus { outline: none; border-color: var(--brand); }
+.account-form { max-width: 420px; }
