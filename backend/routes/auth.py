@@ -13,7 +13,7 @@ import smtplib
 from email.mime.text import MIMEText
 from datetime import timedelta
 
-from flask import Blueprint, g, render_template, request, redirect, url_for, flash
+from flask import Blueprint, g, render_template, request, redirect, url_for, flash, send_from_directory
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, EmailField
@@ -26,6 +26,7 @@ from sqlalchemy.exc import IntegrityError
 from backend.models import User, Classroom, ClassroomStudent, Project, Class, utcnow
 from backend.db import get_session
 from backend.messages import get_message
+from backend.config import FRONTEND_DIR
 
 auth_bp = Blueprint("auth", __name__)
 login_manager = LoginManager()
@@ -650,6 +651,15 @@ def delete_class(class_id):
     finally:
         s.close()
     return redirect(url_for("auth.view_class", class_id=class_id))
+
+
+@auth_bp.route("/teacher/regen-thumbnails")
+@login_required
+def teacher_regen_thumbnails():
+    """Página de utilidad: regenera los thumbnails de los proyectos de los alumnos."""
+    if not current_user.is_teacher:
+        return redirect(url_for("auth.dashboard"))
+    return send_from_directory(str(FRONTEND_DIR), "regen.html")
 
 
 # ═══ Perfil de estudiante (vista docente) ═════════

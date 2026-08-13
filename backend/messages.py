@@ -112,6 +112,7 @@ MESSAGES = {
         "location": "Clase",
         "no_class": "Sin clase",
         "open_editor": "Abrir",
+        "regen_thumbnails": "Regenerar thumbnails",
         # ── Emails ──
         "welcome_subject": "¡Bienvenido a ArduBlock, %(name)s!",
         "welcome_body": (
@@ -230,6 +231,7 @@ MESSAGES = {
         "location": "Class",
         "no_class": "No class",
         "open_editor": "Open",
+        "regen_thumbnails": "Regenerate thumbnails",
         # ── Emails ──
         "welcome_subject": "Welcome to ArduBlock, %(name)s!",
         "welcome_body": (

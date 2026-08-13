@@ -101,3 +101,31 @@ def test_project_thumbnail_roundtrip(client, seed_classroom):
     # PUT lo limpia
     client.put(f"/api/projects/{pid}", json={"thumbnail": None})
     assert client.get(f"/api/projects/{pid}").get_json()["thumbnail"] is None
+
+
+def test_teacher_regen_list_and_save(client, seed_classroom):
+    seed_classroom("ABC123")
+    _register(client, "a@example.com")
+    _create(client, name="p.ino")
+    client.get("/logout")
+    client.post("/login", data={"email": "profesor@example.com", "password": "profesor123"}, follow_redirects=True)
+
+    r = client.get("/api/teacher/regen/projects")
+    assert r.status_code == 200
+    items = r.get_json()
+    assert len(items) == 1
+    assert items[0]["name"] == "p.ino"
+    assert "data" in items[0]
+
+    pid = items[0]["id"]
+    r2 = client.post(f"/api/teacher/regen/projects/{pid}/thumbnail",
+                     json={"thumbnail": "data:image/png;base64,BBBB"})
+    assert r2.status_code == 200
+    assert r2.get_json()["thumbnail"] == "data:image/png;base64,BBBB"
+
+
+def test_student_cannot_regen(client, seed_classroom):
+    seed_classroom("ABC123")
+    _register(client, "a@example.com")  # sigue logueado como alumno
+    r = client.get("/api/teacher/regen/projects")
+    assert r.status_code == 403

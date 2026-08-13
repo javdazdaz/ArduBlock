@@ -4,8 +4,8 @@
   "description": "Programación visual para Arduino. Interfaz de bloques que genera código C++ listo para Arduino IDE.",
   "type": "module",
   "scripts": {
-    "dev": "vite frontend",
-    "build": "cp frontend/css/palettes.css frontend/public/css/ && cp frontend/css/pages.css frontend/public/css/ && vite build frontend",
+    "dev": "vite",
+    "build": "cp frontend/css/palettes.css frontend/public/css/ && cp frontend/css/pages.css frontend/public/css/ && vite build",
     "preview": "vite preview frontend",
     "test": "vitest run",
     "test:watch": "vitest"

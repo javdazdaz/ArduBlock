@@ -10,5 +10,13 @@ export default defineConfig({
   },
   optimizeDeps: {
     include: ['@blockly/block-shareable-procedures']
+  },
+  build: {
+    rollupOptions: {
+      input: {
+        index: 'index.html',
+        regen: 'regen.html',
+      }
+    }
   }
 });

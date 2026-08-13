@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Regenerar thumbnails — ArduBlock</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: system-ui, sans-serif; background: #0f1115; color: #e6e8eb; margin: 0; padding: 2rem; }
+    .wrap { max-width: 640px; margin: 0 auto; }
+    h1 { font-size: 1.3rem; margin-bottom: 0.3rem; }
+    .muted { color: #8b949e; font-size: 0.9rem; margin-bottom: 1.5rem; }
+    .muted a { color: #58a6ff; }
+    button {
+      background: #1f6feb; color: #fff; border: 0; padding: 0.6rem 1.2rem;
+      border-radius: 6px; cursor: pointer; font-size: 0.95rem;
+    }
+    button:disabled { opacity: 0.5; cursor: default; }
+    ul { list-style: none; padding: 0; margin: 1.5rem 0 0; }
+    li { padding: 0.5rem 0; border-bottom: 1px solid #21262d; font-size: 0.9rem; }
+    .summary { margin-top: 1rem; font-weight: 600; min-height: 1.2em; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>⚡ Regenerar thumbnails</h1>
+    <p class="muted">
+      Recorre los proyectos de tus alumnos, renderiza el workspace de cada uno
+      y guarda el thumbnail 128x128 en el dashboard.
+      <a href="/teacher">← Volver al panel</a>
+    </p>
+    <button id="regen-run">Regenerar</button>
+    <ul id="regen-list"></ul>
+    <div id="regen-summary" class="summary"></div>
+  </div>
+
+  <div id="regen-workspace" style="position:fixed;left:-9999px;top:0;width:2000px;height:1500px;"></div>
+
+  <script type="module" src="js/regen.js"></script>
+</body>
+</html>

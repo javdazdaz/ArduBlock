@@ -13,7 +13,7 @@ from pathlib import Path
 from flask import Blueprint, jsonify, request
 from flask_login import current_user, login_required
 
-from backend.models import Project, Classroom, ClassroomStudent, Class
+from backend.models import Project, Classroom, ClassroomStudent, Class, User
 from backend.db import get_session as _get_session
 
 projects_bp = Blueprint("projects", __name__)
@@ -193,5 +193,64 @@ def delete_project(project_id):
         s.delete(p)
         s.commit()
         return jsonify({"status": "ok"})
+    finally:
+        s.close()
+
+
+# ═══ Regeneración de thumbnails (profesor) ══════════════
+
+@projects_bp.route("/api/teacher/regen/projects", methods=["GET"])
+@login_required
+def teacher_regen_projects():
+    """Profesor: lista los proyectos de sus alumnos para regenerar thumbnails."""
+    if not current_user.is_teacher:
+        return jsonify({"error": "No autorizado"}), 403
+    s = _get_session()
+    try:
+        rows = (
+            s.query(Project)
+            .join(User, User.id == Project.user_id)
+            .join(ClassroomStudent, ClassroomStudent.user_id == User.id)
+            .join(Classroom, Classroom.id == ClassroomStudent.classroom_id)
+            .filter(Classroom.teacher_id == current_user.id)
+            .order_by(Project.updated_at.desc())
+            .all()
+        )
+        return jsonify([{
+            "id": p.id,
+            "name": p.name,
+            "data": p.data,
+            "has_thumbnail": bool(p.thumbnail),
+        } for p in rows])
+    finally:
+        s.close()
+
+
+@projects_bp.route("/api/teacher/regen/projects/<int:project_id>/thumbnail", methods=["POST"])
+@login_required
+def teacher_regen_thumbnail(project_id):
+    """Profesor: guarda el thumbnail regenerado de un proyecto de sus alumnos."""
+    if not current_user.is_teacher:
+        return jsonify({"error": "No autorizado"}), 403
+    data = request.get_json(silent=True) or {}
+    s = _get_session()
+    try:
+        p = s.get(Project, project_id)
+        if not p:
+            return jsonify({"error": "Proyecto no encontrado"}), 404
+        enrolled = (
+            s.query(ClassroomStudent)
+            .join(Classroom, Classroom.id == ClassroomStudent.classroom_id)
+            .filter(
+                Classroom.teacher_id == current_user.id,
+                ClassroomStudent.user_id == p.user_id,
+            )
+            .first()
+        )
+        if not enrolled:
+            return jsonify({"error": "No autorizado"}), 403
+        p.thumbnail = data.get("thumbnail")
+        s.commit()
+        return jsonify(p.to_dict())
     finally:
         s.close()
