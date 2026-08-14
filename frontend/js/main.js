@@ -23,6 +23,7 @@ let IS_GUEST_MODE = true;
 window.IS_GUEST_MODE = true;
 let USER_NAME = '';
 let IS_TEACHER = false;
+let DASHBOARD_URL = '/';
 
 (async function detectMode() {
   try {
@@ -47,11 +48,17 @@ let IS_TEACHER = false;
     if (Number.isInteger(c) && c > 0) setClassId(c);
   }
 
+  DASHBOARD_URL = IS_GUEST_MODE ? '/' : (IS_TEACHER ? '/teacher' : '/student');
+
+  // Logo → dashboard del rol.
+  const brandLink = document.getElementById('brand-link');
+  if (brandLink) brandLink.href = DASHBOARD_URL;
+
   // Botón "volver": ?from=<ruta> si viene de un dashboard; si no, al dashboard del rol.
   const backBtn = document.getElementById('btn-back');
   if (backBtn) {
     const fromParam = params.get('from');
-    backBtn.href = fromParam || (IS_GUEST_MODE ? '/' : (IS_TEACHER ? '/teacher' : '/student'));
+    backBtn.href = fromParam || DASHBOARD_URL;
     const label = document.getElementById('back-label');
     if (label) label.textContent = fromParam ? 'Volver' : (IS_GUEST_MODE ? 'Inicio' : 'Dashboard');
     backBtn.classList.remove('hidden');
@@ -291,6 +298,10 @@ window._forceUndoPush = forcePush;
 window._updateUndoRedoButtons = updateUndoRedoButtons;
 
 // Items del menú → disparan los botones originales
+document.getElementById('hmenu-dashboard').addEventListener('click', () => {
+  hamburgerMenu.classList.add('hidden');
+  window.location.href = DASHBOARD_URL;
+});
 document.getElementById('hmenu-new').addEventListener('click', () => {
   hamburgerMenu.classList.add('hidden');
   document.getElementById('btn-new').click();

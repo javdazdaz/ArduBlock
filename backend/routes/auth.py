@@ -382,11 +382,17 @@ def teacher_dashboard():
         )
         for c in classrooms:
             _ = len(c.students)
+        projects = (
+            s.query(Project)
+            .filter_by(user_id=current_user.id)
+            .order_by(Project.updated_at.desc())
+            .all()
+        )
     finally:
         s.close()
     return render_template(
         "teacher_dashboard.html",
-        user=current_user, classrooms=classrooms, form=form,
+        user=current_user, classrooms=classrooms, projects=projects, form=form,
     )
 
 

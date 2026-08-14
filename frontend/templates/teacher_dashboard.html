@@ -48,6 +48,29 @@
       <button type="button" class="btn" onclick="document.getElementById('toggle-new').click()">{{ _('create_classroom') }}</button>
     </div>
   {% endif %}
+
+  <div class="page-header">
+    <h2>📁 {{ _('my_projects') }} ({{ projects|length }})</h2>
+    <a href="/app?from={{ '/teacher' | urlencode }}" class="btn">{{ _('new_project') }}</a>
+  </div>
+  {% if projects %}
+    <div class="project-grid">
+      {% for p in projects %}
+        <a href="/app?project={{ p.id }}&from={{ '/teacher' | urlencode }}" class="project-card">
+          {% if p.thumbnail %}
+            <img src="{{ p.thumbnail }}" alt="{{ p.name }}" class="project-thumb">
+          {% else %}
+            <div class="project-thumb project-thumb-empty" aria-hidden="true"></div>
+          {% endif %}
+          <h3>{{ p.name }}</h3>
+          <div class="board">{{ p.board }}</div>
+          <div class="meta">{{ p.updated_at.strftime('%d/%m/%Y %H:%M') if p.updated_at else '' }}</div>
+        </a>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty"><p>{{ _('no_teacher_projects') }}</p></div>
+  {% endif %}
 </main>
 <script>
   document.getElementById('toggle-new').addEventListener('click', function () {
