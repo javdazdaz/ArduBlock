@@ -68,6 +68,9 @@ class Classroom(Base):
     classes = relationship(
         "Class", back_populates="classroom", cascade="all, delete-orphan",
     )
+    activities = relationship(
+        "Activity", back_populates="classroom", cascade="all, delete-orphan",
+    )
 
     @staticmethod
     def generate_code():
@@ -119,3 +122,17 @@ class Project(Base):
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
+
+
+class Activity(Base):
+    """Actividad dentro de un curso: nombre + proyecto de referencia (modelo)."""
+    __tablename__ = "activities"
+
+    id = Column(Integer, primary_key=True)
+    classroom_id = Column(Integer, ForeignKey("classrooms.id"), nullable=False, index=True)
+    name = Column(String(200), nullable=False)
+    reference_project_id = Column(Integer, ForeignKey("projects.id"), nullable=True)
+    created_at = Column(DateTime, default=utcnow)
+
+    classroom = relationship("Classroom", back_populates="activities")
+    reference_project = relationship("Project", foreign_keys=[reference_project_id])

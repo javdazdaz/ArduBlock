@@ -67,6 +67,57 @@
   </div>
 
   <div class="panel">
+    <div class="page-header">
+      <h2>📋 {{ _('activities') }}</h2>
+      <button type="button" class="btn" id="toggle-activity">{{ _('new_activity') }}</button>
+    </div>
+    <div class="hidden" id="new-activity">
+      <form method="POST" action="{{ url_for('auth.create_activity', classroom_id=classroom.id) }}">
+        {{ activity_form.hidden_tag() }}
+        <div class="field">
+          <label>{{ _('activity_name_label') }}</label>
+          {{ activity_form.name() }}
+        </div>
+        <div class="field">
+          <label>{{ _('reference_project') }}</label>
+          <select name="reference_project_id">
+            <option value="">{{ _('no_reference') }}</option>
+            {% for pr in my_projects %}
+              <option value="{{ pr.id }}">{{ pr.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <button type="submit" class="btn">{{ _('create_activity') }}</button>
+      </form>
+    </div>
+    {% if activities %}
+      <div class="project-edit-list">
+        {% for a in activities %}
+          <div class="project-edit-row">
+            <form method="POST" action="{{ url_for('auth.edit_activity', classroom_id=classroom.id, activity_id=a.id) }}" class="project-edit-form">
+              {{ activity_form.hidden_tag() }}
+              <input type="text" name="name" value="{{ a.name }}" maxlength="200" required aria-label="{{ _('rename') }}">
+              <select name="reference_project_id" aria-label="{{ _('reference_project') }}">
+                <option value="">{{ _('no_reference') }}</option>
+                {% for pr in my_projects %}
+                  <option value="{{ pr.id }}" {% if a.reference_project_id == pr.id %}selected{% endif %}>{{ pr.name }}</option>
+                {% endfor %}
+              </select>
+              <button type="submit" class="btn btn-small">{{ _('save') }}</button>
+            </form>
+            <form method="POST" action="{{ url_for('auth.delete_activity', classroom_id=classroom.id, activity_id=a.id) }}" onsubmit="return confirm('{{ _('confirm_delete_activity') }}')">
+              {{ delete_form.hidden_tag() }}
+              <button type="submit" class="btn btn-danger btn-small">{{ _('delete_activity') }}</button>
+            </form>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="muted">{{ _('no_activities') }}</p>
+    {% endif %}
+  </div>
+
+  <div class="panel">
     <h2>👥 {{ _('students_title') }} ({{ students|length }})</h2>
     {% if students %}
       <div class="student-list">
@@ -95,6 +146,9 @@
 <script>
   document.getElementById('toggle-class').addEventListener('click', function () {
     document.getElementById('new-class').classList.toggle('hidden');
+  });
+  document.getElementById('toggle-activity').addEventListener('click', function () {
+    document.getElementById('new-activity').classList.toggle('hidden');
   });
   document.getElementById('copy-code').addEventListener('click', function () {
     var code = document.getElementById('join-code').textContent.trim();

@@ -38,6 +38,7 @@ let USER_NAME = '';
   const pid = params.get('project');
   const isView = params.get('view') === '1';
   const isEdit = params.get('edit') === '1';
+  const isRef = params.get('ref') === '1';
   const cid = params.get('class');
   if (cid) {
     const c = Number(cid);
@@ -52,6 +53,8 @@ let USER_NAME = '';
       badge.textContent = '👤 Invitado';
     } else if (isEdit) {
       badge.textContent = '✏️ Editando · ' + USER_NAME;
+    } else if (isRef) {
+      badge.textContent = '📎 Referencia · ' + USER_NAME;
     } else if (isView) {
       badge.textContent = '🔒 Lectura · ' + USER_NAME;
     } else {
@@ -67,6 +70,7 @@ let USER_NAME = '';
     if (Number.isInteger(id) && id > 0) {
       if (isView) { loadTeacherProject(id); }
       else if (isEdit) { loadTeacherProject(id, { editable: true }); }
+      else if (isRef) { loadReferenceProject(id); }
       else { loadProject(id); }
     }
   }
@@ -134,7 +138,7 @@ class FixedEdgesScrollMetricsManager extends ScrollMetricsManager {
 FixedEdgesScrollMetricsManager.setFixedEdges({ top: true, left: true });
 
 // Módulos de la aplicación
-import { initProjectManager, lsKey, isWorkspaceDirty, resetCurrentProject, loadProject, loadTeacherProject, setClassId } from './project-manager.js';
+import { initProjectManager, lsKey, isWorkspaceDirty, resetCurrentProject, loadProject, loadTeacherProject, loadReferenceProject, setClassId } from './project-manager.js';
 import { initSettings, getSetting } from './settings.js';
 import { initSerial }        from './serial.js';
 import { initUpload }         from './upload.js';

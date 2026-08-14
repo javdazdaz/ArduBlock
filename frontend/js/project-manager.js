@@ -198,13 +198,17 @@ export async function loadProject(idOrName) {
   projectList.classList.add('hidden');
 }
 
-export async function loadTeacherProject(id, opts = {}) {
-  const editable = !!opts.editable;
+async function loadForeignProject(id, url, editable) {
   teacherEditId = editable ? id : null;
   setReadOnly(!editable);
   try {
-    const res = await fetch(`/api/teacher/projects/${id}`);
-    if (!res.ok) { showToast('No autorizado o proyecto no encontrado'); return; }
+    const res = await fetch(url);
+    if (!res.ok) {
+      teacherEditId = null;
+      setReadOnly(true);
+      showToast('No autorizado o proyecto no encontrado');
+      return null;
+    }
     const p = await res.json();
     const record = typeof p.data === 'string' ? JSON.parse(p.data) : p.data;
     if (window._forceUndoPush) window._forceUndoPush();
@@ -219,8 +223,24 @@ export async function loadTeacherProject(id, opts = {}) {
       window._tabManager.loadTabs(record.tabs, displayName);
     }
     localStorage.setItem(LAST_KEY, displayName);
-    showToast(editable ? `Editando: "${displayName}"` : `Solo lectura: "${displayName}"`);
-  } catch (e) { showToast('Error de conexión al cargar'); }
+    return displayName;
+  } catch (e) {
+    teacherEditId = null;
+    setReadOnly(true);
+    showToast('Error de conexión al cargar');
+    return null;
+  }
+}
+
+export async function loadTeacherProject(id, opts = {}) {
+  const editable = !!opts.editable;
+  const name = await loadForeignProject(id, `/api/teacher/projects/${id}`, editable);
+  if (name) showToast(editable ? `Editando: "${name}"` : `Solo lectura: "${name}"`);
+}
+
+export async function loadReferenceProject(id) {
+  const name = await loadForeignProject(id, `/api/reference-projects/${id}`, false);
+  if (name) showToast(`Referencia: "${name}"`);
 }
 
 

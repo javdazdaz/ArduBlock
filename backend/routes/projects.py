@@ -13,7 +13,7 @@ from pathlib import Path
 from flask import Blueprint, jsonify, request
 from flask_login import current_user, login_required
 
-from backend.models import Project, Classroom, ClassroomStudent, Class, User
+from backend.models import Project, Classroom, ClassroomStudent, Class, User, Activity
 from backend.db import get_session as _get_session
 
 projects_bp = Blueprint("projects", __name__)
@@ -150,6 +150,32 @@ def save_student_project(project_id):
         s.close()
 
 
+@projects_bp.route("/api/reference-projects/<int:project_id>", methods=["GET"])
+@login_required
+def load_reference_project(project_id):
+    """Lee (solo lectura) un proyecto asignado como referencia a una actividad
+    de un curso donde el usuario está matriculado, o el propio docente dueño."""
+    s = _get_session()
+    try:
+        p = s.get(Project, project_id)
+        if not p:
+            return jsonify({"error": "Proyecto no encontrado"}), 404
+        is_reference = (
+            s.query(Activity)
+            .join(ClassroomStudent, ClassroomStudent.classroom_id == Activity.classroom_id)
+            .filter(
+                Activity.reference_project_id == project_id,
+                ClassroomStudent.user_id == current_user.id,
+            )
+            .first()
+        ) is not None
+        if not is_reference and not (current_user.is_teacher and p.user_id == current_user.id):
+            return jsonify({"error": "No autorizado"}), 403
+        return jsonify(p.to_dict())
+    finally:
+        s.close()
+
+
 @projects_bp.route("/api/projects", methods=["POST"])
 @login_required
 def create_project():
@@ -230,6 +256,10 @@ def delete_project(project_id):
         p = s.get(Project, project_id)
         if not p or p.user_id != current_user.id:
             return jsonify({"error": "Proyecto no encontrado"}), 404
+        # Si era referencia de alguna actividad, desvincularla (evita FK colgante).
+        s.query(Activity).filter_by(reference_project_id=project_id).update(
+            {"reference_project_id": None}
+        )
         s.delete(p)
         s.commit()
         return jsonify({"status": "ok"})

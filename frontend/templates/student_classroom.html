@@ -21,5 +21,21 @@
   {% else %}
     <div class="empty"><p>{{ _('no_classes') }}</p></div>
   {% endif %}
+
+  {% if activities %}
+    <div class="page-header"><h2>📋 {{ _('activities') }}</h2></div>
+    <div class="project-edit-list">
+      {% for a in activities %}
+        <div class="project-edit-row">
+          <div style="flex:1">{{ a.name }}</div>
+          {% if a.reference_project %}
+            <a href="/app?project={{ a.reference_project.id }}&ref=1" class="btn btn-ghost btn-small">{{ _('view_reference') }}</a>
+          {% else %}
+            <span class="muted">{{ _('no_reference') }}</span>
+          {% endif %}
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
 </main>
 {% endblock %}
