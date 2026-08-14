@@ -1,10 +1,10 @@
-"""Tests del módulo de actividades: crear/editar/borrar actividades en un curso,
-asignar proyecto de referencia, dashboard de proyectos del docente y lectura
-de referencia por parte del estudiante (autorización).
+"""Tests del módulo de actividades (B+C): biblioteca del docente, asignación a
+clases, dashboard de proyectos del docente y lectura de referencia por el
+estudiante (autorización).
 """
 
 from backend.db import get_session
-from backend.models import Activity, Project, Classroom, User
+from backend.models import Activity, ClassActivity, Project, Classroom, Class, User
 
 
 TEACHER_EMAIL = "profesor@example.com"
@@ -32,58 +32,68 @@ def _classroom_id(join_code="ABC123"):
 
 
 def _teacher_project(client, name="referencia.ino"):
-    """Crea un proyecto propio del docente (logueado) y devuelve su id."""
     r = client.post("/api/projects", json={"name": name, "data": {"state": {}}})
     assert r.status_code == 201, r.get_json()
     return r.get_json()["id"]
 
 
+def _create_class(client, classroom_id, name="Clase 1"):
+    client.post(f"/teacher/classroom/{classroom_id}/classes",
+                data={"name": name}, follow_redirects=True)
+    s = get_session()
+    try:
+        return s.query(Class).filter_by(classroom_id=classroom_id, name=name).first().id
+    finally:
+        s.close()
+
+
+def _create_activity(client, name, ref_id=None):
+    data = {"name": name}
+    if ref_id:
+        data["reference_project_id"] = str(ref_id)
+    client.post("/teacher/activities", data=data, follow_redirects=True)
+    s = get_session()
+    try:
+        return s.query(Activity).filter_by(name=name).first().id
+    finally:
+        s.close()
+
+
 def test_teacher_projects_dashboard_lists_own_projects(client):
     _login_teacher(client)
-    pid = _teacher_project(client, "mi-referencia.ino")
+    _teacher_project(client, "mi-referencia.ino")
 
     r = client.get("/teacher/projects")
     assert r.status_code == 200
     assert b"mi-referencia.ino" in r.data
 
-    s = get_session()
-    try:
-        assert s.get(Project, pid).user_id == s.query(User).filter_by(role="teacher").first().id
-    finally:
-        s.close()
 
-
-def test_teacher_creates_activity_without_reference(client, seed_classroom):
-    seed_classroom("ABC123")
+def test_teacher_creates_activity_in_library(client):
     _login_teacher(client)
-    cid = _classroom_id()
-
-    client.post(f"/teacher/classroom/{cid}/activities",
-                data={"name": "Actividad 1"}, follow_redirects=True)
+    client.post("/teacher/activities", data={"name": "Actividad 1"}, follow_redirects=True)
 
     s = get_session()
     try:
-        a = s.query(Activity).filter_by(classroom_id=cid).first()
+        teacher = s.query(User).filter_by(role="teacher").first()
+        a = s.query(Activity).filter_by(name="Actividad 1").first()
         assert a is not None
-        assert a.name == "Actividad 1"
+        assert a.teacher_id == teacher.id
         assert a.reference_project_id is None
     finally:
         s.close()
 
 
-def test_teacher_creates_activity_with_reference(client, seed_classroom):
-    seed_classroom("ABC123")
+def test_teacher_creates_activity_with_reference(client):
     _login_teacher(client)
-    cid = _classroom_id()
     pid = _teacher_project(client)
 
-    client.post(f"/teacher/classroom/{cid}/activities",
+    client.post("/teacher/activities",
                 data={"name": "Con referencia", "reference_project_id": str(pid)},
                 follow_redirects=True)
 
     s = get_session()
     try:
-        a = s.query(Activity).filter_by(classroom_id=cid).first()
+        a = s.query(Activity).filter_by(name="Con referencia").first()
         assert a.reference_project_id == pid
     finally:
         s.close()
@@ -91,42 +101,30 @@ def test_teacher_creates_activity_with_reference(client, seed_classroom):
 
 def test_teacher_cannot_assign_foreign_project_as_reference(client, seed_classroom):
     seed_classroom("ABC123")
-    cid = _classroom_id()
-    # proyecto de un estudiante (ajeno al docente)
     _register_student(client, "alumno@example.com")
     foreign_pid = client.post("/api/projects",
                               json={"name": "ajeno.ino", "data": {"state": {}}}).get_json()["id"]
     client.get("/logout")
     _login_teacher(client)
 
-    client.post(f"/teacher/classroom/{cid}/activities",
+    client.post("/teacher/activities",
                 data={"name": "Intentando ajeno", "reference_project_id": str(foreign_pid)},
                 follow_redirects=True)
 
     s = get_session()
     try:
-        a = s.query(Activity).filter_by(classroom_id=cid).first()
-        assert a.name == "Intentando ajeno"
+        a = s.query(Activity).filter_by(name="Intentando ajeno").first()
         assert a.reference_project_id is None  # rechazado silenciosamente
     finally:
         s.close()
 
 
-def test_teacher_edits_activity(client, seed_classroom):
-    seed_classroom("ABC123")
+def test_teacher_edits_activity(client):
     _login_teacher(client)
-    cid = _classroom_id()
     pid = _teacher_project(client)
+    aid = _create_activity(client, "Antes")
 
-    client.post(f"/teacher/classroom/{cid}/activities",
-                data={"name": "Antes"}, follow_redirects=True)
-    s = get_session()
-    try:
-        aid = s.query(Activity).filter_by(classroom_id=cid).first().id
-    finally:
-        s.close()
-
-    client.post(f"/teacher/classroom/{cid}/activities/{aid}/edit",
+    client.post(f"/teacher/activities/{aid}/edit",
                 data={"name": "Después", "reference_project_id": str(pid)},
                 follow_redirects=True)
 
@@ -139,20 +137,11 @@ def test_teacher_edits_activity(client, seed_classroom):
         s.close()
 
 
-def test_teacher_deletes_activity(client, seed_classroom):
-    seed_classroom("ABC123")
+def test_teacher_deletes_activity(client):
     _login_teacher(client)
-    cid = _classroom_id()
-    client.post(f"/teacher/classroom/{cid}/activities",
-                data={"name": "Para borrar"}, follow_redirects=True)
-    s = get_session()
-    try:
-        aid = s.query(Activity).filter_by(classroom_id=cid).first().id
-    finally:
-        s.close()
+    aid = _create_activity(client, "Para borrar")
 
-    client.post(f"/teacher/classroom/{cid}/activities/{aid}/delete",
-                follow_redirects=True)
+    client.post(f"/teacher/activities/{aid}/delete", follow_redirects=True)
 
     s = get_session()
     try:
@@ -161,19 +150,69 @@ def test_teacher_deletes_activity(client, seed_classroom):
         s.close()
 
 
-def test_student_sees_activities_in_classroom(client, seed_classroom):
+def test_teacher_assigns_activity_to_class(client, seed_classroom):
+    seed_classroom("ABC123")
+    _login_teacher(client)
+    cid = _classroom_id()
+    clid = _create_class(client, cid, "Clase 1")
+    aid = _create_activity(client, "Actividad asignable")
+
+    client.post(f"/teacher/class/{clid}/activities",
+                data={"activity_id": str(aid)}, follow_redirects=True)
+
+    s = get_session()
+    try:
+        ca = s.query(ClassActivity).filter_by(class_id=clid, activity_id=aid).first()
+        assert ca is not None
+    finally:
+        s.close()
+
+
+def test_teacher_cannot_assign_foreign_activity(client, seed_classroom):
+    seed_classroom("ABC123")
+    _login_teacher(client)
+    cid = _classroom_id()
+    clid = _create_class(client, cid, "Clase 1")
+
+    # actividad de otro docente
+    s = get_session()
+    try:
+        other = User(email="otro@example.com", name="Otro",
+                     password_hash="x", role="teacher")
+        s.add(other)
+        s.flush()
+        a = Activity(teacher_id=other.id, name="Ajeno")
+        s.add(a)
+        s.commit()
+        aid = a.id
+    finally:
+        s.close()
+
+    client.post(f"/teacher/class/{clid}/activities",
+                data={"activity_id": str(aid)}, follow_redirects=True)
+
+    s = get_session()
+    try:
+        assert s.query(ClassActivity).filter_by(class_id=clid, activity_id=aid).first() is None
+    finally:
+        s.close()
+
+
+def test_student_sees_activities_in_class(client, seed_classroom):
     seed_classroom("ABC123")
     cid = _classroom_id()
     _register_student(client, "alumno@example.com")
     client.get("/logout")
     _login_teacher(client)
-    client.post(f"/teacher/classroom/{cid}/activities",
-                data={"name": "Actividad visible"}, follow_redirects=True)
+    clid = _create_class(client, cid, "Clase 1")
+    aid = _create_activity(client, "Actividad visible")
+    client.post(f"/teacher/class/{clid}/activities",
+                data={"activity_id": str(aid)}, follow_redirects=True)
     client.get("/logout")
     client.post("/login", data={"email": "alumno@example.com", "password": "secreto123"},
                 follow_redirects=True)
 
-    r = client.get(f"/student/classroom/{cid}")
+    r = client.get(f"/student/class/{clid}")
     assert r.status_code == 200
     assert b"Actividad visible" in r.data
 
@@ -185,8 +224,10 @@ def test_student_reads_reference_project(client, seed_classroom):
     client.get("/logout")
     _login_teacher(client)
     pid = _teacher_project(client)
-    client.post(f"/teacher/classroom/{cid}/activities",
-                data={"name": "Ref", "reference_project_id": str(pid)}, follow_redirects=True)
+    aid = _create_activity(client, "Ref", ref_id=pid)
+    clid = _create_class(client, cid, "Clase 1")
+    client.post(f"/teacher/class/{clid}/activities",
+                data={"activity_id": str(aid)}, follow_redirects=True)
     client.get("/logout")
     client.post("/login", data={"email": "alumno@example.com", "password": "secreto123"},
                 follow_redirects=True)

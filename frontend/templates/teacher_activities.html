@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}{{ _('activities') }} — ArduBlock{% endblock %}
+{% block content %}
+<nav>
+  <h1 class="nav-brand">⚡ ArduBlock <span class="nav-role">{{ _('teacher_label') }}</span></h1>
+  <div class="nav-links">
+    <span class="nav-user">{{ user.name }}</span>
+    <a href="/teacher" class="nav-btn">{{ _('back_my_classrooms') }}</a>
+    <a href="/app" class="nav-btn">{{ _('editor_link') }}</a>
+    <a href="/teacher/projects" class="nav-btn">{{ _('my_projects') }}</a>
+    <a href="{{ url_for('auth.logout') }}" class="nav-btn">{{ _('logout') }}</a>
+  </div>
+</nav>
+<main class="narrow">
+  <a href="/teacher" class="back">{{ _('back_my_classrooms') }}</a>
+  {{ render_flash() }}
+
+  <div class="panel">
+    <div class="page-header">
+      <h2>📋 {{ _('activities') }} ({{ activities|length }})</h2>
+      <button type="button" class="btn" id="toggle-new">{{ _('new_activity') }}</button>
+    </div>
+    <p class="muted">{{ _('activity_library_hint') }}</p>
+    <div class="hidden" id="new-activity">
+      <form method="POST" action="{{ url_for('auth.create_activity') }}">
+        {{ form.hidden_tag() }}
+        <div class="field">
+          <label>{{ _('activity_name_label') }}</label>
+          {{ form.name() }}
+        </div>
+        <div class="field">
+          <label>{{ _('reference_project') }}</label>
+          <select name="reference_project_id">
+            <option value="">{{ _('no_reference') }}</option>
+            {% for pr in my_projects %}
+              <option value="{{ pr.id }}">{{ pr.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <button type="submit" class="btn">{{ _('create_activity') }}</button>
+      </form>
+    </div>
+    {% if activities %}
+      <div class="project-edit-list">
+        {% for a in activities %}
+          <div class="project-edit-row">
+            <form method="POST" action="{{ url_for('auth.edit_activity', activity_id=a.id) }}" class="project-edit-form">
+              {{ form.hidden_tag() }}
+              <input type="text" name="name" value="{{ a.name }}" maxlength="200" required aria-label="{{ _('rename') }}">
+              <select name="reference_project_id" aria-label="{{ _('reference_project') }}">
+                <option value="">{{ _('no_reference') }}</option>
+                {% for pr in my_projects %}
+                  <option value="{{ pr.id }}" {% if a.reference_project_id == pr.id %}selected{% endif %}>{{ pr.name }}</option>
+                {% endfor %}
+              </select>
+              <button type="submit" class="btn btn-small">{{ _('save') }}</button>
+            </form>
+            <form method="POST" action="{{ url_for('auth.delete_activity', activity_id=a.id) }}" onsubmit="return confirm('{{ _('confirm_delete_activity') }}')">
+              {{ form.hidden_tag() }}
+              <button type="submit" class="btn btn-danger btn-small">{{ _('delete_activity') }}</button>
+            </form>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="muted">{{ _('no_activities') }}</p>
+    {% endif %}
+  </div>
+</main>
+<script>
+  document.getElementById('toggle-new').addEventListener('click', function () {
+    document.getElementById('new-activity').classList.toggle('hidden');
+  });
+</script>
+{% endblock %}

@@ -68,9 +68,6 @@ class Classroom(Base):
     classes = relationship(
         "Class", back_populates="classroom", cascade="all, delete-orphan",
     )
-    activities = relationship(
-        "Activity", back_populates="classroom", cascade="all, delete-orphan",
-    )
 
     @staticmethod
     def generate_code():
@@ -87,6 +84,9 @@ class Class(Base):
     created_at = Column(DateTime, default=utcnow)
 
     classroom = relationship("Classroom", back_populates="classes")
+    activities = relationship(
+        "Activity", secondary="class_activities", back_populates="classes",
+    )
 
 
 class ClassroomStudent(Base):
@@ -125,14 +125,28 @@ class Project(Base):
 
 
 class Activity(Base):
-    """Actividad dentro de un curso: nombre + proyecto de referencia (modelo)."""
+    """Actividad (biblioteca del docente): nombre + proyecto de referencia.
+
+    Reutilizable: se asigna a clases vía ClassActivity (tabla de unión N-N).
+    """
     __tablename__ = "activities"
 
     id = Column(Integer, primary_key=True)
-    classroom_id = Column(Integer, ForeignKey("classrooms.id"), nullable=False, index=True)
+    teacher_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
     name = Column(String(200), nullable=False)
     reference_project_id = Column(Integer, ForeignKey("projects.id"), nullable=True)
     created_at = Column(DateTime, default=utcnow)
 
-    classroom = relationship("Classroom", back_populates="activities")
+    teacher = relationship("User", foreign_keys=[teacher_id])
     reference_project = relationship("Project", foreign_keys=[reference_project_id])
+    classes = relationship("Class", secondary="class_activities", back_populates="activities")
+
+
+class ClassActivity(Base):
+    """Asignación de una actividad a una clase (N-N)."""
+    __tablename__ = "class_activities"
+
+    id = Column(Integer, primary_key=True)
+    class_id = Column(Integer, ForeignKey("classes.id"), nullable=False, index=True)
+    activity_id = Column(Integer, ForeignKey("activities.id"), nullable=False, index=True)
+    created_at = Column(DateTime, default=utcnow)

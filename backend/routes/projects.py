@@ -13,7 +13,7 @@ from pathlib import Path
 from flask import Blueprint, jsonify, request
 from flask_login import current_user, login_required
 
-from backend.models import Project, Classroom, ClassroomStudent, Class, User, Activity
+from backend.models import Project, Classroom, ClassroomStudent, Class, User, Activity, ClassActivity
 from backend.db import get_session as _get_session
 
 projects_bp = Blueprint("projects", __name__)
@@ -161,8 +161,10 @@ def load_reference_project(project_id):
         if not p:
             return jsonify({"error": "Proyecto no encontrado"}), 404
         is_reference = (
-            s.query(Activity)
-            .join(ClassroomStudent, ClassroomStudent.classroom_id == Activity.classroom_id)
+            s.query(ClassActivity)
+            .join(Activity, Activity.id == ClassActivity.activity_id)
+            .join(Class, Class.id == ClassActivity.class_id)
+            .join(ClassroomStudent, ClassroomStudent.classroom_id == Class.classroom_id)
             .filter(
                 Activity.reference_project_id == project_id,
                 ClassroomStudent.user_id == current_user.id,

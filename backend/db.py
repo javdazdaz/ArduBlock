@@ -25,8 +25,23 @@ def init_db():
     """Crea las tablas si no existen y aplica migraciones ligeras."""
     from backend.models import Base
 
+    _drop_old_activities()
     Base.metadata.create_all(engine)
     _migrate()
+
+
+def _drop_old_activities():
+    """Recrea `activities` si viene del esquema viejo (classroom_id, iteración
+    previa) para pasar a teacher_id. Sin datos: la feature recién salió."""
+    from sqlalchemy import inspect, text
+
+    insp = inspect(engine)
+    if "activities" not in insp.get_table_names():
+        return
+    cols = {c["name"] for c in insp.get_columns("activities")}
+    if "classroom_id" in cols and "teacher_id" not in cols:
+        with engine.begin() as conn:
+            conn.execute(text("DROP TABLE activities"))
 
 
 def _migrate():

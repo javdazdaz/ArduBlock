@@ -5,11 +5,17 @@
   <h1 class="nav-brand">⚡ ArduBlock</h1>
   <div class="nav-links">
     <a href="/teacher/classroom/{{ cls.classroom_id }}" class="nav-btn">{{ _('back') }}</a>
+    <a href="/teacher/activities" class="nav-btn">{{ _('activities') }}</a>
     <a href="/teacher/regen-thumbnails" class="nav-btn">{{ _('regen_thumbnails') }}</a>
   </div>
 </nav>
 <main>
   <a href="/teacher/classroom/{{ cls.classroom_id }}" class="back">{{ _('back') }}</a>
+  <nav class="breadcrumb">
+    <a href="/teacher">{{ _('my_classrooms') }}</a><span class="sep">›</span>
+    <a href="/teacher/classroom/{{ cls.classroom_id }}">{{ cls.classroom.name }}</a><span class="sep">›</span>
+    <span>{{ cls.name }}</span>
+  </nav>
   {{ render_flash() }}
 
   <div class="panel">
@@ -28,6 +34,37 @@
       </div>
     </div>
     <p class="muted">{{ _('students_title') }}: {{ students|length }}</p>
+  </div>
+
+  <div class="panel">
+    <h2>📋 {{ _('activities') }} ({{ activities|length }})</h2>
+    {% if library %}
+      <form method="POST" action="{{ url_for('auth.assign_activity', class_id=cls.id) }}" class="inline-form">
+        {{ delete_form.hidden_tag() }}
+        <select name="activity_id" required>
+          {% for a in library %}
+            <option value="{{ a.id }}">{{ a.name }}</option>
+          {% endfor %}
+        </select>
+        <button type="submit" class="btn btn-small">{{ _('assign_activity') }}</button>
+      </form>
+      <p class="muted">{{ _('manage_activities_hint') }} <a href="/teacher/activities">{{ _('activities') }}</a></p>
+    {% else %}
+      <p class="muted">{{ _('no_activities_to_assign') }} <a href="/teacher/activities">{{ _('activities') }}</a></p>
+    {% endif %}
+    {% if activities %}
+      <div class="project-edit-list">
+        {% for a in activities %}
+          <div class="project-edit-row">
+            <div style="flex:1">{{ a.name }}{% if a.reference_project %} · <span class="muted">{{ a.reference_project.name }}</span>{% endif %}</div>
+            <form method="POST" action="{{ url_for('auth.unassign_activity', class_id=cls.id, activity_id=a.id) }}">
+              {{ delete_form.hidden_tag() }}
+              <button type="submit" class="btn btn-ghost btn-small">{{ _('unassign_activity') }}</button>
+            </form>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
   </div>
 
   <div class="panel">

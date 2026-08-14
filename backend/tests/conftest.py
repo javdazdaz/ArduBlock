@@ -28,7 +28,7 @@ os.environ["SMTP_HOST"] = ""  # sin email real en tests
 
 from backend.app import create_app  # noqa: E402
 from backend.db import get_session  # noqa: E402
-from backend.models import User, Classroom, ClassroomStudent, Project, Class, Activity  # noqa: E402
+from backend.models import User, Classroom, ClassroomStudent, Project, Class, Activity, ClassActivity  # noqa: E402
 from backend.routes.auth import _ensure_teacher  # noqa: E402
 
 
@@ -47,6 +47,7 @@ def clean_db(app):
         s = get_session()
         try:
             s.query(ClassroomStudent).delete()
+            s.query(ClassActivity).delete()
             s.query(Activity).delete()
             s.query(Project).delete()
             s.query(Class).delete()

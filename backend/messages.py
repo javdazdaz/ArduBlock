@@ -132,6 +132,14 @@ MESSAGES = {
         "delete_activity": "Eliminar",
         "teacher_projects_hint": "Estos son tus proyectos guardados. Asígnalos como referencia a las actividades de tus cursos.",
         "no_teacher_projects": "Aún no tienes proyectos. Abre el editor y guarda uno.",
+        "activity_library_hint": "Biblioteca de actividades: créalas una vez y asígnalas a tus clases.",
+        "assign_activity": "Asignar",
+        "unassign_activity": "Quitar",
+        "activity_assigned": "Actividad asignada a la clase.",
+        "activity_unassigned": "Actividad quitada de la clase.",
+        "activity_already_assigned": "Esa actividad ya está en la clase.",
+        "manage_activities_hint": "Gestiona tu biblioteca en",
+        "no_activities_to_assign": "No quedan actividades sin asignar en tu biblioteca. Créalas en",
         # ── Emails ──
         "welcome_subject": "¡Bienvenido a ArduBlock, %(name)s!",
         "welcome_body": (
@@ -270,6 +278,14 @@ MESSAGES = {
         "delete_activity": "Delete",
         "teacher_projects_hint": "These are your saved projects. Assign them as references to your courses' activities.",
         "no_teacher_projects": "You don't have any projects yet. Open the editor and save one.",
+        "activity_library_hint": "Activity library: create them once and assign them to your classes.",
+        "assign_activity": "Assign",
+        "unassign_activity": "Remove",
+        "activity_assigned": "Activity assigned to the class.",
+        "activity_unassigned": "Activity removed from the class.",
+        "activity_already_assigned": "That activity is already in the class.",
+        "manage_activities_hint": "Manage your library in",
+        "no_activities_to_assign": "No unassigned activities left in your library. Create them in",
         # ── Emails ──
         "welcome_subject": "Welcome to ArduBlock, %(name)s!",
         "welcome_body": (

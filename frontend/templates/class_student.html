@@ -9,6 +9,12 @@
 </nav>
 <main>
   <a href="/teacher/class/{{ cls.id }}" class="back">{{ _('back_to_class') }}</a>
+  <nav class="breadcrumb">
+    <a href="/teacher">{{ _('my_classrooms') }}</a><span class="sep">›</span>
+    <a href="/teacher/classroom/{{ cls.classroom_id }}">{{ cls.classroom.name }}</a><span class="sep">›</span>
+    <a href="/teacher/class/{{ cls.id }}">{{ cls.name }}</a><span class="sep">›</span>
+    <span>{{ student.name }}</span>
+  </nav>
   <div class="page-header">
     <h2>{{ student.name }}</h2>
     <span class="muted">{{ student.email }}</span>
@@ -17,7 +23,7 @@
     <div class="project-grid">
       {% for p in projects %}
         <div class="project-card">
-          <a href="/app?project={{ p.id }}&view=1" class="project-card-body">
+          <a href="/app?project={{ p.id }}&view=1&from={{ ('/teacher/class/' ~ cls.id ~ '/student/' ~ student.id) | urlencode }}" class="project-card-body">
             {% if p.thumbnail %}
               <img src="{{ p.thumbnail }}" alt="{{ p.name }}" class="project-thumb">
             {% else %}
@@ -28,8 +34,8 @@
             <div class="meta">{{ p.updated_at.strftime('%d/%m/%Y %H:%M') if p.updated_at else '' }}</div>
           </a>
           <div class="project-card-actions">
-            <a href="/app?project={{ p.id }}&view=1" class="btn btn-ghost btn-small">{{ _('view') }}</a>
-            <a href="/app?project={{ p.id }}&edit=1" class="btn btn-small">{{ _('edit') }}</a>
+            <a href="/app?project={{ p.id }}&view=1&from={{ ('/teacher/class/' ~ cls.id ~ '/student/' ~ student.id) | urlencode }}" class="btn btn-ghost btn-small">{{ _('view') }}</a>
+            <a href="/app?project={{ p.id }}&edit=1&from={{ ('/teacher/class/' ~ cls.id ~ '/student/' ~ student.id) | urlencode }}" class="btn btn-small">{{ _('edit') }}</a>
           </div>
         </div>
       {% endfor %}

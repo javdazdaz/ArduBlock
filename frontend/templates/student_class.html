@@ -9,14 +9,36 @@
 </nav>
 <main>
   <a href="/student/classroom/{{ cls.classroom_id }}" class="back">{{ _('back') }}</a>
+  <nav class="breadcrumb">
+    <a href="/student">{{ _('my_courses') }}</a><span class="sep">›</span>
+    <a href="/student/classroom/{{ cls.classroom_id }}">{{ cls.classroom.name }}</a><span class="sep">›</span>
+    <span>{{ cls.name }}</span>
+  </nav>
+
+  {% if activities %}
+    <div class="page-header"><h2>📋 {{ _('activities') }}</h2></div>
+    <div class="project-edit-list">
+      {% for a in activities %}
+        <div class="project-edit-row">
+          <div style="flex:1">{{ a.name }}</div>
+          {% if a.reference_project %}
+            <a href="/app?project={{ a.reference_project.id }}&ref=1&from={{ ('/student/class/' ~ cls.id) | urlencode }}" class="btn btn-ghost btn-small">{{ _('view_reference') }}</a>
+          {% else %}
+            <span class="muted">{{ _('no_reference') }}</span>
+          {% endif %}
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
   <div class="page-header">
-    <h2>{{ cls.name }}</h2>
-    <a href="/app?class={{ cls.id }}" class="btn-new">{{ _('new_project') }}</a>
+    <h2>📁 {{ _('my_projects') }}</h2>
+    <a href="/app?class={{ cls.id }}&from={{ ('/student/class/' ~ cls.id) | urlencode }}" class="btn-new">{{ _('new_project') }}</a>
   </div>
   {% if projects %}
     <div class="project-grid">
       {% for p in projects %}
-        <a href="/app?project={{ p.id }}" class="project-card">
+        <a href="/app?project={{ p.id }}&from={{ ('/student/class/' ~ cls.id) | urlencode }}" class="project-card">
           {% if p.thumbnail %}
             <img src="{{ p.thumbnail }}" alt="{{ p.name }}" class="project-thumb">
           {% else %}
@@ -31,7 +53,7 @@
   {% else %}
     <div class="empty">
       <p>{{ _('no_projects') }}</p>
-      <a href="/app?class={{ cls.id }}" class="btn-new">{{ _('first_project') }}</a>
+      <a href="/app?class={{ cls.id }}&from={{ ('/student/class/' ~ cls.id) | urlencode }}" class="btn-new">{{ _('first_project') }}</a>
     </div>
   {% endif %}
 </main>

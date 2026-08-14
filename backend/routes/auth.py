@@ -23,7 +23,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import joinedload
 from sqlalchemy.exc import IntegrityError
 
-from backend.models import User, Classroom, ClassroomStudent, Project, Class, Activity, utcnow
+from backend.models import User, Classroom, ClassroomStudent, Project, Class, Activity, ClassActivity, utcnow
 from backend.db import get_session
 from backend.messages import get_message
 from backend.config import FRONTEND_DIR
@@ -447,7 +447,6 @@ def view_classroom(classroom_id):
     rename_form = RenameClassroomForm()
     delete_form = EmptyForm()
     class_form = ClassNameForm()
-    activity_form = ActivityForm()
     s = _get_session()
     try:
         classroom = s.get(Classroom, classroom_id)
@@ -458,19 +457,6 @@ def view_classroom(classroom_id):
             s.query(Class)
             .filter_by(classroom_id=classroom_id)
             .order_by(Class.created_at.asc())
-            .all()
-        )
-        activities = (
-            s.query(Activity)
-            .filter_by(classroom_id=classroom_id)
-            .options(joinedload(Activity.reference_project))
-            .order_by(Activity.created_at.asc())
-            .all()
-        )
-        my_projects = (
-            s.query(Project)
-            .filter_by(user_id=current_user.id)
-            .order_by(Project.updated_at.desc())
             .all()
         )
         students = (
@@ -485,9 +471,7 @@ def view_classroom(classroom_id):
     return render_template(
         "classroom_view.html",
         classroom=classroom, students=students, classes=classes, user=current_user,
-        activities=activities, my_projects=my_projects,
         rename_form=rename_form, delete_form=delete_form, class_form=class_form,
-        activity_form=activity_form,
     )
 
 
@@ -608,11 +592,28 @@ def view_class(class_id):
             .group_by(Project.user_id)
             .all()
         ) if student_ids else {}
+        activities = (
+            s.query(Activity)
+            .join(ClassActivity, ClassActivity.activity_id == Activity.id)
+            .filter(ClassActivity.class_id == class_id)
+            .options(joinedload(Activity.reference_project))
+            .order_by(Activity.created_at.asc())
+            .all()
+        )
+        assigned_ids = [a.id for a in activities]
+        library = (
+            s.query(Activity)
+            .filter_by(teacher_id=current_user.id)
+            .order_by(Activity.created_at.asc())
+            .all()
+        )
+        library = [a for a in library if a.id not in assigned_ids]
     finally:
         s.close()
     return render_template(
         "class_view.html",
         cls=cls, students=students, counts=counts, user=current_user,
+        activities=activities, library=library,
         rename_form=rename_form, delete_form=delete_form,
     )
 
@@ -686,6 +687,7 @@ def delete_class(class_id):
             return redirect(url_for("auth.teacher_dashboard"))
         if form.validate_on_submit():
             s.query(Project).filter_by(class_id=class_id).update({"class_id": None})
+            s.query(ClassActivity).filter_by(class_id=class_id).delete()
             s.delete(cls)
             s.commit()
             flash(get_message(g.lang, "class_deleted"), "success")
@@ -707,22 +709,48 @@ def _valid_reference_project(s, reference_id):
     return p
 
 
-@auth_bp.route("/teacher/classroom/<int:classroom_id>/activities", methods=["POST"])
+@auth_bp.route("/teacher/activities")
 @login_required
-def create_activity(classroom_id):
+def teacher_activities():
+    """Biblioteca de actividades del docente (reutilizables entre clases)."""
     if not current_user.is_teacher:
         return redirect(url_for("auth.dashboard"))
     form = ActivityForm()
     s = _get_session()
     try:
-        classroom = s.get(Classroom, classroom_id)
-        if not classroom or classroom.teacher_id != current_user.id:
-            flash(get_message(g.lang, "classroom_not_found"), "error")
-            return redirect(url_for("auth.teacher_dashboard"))
+        activities = (
+            s.query(Activity)
+            .filter_by(teacher_id=current_user.id)
+            .options(joinedload(Activity.reference_project))
+            .order_by(Activity.created_at.asc())
+            .all()
+        )
+        my_projects = (
+            s.query(Project)
+            .filter_by(user_id=current_user.id)
+            .order_by(Project.updated_at.desc())
+            .all()
+        )
+    finally:
+        s.close()
+    return render_template(
+        "teacher_activities.html",
+        user=current_user, activities=activities, my_projects=my_projects, form=form,
+    )
+
+
+@auth_bp.route("/teacher/activities", methods=["POST"])
+@login_required
+def create_activity():
+    if not current_user.is_teacher:
+        return redirect(url_for("auth.dashboard"))
+    form = ActivityForm()
+    s = _get_session()
+    try:
         if form.validate_on_submit():
             ref = _valid_reference_project(s, request.form.get("reference_project_id", type=int))
             activity = Activity(
-                classroom_id=classroom_id,
+                teacher_id=current_user.id,
                 name=form.name.data.strip(),
                 reference_project_id=ref.id if ref else None,
             )
@@ -731,25 +759,21 @@ def create_activity(classroom_id):
             flash(get_message(g.lang, "activity_created"), "success")
     finally:
         s.close()
-    return redirect(url_for("auth.view_classroom", classroom_id=classroom_id))
+    return redirect(url_for("auth.teacher_activities"))
 
 
-@auth_bp.route("/teacher/classroom/<int:classroom_id>/activities/<int:activity_id>/edit", methods=["POST"])
+@auth_bp.route("/teacher/activities/<int:activity_id>/edit", methods=["POST"])
 @login_required
-def edit_activity(classroom_id, activity_id):
+def edit_activity(activity_id):
     if not current_user.is_teacher:
         return redirect(url_for("auth.dashboard"))
     form = ActivityForm()
     s = _get_session()
     try:
-        classroom = s.get(Classroom, classroom_id)
-        if not classroom or classroom.teacher_id != current_user.id:
-            flash(get_message(g.lang, "classroom_not_found"), "error")
-            return redirect(url_for("auth.teacher_dashboard"))
         activity = s.get(Activity, activity_id)
-        if not activity or activity.classroom_id != classroom_id:
+        if not activity or activity.teacher_id != current_user.id:
             flash(get_message(g.lang, "activity_not_found"), "error")
-            return redirect(url_for("auth.view_classroom", classroom_id=classroom_id))
+            return redirect(url_for("auth.teacher_activities"))
         if form.validate_on_submit():
             activity.name = form.name.data.strip()
             ref = _valid_reference_project(s, request.form.get("reference_project_id", type=int))
@@ -758,32 +782,80 @@ def edit_activity(classroom_id, activity_id):
             flash(get_message(g.lang, "activity_updated"), "success")
     finally:
         s.close()
-    return redirect(url_for("auth.view_classroom", classroom_id=classroom_id))
+    return redirect(url_for("auth.teacher_activities"))
 
 
-@auth_bp.route("/teacher/classroom/<int:classroom_id>/activities/<int:activity_id>/delete", methods=["POST"])
+@auth_bp.route("/teacher/activities/<int:activity_id>/delete", methods=["POST"])
 @login_required
-def delete_activity(classroom_id, activity_id):
+def delete_activity(activity_id):
     if not current_user.is_teacher:
         return redirect(url_for("auth.dashboard"))
     form = EmptyForm()
     s = _get_session()
     try:
-        classroom = s.get(Classroom, classroom_id)
-        if not classroom or classroom.teacher_id != current_user.id:
-            flash(get_message(g.lang, "classroom_not_found"), "error")
-            return redirect(url_for("auth.teacher_dashboard"))
         activity = s.get(Activity, activity_id)
-        if not activity or activity.classroom_id != classroom_id:
+        if not activity or activity.teacher_id != current_user.id:
             flash(get_message(g.lang, "activity_not_found"), "error")
-            return redirect(url_for("auth.view_classroom", classroom_id=classroom_id))
+            return redirect(url_for("auth.teacher_activities"))
         if form.validate_on_submit():
+            s.query(ClassActivity).filter_by(activity_id=activity_id).delete()
             s.delete(activity)
             s.commit()
             flash(get_message(g.lang, "activity_deleted"), "success")
     finally:
         s.close()
-    return redirect(url_for("auth.view_classroom", classroom_id=classroom_id))
+    return redirect(url_for("auth.teacher_activities"))
+
+
+@auth_bp.route("/teacher/class/<int:class_id>/activities", methods=["POST"])
+@login_required
+def assign_activity(class_id):
+    """Asigna una actividad de la biblioteca a una clase."""
+    if not current_user.is_teacher:
+        return redirect(url_for("auth.dashboard"))
+    form = EmptyForm()
+    s = _get_session()
+    try:
+        cls = s.get(Class, class_id)
+        if not cls or cls.classroom.teacher_id != current_user.id:
+            flash(get_message(g.lang, "classroom_not_found"), "error")
+            return redirect(url_for("auth.teacher_dashboard"))
+        if form.validate_on_submit():
+            aid = request.form.get("activity_id", type=int)
+            activity = s.get(Activity, aid) if aid else None
+            if not activity or activity.teacher_id != current_user.id:
+                flash(get_message(g.lang, "activity_not_found"), "error")
+            elif not s.query(ClassActivity).filter_by(class_id=class_id, activity_id=aid).first():
+                s.add(ClassActivity(class_id=class_id, activity_id=aid))
+                s.commit()
+                flash(get_message(g.lang, "activity_assigned"), "success")
+            else:
+                flash(get_message(g.lang, "activity_already_assigned"), "error")
+    finally:
+        s.close()
+    return redirect(url_for("auth.view_class", class_id=class_id))
+
+
+@auth_bp.route("/teacher/class/<int:class_id>/activities/<int:activity_id>/remove", methods=["POST"])
+@login_required
+def unassign_activity(class_id, activity_id):
+    """Quita una actividad de una clase (no borra la actividad de la biblioteca)."""
+    if not current_user.is_teacher:
+        return redirect(url_for("auth.dashboard"))
+    form = EmptyForm()
+    s = _get_session()
+    try:
+        cls = s.get(Class, class_id)
+        if not cls or cls.classroom.teacher_id != current_user.id:
+            flash(get_message(g.lang, "classroom_not_found"), "error")
+            return redirect(url_for("auth.teacher_dashboard"))
+        if form.validate_on_submit():
+            s.query(ClassActivity).filter_by(class_id=class_id, activity_id=activity_id).delete()
+            s.commit()
+            flash(get_message(g.lang, "activity_unassigned"), "success")
+    finally:
+        s.close()
+    return redirect(url_for("auth.view_class", class_id=class_id))
 
 
 @auth_bp.route("/teacher/regen-thumbnails")
@@ -963,18 +1035,11 @@ def student_classroom(classroom_id):
             .order_by(Class.created_at.asc())
             .all()
         )
-        activities = (
-            s.query(Activity)
-            .filter_by(classroom_id=classroom_id)
-            .options(joinedload(Activity.reference_project))
-            .order_by(Activity.created_at.asc())
-            .all()
-        )
     finally:
         s.close()
     return render_template(
         "student_classroom.html",
-        classroom=classroom, classes=classes, activities=activities, user=current_user,
+        classroom=classroom, classes=classes, user=current_user,
     )
 
 
@@ -985,7 +1050,12 @@ def student_class(class_id):
         return redirect(url_for("auth.teacher_dashboard"))
     s = _get_session()
     try:
-        cls = s.get(Class, class_id)
+        cls = (
+            s.query(Class)
+            .options(joinedload(Class.classroom))
+            .filter_by(id=class_id)
+            .first()
+        )
         if not cls:
             return redirect(url_for("auth.dashboard"))
         enrolled = (
@@ -1001,9 +1071,17 @@ def student_class(class_id):
             .order_by(Project.updated_at.desc())
             .all()
         )
+        activities = (
+            s.query(Activity)
+            .join(ClassActivity, ClassActivity.activity_id == Activity.id)
+            .filter(ClassActivity.class_id == class_id)
+            .options(joinedload(Activity.reference_project))
+            .order_by(Activity.created_at.asc())
+            .all()
+        )
     finally:
         s.close()
     return render_template(
         "student_class.html",
-        cls=cls, projects=projects, user=current_user,
+        cls=cls, projects=projects, activities=activities, user=current_user,
     )

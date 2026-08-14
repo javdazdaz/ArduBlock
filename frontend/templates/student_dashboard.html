@@ -31,7 +31,7 @@
     <div class="page-header"><h2>{{ _('unassigned_projects') }}</h2></div>
     <div class="project-grid">
       {% for p in unassigned %}
-        <a href="/app?project={{ p.id }}" class="project-card">
+        <a href="/app?project={{ p.id }}&from={{ '/student' | urlencode }}" class="project-card">
           {% if p.thumbnail %}
             <img src="{{ p.thumbnail }}" alt="{{ p.name }}" class="project-thumb">
           {% else %}

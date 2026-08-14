@@ -22,6 +22,7 @@ import { initValidator }       from './validator.js';
 let IS_GUEST_MODE = true;
 window.IS_GUEST_MODE = true;
 let USER_NAME = '';
+let IS_TEACHER = false;
 
 (async function detectMode() {
   try {
@@ -30,6 +31,7 @@ let USER_NAME = '';
     IS_GUEST_MODE = !data.authenticated;
     window.IS_GUEST_MODE = IS_GUEST_MODE;
     USER_NAME = data.user_name || '';
+    IS_TEACHER = !!data.is_teacher;
   } catch (_) {
     IS_GUEST_MODE = true;
   }
@@ -43,6 +45,16 @@ let USER_NAME = '';
   if (cid) {
     const c = Number(cid);
     if (Number.isInteger(c) && c > 0) setClassId(c);
+  }
+
+  // Botón "volver": ?from=<ruta> si viene de un dashboard; si no, al dashboard del rol.
+  const backBtn = document.getElementById('btn-back');
+  if (backBtn) {
+    const fromParam = params.get('from');
+    backBtn.href = fromParam || (IS_GUEST_MODE ? '/' : (IS_TEACHER ? '/teacher' : '/student'));
+    const label = document.getElementById('back-label');
+    if (label) label.textContent = fromParam ? 'Volver' : (IS_GUEST_MODE ? 'Inicio' : 'Dashboard');
+    backBtn.classList.remove('hidden');
   }
 
   const brand = document.querySelector('.header-brand');

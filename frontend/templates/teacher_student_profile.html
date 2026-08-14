@@ -9,6 +9,7 @@
 </nav>
 <main class="narrow">
   <a href="{{ back_url }}" class="back">{{ _('back') }}</a>
+  {% set from_path = '/teacher/student/' ~ student.id ~ ('?from=' ~ from_classroom_id if from_classroom_id else '') %}
   {{ render_flash() }}
 
   <div class="page-header">
@@ -33,8 +34,8 @@
               </select>
               <button type="submit" class="btn btn-small">{{ _('save') }}</button>
             </form>
-            <a href="/app?project={{ p.id }}&view=1" class="btn btn-ghost btn-small">{{ _('view') }}</a>
-            <a href="/app?project={{ p.id }}&edit=1" class="btn btn-small">{{ _('edit') }}</a>
+            <a href="/app?project={{ p.id }}&view=1&from={{ from_path | urlencode }}" class="btn btn-ghost btn-small">{{ _('view') }}</a>
+            <a href="/app?project={{ p.id }}&edit=1&from={{ from_path | urlencode }}" class="btn btn-small">{{ _('edit') }}</a>
           </div>
         {% endfor %}
       </div>

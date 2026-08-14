@@ -108,6 +108,27 @@ header {
   border-color: var(--border);
 }
 
+/* ── Back to dashboard button ────────────────── */
+.back-btn {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 0.9rem;
+  height: 2.2rem;
+  padding: 0 0.7rem;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  flex-shrink: 0;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background 0.15s, border-color 0.15s;
+}
+.back-btn:hover { background: var(--bg-input); border-color: var(--accent); }
+.back-btn.hidden { display: none; }
+
 /* ── Header brand (logo + subtitle) ───────────── */
 .header-brand {
   display: flex;
