@@ -14,21 +14,33 @@ let workspaceDirty = false;
 let currentProjectId = null;  // ID del proyecto actual en servidor
 let readOnly = false;         // modo solo-lectura (profesor viendo proyecto de alumno)
 let currentClassId = null;    // clase en la que se crean proyectos (?class=)
+let teacherEditId = null;     // id del proyecto de alumno en edición docente
 
 export function cancelAutoSave() { clearTimeout(autoSaveTimer); }
 
-export function resetCurrentProject() { currentProjectId = null; delete projectInput?.dataset?.projectId; }
+export function resetCurrentProject() {
+  currentProjectId = null;
+  teacherEditId = null;
+  setReadOnly(false);
+  delete projectInput?.dataset?.projectId;
+}
 
 export function setClassId(id) { currentClassId = id; }
 
 export function isReadOnly() { return readOnly; }
 
-export function setReadOnly(v) {
-  readOnly = v;
+function refreshButtons() {
   const save = document.getElementById('btn-save');
   const del = document.getElementById('btn-delete');
-  if (save) save.disabled = v;
-  if (del) del.disabled = v;
+  // Solo-lectura: guardar y eliminar deshabilitados.
+  // Edición docente: guardar habilitado, eliminar deshabilitado (no borrar trabajo ajeno).
+  if (save) save.disabled = readOnly;
+  if (del) del.disabled = readOnly || teacherEditId != null;
+}
+
+export function setReadOnly(v) {
+  readOnly = v;
+  refreshButtons();
 }
 
 export function initProjectManager(deps) {
@@ -114,20 +126,26 @@ export async function saveProject(name) {
 
   // Usuario logueado: API
   try {
-    const method = currentProjectId ? 'PUT' : 'POST';
-    const url = currentProjectId ? `/api/projects/${currentProjectId}` : '/api/projects';
+    // Edición docente → endpoint de profesor; proyecto propio → endpoint normal.
+    const method = 'PUT';
+    const url = teacherEditId
+      ? `/api/teacher/projects/${teacherEditId}`
+      : (currentProjectId ? `/api/projects/${currentProjectId}` : '/api/projects');
+    const isCreate = !teacherEditId && !currentProjectId;
     const thumbnail = await captureWorkspaceThumbnail(workspace);
     const body = { name, data: record, thumbnail };
-    if (!currentProjectId && currentClassId) body.class_id = currentClassId;
+    if (isCreate && currentClassId) body.class_id = currentClassId;
     const res = await fetch(url, {
-      method, headers: { 'Content-Type': 'application/json' },
+      method: isCreate ? 'POST' : 'PUT', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     });
     if (res.ok) {
       const saved = await res.json();
-      if (!currentProjectId) currentProjectId = saved.id;
-      projectInput.dataset.projectId = currentProjectId;
-      showToast(`Proyecto "${name}" guardado en servidor`);
+      if (isCreate) currentProjectId = saved.id;
+      projectInput.dataset.projectId = teacherEditId || currentProjectId || '';
+      showToast(teacherEditId
+        ? `Trabajo del estudiante guardado`
+        : `Proyecto "${name}" guardado en servidor`);
       localStorage.setItem(LAST_KEY, name);
     } else {
       showToast('Error al guardar en servidor');
@@ -142,6 +160,7 @@ export function loadProjectByName(name) { loadProject(name); }
 
 export async function loadProject(idOrName) {
   if (!idOrName) return;
+  teacherEditId = null;
 
   let record;
   if (isGuest() || typeof idOrName === 'string') {
@@ -179,8 +198,10 @@ export async function loadProject(idOrName) {
   projectList.classList.add('hidden');
 }
 
-export async function loadTeacherProject(id) {
-  setReadOnly(true);
+export async function loadTeacherProject(id, opts = {}) {
+  const editable = !!opts.editable;
+  teacherEditId = editable ? id : null;
+  setReadOnly(!editable);
   try {
     const res = await fetch(`/api/teacher/projects/${id}`);
     if (!res.ok) { showToast('No autorizado o proyecto no encontrado'); return; }
@@ -189,7 +210,7 @@ export async function loadTeacherProject(id) {
     if (window._forceUndoPush) window._forceUndoPush();
     workspace.clear();
     Blockly.serialization.workspaces.load(record.state, workspace);
-    currentProjectId = null; // proyecto ajeno: no se guarda
+    currentProjectId = null; // proyecto ajeno: no se guarda como propio
     let displayName = record.name || 'sin-nombre';
     if (!displayName.endsWith('.ino')) displayName += '.ino';
     projectInput.value = displayName;
@@ -198,7 +219,7 @@ export async function loadTeacherProject(id) {
       window._tabManager.loadTabs(record.tabs, displayName);
     }
     localStorage.setItem(LAST_KEY, displayName);
-    showToast(`Solo lectura: "${displayName}"`);
+    showToast(editable ? `Editando: "${displayName}"` : `Solo lectura: "${displayName}"`);
   } catch (e) { showToast('Error de conexión al cargar'); }
 }
 

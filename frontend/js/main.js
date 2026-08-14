@@ -37,6 +37,7 @@ let USER_NAME = '';
   const params = new URLSearchParams(window.location.search);
   const pid = params.get('project');
   const isView = params.get('view') === '1';
+  const isEdit = params.get('edit') === '1';
   const cid = params.get('class');
   if (cid) {
     const c = Number(cid);
@@ -49,6 +50,8 @@ let USER_NAME = '';
     badge.style.cssText = 'font-size:0.8rem;opacity:0.7;margin-left:0.5rem';
     if (IS_GUEST_MODE) {
       badge.textContent = '👤 Invitado';
+    } else if (isEdit) {
+      badge.textContent = '✏️ Editando · ' + USER_NAME;
     } else if (isView) {
       badge.textContent = '🔒 Lectura · ' + USER_NAME;
     } else {
@@ -57,11 +60,13 @@ let USER_NAME = '';
     brand.appendChild(badge);
   }
 
-  // Cargar proyecto por URL: /app?project=<id>  o  /app?project=<id>&view=1 (solo lectura).
+  // Cargar proyecto por URL: /app?project=<id>  /app?project=<id>&view=1 (solo lectura)
+  // o /app?project=<id>&edit=1 (edición docente).
   if (!IS_GUEST_MODE && pid) {
     const id = Number(pid);
     if (Number.isInteger(id) && id > 0) {
       if (isView) { loadTeacherProject(id); }
+      else if (isEdit) { loadTeacherProject(id, { editable: true }); }
       else { loadProject(id); }
     }
   }

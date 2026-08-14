@@ -192,6 +192,8 @@ main.narrow { max-width: 760px; }
 .project-thumb-empty { background: var(--bg-inset); }
 .project-card .board { font-size: 0.75rem; color: var(--brand); margin-bottom: 0.5rem; }
 .project-card .meta { font-size: 0.75rem; color: var(--text-faint); }
+.project-card-body { display: block; text-decoration: none; color: inherit; }
+.project-card-actions { display: flex; gap: 0.5rem; margin-top: 0.8rem; }
 .empty { text-align: center; color: var(--text-faint); padding: 3rem; }
 .empty p { margin-bottom: 1rem; }
 

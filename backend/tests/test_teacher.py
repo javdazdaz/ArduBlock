@@ -1,7 +1,8 @@
+"""Tests del dashboard docente: gestión de aulas (renombrar, eliminar, quitar
+alumno) y lectura/edición de proyectos de alumnos (solo lectura + autorización).
 """
-Tests del dashboard docente: gestión de aulas (renombrar, eliminar, quitar
-alumno) y lectura de proyectos de alumnos (solo lectura + autorización).
-"""
+
+import json
 
 from werkzeug.security import generate_password_hash
 
@@ -163,3 +164,55 @@ def test_view_classroom_renders_with_classes(client, seed_classroom):
     assert r.status_code == 200
     assert b"alumno@example.com" in r.data
     assert b"Clase 1" in r.data
+
+
+def test_teacher_edits_enrolled_student_project(client, seed_classroom):
+    seed_classroom("ABC123")
+    _register_student(client, "alumno@example.com")
+    pid = client.post("/api/projects",
+                      json={"name": "proy", "data": {"state": {"x": 1}}}).get_json()["id"]
+    client.get("/logout")
+    _login_teacher(client)
+
+    r = client.put(f"/api/teacher/projects/{pid}",
+                   json={"name": "corregido.ino", "data": {"state": {"x": 2}}})
+    assert r.status_code == 200
+    assert r.get_json()["name"] == "corregido.ino"
+
+    s = get_session()
+    try:
+        p = s.get(Project, pid)
+        assert p.name == "corregido.ino"
+        assert json.loads(p.data)["state"]["x"] == 2
+    finally:
+        s.close()
+
+
+def test_teacher_cannot_edit_foreign_project(client, seed_classroom):
+    seed_classroom("ABC123")
+    s = get_session()
+    try:
+        outsider = User(email="outsider@example.com", name="X",
+                        password_hash=generate_password_hash("x"), role="student")
+        s.add(outsider)
+        s.flush()
+        p = Project(user_id=outsider.id, name="p", data="{}")
+        s.add(p)
+        s.commit()
+        pid = p.id
+    finally:
+        s.close()
+
+    _login_teacher(client)
+    assert client.put(f"/api/teacher/projects/{pid}",
+                      json={"name": "hack"}).status_code == 403
+
+
+def test_student_cannot_use_teacher_edit_endpoint(client, seed_classroom):
+    seed_classroom("ABC123")
+    _register_student(client, "alumno@example.com")
+    pid = client.post("/api/projects",
+                      json={"name": "proy", "data": {"state": {}}}).get_json()["id"]
+
+    r = client.put(f"/api/teacher/projects/{pid}", json={"name": "hack"})
+    assert r.status_code == 403

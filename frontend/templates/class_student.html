@@ -16,16 +16,22 @@
   {% if projects %}
     <div class="project-grid">
       {% for p in projects %}
-        <a href="/app?project={{ p.id }}&view=1" class="project-card">
-          {% if p.thumbnail %}
-            <img src="{{ p.thumbnail }}" alt="{{ p.name }}" class="project-thumb">
-          {% else %}
-            <div class="project-thumb project-thumb-empty" aria-hidden="true"></div>
-          {% endif %}
-          <h3>{{ p.name }}</h3>
-          <div class="board">{{ p.board }}</div>
-          <div class="meta">{{ p.updated_at.strftime('%d/%m/%Y %H:%M') if p.updated_at else '' }}</div>
-        </a>
+        <div class="project-card">
+          <a href="/app?project={{ p.id }}&view=1" class="project-card-body">
+            {% if p.thumbnail %}
+              <img src="{{ p.thumbnail }}" alt="{{ p.name }}" class="project-thumb">
+            {% else %}
+              <div class="project-thumb project-thumb-empty" aria-hidden="true"></div>
+            {% endif %}
+            <h3>{{ p.name }}</h3>
+            <div class="board">{{ p.board }}</div>
+            <div class="meta">{{ p.updated_at.strftime('%d/%m/%Y %H:%M') if p.updated_at else '' }}</div>
+          </a>
+          <div class="project-card-actions">
+            <a href="/app?project={{ p.id }}&view=1" class="btn btn-ghost btn-small">{{ _('view') }}</a>
+            <a href="/app?project={{ p.id }}&edit=1" class="btn btn-small">{{ _('edit') }}</a>
+          </div>
+        </div>
       {% endfor %}
     </div>
   {% else %}

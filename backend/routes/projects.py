@@ -54,6 +54,19 @@ def _write_tabs(sketch_dir: Path, tabs: list[dict]) -> None:
         (sketch_dir / safe).write_text(content)
 
 
+def _teacher_owns_enrollment(s, student_user_id) -> bool:
+    """¿El alumno está matriculado en un aula del profesor actual?"""
+    return (
+        s.query(ClassroomStudent)
+        .join(Classroom, Classroom.id == ClassroomStudent.classroom_id)
+        .filter(
+            Classroom.teacher_id == current_user.id,
+            ClassroomStudent.user_id == student_user_id,
+        )
+        .first()
+    ) is not None
+
+
 @projects_bp.route("/api/projects", methods=["GET"])
 @login_required
 def list_projects():
@@ -94,17 +107,44 @@ def load_student_project(project_id):
         p = s.get(Project, project_id)
         if not p:
             return jsonify({"error": "Proyecto no encontrado"}), 404
-        enrolled = (
-            s.query(ClassroomStudent)
-            .join(Classroom, Classroom.id == ClassroomStudent.classroom_id)
-            .filter(
-                Classroom.teacher_id == current_user.id,
-                ClassroomStudent.user_id == p.user_id,
-            )
-            .first()
-        )
-        if not enrolled:
+        if not _teacher_owns_enrollment(s, p.user_id):
             return jsonify({"error": "No autorizado"}), 403
+        return jsonify(p.to_dict())
+    finally:
+        s.close()
+
+
+@projects_bp.route("/api/teacher/projects/<int:project_id>", methods=["PUT"])
+@login_required
+def save_student_project(project_id):
+    """Profesor: edita (guarda) el proyecto de un alumno de sus aulas."""
+    if not current_user.is_teacher:
+        return jsonify({"error": "No autorizado"}), 403
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify({"error": "Datos inválidos"}), 400
+
+    s = _get_session()
+    try:
+        p = s.get(Project, project_id)
+        if not p:
+            return jsonify({"error": "Proyecto no encontrado"}), 404
+        if not _teacher_owns_enrollment(s, p.user_id):
+            return jsonify({"error": "No autorizado"}), 403
+
+        # Solo actualiza campos presentes (mismo criterio que PUT /api/projects).
+        if "name" in data:
+            p.name = _clean_name(data.get("name"))
+        if "data" in data:
+            new_data = _coerce_data(data.get("data"))
+            if not new_data:
+                return jsonify({"error": "'data' inválido"}), 400
+            p.data = new_data
+        if "board" in data:
+            p.board = data.get("board", p.board)
+        if "thumbnail" in data:
+            p.thumbnail = data.get("thumbnail")
+        s.commit()
         return jsonify(p.to_dict())
     finally:
         s.close()
@@ -238,16 +278,7 @@ def teacher_regen_thumbnail(project_id):
         p = s.get(Project, project_id)
         if not p:
             return jsonify({"error": "Proyecto no encontrado"}), 404
-        enrolled = (
-            s.query(ClassroomStudent)
-            .join(Classroom, Classroom.id == ClassroomStudent.classroom_id)
-            .filter(
-                Classroom.teacher_id == current_user.id,
-                ClassroomStudent.user_id == p.user_id,
-            )
-            .first()
-        )
-        if not enrolled:
+        if not _teacher_owns_enrollment(s, p.user_id):
             return jsonify({"error": "No autorizado"}), 403
         p.thumbnail = data.get("thumbnail")
         s.commit()
