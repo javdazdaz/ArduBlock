@@ -1,13 +1,7 @@
 {% extends "base.html" %}
 {% block title %}{{ _('my_courses') }} — ArduBlock{% endblock %}
 {% block content %}
-<nav>
-  <h1 class="nav-brand">⚡ ArduBlock</h1>
-  <div class="nav-links">
-    <span class="nav-user">{{ user.name }}</span>
-    <a href="{{ url_for('auth.logout') }}" class="nav-btn">{{ _('logout') }}</a>
-  </div>
-</nav>
+{{ nav_bar() }}
 <main>
   <div class="page-header">
     <h2>🎓 {{ _('my_courses') }}</h2>

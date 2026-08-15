@@ -36,7 +36,7 @@
         <button id="btn-delete" class="btn-danger" data-i18n="btn_delete" title="Eliminar proyecto">🗑 Eliminar</button>
         <div id="project-list" class="project-dropdown hidden"></div>
       </div>
-      <button id="btn-copy" class="btn-secondary" data-i18n="btn_copy">📋 Copiar</button>
+      <button id="btn-copy" class="btn-secondary" data-i18n="btn_copy" style="display:none">📋 Copiar</button>
       <button id="btn-new" class="btn-primary" data-i18n="btn_new" style="display:none">📄 Nuevo</button>
       <button id="btn-examples" class="btn-secondary" data-i18n="btn_examples" style="display:none">📚 Ejemplos</button>
       <button id="btn-settings" class="btn-secondary" style="display:none">⚙</button>
@@ -49,6 +49,7 @@
     <hr class="hmenu-divider">
     <button id="hmenu-new" class="hmenu-item" role="menuitem">📄 <span data-i18n="hmenu_new">Nuevo proyecto</span></button>
     <button id="hmenu-open" class="hmenu-item" role="menuitem">📂 <span data-i18n="hmenu_open">Abrir proyecto</span></button>
+    <button id="hmenu-copy" class="hmenu-item" role="menuitem">📋 <span data-i18n="hmenu_copy">Copiar</span></button>
     <hr class="hmenu-divider">
     <button id="hmenu-examples" class="hmenu-item" role="menuitem">📚 <span data-i18n="hmenu_examples">Ejemplos</span></button>
     <button id="hmenu-activities" class="hmenu-item" role="menuitem">📋 <span data-i18n="hmenu_activities">Actividades</span></button>
@@ -83,18 +84,6 @@
       </div>
 
       <div class="arduino-toolbar">
-        <select id="board-selector" class="arduino-select" title="Seleccionar placa Arduino">
-          <option value="arduino:avr:uno">Arduino Uno R3</option>
-          <option value="arduino:renesas_uno:minima">Arduino Uno R4 Minima</option>
-          <option value="arduino:renesas_uno:unor4wifi">Arduino Uno R4 WiFi</option>
-          <option value="arduino:esp32:nano_nora">Arduino Nano ESP32</option>
-          <option value="arduino:avr:mega">Arduino Mega</option>
-        </select>
-        <select id="level-selector" class="arduino-select" title="Nivel de bloques">
-          <option value="1">⚊ Básico</option>
-          <option value="2">⚌ Intermedio</option>
-          <option value="3">⚋ Avanzado</option>
-        </select>
         <button id="btn-console-toggle" class="arduino-btn console" data-i18n="btn_console" title="Abrir/cerrar monitor serial">🔌 Consola</button>
         <button id="btn-upload" class="arduino-btn upload" data-i18n="btn_upload" title="Compilar y subir al Arduino">⚡ Subir</button>
         <button id="btn-export" class="arduino-btn export" data-i18n="btn_export" title="Exportar sketch como .zip" style="display:none">📦 Exportar</button>
@@ -218,7 +207,7 @@
         <div class="setting-section" data-i18n="settings_hardware">Hardware</div>
         <div class="setting-row">
           <label data-i18n="settings_board">Placa</label>
-          <select id="setting-board">
+          <select id="board-selector" title="Seleccionar placa Arduino">
             <option value="arduino:avr:uno">Arduino Uno R3</option>
             <option value="arduino:renesas_uno:minima">Arduino Uno R4 Minima</option>
             <option value="arduino:renesas_uno:unor4wifi">Arduino Uno R4 WiFi</option>
@@ -242,6 +231,14 @@
           <select id="setting-renderer">
             <option value="geras">Geras</option>
             <option value="zelos">Zelos</option>
+          </select>
+        </div>
+        <div class="setting-row">
+          <label data-i18n="settings_level">Nivel de bloques</label>
+          <select id="level-selector" title="Nivel de bloques">
+            <option value="1">⚊ Básico</option>
+            <option value="2">⚌ Intermedio</option>
+            <option value="3">⚋ Avanzado</option>
           </select>
         </div>
         <div class="setting-section" data-i18n="settings_language">Idioma / Language</div>

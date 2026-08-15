@@ -42,6 +42,7 @@ MESSAGES = {
         "change_password": "Cambiar contraseña",
         # ── Teacher dashboard ──
         "teacher_label": "Profesor",
+        "student_label": "Estudiante",
         "editor_link": "Editor",
         "logout": "Salir",
         "new_classroom": "Nueva aula",
@@ -189,6 +190,7 @@ MESSAGES = {
         "change_password": "Change password",
         # ── Teacher dashboard ──
         "teacher_label": "Teacher",
+        "student_label": "Student",
         "editor_link": "Editor",
         "logout": "Log out",
         "new_classroom": "New classroom",

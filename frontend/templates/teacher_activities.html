@@ -1,16 +1,7 @@
 {% extends "base.html" %}
 {% block title %}{{ _('activities') }} — ArduBlock{% endblock %}
 {% block content %}
-<nav>
-  <h1 class="nav-brand">⚡ ArduBlock <span class="nav-role">{{ _('teacher_label') }}</span></h1>
-  <div class="nav-links">
-    <span class="nav-user">{{ user.name }}</span>
-    <a href="/teacher" class="nav-btn">{{ _('back_my_classrooms') }}</a>
-    <a href="/app" class="nav-btn">{{ _('editor_link') }}</a>
-    <a href="/teacher/projects" class="nav-btn">{{ _('my_projects') }}</a>
-    <a href="{{ url_for('auth.logout') }}" class="nav-btn">{{ _('logout') }}</a>
-  </div>
-</nav>
+{{ nav_bar() }}
 <main class="narrow">
   <a href="/teacher" class="back">{{ _('back_my_classrooms') }}</a>
   {{ render_flash() }}

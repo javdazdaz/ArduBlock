@@ -283,6 +283,7 @@ const messages = {
     // ── Menú hamburguesa ──
     hmenu_new: 'Nuevo proyecto',
     hmenu_open: 'Abrir proyecto',
+    hmenu_copy: 'Copiar',
     hmenu_examples: 'Ejemplos',
     hmenu_activities: 'Actividades',
     hmenu_export: 'Exportar sketch',
@@ -316,6 +317,7 @@ const messages = {
     settings_title: 'Configuración',
     settings_hardware: 'Hardware',
     settings_board: 'Placa',
+    settings_level: 'Nivel de bloques',
     settings_baud: 'Baud rate',
     settings_blockly: 'Blockly',
     settings_theme: 'Tema',
@@ -632,6 +634,7 @@ const messages = {
     // ── Hamburger menu ──
     hmenu_new: 'New project',
     hmenu_open: 'Open project',
+    hmenu_copy: 'Copy',
     hmenu_examples: 'Examples',
     hmenu_activities: 'Activities',
     hmenu_export: 'Export sketch',
@@ -668,6 +671,7 @@ const messages = {
     settings_title: 'Settings',
     settings_hardware: 'Hardware',
     settings_board: 'Board',
+    settings_level: 'Block level',
     settings_baud: 'Baud rate',
     settings_blockly: 'Blockly',
     settings_theme: 'Theme',

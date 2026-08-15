@@ -1,14 +1,7 @@
 {% extends "base.html" %}
 {% block title %}{{ cls.name }} — ArduBlock{% endblock %}
 {% block content %}
-<nav>
-  <h1 class="nav-brand">⚡ ArduBlock</h1>
-  <div class="nav-links">
-    <a href="/teacher/classroom/{{ cls.classroom_id }}" class="nav-btn">{{ _('back') }}</a>
-    <a href="/teacher/activities" class="nav-btn">{{ _('activities') }}</a>
-    <a href="/teacher/regen-thumbnails" class="nav-btn">{{ _('regen_thumbnails') }}</a>
-  </div>
-</nav>
+{{ nav_bar() }}
 <main>
   <a href="/teacher/classroom/{{ cls.classroom_id }}" class="back">{{ _('back') }}</a>
   <nav class="breadcrumb">

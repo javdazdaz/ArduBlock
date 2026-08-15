@@ -310,6 +310,10 @@ document.getElementById('hmenu-open').addEventListener('click', () => {
   hamburgerMenu.classList.add('hidden');
   document.getElementById('btn-load').click();
 });
+document.getElementById('hmenu-copy').addEventListener('click', () => {
+  hamburgerMenu.classList.add('hidden');
+  document.getElementById('btn-copy').click();
+});
 document.getElementById('hmenu-examples').addEventListener('click', () => {
   hamburgerMenu.classList.add('hidden');
   document.getElementById('btn-examples').click();
@@ -443,10 +447,6 @@ if (boardSelector) {
     const s = loadSettings();
     s.board = fqbn;
     saveSettings(s);
-
-    // Sincronizar settings modal
-    const settingsBoard = document.getElementById('setting-board');
-    if (settingsBoard) settingsBoard.value = fqbn;
 
     // Reconstruir toolbox
     if (window._rebuildToolbox) window._rebuildToolbox(fqbn);
