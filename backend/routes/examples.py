@@ -2,11 +2,29 @@
 ArduBlock — Rutas de ejemplos Arduino
 """
 
+from pathlib import Path
+
 from flask import Blueprint, jsonify
 
 from backend.config import EXAMPLES_DIR
 
 examples_bp = Blueprint("examples", __name__)
+
+
+def _safe_example_path(rel_path: str):
+    """Resuelve rel_path dentro de EXAMPLES_DIR bloqueando path traversal.
+
+    Devuelve el Path absoluto resuelto (symlinks incluidos) si queda DENTRO
+    del directorio de ejemplos; si escapa (``../`` o un symlink hacia afuera),
+    devuelve None.
+    """
+    base = Path(EXAMPLES_DIR).resolve()
+    full = (base / rel_path).resolve()
+    try:
+        full.relative_to(base)
+    except ValueError:
+        return None
+    return full
 
 
 @examples_bp.route("/api/examples")
@@ -52,11 +70,11 @@ def list_examples():
 
 @examples_bp.route("/api/examples/<path:example_path>")
 def get_example(example_path):
-    full = EXAMPLES_DIR / example_path
-    if not full.exists() or not full.is_file():
+    full = _safe_example_path(example_path)
+    if full is None or not full.is_file():
         return jsonify({"error": "Ejemplo no encontrado"}), 404
     try:
-        content = full.read_text()
+        content = full.read_text(encoding="utf-8")
         return jsonify({"path": example_path, "name": full.stem, "content": content})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
