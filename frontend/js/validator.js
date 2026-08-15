@@ -105,13 +105,11 @@ function validateWorkspace(workspace) {
   for (const block of serialBeginBlocks) {
     const context = getArduinoContext(workspace, block);
     if (context !== 'setup') {
-      const where = context === 'loop'
-        ? 'dentro de loop()'
-        : 'fuera de setup() y loop()';
+      const where = context === 'loop' ? t('val_where_loop') : t('val_where_outside');
       warnings.push({
         type: 'serial_begin_position',
         severity: 'warning',
-        message: `Serial.begin() está ${where}. Debería ir dentro de setup().`,
+        message: t('val_serial_begin_position', { where }),
         blocks: [block]
       });
     }
@@ -137,7 +135,7 @@ function validateWorkspace(workspace) {
       warnings.push({
         type: 'orphan_statement',
         severity: 'info',
-        message: `Bloque "${getBlockLabel(block)}" ` + t('val_orphan_suffix'),
+        message: t('val_orphan', { label: getBlockLabel(block) }),
         blocks: [block]
       });
     }
@@ -155,7 +153,7 @@ function validateWorkspace(workspace) {
         warnings.push({
           type: 'var_in_loop',
           severity: 'info',
-          message: `Variable "${varName}" asignada en loop(). Asegúrate de declararla fuera de setup/loop.`,
+          message: t('val_var_in_loop', { name: varName }),
           blocks: [block],
           variable: varName
         });
@@ -176,12 +174,12 @@ function validateWorkspace(workspace) {
     // R6b: servo_create debe ir dentro de setup()
     if (!isInsideBlockType(workspace, block, 'arduino_setup')) {
       const context = getArduinoContext(workspace, block);
-      const where = context === 'loop' ? 'de loop()' : 'fuera de setup() y loop()';
+      const where = context === 'loop' ? t('val_where_loop') : t('val_where_outside');
       warnings.push({
         type: 'servo_attach_position',
         severity: 'error',
         disable: false,
-        message: `Servo "${name || '?'}" está ${where}. ` + t('val_servo_attach_suffix'),
+        message: t('val_servo_attach_position', { name: name || '?', where }),
         blocks: [block]
       });
     }
@@ -205,18 +203,18 @@ function validateWorkspace(workspace) {
 
   // ═══ R6c: Librerías create deben ir en setup ═══
   const inSetupTypes = [
-    { type: 'lcd_create', field: 'NAME', label: 'LCD' },
-    { type: 'lcd_create_advanced', field: 'NAME', label: 'LCD' },
-    { type: 'lcd_i2c_create', field: 'NAME', label: 'LCD I2C' },
-    { type: 'lcd_i2c_create_advanced', field: 'NAME', label: 'LCD I2C' },
-    { type: 'dht_create', field: 'NAME', label: 'sensor DHT' },
-    { type: 'dht_create_advanced', field: 'NAME', label: 'sensor DHT' },
-    { type: 'ultrasonic_create', field: 'NAME', label: 'ultrasónico' },
-    { type: 'ultrasonic_create_advanced', field: 'NAME', label: 'ultrasónico' },
-    { type: 'stepper_create', field: 'NAME', label: 'motor paso a paso' },
-    { type: 'stepper_create_advanced', field: 'NAME', label: 'motor paso a paso' },
-    { type: 'afmotor_dc_create', field: 'NAME', label: 'motor DC' },
-    { type: 'afmotor_stepper_create', field: 'NAME', label: 'motor paso a paso (AFMotor)' }
+    { type: 'lcd_create', field: 'NAME', labelKey: 'lbl_lcd' },
+    { type: 'lcd_create_advanced', field: 'NAME', labelKey: 'lbl_lcd' },
+    { type: 'lcd_i2c_create', field: 'NAME', labelKey: 'lbl_lcd_i2c' },
+    { type: 'lcd_i2c_create_advanced', field: 'NAME', labelKey: 'lbl_lcd_i2c' },
+    { type: 'dht_create', field: 'NAME', labelKey: 'lbl_dht' },
+    { type: 'dht_create_advanced', field: 'NAME', labelKey: 'lbl_dht' },
+    { type: 'ultrasonic_create', field: 'NAME', labelKey: 'lbl_ultrasonic' },
+    { type: 'ultrasonic_create_advanced', field: 'NAME', labelKey: 'lbl_ultrasonic' },
+    { type: 'stepper_create', field: 'NAME', labelKey: 'lbl_stepper' },
+    { type: 'stepper_create_advanced', field: 'NAME', labelKey: 'lbl_stepper' },
+    { type: 'afmotor_dc_create', field: 'NAME', labelKey: 'lbl_motor_dc' },
+    { type: 'afmotor_stepper_create', field: 'NAME', labelKey: 'lbl_stepper_afmotor' }
   ];
 
   for (const cfg of inSetupTypes) {
@@ -225,11 +223,11 @@ function validateWorkspace(workspace) {
       if (!isInsideBlockType(workspace, block, 'arduino_setup')) {
         const name = block.getFieldValue(cfg.field) || '?';
         const context = getArduinoContext(workspace, block);
-        const where = context === 'loop' ? 'de loop()' : 'fuera de setup() y loop()';
+        const where = context === 'loop' ? t('val_where_loop') : t('val_where_outside');
         warnings.push({
           type: 'lib_not_in_setup',
           severity: 'error',
-          message: `${cfg.label} "${name}" está ${where}. ` + t('val_create_in_setup'),
+          message: t('val_create_in_setup', { label: t(cfg.labelKey), name, where }),
           blocks: [block]
         });
       }
@@ -238,8 +236,8 @@ function validateWorkspace(workspace) {
 
   // ═══ R6d: pinMode() y attachInterrupt() deben ir en setup ═══
   const setupStatements = [
-    { types: ['pin_mode_basic', 'pin_mode_advanced'], label: 'pinMode', type: 'pin_mode_position' },
-    { types: ['attach_interrupt', 'attach_interrupt_basic', 'attach_interrupt_advanced'], label: 'attachInterrupt', type: 'interrupt_position' }
+    { types: ['pin_mode_basic', 'pin_mode_advanced'], msgKey: 'val_pinmode_position', type: 'pin_mode_position' },
+    { types: ['attach_interrupt', 'attach_interrupt_basic', 'attach_interrupt_advanced'], msgKey: 'val_interrupt_position', type: 'interrupt_position' }
   ];
   for (const cfg of setupStatements) {
     const blocks = [];
@@ -247,11 +245,11 @@ function validateWorkspace(workspace) {
     for (const block of blocks) {
       if (isInsideBlockType(workspace, block, 'arduino_setup')) continue;
       const context = getArduinoContext(workspace, block);
-      const where = context === 'loop' ? 'dentro de loop()' : 'fuera de setup() y loop()';
+      const where = context === 'loop' ? t('val_where_loop') : t('val_where_outside');
       warnings.push({
         type: cfg.type,
         severity: 'warning',
-        message: `${cfg.label}() está ${where}. Debería ir dentro de setup().`,
+        message: t(cfg.msgKey, { where }),
         blocks: [block]
       });
     }
@@ -262,17 +260,17 @@ function validateWorkspace(workspace) {
     {
       createTypes: ['stepper_create', 'stepper_create_advanced'],
       useTypes: ['stepper_speed', 'stepper_speed_advanced', 'stepper_step', 'stepper_step_advanced'],
-      label: 'motor paso a paso'
+      labelKey: 'lbl_stepper'
     },
     {
       createTypes: ['afmotor_dc_create'],
       useTypes: ['afmotor_dc_speed', 'afmotor_dc_run'],
-      label: 'motor DC'
+      labelKey: 'lbl_motor_dc'
     },
     {
       createTypes: ['afmotor_stepper_create'],
       useTypes: ['afmotor_stepper_speed', 'afmotor_stepper_step'],
-      label: 'motor paso a paso (AFMotor)'
+      labelKey: 'lbl_stepper_afmotor'
     }
   ];
   for (const cfg of motorUsage) {
@@ -291,7 +289,7 @@ function validateWorkspace(workspace) {
         warnings.push({
           type: 'motor_not_declared',
           severity: 'error',
-          message: `El ${cfg.label} "${name}" no está definido. Créalo primero con su bloque "crear".`,
+          message: t('val_motor_not_declared', { label: t(cfg.labelKey), name }),
           blocks: [block]
         });
       }
@@ -337,16 +335,21 @@ function validateWorkspace(workspace) {
         warnings.push({
           type: 'pin_not_configured',
           severity: sev,
-          message: `Pin ${pin}: ${cfg.label}() ` + t('val_pin_not_conf_suffix') + ` ${dir}.` + (cfg.optional ? ' ' + t('val_pin_optional') : ''),
+          message: t('val_pin_not_configured', { pin, fn: cfg.label, dir }) + (cfg.optional ? ' ' + t('val_pin_optional') : ''),
           blocks: [block]
         });
       } else if (!compatibleModes[cfg.mode].includes(declared.mode)) {
-        const modeLabels = { 'OUTPUT': 'SALIDA', 'INPUT': 'ENTRADA', 'INPUT_PULLUP': 'ENTRADA_PULLUP' };
-        const expected = cfg.mode === 'OUTPUT' ? 'SALIDA' : 'ENTRADA';
+        const modeLabelKeys = { 'OUTPUT': 'val_mode_output', 'INPUT': 'val_mode_input', 'INPUT_PULLUP': 'val_mode_input_pullup' };
+        const expectedKey = cfg.mode === 'OUTPUT' ? 'val_mode_output' : 'val_mode_input';
         warnings.push({
           type: 'pin_mode_mismatch',
           severity: 'warning',
-          message: `Pin ${pin}: configurado como ${modeLabels[declared.mode] || declared.mode} en setup(), pero ${cfg.label}() espera ${expected}.`,
+          message: t('val_pin_mode_mismatch', {
+            pin,
+            fn: cfg.label,
+            mode: t(modeLabelKeys[declared.mode] || declared.mode),
+            expected: t(expectedKey)
+          }),
           blocks: [block]
         });
       }
@@ -398,10 +401,9 @@ function validateWorkspace(workspace) {
           warnings.push({
             type: 'pin_out_of_range',
             severity: 'error',
-            message: `Pin ${pin} no existe en ${board.name}. ` +
-                     (cfg.kind === 'analog'
-                       ? `Pines analógicos válidos: A0-A${maxPin}.`
-                       : `Pines digitales válidos: 0-${maxPin}.`),
+            message: cfg.kind === 'analog'
+              ? t('val_pin_out_of_range_analog', { pin, board: board.name, max: maxPin })
+              : t('val_pin_out_of_range_digital', { pin, board: board.name, max: maxPin }),
             blocks: [block]
           });
         }
@@ -426,7 +428,7 @@ function validateWorkspace(workspace) {
       warnings.push({
         type: 'serial_without_begin',
         severity: 'warning',
-        message: `Hay bloques de Serial (${labels}) pero no se encontró "iniciar Serial" en setup(). El código compilará pero no verás output en el Monitor Serial.`,
+        message: t('val_serial_without_begin', { labels }),
         blocks: serialOutputBlocks
       });
     }
@@ -438,7 +440,7 @@ function validateWorkspace(workspace) {
     warnings.push({
       type: 'text_join_heap',
       severity: 'warning',
-      message: `${textJoinBlocks.length} bloques "unir texto" detectados. En placas AVR (UNO, Nano, Mega) con solo 2KB de RAM, muchas concatenaciones con String() pueden fragmentar la memoria y crashear el programa. Considera usar menos concatenaciones.`,
+      message: t('val_text_join_heap', { n: textJoinBlocks.length }),
       blocks: textJoinBlocks
     });
   }
@@ -465,7 +467,7 @@ function validateWorkspace(workspace) {
           warnings.push({
             type: 'serial_pin_conflict',
             severity: 'warning',
-            message: 'Pin ' + pin + ': reservado para Serial (RX/TX). Al usar Serial, este pin puede interferir con la comunicación y la carga de sketches.',
+            message: t('val_serial_pin_conflict', { pin }),
             blocks: [block]
           });
         }
@@ -497,7 +499,7 @@ function validateWorkspace(workspace) {
           warnings.push({
             type: 'i2c_pin_conflict',
             severity: 'warning',
-            message: 'Pin ' + pinStr + ': el LCD I2C usa SDA=A4 y SCL=A5. Usar estos pines puede causar conflictos con la pantalla.',
+            message: t('val_i2c_pin_conflict', { pin: pinStr }),
             blocks: [block]
           });
         }
@@ -527,57 +529,60 @@ function validateWorkspace(workspace) {
 
 // ── Función helper: nombre legible del bloque ───
 
+const BLOCK_LABEL_KEYS = {
+  'arduino_setup': 'blk_arduino_setup',
+  'arduino_loop': 'blk_arduino_loop',
+  'digital_write': 'blk_digital_write',
+  'analog_write': 'blk_analog_write',
+  'delay_ms': 'blk_delay_ms',
+  'serial_begin': 'blk_serial_begin',
+  'serial_print': 'blk_serial_print',
+  'serial_println': 'blk_serial_println',
+  'serial_write': 'blk_serial_write',
+  'serial_read': 'blk_serial_read',
+  'serial_available': 'blk_serial_available',
+  'serial_parseInt': 'blk_serial_parseInt',
+  'serial_parseFloat': 'blk_serial_parseFloat',
+  'serial_readString': 'blk_serial_readString',
+  'servo_create': 'blk_servo_create',
+  'servo_write': 'blk_servo_write',
+  'servo_write_us': 'blk_servo_write_us',
+  'tone_output': 'blk_tone_output',
+  'tone_duration': 'blk_tone_duration',
+  'no_tone_output': 'blk_no_tone_output',
+  'map_value': 'blk_map_value',
+  'pulse_in': 'blk_pulse_in',
+  'attach_interrupt': 'blk_attach_interrupt',
+  'lcd_create': 'blk_lcd_create',
+  'lcd_i2c_create': 'blk_lcd_i2c_create',
+  'lcd_print': 'blk_lcd_print',
+  'lcd_set_cursor': 'blk_lcd_set_cursor',
+  'lcd_clear': 'blk_lcd_clear',
+  'dht_create': 'blk_dht_create',
+  'dht_temp': 'blk_dht_temp',
+  'dht_humidity': 'blk_dht_humidity',
+  'ultrasonic_create': 'blk_ultrasonic_create',
+  'ultrasonic_read': 'blk_ultrasonic_read',
+  'stepper_create': 'blk_stepper_create',
+  'stepper_speed': 'blk_stepper_speed',
+  'stepper_step': 'blk_stepper_step',
+  'text_print': 'blk_text_print',
+  'variable_global': 'blk_variable_global',
+  'variable_declare': 'blk_variable_declare',
+  'variable_set': 'blk_variable_set',
+  'variable_get': 'blk_variable_get',
+  'afmotor_dc_create': 'blk_afmotor_dc_create',
+  'afmotor_dc_speed': 'blk_afmotor_dc_speed',
+  'afmotor_dc_run': 'blk_afmotor_dc_run',
+  'afmotor_stepper_create': 'blk_afmotor_stepper_create',
+  'afmotor_stepper_speed': 'blk_afmotor_stepper_speed',
+  'afmotor_stepper_step': 'blk_afmotor_stepper_step'
+};
+
 function getBlockLabel(block) {
-  const labels = {
-    'arduino_setup': 'al iniciar (setup)',
-    'arduino_loop': 'repetir siempre (loop)',
-    'digital_write': 'escribir digital',
-    'analog_write': 'escribir analógico',
-    'delay_ms': 'esperar',
-    'serial_begin': 'iniciar Serial',
-    'serial_print': 'enviar por Serial',
-    'serial_println': 'enviar por Serial (salto)',
-    'serial_write': 'escribir byte Serial',
-    'serial_read': 'leer byte Serial',
-    'serial_available': 'bytes disponibles Serial',
-    'serial_parseInt': 'leer entero Serial',
-    'serial_parseFloat': 'leer decimal Serial',
-    'serial_readString': 'leer texto Serial',
-    'servo_create': 'crear servo',
-    'servo_write': 'mover servo',
-    'servo_write_us': 'mover servo (μs)',
-    'tone_output': 'generar tono',
-    'tone_duration': 'generar tono (con duración)',
-    'no_tone_output': 'detener tono',
-    'map_value': 'mapear valor',
-    'pulse_in': 'medir pulso',
-    'attach_interrupt': 'configurar interrupción',
-    'lcd_create': 'crear LCD',
-    'lcd_i2c_create': 'crear LCD I2C',
-    'lcd_print': 'imprimir en LCD',
-    'lcd_set_cursor': 'cursor LCD',
-    'lcd_clear': 'limpiar LCD',
-    'dht_create': 'crear sensor DHT',
-    'dht_temp': 'temperatura DHT',
-    'dht_humidity': 'humedad DHT',
-    'ultrasonic_create': 'crear ultrasónico',
-    'ultrasonic_read': 'distancia ultrasónico',
-    'stepper_create': 'crear motor paso a paso',
-    'stepper_speed': 'velocidad motor',
-    'stepper_step': 'girar motor',
-    'text_print': 'imprimir texto',
-    'variable_global': 'variable global',
-    'variable_declare': 'crear variable local',
-    'variable_set': 'asignar variable',
-    'variable_get': 'leer variable',
-    'afmotor_dc_create': 'crear motor DC',
-    'afmotor_dc_speed': 'velocidad motor DC',
-    'afmotor_dc_run': 'mover motor DC',
-    'afmotor_stepper_create': 'crear motor paso a paso (AFMotor)',
-    'afmotor_stepper_speed': 'velocidad motor paso a paso',
-    'afmotor_stepper_step': 'girar motor paso a paso'
-  };
-  return labels[block.type] || block.type;
+  const base = String(block.type).replace(/_(advanced|basic)$/, '');
+  const key = BLOCK_LABEL_KEYS[base];
+  return key ? t(key) : block.type;
 }
 
 // ── Aplicar warnings al workspace (UI) ──────────

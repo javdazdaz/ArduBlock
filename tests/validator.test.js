@@ -274,9 +274,14 @@ describe('validator — reglas de validación', () => {
 
   // ── getBlockLabel ──────────────────────────────
   describe('getBlockLabel', () => {
-    it('devuelve etiqueta para bloque conocido', () => {
+    it('resuelve el bloque a su clave i18n', () => {
       const b = mb('digital_write', { PIN: '13' });
-      expect(getBlockLabel(b)).toBe('escribir digital');
+      expect(getBlockLabel(b)).toBe('blk_digital_write');
+    });
+
+    it('resuelve variantes _basic/_advanced a su etiqueta base', () => {
+      expect(getBlockLabel(mb('servo_create_advanced'))).toBe('blk_servo_create');
+      expect(getBlockLabel(mb('tone_duration_basic'))).toBe('blk_tone_duration');
     });
 
     it('devuelve el type para bloque desconocido', () => {
