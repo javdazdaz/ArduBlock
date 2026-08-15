@@ -11,6 +11,7 @@ from pathlib import Path
 from flask import Blueprint, jsonify, request
 
 from backend.rate_limit import rate_limit
+from backend.sketch_guard import find_unsafe_include
 from backend.services.arduino_cli import run_arduino_cli, try_install_missing_core
 from backend.routes.projects import _write_tabs
 
@@ -27,6 +28,10 @@ def compile_sketch():
 
     if not code.strip():
         return jsonify({"error": "Código vacío"}), 400
+
+    unsafe = find_unsafe_include(code, tabs)
+    if unsafe:
+        return jsonify({"error": f"Include no permitido: \"{unsafe}\""}), 422
 
     tmpdir = tempfile.mkdtemp(prefix="ardublock_")
     sketch_name = "ardublock_sketch"
@@ -77,6 +82,10 @@ def compile_hex():
 
     if not code.strip():
         return jsonify({"error": "Código vacío"}), 400
+
+    unsafe = find_unsafe_include(code, tabs)
+    if unsafe:
+        return jsonify({"error": f"Include no permitido: \"{unsafe}\""}), 422
 
     tmpdir = tempfile.mkdtemp(prefix="ardublock_hex_")
     sketch_name = "ardublock_sketch"

@@ -7,14 +7,39 @@ Ejecución de comandos, auto-instalación de cores, consulta de cores/libs insta
 import json
 import os
 import re
+import resource
 import subprocess
 import sys
+import threading
 from typing import Any
 
 from backend.config import (
     get_arduino_cli_path,
     BOARD_DEPS,
 )
+
+
+# ── Control de recursos del compilador (Fase A anti-OOM/fork-bomb) ──
+
+# Semáforo global: como mucho 2 invocaciones de arduino-cli concurrentes.
+_ARDUINO_CLI_SEMAPHORE = threading.Semaphore(2)
+
+# Límites heredados por arduino-cli y sus hijos (avr-gcc, cc1plus, ...).
+_ARDUINO_CLI_LIMITS = (
+    (resource.RLIMIT_AS, (2 * 1024 * 1024 * 1024, 2 * 1024 * 1024 * 1024)),  # 2 GiB
+    (resource.RLIMIT_CPU, (60, 60)),  # 60 s de CPU
+    (resource.RLIMIT_FSIZE, (256 * 1024 * 1024, 256 * 1024 * 1024)),  # 256 MB
+    (resource.RLIMIT_NPROC, (64, 64)),
+)
+
+
+def _set_rlimits():
+    """preexec_fn: aplica los límites en el hijo antes del exec (POSIX)."""
+    for res, limits in _ARDUINO_CLI_LIMITS:
+        try:
+            resource.setrlimit(res, limits)
+        except (ValueError, OSError):
+            pass
 
 
 def run_arduino_cli(
@@ -37,7 +62,14 @@ def run_arduino_cli(
         kwargs.setdefault("errors", "replace")
     if "text" not in kwargs and "encoding" not in kwargs:
         kwargs["text"] = True
-    return subprocess.run(cmd, **kwargs)
+    # Límites de recursos en el subprocess (solo POSIX).
+    if sys.platform != "win32" and "preexec_fn" not in kwargs:
+        kwargs["preexec_fn"] = _set_rlimits
+    _ARDUINO_CLI_SEMAPHORE.acquire()
+    try:
+        return subprocess.run(cmd, **kwargs)
+    finally:
+        _ARDUINO_CLI_SEMAPHORE.release()
 
 
 def try_install_missing_core(stderr_text: str) -> bool:

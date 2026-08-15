@@ -11,6 +11,7 @@ from pathlib import Path
 from flask import Blueprint, jsonify, request
 from flask_login import login_required
 
+from backend.sketch_guard import find_unsafe_include
 from backend.services.arduino_cli import run_arduino_cli, try_install_missing_core
 from backend.routes.projects import _write_tabs
 
@@ -28,6 +29,11 @@ def upload_sketch():
 
     if not code.strip():
         return jsonify({"error": "Código vacío"}), 400
+
+    unsafe = find_unsafe_include(code, tabs)
+    if unsafe:
+        return jsonify({"error": f"Include no permitido: \"{unsafe}\""}), 422
+
     if not port:
         return (
             jsonify(
