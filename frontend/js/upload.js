@@ -356,57 +356,91 @@ async function _pathB2_samba(code, fqbn, tabs, port) {
  */
 async function _compileOnServer(code, fqbn, tabs, format = 'hex') {
   try {
+    // 1. Encolar la compilación
     const res = await fetch('/api/compile-hex', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ code, fqbn, tabs })
     });
-    const data = await res.json();
+    const submitted = await res.json();
 
-    if (!data.success) {
-      consoleLog('✕ Error de compilación:', 'error');
-      if (data.stdout) {
-        for (const line of data.stdout.split('\n').filter(l => l.trim())) {
-          consoleLog(line, 'error');
-        }
-      }
-      if (data.stderr) {
-        for (const line of data.stderr.split('\n').filter(l => l.trim())) {
-          consoleLog(line, 'error');
-        }
-      }
+    if (!submitted.job_id) {
+      consoleLog('✕ ' + (submitted.error || 'Error al encolar la compilación'), 'error');
       return null;
     }
 
-    if (format === 'bin') {
-      if (!data.bin) {
-        consoleLog('✕ El servidor no devolvió .bin para esta placa', 'error');
-        return null;
+    consoleLog('⏳ Compilación en cola...', 'info');
+
+    // 2. Polling del estado hasta done/error
+    const deadline = Date.now() + 90000;  // 90 s máximo
+    let lastStatus = '';
+    while (Date.now() < deadline) {
+      await new Promise(r => setTimeout(r, 700));
+      const sr = await fetch('/api/compile-hex/' + submitted.job_id);
+      const st = await sr.json();
+
+      if (st.status === 'running' && lastStatus !== 'running') {
+        consoleLog('🌐 Compilando en el servidor...', 'info');
+        lastStatus = 'running';
       }
-      consoleLog('✓ Compilación exitosa (.bin)', 'success');
-      return data.bin;
-    }
 
-    if (!data.hex) {
-      consoleLog('✕ El servidor no devolvió .hex para esta placa', 'error');
-      return null;
+      if (st.status === 'done' || st.status === 'error') {
+        return _handleCompileResult(st.result || {}, format);
+      }
     }
-    consoleLog('✓ Compilación exitosa (.hex)', 'success');
-
-    // Mostrar resumen de compilación
-    if (data.stdout) {
-      const lines = data.stdout.split('\n').filter(l => l.trim());
-      const last = lines.slice(-3);
-      for (const l of last) consoleLog(l, 'dim');
-    }
-
-    return data.hex;
+    consoleLog('✕ Timeout esperando la compilación (90s)', 'error');
+    return null;
 
   } catch (e) {
     consoleLog('Error de conexión con el servidor: ' + e.message, 'error');
     consoleLog('  ¿El backend está corriendo? Necesitás arduino-cli en el servidor.', 'info');
     return null;
   }
+}
+
+/**
+ * Interpreta el resultado del job de compilación y devuelve hex/bin o null.
+ */
+function _handleCompileResult(data, format) {
+  if (!data.success) {
+    consoleLog('✕ Error de compilación:', 'error');
+    if (data.stdout) {
+      for (const line of data.stdout.split('\n').filter(l => l.trim())) {
+        consoleLog(line, 'error');
+      }
+    }
+    if (data.stderr) {
+      for (const line of data.stderr.split('\n').filter(l => l.trim())) {
+        consoleLog(line, 'error');
+      }
+    }
+    if (data.error) consoleLog('✕ ' + data.error, 'error');
+    return null;
+  }
+
+  if (format === 'bin') {
+    if (!data.bin) {
+      consoleLog('✕ El servidor no devolvió .bin para esta placa', 'error');
+      return null;
+    }
+    consoleLog('✓ Compilación exitosa (.bin)', 'success');
+    return data.bin;
+  }
+
+  if (!data.hex) {
+    consoleLog('✕ El servidor no devolvió .hex para esta placa', 'error');
+    return null;
+  }
+  consoleLog('✓ Compilación exitosa (.hex)', 'success');
+
+  // Mostrar resumen de compilación
+  if (data.stdout) {
+    const lines = data.stdout.split('\n').filter(l => l.trim());
+    const last = lines.slice(-3);
+    for (const l of last) consoleLog(l, 'dim');
+  }
+
+  return data.hex;
 }
 
 // ── Helpers de drivers USB ─────────────────────

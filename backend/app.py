@@ -16,6 +16,7 @@ from pathlib import Path
 
 from flask import Flask, g, request, send_from_directory, session, redirect, url_for, Response
 from flask_login import current_user
+from backend import compile_queue
 from backend.config import (
     FRONTEND_DIR, TEMPLATES_DIR, HOST, PORT, SECRET_KEY,
     get_arduino_cli_path,
@@ -138,6 +139,7 @@ def create_app() -> Flask:
     def _handle_shutdown(signum, frame):
         print("\n⏳ Cerrando servidor...", file=sys.stderr)
         serial_manager.close()
+        compile_queue.shutdown()
         sys.exit(0)
 
     signal.signal(signal.SIGTERM, _handle_shutdown)
@@ -156,4 +158,4 @@ if __name__ == "__main__":
         print(f"   arduino-cli: ✓ {cli_path}")
     else:
         print("   arduino-cli: ✕ NO ENCONTRADO")
-    app.run(host=HOST, port=PORT, debug=False)
+    app.run(host=HOST, port=PORT, debug=False, threaded=True)

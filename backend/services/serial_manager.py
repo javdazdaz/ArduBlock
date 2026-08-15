@@ -2,6 +2,8 @@
 ArduBlock — Gestión del monitor serial.
 
 Estado del puerto serial como clase (antes eran variables globales en app.py).
+Con el servidor threaded (Fase C) se añade un lock coarse para serializar
+open/close/write sobre el único puerto.
 """
 
 import threading
@@ -16,6 +18,7 @@ class SerialManager:
         self._buffer: list[str] = []
         self._lock = threading.Lock()
         self._running = False
+        self._op_lock = threading.Lock()  # serializa open/close/write
 
     @property
     def port(self):
@@ -36,10 +39,11 @@ class SerialManager:
         """Abre la conexión serial e inicia el hilo de lectura."""
         import serial
 
-        ser = serial.Serial(port, baud, timeout=0.5)
-        self._port = ser
-        self._running = True
-        self._buffer = []
+        with self._op_lock:
+            ser = serial.Serial(port, baud, timeout=0.5)
+            self._port = ser
+            self._running = True
+            self._buffer = []
 
         def _read_loop():
             while self._running:
@@ -65,22 +69,24 @@ class SerialManager:
 
     def write(self, data: str) -> int:
         """Escribe datos al puerto serial. Retorna bytes escritos."""
-        if not self._port or not self._running:
-            raise RuntimeError("No conectado")
-        encoded = data.encode("utf-8")
-        self._port.write(encoded)
-        return len(encoded)
+        with self._op_lock:
+            if not self._port or not self._running:
+                raise RuntimeError("No conectado")
+            encoded = data.encode("utf-8")
+            self._port.write(encoded)
+            return len(encoded)
 
     def close(self):
         """Cierra la conexión serial."""
-        self._running = False
-        if self._port:
-            try:
-                self._port.close()
-            except Exception:
-                pass
-            self._port = None
-        self._buffer = []
+        with self._op_lock:
+            self._running = False
+            if self._port:
+                try:
+                    self._port.close()
+                except Exception:
+                    pass
+                self._port = None
+            self._buffer = []
 
     def status(self) -> dict:
         return {

@@ -24,12 +24,20 @@ from backend.config import (
 
 # ── Control de recursos del compilador (Fase A anti-OOM/fork-bomb) ──
 
-# Semáforo global: como mucho 2 invocaciones de arduino-cli concurrentes.
-_ARDUINO_CLI_SEMAPHORE = threading.Semaphore(2)
+# Concurrencia máxima de arduino-cli (mismo env que la cola de compilación).
+_ARDUINO_CLI_MAX_CONCURRENT = max(
+    1, int(os.environ.get("ARDUBLOCK_COMPILE_WORKERS", "2"))
+)
+_ARDUINO_CLI_SEMAPHORE = threading.Semaphore(_ARDUINO_CLI_MAX_CONCURRENT)
+
+# Tope de memoria por invocación (ARDUBLOCK_COMPILE_MEMORY_MB, default 1024 MiB).
+_ARDUINO_CLI_MEM_BYTES = (
+    max(128, int(os.environ.get("ARDUBLOCK_COMPILE_MEMORY_MB", "1024"))) * 1024 * 1024
+)
 
 # Límites heredados por arduino-cli y sus hijos (avr-gcc, cc1plus, ...).
 _ARDUINO_CLI_LIMITS = (
-    (resource.RLIMIT_AS, (2 * 1024 * 1024 * 1024, 2 * 1024 * 1024 * 1024)),  # 2 GiB
+    (resource.RLIMIT_AS, (_ARDUINO_CLI_MEM_BYTES, _ARDUINO_CLI_MEM_BYTES)),
     (resource.RLIMIT_CPU, (60, 60)),  # 60 s de CPU
     (resource.RLIMIT_FSIZE, (256 * 1024 * 1024, 256 * 1024 * 1024)),  # 256 MB
     (resource.RLIMIT_NPROC, (64, 64)),
