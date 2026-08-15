@@ -3,7 +3,6 @@
 {% block content %}
 {{ nav_bar() }}
 <main>
-  <a href="/teacher/classroom/{{ cls.classroom_id }}" class="back">{{ _('back') }}</a>
   <nav class="breadcrumb">
     <a href="/teacher">{{ _('my_classrooms') }}</a><span class="sep">›</span>
     <a href="/teacher/classroom/{{ cls.classroom_id }}">{{ cls.classroom.name }}</a><span class="sep">›</span>

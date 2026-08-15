@@ -1,23 +1,39 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" data-theme="calcite">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Regenerar thumbnails — ArduBlock</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
+  <script>
+    /* Aplicar paleta guardada antes de pintar (evita parpadeo) */
+    try {
+      var p = localStorage.getItem("ardublock-palette");
+      if (["calcite", "calcite-dark", "dracula", "legacy"].indexOf(p) !== -1) {
+        document.documentElement.setAttribute("data-theme", p);
+      }
+    } catch (e) {}
+  </script>
+  <link rel="stylesheet" href="/css/palettes.css">
   <style>
     * { box-sizing: border-box; }
-    body { font-family: system-ui, sans-serif; background: #0f1115; color: #e6e8eb; margin: 0; padding: 2rem; }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: var(--bg); color: var(--text);
+      margin: 0; padding: 2rem; min-height: 100vh;
+    }
     .wrap { max-width: 640px; margin: 0 auto; }
     h1 { font-size: 1.3rem; margin-bottom: 0.3rem; }
-    .muted { color: #8b949e; font-size: 0.9rem; margin-bottom: 1.5rem; }
-    .muted a { color: #58a6ff; }
+    .muted { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem; }
+    .muted a { color: var(--brand); }
     button {
-      background: #1f6feb; color: #fff; border: 0; padding: 0.6rem 1.2rem;
-      border-radius: 6px; cursor: pointer; font-size: 0.95rem;
+      background: var(--brand); color: var(--on-brand);
+      border: 0; padding: 0.6rem 1.2rem; border-radius: 6px;
+      cursor: pointer; font-size: 0.95rem;
     }
     button:disabled { opacity: 0.5; cursor: default; }
     ul { list-style: none; padding: 0; margin: 1.5rem 0 0; }
-    li { padding: 0.5rem 0; border-bottom: 1px solid #21262d; font-size: 0.9rem; }
+    li { padding: 0.5rem 0; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
     .summary { margin-top: 1rem; font-weight: 600; min-height: 1.2em; }
   </style>
 </head>
@@ -35,6 +51,41 @@
   </div>
 
   <div id="regen-workspace" style="position:fixed;left:-9999px;top:0;width:2000px;height:1500px;"></div>
+
+  <div class="palette-switcher">
+    <button id="palette-btn" class="palette-btn" title="Cambiar paleta" aria-label="Cambiar paleta">🎨</button>
+    <div id="palette-menu" class="palette-menu hidden">
+      <div class="palette-group-label">Tema</div>
+      <button class="palette-option" data-palette="calcite">Calcite</button>
+      <button class="palette-option" data-palette="calcite-dark">Calcite Dark</button>
+      <button class="palette-option" data-palette="dracula">Dracula</button>
+      <button class="palette-option" data-palette="legacy">ArduBlock</button>
+    </div>
+  </div>
+  <script>
+    (function () {
+      var PALETTES = ["calcite", "calcite-dark", "dracula", "legacy"];
+      var KEY = "ardublock-palette";
+      function apply(p) {
+        if (PALETTES.indexOf(p) === -1) p = "calcite";
+        document.documentElement.setAttribute("data-theme", p);
+        try { localStorage.setItem(KEY, p); } catch (e) {}
+      }
+      var btn = document.getElementById("palette-btn");
+      var menu = document.getElementById("palette-menu");
+      btn.addEventListener("click", function (e) {
+        e.stopPropagation();
+        menu.classList.toggle("hidden");
+      });
+      document.addEventListener("click", function () { menu.classList.add("hidden"); });
+      Array.prototype.forEach.call(menu.querySelectorAll(".palette-option"), function (opt) {
+        opt.addEventListener("click", function () {
+          apply(opt.getAttribute("data-palette"));
+          menu.classList.add("hidden");
+        });
+      });
+    })();
+  </script>
 
   <script type="module" src="js/regen.js"></script>
 </body>
