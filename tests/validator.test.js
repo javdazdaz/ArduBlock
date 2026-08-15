@@ -232,6 +232,46 @@ describe('validator — reglas de validación', () => {
     });
   });
 
+  // ── R6e: motor debe estar definido ─────────────
+  describe('R6e: uso de motor sin crear', () => {
+    it('advierte si stepper_speed usa un motor no creado', () => {
+      const ws = mw([mb('arduino_setup'), mb('arduino_loop'), mb('stepper_speed', { NAME: 'motor', RPM: '10' })]);
+      const w = validateWorkspace(ws);
+      expect(w.some(x => x.type === 'motor_not_declared')).toBe(true);
+    });
+
+    it('no advierte si el motor fue creado', () => {
+      const ws = mw([
+        mb('arduino_setup'), mb('arduino_loop'),
+        mb('stepper_create', { NAME: 'motor' }),
+        mb('stepper_speed', { NAME: 'motor', RPM: '10' }),
+      ]);
+      const w = validateWorkspace(ws);
+      expect(w.some(x => x.type === 'motor_not_declared')).toBe(false);
+    });
+
+    it('stepper_speed no se marca como "debe ir en setup"', () => {
+      const ws = mw([mb('arduino_setup'), mb('arduino_loop'), mb('stepper_speed', { NAME: 'motor', RPM: '10' })]);
+      const w = validateWorkspace(ws);
+      expect(w.some(x => x.type === 'lib_not_in_setup')).toBe(false);
+    });
+  });
+
+  // ── Deduplicación de warnings ─────────────────
+  describe('Deduplicación de warnings', () => {
+    it('fusiona warnings idénticos (mismo type + mensaje) en uno solo', () => {
+      const ws = mw([
+        mb('arduino_setup'), mb('arduino_loop'),
+        mb('digital_write_basic', { PIN: '13', VALUE: 'HIGH' }),
+        mb('digital_write_basic', { PIN: '13', VALUE: 'LOW' }),
+      ]);
+      const w = validateWorkspace(ws);
+      const pinWarn = w.filter(x => x.type === 'pin_not_configured');
+      expect(pinWarn).toHaveLength(1);
+      expect(pinWarn[0].blocks).toHaveLength(2);
+    });
+  });
+
   // ── getBlockLabel ──────────────────────────────
   describe('getBlockLabel', () => {
     it('devuelve etiqueta para bloque conocido', () => {

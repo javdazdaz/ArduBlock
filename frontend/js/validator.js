@@ -215,8 +215,6 @@ function validateWorkspace(workspace) {
     { type: 'ultrasonic_create_advanced', field: 'NAME', label: 'ultrasónico' },
     { type: 'stepper_create', field: 'NAME', label: 'motor paso a paso' },
     { type: 'stepper_create_advanced', field: 'NAME', label: 'motor paso a paso' },
-    { type: 'stepper_speed', field: 'NAME', label: 'velocidad motor' },
-    { type: 'stepper_speed_advanced', field: 'NAME', label: 'velocidad motor' },
     { type: 'afmotor_dc_create', field: 'NAME', label: 'motor DC' },
     { type: 'afmotor_stepper_create', field: 'NAME', label: 'motor paso a paso (AFMotor)' }
   ];
@@ -256,6 +254,47 @@ function validateWorkspace(workspace) {
         message: `${cfg.label}() está ${where}. Debería ir dentro de setup().`,
         blocks: [block]
       });
+    }
+  }
+
+  // ═══ R6e: bloques de uso de motor deben referenciar uno creado ═══
+  const motorUsage = [
+    {
+      createTypes: ['stepper_create', 'stepper_create_advanced'],
+      useTypes: ['stepper_speed', 'stepper_speed_advanced', 'stepper_step', 'stepper_step_advanced'],
+      label: 'motor paso a paso'
+    },
+    {
+      createTypes: ['afmotor_dc_create'],
+      useTypes: ['afmotor_dc_speed', 'afmotor_dc_run'],
+      label: 'motor DC'
+    },
+    {
+      createTypes: ['afmotor_stepper_create'],
+      useTypes: ['afmotor_stepper_speed', 'afmotor_stepper_step'],
+      label: 'motor paso a paso (AFMotor)'
+    }
+  ];
+  for (const cfg of motorUsage) {
+    const names = new Set();
+    for (const ct of cfg.createTypes) {
+      for (const block of findAllBlocksOfType(workspace, ct)) {
+        const n = (block.getFieldValue('NAME') || '').trim();
+        if (n) names.add(n);
+      }
+    }
+    const useBlocks = [];
+    for (const ut of cfg.useTypes) useBlocks.push(...findAllBlocksOfType(workspace, ut));
+    for (const block of useBlocks) {
+      const name = (block.getFieldValue('NAME') || '').trim();
+      if (name && !names.has(name)) {
+        warnings.push({
+          type: 'motor_not_declared',
+          severity: 'error',
+          message: `El ${cfg.label} "${name}" no está definido. Créalo primero con su bloque "crear".`,
+          blocks: [block]
+        });
+      }
     }
   }
 
@@ -467,7 +506,23 @@ function validateWorkspace(workspace) {
   }
 
 
-  return warnings;
+  // ═══ Deduplicar warnings idénticos (mismo type + mensaje) ═══
+  // N bloques con el mismo problema se fusionan en una sola entrada
+  // (evita llenar la lista con copias, p. ej. 2× digitalWrite en el mismo pin).
+  const deduped = [];
+  const seen = new Map();
+  for (const w of warnings) {
+    const key = w.type + '|' + w.message;
+    const existing = seen.get(key);
+    if (existing) {
+      existing.blocks.push(...w.blocks);
+    } else {
+      seen.set(key, w);
+      deduped.push(w);
+    }
+  }
+
+  return deduped;
 }
 
 // ── Función helper: nombre legible del bloque ───
