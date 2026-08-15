@@ -98,7 +98,10 @@ function validateWorkspace(workspace) {
   }
 
   // ═══ R3: Serial.begin() debe estar en setup() ═══
-  const serialBeginBlocks = findAllBlocksOfType(workspace, 'serial_begin');
+  const serialBeginBlocks = [
+    ...findAllBlocksOfType(workspace, 'serial_begin'),
+    ...findAllBlocksOfType(workspace, 'serial_begin_advanced')
+  ];
   for (const block of serialBeginBlocks) {
     const context = getArduinoContext(workspace, block);
     if (context !== 'setup') {
@@ -162,7 +165,10 @@ function validateWorkspace(workspace) {
 
   // ═══ R6: Servo no declarado + attach fuera de setup ═══
   const servoNames = new Set();
-  const servoCreateBlocks = findAllBlocksOfType(workspace, 'servo_create');
+  const servoCreateBlocks = [
+    ...findAllBlocksOfType(workspace, 'servo_create'),
+    ...findAllBlocksOfType(workspace, 'servo_create_advanced')
+  ];
   for (const block of servoCreateBlocks) {
     const name = block.getFieldValue('NAME');
     if (name) servoNames.add(name.trim());
@@ -200,10 +206,19 @@ function validateWorkspace(workspace) {
   // ═══ R6c: Librerías create deben ir en setup ═══
   const inSetupTypes = [
     { type: 'lcd_create', field: 'NAME', label: 'LCD' },
+    { type: 'lcd_create_advanced', field: 'NAME', label: 'LCD' },
     { type: 'lcd_i2c_create', field: 'NAME', label: 'LCD I2C' },
+    { type: 'lcd_i2c_create_advanced', field: 'NAME', label: 'LCD I2C' },
     { type: 'dht_create', field: 'NAME', label: 'sensor DHT' },
+    { type: 'dht_create_advanced', field: 'NAME', label: 'sensor DHT' },
     { type: 'ultrasonic_create', field: 'NAME', label: 'ultrasónico' },
-    { type: 'stepper_speed', field: 'NAME', label: 'velocidad motor' }
+    { type: 'ultrasonic_create_advanced', field: 'NAME', label: 'ultrasónico' },
+    { type: 'stepper_create', field: 'NAME', label: 'motor paso a paso' },
+    { type: 'stepper_create_advanced', field: 'NAME', label: 'motor paso a paso' },
+    { type: 'stepper_speed', field: 'NAME', label: 'velocidad motor' },
+    { type: 'stepper_speed_advanced', field: 'NAME', label: 'velocidad motor' },
+    { type: 'afmotor_dc_create', field: 'NAME', label: 'motor DC' },
+    { type: 'afmotor_stepper_create', field: 'NAME', label: 'motor paso a paso (AFMotor)' }
   ];
 
   for (const cfg of inSetupTypes) {
@@ -220,6 +235,27 @@ function validateWorkspace(workspace) {
           blocks: [block]
         });
       }
+    }
+  }
+
+  // ═══ R6d: pinMode() y attachInterrupt() deben ir en setup ═══
+  const setupStatements = [
+    { types: ['pin_mode_basic', 'pin_mode_advanced'], label: 'pinMode', type: 'pin_mode_position' },
+    { types: ['attach_interrupt', 'attach_interrupt_basic', 'attach_interrupt_advanced'], label: 'attachInterrupt', type: 'interrupt_position' }
+  ];
+  for (const cfg of setupStatements) {
+    const blocks = [];
+    for (const t of cfg.types) blocks.push(...findAllBlocksOfType(workspace, t));
+    for (const block of blocks) {
+      if (isInsideBlockType(workspace, block, 'arduino_setup')) continue;
+      const context = getArduinoContext(workspace, block);
+      const where = context === 'loop' ? 'dentro de loop()' : 'fuera de setup() y loop()';
+      warnings.push({
+        type: cfg.type,
+        severity: 'warning',
+        message: `${cfg.label}() está ${where}. Debería ir dentro de setup().`,
+        blocks: [block]
+      });
     }
   }
 
@@ -478,7 +514,13 @@ function getBlockLabel(block) {
     'variable_global': 'variable global',
     'variable_declare': 'crear variable local',
     'variable_set': 'asignar variable',
-    'variable_get': 'leer variable'
+    'variable_get': 'leer variable',
+    'afmotor_dc_create': 'crear motor DC',
+    'afmotor_dc_speed': 'velocidad motor DC',
+    'afmotor_dc_run': 'mover motor DC',
+    'afmotor_stepper_create': 'crear motor paso a paso (AFMotor)',
+    'afmotor_stepper_speed': 'velocidad motor paso a paso',
+    'afmotor_stepper_step': 'girar motor paso a paso'
   };
   return labels[block.type] || block.type;
 }
@@ -517,42 +559,16 @@ function applyWarnings(workspace, warnings) {
 
 // ── Panel de estado (barra inferior compacta, estilo IDE) ────────────────
 
-const STATUS_COLLAPSED_KEY = 'ardublock:status-collapsed';
-
-function statusCollapsed() {
-  try { return localStorage.getItem(STATUS_COLLAPSED_KEY) === '1'; } catch (e) { return false; }
-}
-
-function setStatusCollapsed(v) {
-  try { localStorage.setItem(STATUS_COLLAPSED_KEY, v ? '1' : '0'); } catch (e) {}
-}
-
-function syncStatusToggle(statusEl) {
-  const collapsed = statusEl.classList.contains('status-collapsed');
-  const toggle = statusEl.querySelector('#status-toggle');
-  toggle.textContent = collapsed ? '▸' : '▾';
-  toggle.title = collapsed ? 'Mostrar estado' : 'Ocultar estado';
-}
-
 function updateStatusPanel(warnings, workspace) {
   let statusEl = document.getElementById('status-panel');
   if (!statusEl) {
     statusEl = document.createElement('div');
     statusEl.id = 'status-panel';
     statusEl.innerHTML =
-      '<button id="status-toggle" class="status-toggle" type="button" aria-label="Mostrar/ocultar estado">▾</button>' +
       '<span id="status-dot" class="status-dot" aria-hidden="true"></span>' +
       '<button id="status-summary" class="status-summary" type="button"></button>' +
       '<div id="status-problems" class="status-problems hidden"></div>';
     document.body.appendChild(statusEl);
-
-    const toggle = statusEl.querySelector('#status-toggle');
-    toggle.addEventListener('click', () => {
-      statusEl.classList.toggle('status-collapsed');
-      closeStatusProblems(statusEl);
-      syncStatusToggle(statusEl);
-      setStatusCollapsed(statusEl.classList.contains('status-collapsed'));
-    });
 
     const summaryBtn = statusEl.querySelector('#status-summary');
     summaryBtn.addEventListener('click', () => {
@@ -567,8 +583,6 @@ function updateStatusPanel(warnings, workspace) {
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') closeStatusProblems(statusEl);
     });
-
-    if (statusCollapsed()) statusEl.classList.add('status-collapsed');
   }
 
   const errors = warnings.filter(w => w.severity === 'error');

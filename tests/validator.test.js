@@ -200,6 +200,38 @@ describe('validator — reglas de validación', () => {
     });
   });
 
+  // ── R6d: pinMode / attachInterrupt en setup ────
+  describe('R6d: pinMode y attachInterrupt en setup', () => {
+    it('advierte si pin_mode está fuera de setup', () => {
+      const ws = mw([mb('arduino_setup'), mb('arduino_loop'), mb('pin_mode_basic', { PIN: '13', MODE: 'OUTPUT' })]);
+      const w = validateWorkspace(ws);
+      expect(w.some(x => x.type === 'pin_mode_position')).toBe(true);
+    });
+
+    it('no advierte si pin_mode está dentro de setup', () => {
+      const setup = mb('arduino_setup');
+      const pm = mb('pin_mode_basic', { PIN: '13', MODE: 'OUTPUT' }, { parent: setup });
+      const ws = {
+        getTopBlocks: () => [setup, mb('arduino_loop')],
+        getAllBlocks: () => [setup, pm, mb('arduino_loop')],
+      };
+      const w = validateWorkspace(ws);
+      expect(w.some(x => x.type === 'pin_mode_position')).toBe(false);
+    });
+
+    it('advierte si attach_interrupt está fuera de setup', () => {
+      const ws = mw([mb('arduino_setup'), mb('arduino_loop'), mb('attach_interrupt_basic', { PIN: '2' })]);
+      const w = validateWorkspace(ws);
+      expect(w.some(x => x.type === 'interrupt_position')).toBe(true);
+    });
+
+    it('advierte si serial_begin_advanced está fuera de setup', () => {
+      const ws = mw([mb('arduino_setup'), mb('arduino_loop'), mb('serial_begin_advanced', { BAUD: '9600' })]);
+      const w = validateWorkspace(ws);
+      expect(w.some(x => x.type === 'serial_begin_position')).toBe(true);
+    });
+  });
+
   // ── getBlockLabel ──────────────────────────────
   describe('getBlockLabel', () => {
     it('devuelve etiqueta para bloque conocido', () => {
