@@ -49,6 +49,11 @@ def create_app() -> Flask:
 
     app = Flask(__name__, static_folder=None, template_folder=str(TEMPLATES_DIR))
     app.secret_key = SECRET_KEY
+    # Hardening de la cookie de sesión: HttpOnly, SameSite=Lax y (en producción)
+    # Secure para que solo viaje por HTTPS.
+    app.config["SESSION_COOKIE_HTTPONLY"] = True
+    app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+    app.config["SESSION_COOKIE_SECURE"] = bool(os.environ.get("ARDUBLOCK_PRODUCTION"))
     app.config["WTF_CSRF_SECRET_KEY"] = os.environ.get("WTF_CSRF_KEY", SECRET_KEY)
     app.config["PROPAGATE_EXCEPTIONS"] = True
 

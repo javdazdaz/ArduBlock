@@ -15,14 +15,16 @@ def _safe_example_path(rel_path: str):
     """Resuelve rel_path dentro de EXAMPLES_DIR bloqueando path traversal.
 
     Devuelve el Path absoluto resuelto (symlinks incluidos) si queda DENTRO
-    del directorio de ejemplos; si escapa (``../`` o un symlink hacia afuera),
-    devuelve None.
+    del directorio de ejemplos; si escapa (``../`` o un symlink hacia afuera)
+    o trae caracteres raros (``\\x00`` u otros de control), devuelve None.
     """
+    if not rel_path or any(ord(c) < 32 for c in rel_path):
+        return None
     base = Path(EXAMPLES_DIR).resolve()
-    full = (base / rel_path).resolve()
     try:
+        full = (base / rel_path).resolve()
         full.relative_to(base)
-    except ValueError:
+    except (ValueError, OSError):
         return None
     return full
 

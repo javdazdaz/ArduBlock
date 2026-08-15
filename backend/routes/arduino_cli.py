@@ -123,11 +123,5 @@ def install_arduino_cli():
 def arduino_cli_status():
     cli_path = get_arduino_cli_path()
     available = cli_path is not None and os.path.isfile(cli_path)
-    return jsonify(
-        {
-            "available": available,
-            "path": cli_path,
-            "can_auto_install": _get_download_url() is not None,
-            "platform": f"{sys.platform}/{platform.machine()}",
-        }
-    )
+    # Sin ruta ni detalles de plataforma: no exponer la estructura del filesystem.
+    return jsonify({"available": available})

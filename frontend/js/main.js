@@ -890,7 +890,6 @@ async function openDiagnostics() {
     html += '<div class="diag-row"><span>Backend no disponible</span><span class="diag-error">✕</span></div>';
   } else if (cli.available) {
     html += `<div class="diag-row"><span>Estado</span><span class="diag-ok">✓ Instalado</span></div>`;
-    html += `<div class="diag-row"><span>Ruta</span><span style="font-size:0.7rem;opacity:0.7">${cli.path}</span></div>`;
   } else {
     html += `<div class="diag-row"><span>Estado</span><span class="diag-error">✕ No encontrado</span></div>`;
     const client = getClientPlatform();
