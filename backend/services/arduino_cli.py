@@ -62,6 +62,8 @@ if _BWRAP:
                 "--dev", "/dev",
                 "--proc", "/proc",
                 "--ro-bind", "/usr", "/usr",
+                "--symlink", "usr/lib", "/lib",
+                "--symlink", "usr/lib64", "/lib64",
                 "--", "/usr/bin/true",
             ],
             capture_output=True,
