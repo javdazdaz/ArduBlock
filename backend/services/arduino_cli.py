@@ -8,9 +8,12 @@ import json
 import os
 import re
 import resource
+import shutil
 import subprocess
 import sys
+import tempfile
 import threading
+from pathlib import Path
 from typing import Any
 
 from backend.config import (
@@ -42,12 +45,98 @@ def _set_rlimits():
             pass
 
 
+# ── Sandbox del compilador (Fase B: aísla la lectura de archivos del host) ──
+
+_ARDUINO_DATA_DIR = os.environ.get("ARDUINO_DATA_DIR") or str(
+    Path.home() / ".arduino15"
+)
+
+_BWRAP = shutil.which("bwrap")
+if _BWRAP:
+    # Self-test: si bwrap/userns no funciona, se desactiva (fallback a Fase A).
+    try:
+        _probe = subprocess.run(
+            [
+                _BWRAP,
+                "--unshare-all",
+                "--dev", "/dev",
+                "--proc", "/proc",
+                "--ro-bind", "/usr", "/usr",
+                "--", "/usr/bin/true",
+            ],
+            capture_output=True,
+            timeout=10,
+        )
+        if _probe.returncode != 0:
+            _BWRAP = None
+    except Exception:
+        _BWRAP = None
+
+
+def _sandboxed_compile(cmd: list[str]):
+    """Envuelve ``arduino-cli compile`` en bwrap. Devuelve (argv, scratch_dir).
+
+    El sandbox ve solo: /usr (ro, libs de avr-gcc), el binario arduino-cli (ro),
+    un data-dir scratch (packages/ e índices en ro) y el directorio del sketch.
+    Sin /etc, /opt, /root, /home ni red.
+    """
+    args = cmd[1:]
+    sketch_dir = os.path.abspath(args[-1])
+    sketch_parent = os.path.dirname(sketch_dir)
+
+    output_dir = None
+    if "--output-dir" in args:
+        i = args.index("--output-dir")
+        if i + 1 < len(args):
+            output_dir = os.path.abspath(args[i + 1])
+
+    cli_path = cmd[0]
+    scratch = tempfile.mkdtemp(prefix="ardublock_data_")
+    os.makedirs(os.path.join(scratch, "packages"), exist_ok=True)
+
+    bwrap = [
+        _BWRAP,
+        "--die-with-parent",
+        "--unshare-all",
+        "--new-session",
+        "--dev", "/dev",
+        "--proc", "/proc",
+        "--ro-bind", "/usr", "/usr",
+        "--symlink", "usr/lib", "/lib",
+        "--symlink", "usr/lib64", "/lib64",
+        "--ro-bind", cli_path, cli_path,
+        "--bind", scratch, scratch,
+        "--bind", sketch_parent, sketch_parent,
+    ]
+
+    packages_dir = os.path.join(_ARDUINO_DATA_DIR, "packages")
+    if os.path.isdir(packages_dir):
+        bwrap += ["--ro-bind", packages_dir, os.path.join(scratch, "packages")]
+    for name in ("inventory.yaml", "package_index.json", "library_index.json"):
+        p = os.path.join(_ARDUINO_DATA_DIR, name)
+        if os.path.isfile(p):
+            bwrap += ["--ro-bind", p, os.path.join(scratch, name)]
+
+    if output_dir:
+        bwrap += ["--bind", output_dir, output_dir]
+
+    bwrap += [
+        "--setenv", "ARDUINO_DATA_DIR", scratch,
+        "--setenv", "HOME", scratch,
+        "--chdir", sketch_parent,
+    ] + cmd
+
+    return bwrap, scratch
+
+
 def run_arduino_cli(
     args: list[str], **kwargs: Any
 ) -> subprocess.CompletedProcess:
     """Ejecuta arduino-cli usando la ruta resuelta.
 
     Lanza FileNotFoundError con mensaje descriptivo si no está instalado.
+    Las compilaciones se ejecutan en un sandbox bwrap (Fase B) cuando está
+    disponible.
     """
     cli_path = get_arduino_cli_path()
     if not cli_path or not os.path.isfile(cli_path):
@@ -65,11 +154,21 @@ def run_arduino_cli(
     # Límites de recursos en el subprocess (solo POSIX).
     if sys.platform != "win32" and "preexec_fn" not in kwargs:
         kwargs["preexec_fn"] = _set_rlimits
+
+    scratch_dir = None
+    if _BWRAP and args and args[0] == "compile" and os.path.isdir(_ARDUINO_DATA_DIR):
+        try:
+            cmd, scratch_dir = _sandboxed_compile(cmd)
+        except Exception:
+            scratch_dir = None  # fallback: compilar sin sandbox
+
     _ARDUINO_CLI_SEMAPHORE.acquire()
     try:
         return subprocess.run(cmd, **kwargs)
     finally:
         _ARDUINO_CLI_SEMAPHORE.release()
+        if scratch_dir:
+            shutil.rmtree(scratch_dir, ignore_errors=True)
 
 
 def try_install_missing_core(stderr_text: str) -> bool:
