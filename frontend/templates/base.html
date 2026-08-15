@@ -14,12 +14,12 @@
     {% if current_user.is_authenticated %}
       <span class="nav-user">{{ current_user.name }}</span>
       {% if current_user.is_teacher %}
-        <a href="/teacher" class="nav-btn">{{ _('my_classrooms') }}</a>
+        <a href="/dashboard" class="nav-btn">{{ _('my_classrooms') }}</a>
         <a href="/app" class="nav-btn">{{ _('editor_link') }}</a>
         <a href="/teacher/projects" class="nav-btn">{{ _('my_projects') }}</a>
         <a href="/teacher/activities" class="nav-btn">{{ _('activities') }}</a>
       {% else %}
-        <a href="/student" class="nav-btn">{{ _('my_courses') }}</a>
+        <a href="/dashboard" class="nav-btn">{{ _('my_courses') }}</a>
         <a href="/app" class="nav-btn">{{ _('editor_link') }}</a>
       {% endif %}
       <a href="{{ url_for('auth.logout') }}" class="nav-btn">{{ _('logout') }}</a>

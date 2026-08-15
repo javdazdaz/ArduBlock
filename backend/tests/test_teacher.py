@@ -37,7 +37,24 @@ def _classroom_id(join_code):
 def test_teacher_dashboard_lists_classrooms(client, seed_classroom):
     _login_teacher(client)
     seed_classroom("ABC123", "Robótica 3A")
-    r = client.get("/teacher")
+    r = client.get("/dashboard")
+    assert r.status_code == 200
+    assert b"Rob\xc3\xb3tica 3A" in r.data
+
+
+def test_old_dashboard_urls_redirect(client, seed_classroom):
+    """/teacher y /student redirigen al dashboard unificado."""
+    _login_teacher(client)
+    seed_classroom("ABC123")
+    assert client.get("/teacher").status_code == 302
+    assert client.get("/student").status_code == 302
+
+
+def test_student_dashboard_lists_courses(client, seed_classroom):
+    """El mismo /dashboard muestra cursos cuando el rol es estudiante."""
+    seed_classroom("ABC123", "Robótica 3A")
+    _register_student(client, "alumno@example.com")
+    r = client.get("/dashboard")
     assert r.status_code == 200
     assert b"Rob\xc3\xb3tica 3A" in r.data
 

@@ -48,7 +48,7 @@ let DASHBOARD_URL = '/';
     if (Number.isInteger(c) && c > 0) setClassId(c);
   }
 
-  DASHBOARD_URL = IS_GUEST_MODE ? '/' : (IS_TEACHER ? '/teacher' : '/student');
+  DASHBOARD_URL = IS_GUEST_MODE ? '/' : '/dashboard';
 
   // Logo → dashboard del rol.
   const brandLink = document.getElementById('brand-link');

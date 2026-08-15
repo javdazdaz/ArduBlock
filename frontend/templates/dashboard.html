@@ -1,71 +1,115 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard — ArduBlock</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: system-ui, sans-serif; background: #1a1a2e; color: #eee; min-height: 100vh; }
-    nav { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.5rem; background: #16213e; border-bottom: 1px solid rgba(255,255,255,0.05); }
-    nav h1 { font-size: 1.2rem; }
-    nav a { color: #a0a0b0; text-decoration: none; font-size: 0.9rem; margin-left: 1rem; }
-    nav a:hover { color: #e94560; }
-    main { max-width: 900px; margin: 2rem auto; padding: 0 1.5rem; }
-    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
-    .header h2 { font-size: 1.3rem; }
-    .btn-new { padding: 0.6rem 1.5rem; border-radius: 6px; background: #e94560; color: #fff; text-decoration: none; font-weight: 600; font-size: 0.9rem; }
-    .btn-new:hover { opacity: 0.9; }
-    .project-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1rem; }
-    .project-card {
-      background: #16213e;
-      border-radius: 10px;
-      padding: 1.2rem;
-      border: 1px solid rgba(255,255,255,0.05);
-      cursor: pointer;
-      transition: border-color 0.15s;
-    }
-    .project-card:hover { border-color: #e94560; }
-    .project-card h3 { font-size: 1rem; margin-bottom: 0.5rem; }
-    .project-card .meta { font-size: 0.8rem; color: #666; }
-    .empty { text-align: center; color: #666; padding: 3rem; }
-    .empty p { margin-bottom: 1rem; }
-  </style>
-</head>
-<body>
-
-<nav>
-  <h1>⚡ ArduBlock</h1>
-  <div>
-    <span style="color:#a0a0b0;font-size:0.9rem">{{ user.name }}</span>
-    <a href="{{ url_for('auth.logout') }}">Salir</a>
-  </div>
-</nav>
-
+{% extends "base.html" %}
+{% block title %}{{ _('my_classrooms') if current_user.is_teacher else _('my_courses') }} — ArduBlock{% endblock %}
+{% block content %}
+{{ nav_bar() }}
 <main>
-  <div class="header">
-    <h2>Mis proyectos</h2>
-    <a href="/app" class="btn-new">+ Nuevo proyecto</a>
-  </div>
+  {{ render_flash() }}
 
-  {% if projects %}
-    <div class="project-grid">
-      {% for p in projects %}
-        <a href="/app?project={{ p.id }}" style="text-decoration:none;color:inherit">
-          <div class="project-card">
+  {% if current_user.is_teacher %}
+    {# ── Docente: aulas + proyectos propios ── #}
+    <div class="page-header">
+      <h2>📚 {{ _('my_classrooms') }}</h2>
+      <button type="button" class="btn" id="toggle-new">{{ _('new_classroom') }}</button>
+    </div>
+
+    <div class="panel hidden" id="new-classroom">
+      <form method="POST" action="{{ url_for('auth.create_classroom') }}">
+        {{ form.hidden_tag() }}
+        <div class="field">
+          <label>{{ _('course_name_label') }}</label>
+          {{ form.name() }}
+        </div>
+        <button type="submit" class="btn">{{ _('create_classroom') }}</button>
+      </form>
+    </div>
+
+    {% if classrooms %}
+      <div class="classroom-grid">
+        {% for c in classrooms %}
+          <a href="/teacher/classroom/{{ c.id }}" class="card-link">
+            <div class="classroom-card">
+              <h3>{{ c.name }}</h3>
+              <div class="code">{{ c.join_code }}</div>
+              <div class="meta">{{ _('students_count', n=c.students|length) }}</div>
+            </div>
+          </a>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty">
+        <p>{{ _('no_classrooms') }}</p>
+        <button type="button" class="btn" onclick="document.getElementById('toggle-new').click()">{{ _('create_classroom') }}</button>
+      </div>
+    {% endif %}
+
+    <div class="page-header">
+      <h2>📁 {{ _('my_projects') }} ({{ projects|length }})</h2>
+      <a href="/teacher/regen-thumbnails" class="btn btn-ghost">{{ _('regen_thumbnails') }}</a>
+      <a href="/app?from={{ '/dashboard' | urlencode }}" class="btn">{{ _('new_project') }}</a>
+    </div>
+    {% if projects %}
+      <div class="project-grid">
+        {% for p in projects %}
+          <a href="/app?project={{ p.id }}&from={{ '/dashboard' | urlencode }}" class="project-card">
+            {% if p.thumbnail %}
+              <img src="{{ p.thumbnail }}" alt="{{ p.name }}" class="project-thumb">
+            {% else %}
+              <div class="project-thumb project-thumb-empty" aria-hidden="true"></div>
+            {% endif %}
             <h3>{{ p.name }}</h3>
+            <div class="board">{{ p.board }}</div>
             <div class="meta">{{ p.updated_at.strftime('%d/%m/%Y %H:%M') if p.updated_at else '' }}</div>
-          </div>
-        </a>
-      {% endfor %}
-    </div>
+          </a>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty"><p>{{ _('no_teacher_projects') }}</p></div>
+    {% endif %}
+
   {% else %}
-    <div class="empty">
-      <p>Aún no tienes proyectos.</p>
-      <a href="/app" class="btn-new">Crear mi primer proyecto</a>
+    {# ── Estudiante: cursos + proyectos no asignados ── #}
+    <div class="page-header">
+      <h2>🎓 {{ _('my_courses') }}</h2>
     </div>
+    {% if classrooms %}
+      <div class="classroom-grid">
+        {% for c in classrooms %}
+          <a href="/student/classroom/{{ c.id }}" class="card-link">
+            <div class="classroom-card">
+              <h3>{{ c.name }}</h3>
+              <div class="meta">{{ c.teacher.name }}</div>
+            </div>
+          </a>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty"><p>{{ _('no_courses') }}</p></div>
+    {% endif %}
+
+    {% if unassigned %}
+      <div class="page-header"><h2>{{ _('unassigned_projects') }}</h2></div>
+      <div class="project-grid">
+        {% for p in unassigned %}
+          <a href="/app?project={{ p.id }}&from={{ '/dashboard' | urlencode }}" class="project-card">
+            {% if p.thumbnail %}
+              <img src="{{ p.thumbnail }}" alt="{{ p.name }}" class="project-thumb">
+            {% else %}
+              <div class="project-thumb project-thumb-empty" aria-hidden="true"></div>
+            {% endif %}
+            <h3>{{ p.name }}</h3>
+            <div class="board">{{ p.board }}</div>
+            <div class="meta">{{ p.updated_at.strftime('%d/%m/%Y %H:%M') if p.updated_at else '' }}</div>
+          </a>
+        {% endfor %}
+      </div>
+    {% endif %}
   {% endif %}
 </main>
-
-</body>
-</html>
+{% if current_user.is_teacher %}
+<script>
+  document.getElementById('toggle-new').addEventListener('click', function () {
+    document.getElementById('new-classroom').classList.toggle('hidden');
+  });
+</script>
+{% endif %}
+{% endblock %}

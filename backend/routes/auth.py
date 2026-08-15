@@ -297,9 +297,52 @@ def logout():
 @auth_bp.route("/dashboard")
 @login_required
 def dashboard():
-    if current_user.is_teacher:
-        return redirect(url_for("auth.teacher_dashboard"))
-    return redirect(url_for("auth.student_dashboard"))
+    """Dashboard unificado: mismo layout, funciones según rol."""
+    s = _get_session()
+    try:
+        if current_user.is_teacher:
+            form = CreateClassroomForm()
+            classrooms = (
+                s.query(Classroom)
+                .filter_by(teacher_id=current_user.id)
+                .order_by(Classroom.created_at.desc())
+                .all()
+            )
+            for c in classrooms:
+                _ = len(c.students)
+            projects = (
+                s.query(Project)
+                .filter_by(user_id=current_user.id)
+                .order_by(Project.updated_at.desc())
+                .all()
+            )
+            return render_template(
+                "dashboard.html",
+                user=current_user, classrooms=classrooms, projects=projects,
+                unassigned=[], form=form,
+            )
+        else:
+            classrooms = (
+                s.query(Classroom)
+                .join(ClassroomStudent, ClassroomStudent.classroom_id == Classroom.id)
+                .filter(ClassroomStudent.user_id == current_user.id)
+                .options(joinedload(Classroom.teacher))
+                .order_by(Classroom.created_at.desc())
+                .all()
+            )
+            unassigned = (
+                s.query(Project)
+                .filter_by(user_id=current_user.id, class_id=None)
+                .order_by(Project.updated_at.desc())
+                .all()
+            )
+            return render_template(
+                "dashboard.html",
+                user=current_user, classrooms=classrooms, unassigned=unassigned,
+                projects=[], form=None,
+            )
+    finally:
+        s.close()
 
 
 # ═══ Password reset ══════════════════════════════
@@ -382,31 +425,7 @@ def reset_password(token):
 @auth_bp.route("/teacher")
 @login_required
 def teacher_dashboard():
-    if not current_user.is_teacher:
-        return redirect(url_for("auth.dashboard"))
-    form = CreateClassroomForm()
-    s = _get_session()
-    try:
-        classrooms = (
-            s.query(Classroom)
-            .filter_by(teacher_id=current_user.id)
-            .order_by(Classroom.created_at.desc())
-            .all()
-        )
-        for c in classrooms:
-            _ = len(c.students)
-        projects = (
-            s.query(Project)
-            .filter_by(user_id=current_user.id)
-            .order_by(Project.updated_at.desc())
-            .all()
-        )
-    finally:
-        s.close()
-    return render_template(
-        "teacher_dashboard.html",
-        user=current_user, classrooms=classrooms, projects=projects, form=form,
-    )
+    return redirect(url_for("auth.dashboard"))
 
 
 @auth_bp.route("/teacher/projects")
@@ -1007,30 +1026,7 @@ def teacher_edit_project(student_id, project_id):
 @auth_bp.route("/student")
 @login_required
 def student_dashboard():
-    if current_user.is_teacher:
-        return redirect(url_for("auth.teacher_dashboard"))
-    s = _get_session()
-    try:
-        classrooms = (
-            s.query(Classroom)
-            .join(ClassroomStudent, ClassroomStudent.classroom_id == Classroom.id)
-            .filter(ClassroomStudent.user_id == current_user.id)
-            .options(joinedload(Classroom.teacher))
-            .order_by(Classroom.created_at.desc())
-            .all()
-        )
-        unassigned = (
-            s.query(Project)
-            .filter_by(user_id=current_user.id, class_id=None)
-            .order_by(Project.updated_at.desc())
-            .all()
-        )
-    finally:
-        s.close()
-    return render_template(
-        "student_dashboard.html",
-        user=current_user, classrooms=classrooms, unassigned=unassigned,
-    )
+    return redirect(url_for("auth.dashboard"))
 
 
 @auth_bp.route("/student/classroom/<int:classroom_id>")
