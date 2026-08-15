@@ -674,11 +674,11 @@ function renderStatusSummary(statusEl) {
 
   let text;
   if (n === 0) {
-    text = '✓ Sketch válido';
+    text = t('status_valid');
   } else {
     const parts = [];
-    if (c.errors) parts.push(`✕ ${c.errors} error(es)`);
-    if (c.warns) parts.push(`⚠ ${c.warns} aviso(s)`);
+    if (c.errors) parts.push(`✕ ${c.errors} ${t('status_errors')}`);
+    if (c.warns) parts.push(`⚠ ${c.warns} ${t('status_warnings')}`);
     text = parts.join(' · ') + (open ? ' ▾' : ' ▴');
   }
   summaryBtn.textContent = text;

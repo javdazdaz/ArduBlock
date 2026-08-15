@@ -357,6 +357,9 @@ const messages = {
     val_pin_dir_in: 'entrada',
     val_pin_not_conf_suffix: 'lo usa pero no está configurado con pinMode() en setup(). Debe ser',
     val_pin_optional: '(opcional: el pin analógico es entrada por defecto)',
+    status_valid: '✓ Sketch válido',
+    status_errors: 'error(es)',
+    status_warnings: 'aviso(s)',
     // ── Ejemplos ──
     examples_title: 'Ejemplos Arduino',
     examples_browse: '📂 Explorar todos los ejemplos...',
@@ -711,6 +714,9 @@ const messages = {
     val_pin_dir_in: 'input',
     val_pin_not_conf_suffix: 'uses it but it\'s not configured with pinMode() in setup(). Should be',
     val_pin_optional: '(optional: analog pins default to input)',
+    status_valid: '✓ Sketch valid',
+    status_errors: 'error(s)',
+    status_warnings: 'warning(s)',
     // ── Examples ──
     examples_title: 'Arduino Examples',
     examples_browse: '📂 Browse all examples...',
