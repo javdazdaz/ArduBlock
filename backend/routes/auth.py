@@ -27,6 +27,7 @@ from backend.models import User, Classroom, ClassroomStudent, Project, Class, Ac
 from backend.db import get_session
 from backend.messages import get_message
 from backend.config import FRONTEND_DIR
+from backend.rate_limit import is_rate_limited
 
 auth_bp = Blueprint("auth", __name__)
 login_manager = LoginManager()
@@ -209,6 +210,13 @@ def login():
     if current_user.is_authenticated:
         return redirect(url_for("auth.dashboard"))
     form = LoginForm()
+    if request.method == "POST" and is_rate_limited(
+        f"login:{request.remote_addr}:{(request.form.get('email') or '').strip().lower()}",
+        10,
+        60,
+    ):
+        flash(get_message(g.lang, "rate_limited"), "error")
+        return render_template("login.html", form=form)
     if form.validate_on_submit():
         s = _get_session()
         try:
@@ -229,6 +237,11 @@ def register():
     if current_user.is_authenticated:
         return redirect(url_for("auth.dashboard"))
     form = RegisterForm()
+    if request.method == "POST" and is_rate_limited(
+        f"register:{request.remote_addr}", 20, 60
+    ):
+        flash(get_message(g.lang, "rate_limited"), "error")
+        return render_template("register.html", form=form)
     if form.validate_on_submit():
         code = form.join_code.data.strip().upper()
         email = form.email.data.strip().lower()

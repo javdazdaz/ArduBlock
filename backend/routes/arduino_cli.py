@@ -14,6 +14,7 @@ import zipfile
 from pathlib import Path
 
 from flask import Blueprint, jsonify
+from flask_login import login_required
 
 from backend.config import (
     ARDUINO_CLI_DOWNLOADS,
@@ -101,6 +102,7 @@ def _install_arduino_cli() -> dict:
 
 
 @arduino_cli_bp.route("/api/arduino-cli/install", methods=["POST"])
+@login_required
 def install_arduino_cli():
     cli_path = get_arduino_cli_path()
     if cli_path and os.path.isfile(cli_path):

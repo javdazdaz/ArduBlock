@@ -25,6 +25,7 @@ MESSAGES = {
         "no_account": "¿No tienes cuenta?",
         "register_link": "Regístrate",
         "forgot_password": "¿Olvidaste tu contraseña?",
+        "rate_limited": "Demasiados intentos. Espere un momento e intente de nuevo.",
         # ── Register ──
         "register_title": "Crear cuenta",
         "full_name": "Nombre completo",
@@ -171,6 +172,7 @@ MESSAGES = {
         "no_account": "Don't have an account?",
         "register_link": "Sign up",
         "forgot_password": "Forgot your password?",
+        "rate_limited": "Too many attempts. Wait a moment and try again.",
         # ── Register ──
         "register_title": "Create account",
         "full_name": "Full name",

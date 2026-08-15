@@ -9,6 +9,7 @@ import tempfile
 from pathlib import Path
 
 from flask import Blueprint, jsonify, request
+from flask_login import login_required
 
 from backend.services.arduino_cli import run_arduino_cli, try_install_missing_core
 from backend.routes.projects import _write_tabs
@@ -17,6 +18,7 @@ upload_bp = Blueprint("upload", __name__)
 
 
 @upload_bp.route("/api/upload", methods=["POST"])
+@login_required
 def upload_sketch():
     data = request.get_json()
     code = data.get("code", "") if data else ""

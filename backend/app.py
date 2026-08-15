@@ -54,14 +54,6 @@ def create_app() -> Flask:
     # ── Auth ──────────────────────────────────────
     init_auth(app, SessionFactory)
 
-    # ── CORS ──────────────────────────────────────
-    @app.after_request
-    def _add_cors_headers(response):
-        response.headers["Access-Control-Allow-Origin"] = "*"
-        response.headers["Access-Control-Allow-Headers"] = "Content-Type"
-        response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
-        return response
-
     # ── i18n (idioma vía cookie) ──────────────────
     @app.before_request
     def _detect_language():

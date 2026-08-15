@@ -71,7 +71,7 @@ class Classroom(Base):
 
     @staticmethod
     def generate_code():
-        return secrets.token_hex(3).upper()[:6]  # ej: "A1B2C3"
+        return secrets.token_hex(4).upper()[:8]  # ej: "A1B2C3D4" (32 bits)
 
 
 class Class(Base):

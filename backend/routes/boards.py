@@ -6,6 +6,7 @@ import json
 import subprocess
 
 from flask import Blueprint, jsonify, request
+from flask_login import login_required
 
 from backend.config import CHIP_BOARD_MAP
 from backend.services.arduino_cli import run_arduino_cli, install_board_deps
@@ -53,6 +54,7 @@ def list_boards():
 
 
 @boards_bp.route("/api/board/install", methods=["POST"])
+@login_required
 def board_install():
     data = request.get_json() or {}
     fqbn = data.get("fqbn", "arduino:avr:uno")

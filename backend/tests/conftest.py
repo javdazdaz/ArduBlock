@@ -25,6 +25,7 @@ os.environ["TEACHER_EMAIL"] = "profesor@example.com"
 os.environ["TEACHER_PASSWORD"] = "profesor123"
 os.environ["ARDUBLOCK_SECRET_KEY"] = "test-secret-key"
 os.environ["SMTP_HOST"] = ""  # sin email real en tests
+os.environ["ARDUBLOCK_RATE_LIMIT_DISABLED"] = "1"  # sin rate limit en tests
 
 from backend.app import create_app  # noqa: E402
 from backend.db import get_session  # noqa: E402

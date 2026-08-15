@@ -5,6 +5,7 @@ ArduBlock — Rutas del monitor serial
 import json
 
 from flask import Blueprint, jsonify, request
+from flask_login import login_required
 
 from backend.services.arduino_cli import run_arduino_cli
 from backend.services.serial_manager import SerialManager
@@ -22,6 +23,7 @@ def init_serial_manager(sm: SerialManager) -> None:
 
 
 @serial_bp.route("/api/serial/open", methods=["POST"])
+@login_required
 def serial_open():
     sm = _serial_manager
     if sm is None:
@@ -73,6 +75,7 @@ def serial_open():
 
 
 @serial_bp.route("/api/serial/read")
+@login_required
 def serial_read():
     sm = _serial_manager
     if sm is None:
@@ -86,6 +89,7 @@ def serial_read():
 
 
 @serial_bp.route("/api/serial/write", methods=["POST"])
+@login_required
 def serial_write():
     sm = _serial_manager
     if sm is None or not sm.running:
@@ -102,6 +106,7 @@ def serial_write():
 
 
 @serial_bp.route("/api/serial/close", methods=["POST"])
+@login_required
 def serial_close():
     sm = _serial_manager
     if sm is None:
@@ -111,6 +116,7 @@ def serial_close():
 
 
 @serial_bp.route("/api/serial/status")
+@login_required
 def serial_status():
     sm = _serial_manager
     if sm is None:

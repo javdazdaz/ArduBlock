@@ -10,6 +10,7 @@ from pathlib import Path
 
 from flask import Blueprint, jsonify, request
 
+from backend.rate_limit import rate_limit
 from backend.services.arduino_cli import run_arduino_cli, try_install_missing_core
 from backend.routes.projects import _write_tabs
 
@@ -17,6 +18,7 @@ compile_bp = Blueprint("compile", __name__)
 
 
 @compile_bp.route("/api/compile", methods=["POST"])
+@rate_limit(30, 300)
 def compile_sketch():
     data = request.get_json()
     code = data.get("code", "") if data else ""
@@ -66,6 +68,7 @@ def compile_sketch():
 
 
 @compile_bp.route("/api/compile-hex", methods=["POST"])
+@rate_limit(30, 300)
 def compile_hex():
     data = request.get_json()
     code = data.get("code", "") if data else ""
