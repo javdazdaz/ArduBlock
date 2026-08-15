@@ -3,7 +3,8 @@
  *
  * Flujo de subida en fases documentadas:
  *
- *   FASE 0 — Pre-vuelo: cerrar monitor serial, generar código
+ *   FASE 0 — Pre-vuelo: liberar monitor serial, generar código
+ *   PORT  — Selección de puerto Web Serial (DESPUÉS de liberar el monitor)
  *   FASE 1 — Detección: /api/boards → ¿placa en el servidor?
  *     ├─ SÍ → PATH A: Upload local (arduino-cli en servidor)
  *     └─ NO → PATH B: Web Serial (flasheo desde navegador)
@@ -41,8 +42,14 @@ export async function uploadToArduino() {
   consoleOutput.innerHTML = '';
   btnUpload.disabled = true;
 
-  // Solicitar puerto AHORA (transient activation del clic expira tras 1er await).
-  // Si no hay soporte Web Serial o el usuario cancela, se guarda null.
+  // ── FASE 0: Pre-vuelo — liberar el monitor serial ANTES de seleccionar puerto.
+  //    El puerto debe quedar libre para poder elegirlo y quemar código sin
+  //    conflicto de "puerto ocupado".
+  await _phase0_preflight();
+
+  // ── Seleccionar puerto Web Serial (transient activation del clic).
+  //    Se pide después de liberar el monitor; si no hay Web Serial o el
+  //    usuario cancela, se guarda null.
   let webSerialPort = null;
   if ('serial' in navigator) {
     try {
@@ -53,9 +60,6 @@ export async function uploadToArduino() {
   }
 
   try {
-    // ── FASE 0: Pre-vuelo ──────────────────────────
-    await _phase0_preflight();
-
     // ── FASE 1: Detección de placa ──────────────────
     const detection = await _phase1_detectBoard();
 
