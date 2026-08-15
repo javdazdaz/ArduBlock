@@ -515,47 +515,68 @@ function applyWarnings(workspace, warnings) {
   updateStatusPanel(warnings);
 }
 
-// ── Panel de estado en el header ────────────────
+// ── Panel de estado (barra inferior compacta, estilo IDE) ────────────────
+
+const STATUS_COLLAPSED_KEY = 'ardublock:status-collapsed';
+
+function statusCollapsed() {
+  try { return localStorage.getItem(STATUS_COLLAPSED_KEY) === '1'; } catch (e) { return false; }
+}
+
+function setStatusCollapsed(v) {
+  try { localStorage.setItem(STATUS_COLLAPSED_KEY, v ? '1' : '0'); } catch (e) {}
+}
+
+function syncStatusToggle(statusEl) {
+  const collapsed = statusEl.classList.contains('status-collapsed');
+  const toggle = statusEl.querySelector('#status-toggle');
+  toggle.textContent = collapsed ? '▸' : '▾';
+  toggle.title = collapsed ? 'Mostrar estado' : 'Ocultar estado';
+}
 
 function updateStatusPanel(warnings) {
   let statusEl = document.getElementById('status-panel');
   if (!statusEl) {
-    const header = document.querySelector('header');
     statusEl = document.createElement('div');
     statusEl.id = 'status-panel';
-    statusEl.style.cssText = `
-      display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;
-      padding: 0.3rem 1.5rem; background: var(--bg-panel);
-      border-bottom: 1px solid #2a2a4a; flex-shrink: 0;
-      font-size: 0.75rem;
-    `;
-    header.insertAdjacentElement('afterend', statusEl);
+    statusEl.innerHTML =
+      '<button id="status-toggle" class="status-toggle" type="button" aria-label="Mostrar/ocultar estado">▾</button>' +
+      '<span id="status-dot" class="status-dot" aria-hidden="true"></span>' +
+      '<span id="status-summary" class="status-summary"></span>';
+    document.body.appendChild(statusEl);
+
+    const toggle = statusEl.querySelector('#status-toggle');
+    toggle.addEventListener('click', () => {
+      statusEl.classList.toggle('status-collapsed');
+      syncStatusToggle(statusEl);
+      setStatusCollapsed(statusEl.classList.contains('status-collapsed'));
+    });
+    if (statusCollapsed()) statusEl.classList.add('status-collapsed');
   }
 
   const errors = warnings.filter(w => w.severity === 'error');
   const warns = warnings.filter(w => w.severity === 'warning');
 
-  let html = '';
+  const summaryEl = statusEl.querySelector('#status-summary');
+  const dotEl = statusEl.querySelector('#status-dot');
 
-  if (errors.length > 0) {
-    html += `<span style="color:var(--status-error)">✕ ${errors.length} error(es)</span> `;
-    for (const e of errors) {
-      html += `<span style="color:var(--status-error-msg); margin-right: 1rem">${e.message}</span>`;
-    }
-  }
-
-  if (warns.length > 0 && errors.length === 0) {
-    html += `<span style="color:var(--status-warn)">⚠ ${warns.length} aviso(s)</span> `;
-    for (const w of warns) {
-      html += `<span style="color:var(--status-warn-msg); margin-right: 1rem">${w.message}</span>`;
-    }
-  }
-
+  let summary;
+  let color;
   if (errors.length === 0 && warns.length === 0) {
-    html = '<span style="color:var(--status-ok)">✓ Sketch válido</span>';
+    summary = '✓ Sketch válido';
+    color = 'var(--status-ok)';
+  } else {
+    const parts = [];
+    if (errors.length) parts.push(`✕ ${errors.length} error(es)`);
+    if (warns.length) parts.push(`⚠ ${warns.length} aviso(s)`);
+    summary = parts.join(' · ');
+    color = errors.length ? 'var(--status-error)' : 'var(--status-warn)';
   }
+  summaryEl.textContent = summary;
+  summaryEl.style.color = color;
+  dotEl.style.background = color;
 
-  statusEl.innerHTML = html;
+  syncStatusToggle(statusEl);
 
   // Hook: re-aplicar protección de nivel después de cada validación,
   // ya que applyWarnings hace setWarningText(null) global.
