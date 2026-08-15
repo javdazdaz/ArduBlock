@@ -29,6 +29,16 @@
   --console-border: var(--warning);
 }
 
+/* Fira Code empaquetada (webfont): evita depender de la fuente del sistema
+   y que la primera carga dibuje los bloques con la fuente de respaldo. */
+@font-face {
+  font-family: 'Fira Code';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('/assets/fonts/fira-code.woff2') format('woff2');
+}
+
 body {
   font-family: "Fira Code", "Cascadia Code", "JetBrains Mono", "Consolas", monospace;
   background: var(--bg);

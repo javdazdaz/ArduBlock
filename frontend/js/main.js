@@ -1010,3 +1010,17 @@ window.addEventListener('beforeunload', (e) => {
 
 // ═══ Aplicar idioma al DOM ═══════════════════
 applyDOMLanguage();
+
+// ═══ Re-render al cargar la fuente de bloques ═══
+// En la primera carga el webfont "Fira Code" aún no está listo y los bloques
+// se dibujan con la fuente de respaldo (métricas incorrectas). Cuando la
+// fuente termina de cargar, re-renderizamos para re-medir con la fuente real.
+if (document.fonts && document.fonts.ready) {
+  document.fonts.ready.then(() => {
+    try {
+      const state = Blockly.serialization.workspaces.save(workspace);
+      workspace.clear();
+      Blockly.serialization.workspaces.load(state, workspace);
+    } catch (_) { /* workspace no listo aún */ }
+  });
+}
