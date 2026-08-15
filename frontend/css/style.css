@@ -665,8 +665,9 @@ main {
   font-family: inherit !important;
 }
 
-/* ── Status panel (barra inferior compacta) ───── */
+/* ── Status panel (barra inferior compacta + lista de problemas) ───── */
 #status-panel {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -676,8 +677,6 @@ main {
   font-size: 0.75rem;
   flex-shrink: 0;
   min-height: 1.7rem;
-  overflow-x: auto;
-  white-space: nowrap;
 }
 #status-panel .status-toggle {
   background: none; border: none; padding: 0 0.25rem;
@@ -688,8 +687,33 @@ main {
 #status-panel .status-dot {
   width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
 }
-#status-panel .status-summary { flex-shrink: 0; }
+#status-panel .status-summary {
+  flex-shrink: 0;
+  background: none; border: none; padding: 0 0.2rem;
+  font-family: inherit; font-size: 0.75rem; cursor: default;
+}
+#status-panel .status-summary.has-problems { cursor: pointer; }
+#status-panel .status-summary.has-problems:hover { background: var(--bg-inset); border-radius: 3px; }
 #status-panel.status-collapsed .status-summary { display: none; }
+#status-panel .status-problems {
+  position: absolute; bottom: calc(100% + 6px); left: 0.5rem; right: 0.5rem;
+  max-height: 45vh; overflow-y: auto;
+  background: var(--bg-panel); border: 1px solid var(--border);
+  border-radius: 6px; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  padding: 0.35rem; font-size: 0.75rem; z-index: 600;
+}
+#status-panel .status-problems.hidden { display: none; }
+#status-panel .problem-row {
+  display: flex; gap: 0.5rem; padding: 0.3rem 0.4rem;
+  border-radius: 4px; cursor: pointer; align-items: flex-start;
+  white-space: normal;
+}
+#status-panel .problem-row:hover { background: var(--bg-inset); }
+#status-panel .problem-sev { flex-shrink: 0; }
+#status-panel .problem-error .problem-sev { color: var(--status-error); }
+#status-panel .problem-warn .problem-sev { color: var(--status-warn); }
+#status-panel .problem-loc { color: var(--text-dim); flex-shrink: 0; white-space: nowrap; }
+#status-panel .problem-msg { color: var(--text); }
 
 /* ── Blockly warning bubbles ──────────────────── */
 .blocklyText.blocklyBubbleText {

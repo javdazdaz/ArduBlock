@@ -512,7 +512,7 @@ function applyWarnings(workspace, warnings) {
     }
   }
 
-  updateStatusPanel(warnings);
+  updateStatusPanel(warnings, workspace);
 }
 
 // ── Panel de estado (barra inferior compacta, estilo IDE) ────────────────
@@ -534,7 +534,7 @@ function syncStatusToggle(statusEl) {
   toggle.title = collapsed ? 'Mostrar estado' : 'Ocultar estado';
 }
 
-function updateStatusPanel(warnings) {
+function updateStatusPanel(warnings, workspace) {
   let statusEl = document.getElementById('status-panel');
   if (!statusEl) {
     statusEl = document.createElement('div');
@@ -542,46 +542,129 @@ function updateStatusPanel(warnings) {
     statusEl.innerHTML =
       '<button id="status-toggle" class="status-toggle" type="button" aria-label="Mostrar/ocultar estado">▾</button>' +
       '<span id="status-dot" class="status-dot" aria-hidden="true"></span>' +
-      '<span id="status-summary" class="status-summary"></span>';
+      '<button id="status-summary" class="status-summary" type="button"></button>' +
+      '<div id="status-problems" class="status-problems hidden"></div>';
     document.body.appendChild(statusEl);
 
     const toggle = statusEl.querySelector('#status-toggle');
     toggle.addEventListener('click', () => {
       statusEl.classList.toggle('status-collapsed');
+      closeStatusProblems(statusEl);
       syncStatusToggle(statusEl);
       setStatusCollapsed(statusEl.classList.contains('status-collapsed'));
     });
+
+    const summaryBtn = statusEl.querySelector('#status-summary');
+    summaryBtn.addEventListener('click', () => {
+      statusEl.querySelector('#status-problems').classList.toggle('hidden');
+      renderStatusSummary(statusEl);
+    });
+
+    // Cerrar la lista al clickear fuera o con Escape
+    document.addEventListener('click', (e) => {
+      if (!statusEl.contains(e.target)) closeStatusProblems(statusEl);
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeStatusProblems(statusEl);
+    });
+
     if (statusCollapsed()) statusEl.classList.add('status-collapsed');
   }
 
   const errors = warnings.filter(w => w.severity === 'error');
   const warns = warnings.filter(w => w.severity === 'warning');
+  statusEl._counts = { errors: errors.length, warns: warns.length };
 
-  const summaryEl = statusEl.querySelector('#status-summary');
   const dotEl = statusEl.querySelector('#status-dot');
+  dotEl.style.background = errors.length ? 'var(--status-error)'
+    : (warns.length ? 'var(--status-warn)' : 'var(--status-ok)');
 
-  let summary;
-  let color;
-  if (errors.length === 0 && warns.length === 0) {
-    summary = '✓ Sketch válido';
-    color = 'var(--status-ok)';
+  const problemsEl = statusEl.querySelector('#status-problems');
+  if (warnings.length > 0) {
+    renderStatusProblems(problemsEl, warnings, workspace);
   } else {
-    const parts = [];
-    if (errors.length) parts.push(`✕ ${errors.length} error(es)`);
-    if (warns.length) parts.push(`⚠ ${warns.length} aviso(s)`);
-    summary = parts.join(' · ');
-    color = errors.length ? 'var(--status-error)' : 'var(--status-warn)';
+    problemsEl.textContent = '';
+    closeStatusProblems(statusEl);
   }
-  summaryEl.textContent = summary;
-  summaryEl.style.color = color;
-  dotEl.style.background = color;
 
-  syncStatusToggle(statusEl);
+  renderStatusSummary(statusEl);
 
   // Hook: re-aplicar protección de nivel después de cada validación,
   // ya que applyWarnings hace setWarningText(null) global.
   if (typeof window._applyLevelProtection === 'function') {
     window._applyLevelProtection();
+  }
+}
+
+function renderStatusSummary(statusEl) {
+  const c = statusEl._counts || { errors: 0, warns: 0 };
+  const summaryBtn = statusEl.querySelector('#status-summary');
+  const problemsEl = statusEl.querySelector('#status-problems');
+  const open = !problemsEl.classList.contains('hidden');
+  const n = c.errors + c.warns;
+
+  let text;
+  if (n === 0) {
+    text = '✓ Sketch válido';
+  } else {
+    const parts = [];
+    if (c.errors) parts.push(`✕ ${c.errors} error(es)`);
+    if (c.warns) parts.push(`⚠ ${c.warns} aviso(s)`);
+    text = parts.join(' · ') + (open ? ' ▾' : ' ▴');
+  }
+  summaryBtn.textContent = text;
+  summaryBtn.style.color = c.errors ? 'var(--status-error)'
+    : (c.warns ? 'var(--status-warn)' : 'var(--status-ok)');
+  summaryBtn.classList.toggle('has-problems', n > 0);
+}
+
+function closeStatusProblems(statusEl) {
+  const problemsEl = statusEl.querySelector('#status-problems');
+  if (!problemsEl.classList.contains('hidden')) {
+    problemsEl.classList.add('hidden');
+    renderStatusSummary(statusEl);
+  }
+}
+
+function renderStatusProblems(problemsEl, warnings, workspace) {
+  problemsEl.textContent = '';
+  for (const w of warnings) {
+    const isError = w.severity === 'error';
+    const block = w.blocks && w.blocks[0];
+    const blockId = block ? block.id : null;
+
+    const row = document.createElement('div');
+    row.className = 'problem-row ' + (isError ? 'problem-error' : 'problem-warn');
+    if (blockId) row.dataset.blockId = blockId;
+
+    const sev = document.createElement('span');
+    sev.className = 'problem-sev';
+    sev.textContent = isError ? '✕' : '⚠';
+    row.appendChild(sev);
+
+    if (block) {
+      const loc = document.createElement('span');
+      loc.className = 'problem-loc';
+      loc.textContent = getBlockLabel(block);
+      row.appendChild(loc);
+    }
+
+    const msg = document.createElement('span');
+    msg.className = 'problem-msg';
+    msg.textContent = w.message;
+    row.appendChild(msg);
+
+    row.addEventListener('click', () => {
+      if (blockId && workspace && typeof workspace.getBlockById === 'function') {
+        const b = workspace.getBlockById(blockId);
+        if (b) {
+          b.select();
+          try { workspace.centerOnBlock(blockId); } catch (e) {}
+        }
+      }
+    });
+
+    problemsEl.appendChild(row);
   }
 }
 
