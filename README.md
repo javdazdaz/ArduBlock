@@ -134,9 +134,20 @@ ardublock/
 │   ├── routes/         # auth, projects, compile, serial, ...
 │   ├── services/       # arduino-cli, serial, usb
 │   └── tests/
-├── examples/           # Sketches .ino de ejemplo
+├── examples/           # Ejemplos: arduino/*.ino (API) + blockly-states/*.json (bloques)
 └── ardublock.sh        # Script de control del servicio
 ```
+
+### Notas de desarrollo
+
+- **Compilación asíncrona**: `POST /api/compile` encola (202 con `job_id`); polling a
+  `GET /api/compile/<job_id>`. Cola en memoria (`backend/compile_queue.py`).
+- **i18n**: es/en vía cookie `lang` (`backend/messages.py`, `frontend/js/i18n.js`).
+- **Actividades**: guiadas (`frontend/activities/*.js`) vs. biblioteca del docente
+  (entidad `Activity` en la DB, asignable a clases).
+- **Ejemplos**: `examples/arduino/*.ino` (servidos por `/api/examples`) y
+  `examples/blockly-states/*.json` (estados Blockly bundleados por Vite).
+- **Seguridad**: ver [SECURITY.md](SECURITY.md).
 
 ## Licencia
 

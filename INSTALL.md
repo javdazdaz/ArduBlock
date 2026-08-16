@@ -52,7 +52,16 @@ cd /opt/ardublock
 npm run build          # → frontend/dist/
 ```
 
-### 4. Systemd service
+### 4. Systemd service (usuario no-root)
+
+Crear un usuario de sistema dedicado (no correr como root) y darle acceso al
+puerto USB para flashear:
+
+```bash
+useradd --system --home-dir /var/lib/ardublock --shell /usr/sbin/nologin ardublock
+usermod -aG dialout ardublock
+chown -R ardublock:ardublock /opt/ardublock
+```
 
 Crear `/etc/systemd/system/ardublock.service`:
 
@@ -63,8 +72,10 @@ After=network.target
 
 [Service]
 Type=simple
-User=root
+User=ardublock
+Group=ardublock
 WorkingDirectory=/opt/ardublock/backend
+Environment="HOME=/var/lib/ardublock"
 Environment="ARDUBLOCK_HOST=0.0.0.0"
 Environment="ARDUBLOCK_PORT=5000"
 Environment="ARDUBLOCK_PRODUCTION=1"
@@ -78,6 +89,9 @@ StandardError=append:/var/log/ardublock.log
 [Install]
 WantedBy=multi-user.target
 ```
+
+arduino-cli y su data (cores, librerías) quedan en `$HOME` (`/var/lib/ardublock/...`),
+no en `/root`. git y build se corren como `ardublock` (`sudo -u ardublock ...`).
 
 ```bash
 systemctl daemon-reload
@@ -126,13 +140,13 @@ chmod +x /opt/ardublock/deploy.sh
 /opt/ardublock/deploy.sh
 ```
 
-O manualmente:
+O manualmente (git y build como `ardublock`, dueño del checkout):
 
 ```bash
 cd /opt/ardublock
-git pull origin main
-npm install --prefer-offline
-npm run build
+sudo -u ardublock git pull origin main
+sudo -u ardublock npm install --prefer-offline
+sudo -u ardublock npm run build
 systemctl restart ardublock
 ```
 
@@ -157,6 +171,6 @@ http://<ip-del-servidor>:5000/api/health
 |-------------|----------|----------------------------------------|
 | Debian 11   | 3.9      | Sin problemas                          |
 | Debian 12   | 3.11     | Requiere `setuptools` en requirements  |
-| Debian 13   | 3.13     | Usa `flask-limiter>=3` (no 1.5)        |
+| Debian 13   | 3.13     | Sin problemas                          |
 | Ubuntu 22.04| 3.10     | Sin problemas                          |
 | Ubuntu 24.04| 3.12     | Igual que Debian 13                    |
