@@ -59,6 +59,13 @@ _ARDUINO_DATA_DIR = os.environ.get("ARDUINO_DATA_DIR") or str(
     Path.home() / ".arduino15"
 )
 
+# Directorio del caché de build de arduino-cli (core compilado + objetos por
+# sketch). Por defecto $HOME/.cache (arduino-cli cachea en $HOME/.cache/arduino).
+# Override con ARDUBLOCK_BUILD_CACHE_DIR.
+_BUILD_CACHE_DIR = os.environ.get("ARDUBLOCK_BUILD_CACHE_DIR") or str(
+    Path.home() / ".cache"
+)
+
 _BWRAP = shutil.which("bwrap")
 if _BWRAP:
     # Self-test: si bwrap/userns no funciona, se desactiva (fallback a Fase A).
@@ -87,7 +94,8 @@ def _sandboxed_compile(cmd: list[str]):
     """Envuelve ``arduino-cli compile`` en bwrap. Devuelve (argv, scratch_dir).
 
     El sandbox ve solo: /usr (ro, libs de avr-gcc), el binario arduino-cli (ro),
-    un data-dir scratch (packages/ e índices en ro) y el directorio del sketch.
+    un data-dir scratch (packages/ e índices en ro), el caché de build
+    (_BUILD_CACHE_DIR, rw, sobre scratch/.cache) y el directorio del sketch.
     Sin /etc, /opt, /root, /home ni red.
     """
     args = cmd[1:]
@@ -103,6 +111,7 @@ def _sandboxed_compile(cmd: list[str]):
     cli_path = cmd[0]
     scratch = tempfile.mkdtemp(prefix="ardublock_data_")
     os.makedirs(os.path.join(scratch, "packages"), exist_ok=True)
+    os.makedirs(os.path.join(scratch, ".cache"), exist_ok=True)
 
     bwrap = [
         _BWRAP,
@@ -118,6 +127,17 @@ def _sandboxed_compile(cmd: list[str]):
         "--bind", scratch, scratch,
         "--bind", sketch_parent, sketch_parent,
     ]
+
+    # Caché de build persistente: arduino-cli cachea el core compilado en
+    # $HOME/.cache/arduino. Con HOME=scratch se perdería en cada compile; lo
+    # montamos rw sobre scratch/.cache para que sobreviva compiles y reinicios.
+    build_cache = Path(_BUILD_CACHE_DIR)
+    try:
+        build_cache.mkdir(parents=True, exist_ok=True)
+    except OSError:
+        build_cache = None
+    if build_cache is not None and os.access(build_cache, os.W_OK):
+        bwrap += ["--bind", str(build_cache), os.path.join(scratch, ".cache")]
 
     packages_dir = os.path.join(_ARDUINO_DATA_DIR, "packages")
     if os.path.isdir(packages_dir):
