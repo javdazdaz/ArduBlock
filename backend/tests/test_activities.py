@@ -248,3 +248,87 @@ def test_student_cannot_read_unreferenced_project(client, seed_classroom):
                 follow_redirects=True)
 
     assert client.get(f"/api/reference-projects/{pid}").status_code == 403
+
+
+def test_student_clones_activity_to_account(client, seed_classroom):
+    seed_classroom("ABC123")
+    cid = _classroom_id()
+    _register_student(client, "alumno@example.com")
+    client.get("/logout")
+    _login_teacher(client)
+    pid = _teacher_project(client, "base.ino")
+    aid = _create_activity(client, "Semáforo", ref_id=pid)
+    clid = _create_class(client, cid, "Clase 1")
+    client.post(f"/teacher/class/{clid}/activities",
+                data={"activity_id": str(aid)}, follow_redirects=True)
+    client.get("/logout")
+    client.post("/login", data={"email": "alumno@example.com", "password": "secreto123"},
+                follow_redirects=True)
+
+    r = client.post(f"/student/class/{clid}/activities/{aid}/clone",
+                    follow_redirects=False)
+
+    # Redirige al editor con la copia abierta.
+    assert r.status_code == 302
+    assert "/app?project=" in r.headers["Location"]
+
+    s = get_session()
+    try:
+        student = s.query(User).filter_by(email="alumno@example.com").first()
+        clones = s.query(Project).filter_by(user_id=student.id).all()
+        assert len(clones) == 1
+        clone = clones[0]
+        assert clone.class_id == clid
+        assert clone.name == "Semáforo"
+        ref = s.get(Project, pid)
+        assert clone.data == ref.data
+        assert clone.board == ref.board
+    finally:
+        s.close()
+
+
+def test_student_cannot_clone_activity_without_reference(client, seed_classroom):
+    seed_classroom("ABC123")
+    cid = _classroom_id()
+    _register_student(client, "alumno@example.com")
+    client.get("/logout")
+    _login_teacher(client)
+    aid = _create_activity(client, "Sin base")  # sin proyecto de referencia
+    clid = _create_class(client, cid, "Clase 1")
+    client.post(f"/teacher/class/{clid}/activities",
+                data={"activity_id": str(aid)}, follow_redirects=True)
+    client.get("/logout")
+    client.post("/login", data={"email": "alumno@example.com", "password": "secreto123"},
+                follow_redirects=True)
+
+    client.post(f"/student/class/{clid}/activities/{aid}/clone", follow_redirects=True)
+
+    s = get_session()
+    try:
+        student = s.query(User).filter_by(email="alumno@example.com").first()
+        assert s.query(Project).filter_by(user_id=student.id).count() == 0
+    finally:
+        s.close()
+
+
+def test_student_cannot_clone_unassigned_activity(client, seed_classroom):
+    seed_classroom("ABC123")
+    cid = _classroom_id()
+    _register_student(client, "alumno@example.com")
+    client.get("/logout")
+    _login_teacher(client)
+    pid = _teacher_project(client, "base.ino")
+    aid = _create_activity(client, "No asignada", ref_id=pid)
+    clid = _create_class(client, cid, "Clase 1")  # actividad NO asignada a esta clase
+    client.get("/logout")
+    client.post("/login", data={"email": "alumno@example.com", "password": "secreto123"},
+                follow_redirects=True)
+
+    client.post(f"/student/class/{clid}/activities/{aid}/clone", follow_redirects=True)
+
+    s = get_session()
+    try:
+        student = s.query(User).filter_by(email="alumno@example.com").first()
+        assert s.query(Project).filter_by(user_id=student.id).count() == 0
+    finally:
+        s.close()

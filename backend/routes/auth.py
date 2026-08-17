@@ -12,6 +12,7 @@ import secrets
 import smtplib
 from email.mime.text import MIMEText
 from datetime import timedelta
+from urllib.parse import quote
 
 from flask import Blueprint, g, render_template, request, redirect, url_for, flash, send_from_directory
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
@@ -896,6 +897,53 @@ def unassign_activity(class_id, activity_id):
     return redirect(url_for("auth.view_class", class_id=class_id))
 
 
+@auth_bp.route("/student/class/<int:class_id>/activities/<int:activity_id>/clone", methods=["POST"])
+@login_required
+def clone_activity(class_id, activity_id):
+    """Estudiante: clona la actividad (su proyecto de referencia) a su cuenta."""
+    if current_user.is_teacher:
+        return redirect(url_for("auth.dashboard"))
+    form = EmptyForm()
+    back = url_for("auth.student_class", class_id=class_id)
+    s = _get_session()
+    try:
+        if not form.validate_on_submit():
+            return redirect(back)
+        cls = s.get(Class, class_id)
+        enrolled = (
+            s.query(ClassroomStudent)
+            .filter_by(classroom_id=cls.classroom_id, user_id=current_user.id)
+            .first()
+        ) if cls else None
+        if not cls or not enrolled:
+            return redirect(url_for("auth.dashboard"))
+        assigned = (
+            s.query(ClassActivity)
+            .filter_by(class_id=class_id, activity_id=activity_id)
+            .first()
+        )
+        activity = s.get(Activity, activity_id) if assigned else None
+        ref = activity.reference_project if activity else None
+        if not activity or not ref:
+            flash(get_message(g.lang, "activity_no_reference"), "error")
+            return redirect(back)
+        name = (activity.name or ref.name or "").strip()[:100] or "Sin título"
+        clone = Project(
+            user_id=current_user.id,
+            name=name,
+            data=ref.data,
+            board=ref.board,
+            class_id=class_id,
+            thumbnail=ref.thumbnail,
+        )
+        s.add(clone)
+        s.commit()
+        flash(get_message(g.lang, "activity_cloned"), "success")
+        return redirect(f"/app?project={clone.id}&from={quote(back)}")
+    finally:
+        s.close()
+
+
 @auth_bp.route("/teacher/regen-thumbnails")
 @login_required
 def teacher_regen_thumbnails():
@@ -1099,4 +1147,5 @@ def student_class(class_id):
     return render_template(
         "student_class.html",
         cls=cls, projects=projects, activities=activities, user=current_user,
+        clone_form=EmptyForm(),
     )

@@ -17,6 +17,10 @@
           <div style="flex:1">{{ a.name }}</div>
           {% if a.reference_project %}
             <a href="/app?project={{ a.reference_project.id }}&ref=1&from={{ ('/student/class/' ~ cls.id) | urlencode }}" class="btn btn-ghost btn-small">{{ _('view_reference') }}</a>
+            <form method="POST" action="{{ url_for('auth.clone_activity', class_id=cls.id, activity_id=a.id) }}" class="inline-form">
+              {{ clone_form.hidden_tag() }}
+              <button type="submit" class="btn btn-small">{{ _('clone_activity') }}</button>
+            </form>
           {% else %}
             <span class="muted">{{ _('no_reference') }}</span>
           {% endif %}
