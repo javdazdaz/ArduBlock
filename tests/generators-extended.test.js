@@ -568,6 +568,58 @@ describe('generadores C++ — Avanzado (tone)', () => {
   });
 });
 
+// ═══ WiFi / Servidor Web ═════════════════════════
+
+describe('generadores C++ — WiFi / Servidor Web', () => {
+  let cppGenerator;
+
+  beforeAll(async () => {
+    const mod = await import('../frontend/js/generator.js');
+    cppGenerator = mod.cppGenerator;
+  });
+
+  it('wifi_connect genera WiFi.begin + espera WL_CONNECTED', () => {
+    const code = cppGenerator.forBlock['wifi_connect'](b('wifi_connect', { SSID: 'miRed', PASS: 'clave' }));
+    expect(code).toContain('WiFi.begin("miRed", "clave");');
+    expect(code).toContain('while (WiFi.status() != WL_CONNECTED)');
+    expect(cppGenerator._wifiUsed).toBe(true);
+  });
+
+  it('wifi_connect escapa comillas en SSID', () => {
+    const code = cppGenerator.forBlock['wifi_connect'](b('wifi_connect', { SSID: 'mi"Red', PASS: '' }));
+    expect(code).toContain('mi\\"Red');
+  });
+
+  it('wifi_access_point genera WiFi.beginAP', () => {
+    const code = cppGenerator.forBlock['wifi_access_point'](b('wifi_access_point', { SSID: 'MiArduino', PASS: '12345678' }));
+    expect(code).toBe('WiFi.beginAP("MiArduino", "12345678");\n');
+    expect(cppGenerator._wifiUsed).toBe(true);
+  });
+
+  it('webserver_begin genera server.begin() y registra puerto', () => {
+    const code = cppGenerator.forBlock['webserver_begin'](b('webserver_begin', { PORT: '8080' }));
+    expect(code).toBe('server.begin();\n');
+    expect(cppGenerator._webserverUsed).toBe(true);
+    expect(cppGenerator._webserverPort).toBe(8080);
+  });
+
+  it('webserver_serve genera handler HTTP con título y texto', () => {
+    const code = cppGenerator.forBlock['webserver_serve'](b('webserver_serve', { TITLE: 'Hola', BODY: 'Mundo' }));
+    expect(code).toContain('WiFiClient client = server.available();');
+    expect(code).toContain('HTTP/1.1 200 OK');
+    expect(code).toContain('<title>Hola</title>');
+    expect(code).toContain('<p>Mundo</p>');
+    expect(cppGenerator._webserverUsed).toBe(true);
+  });
+
+  it('wifi_ip genera WiFi.localIP().toString()', () => {
+    const [code, order] = cppGenerator.forBlock['wifi_ip'](b('wifi_ip'));
+    expect(code).toBe('WiFi.localIP().toString()');
+    expect(order).toBe(cppGenerator.ORDER_ATOMIC);
+    expect(cppGenerator._wifiUsed).toBe(true);
+  });
+});
+
 // ═══ Integración: generateArduinoCode ═════════════
 
 describe('generateArduinoCode — includes y helpers', () => {
@@ -626,6 +678,29 @@ describe('generateArduinoCode — includes y helpers', () => {
         b('stepper_create', { NAME: 'm', STEPS: '200', P1: '8', P2: '9', P3: '10', P4: '11' })],
     };
     expect(generateArduinoCode(ws)).toContain('#include <Stepper.h>');
+  });
+
+  it('incluye #include <WiFiS3.h> y WiFiServer con bloques WiFi', () => {
+    const ws = {
+      getTopBlocks: () => [b('arduino_setup'), b('arduino_loop')],
+      getAllBlocks: () => [b('arduino_setup'), b('arduino_loop'),
+        b('wifi_connect', { SSID: 'red', PASS: 'clave' }),
+        b('webserver_begin', { PORT: '80' })],
+    };
+    const code = generateArduinoCode(ws);
+    expect(code).toContain('#include <WiFiS3.h>');
+    expect(code).toContain('WiFiServer server(80);');
+    expect(code).toContain('server.begin();');
+  });
+
+  it('WiFiServer usa el puerto del bloque webserver_begin', () => {
+    const ws = {
+      getTopBlocks: () => [b('arduino_setup'), b('arduino_loop')],
+      getAllBlocks: () => [b('arduino_setup'), b('arduino_loop'),
+        b('webserver_begin', { PORT: '8080' }),
+        b('webserver_serve', { TITLE: 'T', BODY: 'B' })],
+    };
+    expect(generateArduinoCode(ws)).toContain('WiFiServer server(8080);');
   });
 
   it('orden canónico: #include → globales → setup → loop', () => {

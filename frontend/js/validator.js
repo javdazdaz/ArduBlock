@@ -115,6 +115,25 @@ function validateWorkspace(workspace) {
     }
   }
 
+  // ═══ R3b: bloques WiFi/servidor deben ir en setup() ═══
+  const wifiSetupBlocks = [
+    ...findAllBlocksOfType(workspace, 'wifi_connect'),
+    ...findAllBlocksOfType(workspace, 'wifi_access_point'),
+    ...findAllBlocksOfType(workspace, 'webserver_begin')
+  ];
+  for (const block of wifiSetupBlocks) {
+    const context = getArduinoContext(workspace, block);
+    if (context !== 'setup') {
+      const where = context === 'loop' ? t('val_where_loop') : t('val_where_outside');
+      warnings.push({
+        type: 'wifi_setup_position',
+        severity: 'warning',
+        message: t('val_wifi_setup_position', { label: getBlockLabel(block), where }),
+        blocks: [block]
+      });
+    }
+  }
+
   // ═══ R4: Bloques huérfanos (no están dentro de setup ni loop) ═══
   const topBlocks = workspace.getTopBlocks(true);
   for (const block of topBlocks) {
@@ -129,7 +148,8 @@ function validateWorkspace(workspace) {
       'servo_write', 'servo_write_us', 'attach_interrupt',
       'lcd_print', 'lcd_set_cursor', 'lcd_clear',
       'stepper_speed', 'stepper_step',
-      'text_print'
+      'text_print',
+      'webserver_serve'
     ];
     if (statementTypes.includes(block.type)) {
       warnings.push({
@@ -567,6 +587,11 @@ const BLOCK_LABEL_KEYS = {
   'stepper_speed': 'blk_stepper_speed',
   'stepper_step': 'blk_stepper_step',
   'text_print': 'blk_text_print',
+  'wifi_connect': 'blk_wifi_connect',
+  'wifi_access_point': 'blk_wifi_access_point',
+  'webserver_begin': 'blk_webserver_begin',
+  'webserver_serve': 'blk_webserver_serve',
+  'wifi_ip': 'blk_wifi_ip',
   'variable_global': 'blk_variable_global',
   'variable_declare': 'blk_variable_declare',
   'variable_set': 'blk_variable_set',

@@ -52,6 +52,7 @@ import { registerGenerators as regLedmatrix,
 import { registerGenerators as regMax7219,
          MAX7219_FRAMES } from './blocks/max7219.js';
 import { registerGenerators as regMatrixdirect } from './blocks/matrixdirect.js';
+import { registerGenerators as regWifi } from './blocks/wifi.js';
 
 regEstructura(cppGenerator);
 regDigital(cppGenerator);
@@ -71,6 +72,7 @@ regAfmotor(cppGenerator);
 regLedmatrix(cppGenerator);
 regMax7219(cppGenerator);
 regMatrixdirect(cppGenerator);
+regWifi(cppGenerator);
 
 // ═══ Generadores built-in de Blockly ═══════════
 
@@ -445,6 +447,9 @@ export function generateArduinoCode(workspace) {
   cppGenerator._max7219FrameNames = null;
   cppGenerator._directUsed = false;
   cppGenerator._directFrameNames = null;
+  cppGenerator._wifiUsed = false;
+  cppGenerator._webserverUsed = false;
+  cppGenerator._webserverPort = 80;
 
   const topBlocks = workspace.getTopBlocks(true);
 
@@ -487,6 +492,20 @@ export function generateArduinoCode(workspace) {
     } else if (b.type === 'ultrasonic_create') {
       const n = (b.getFieldValue('NAME') || '').trim();
       if (n) usNames.add(n);
+    }
+  }
+
+  // ── WiFi (R4): detectar bloques por tipo (scan, igual que servo/lcd) ──
+  for (const b of allBlocks) {
+    if (b.type === 'wifi_connect' || b.type === 'wifi_access_point' || b.type === 'wifi_ip') {
+      cppGenerator._wifiUsed = true;
+    }
+    if (b.type === 'webserver_begin' || b.type === 'webserver_serve') {
+      cppGenerator._webserverUsed = true;
+    }
+    if (b.type === 'webserver_begin') {
+      const p = parseInt(b.getFieldValue('PORT'), 10);
+      if (p > 0 && p <= 65535) cppGenerator._webserverPort = p;
     }
   }
 
@@ -733,6 +752,15 @@ export function generateArduinoCode(workspace) {
     sketch += '\n';
   }
 
+  // ── WiFi (R4) ──
+  if (cppGenerator._wifiUsed || cppGenerator._webserverUsed) {
+    sketch += '#include <WiFiS3.h>\n';
+    if (cppGenerator._webserverUsed) {
+      sketch += 'WiFiServer server(' + (cppGenerator._webserverPort || 80) + ');\n';
+    }
+    sketch += '\n';
+  }
+
   // ── Ultrasonic helpers ──
   if (usNames.size > 0) {
     for (const inst of cppGenerator._usInstances) {
@@ -867,6 +895,13 @@ export function generateArduinoCode(workspace) {
                + '    digitalWrite(_md_cols[_d], HIGH);\n'
                + '  }\n';
     setupBody = init;
+  }
+
+  // ── Servidor web: auto-inyectar server.begin() en setup ──
+  if (cppGenerator._webserverUsed && setupBody && !setupBody.includes('server.begin()')) {
+    setupBody = '  server.begin();\n' + setupBody;
+  } else if (cppGenerator._webserverUsed && !setupBody) {
+    setupBody = '  server.begin();\n';
   }
 
   if (globals.trim()) {

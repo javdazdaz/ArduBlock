@@ -132,6 +132,7 @@ import { blocks as afmotorBlocks }    from './blocks/afmotor.js';
 import { blocks as ledmatrixBlocks } from './blocks/ledmatrix.js';
 import { blocks as max7219Blocks } from './blocks/max7219.js';
 import { blocks as matrixdirectBlocks } from './blocks/matrixdirect.js';
+import { blocks as wifiBlocks } from './blocks/wifi.js';
 
 // ═══ Registrar todos los bloques ═══════════════
 
@@ -154,6 +155,7 @@ const allBlocks = [
   ...ledmatrixBlocks,
   ...max7219Blocks,
   ...matrixdirectBlocks,
+  ...wifiBlocks,
 ];
 
 Blockly.common.defineBlocksWithJsonArray(allBlocks);
@@ -279,6 +281,11 @@ const _FULL_TOOLBOX_TEMPLATE = [
   { kind: 'block', type: 'matrixdirect_create', level: 2 },
   { kind: 'block', type: 'matrixdirect_show', level: 2 },
   { kind: 'block', type: 'matrixdirect_clear', level: 2 },
+  { kind: 'block', type: 'wifi_connect', level: 3 },
+  { kind: 'block', type: 'wifi_access_point', level: 3 },
+  { kind: 'block', type: 'webserver_begin', level: 3 },
+  { kind: 'block', type: 'webserver_serve', level: 3 },
+  { kind: 'block', type: 'wifi_ip', level: 3 },
 ];
 
 export const BLOCK_LEVELS = _buildBlockLevelMap(_FULL_TOOLBOX_TEMPLATE);
@@ -501,6 +508,15 @@ export function buildToolboxForBoard(fqbn, level) {
           { 'kind': 'block', 'type': 'matrixdirect_create', 'level': 2 },
           { 'kind': 'block', 'type': 'matrixdirect_show', 'level': 2 },
           { 'kind': 'block', 'type': 'matrixdirect_clear', 'level': 2 },
+        ]},
+      { 'kind': 'category', 'name': '%{BKY_CAT_WIFI}', 'colour': '210', 'level': 3,
+        'boardFilter': /^arduino:renesas_uno:unor4wifi/,
+        'contents': [
+          { 'kind': 'block', 'type': 'wifi_connect', 'level': 3 },
+          { 'kind': 'block', 'type': 'wifi_access_point', 'level': 3 },
+          { 'kind': 'block', 'type': 'webserver_begin', 'level': 3 },
+          { 'kind': 'block', 'type': 'webserver_serve', 'level': 3 },
+          { 'kind': 'block', 'type': 'wifi_ip', 'level': 3 },
         ]},
       { 'kind': 'search', 'name': '%{BKY_CAT_BUSCAR}', 'contents': [] }
     ]
