@@ -10,6 +10,7 @@
 import { EditorView, keymap, lineNumbers, highlightActiveLine, highlightActiveLineGutter } from '@codemirror/view';
 import { EditorState, Compartment } from '@codemirror/state';
 import { cpp } from '@codemirror/lang-cpp';
+import { html } from '@codemirror/lang-html';
 import { oneDark } from '@codemirror/theme-one-dark';
 import { syntaxHighlighting, defaultHighlightStyle } from '@codemirror/language';
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
@@ -21,6 +22,7 @@ let inoContainer, hContainer;  // DOM parents
 // ═══ Tema dinámico (light/dark) ══════════════════
 
 const themeCompartment = new Compartment();
+const langCompartment = new Compartment();
 
 const lightTheme = [
   EditorView.theme({
@@ -56,13 +58,13 @@ const lightTheme = [
 // ═══ Extensiones compartidas ══════════════════════
 
 const sharedExtensions = [
-  cpp(),
   themeCompartment.of([...oneDark]),  // default: dark
   lineNumbers(),
   highlightActiveLineGutter(),
 ];
 
 const editableExtensions = [
+  langCompartment.of(cpp()),  // lenguaje dinámico (se cambia según extensión)
   ...sharedExtensions,
   history(),
   keymap.of([...defaultKeymap, ...historyKeymap]),
@@ -88,6 +90,7 @@ export function initTabManager(_deps = {}) {
   inoView = new EditorView({
     doc: '',
     extensions: [
+      cpp(),
       ...sharedExtensions,
       EditorState.readOnly.of(true),
     ],
@@ -136,25 +139,49 @@ function _bindEvents() {
 
 // ── Acciones de tabs ─────────────────────────────
 
+let _newFileDialog, _newFileName, _newFileType;
+
+function _langFor(filename) {
+  if (/\.html?$/i.test(filename)) return html();
+  return cpp();
+}
+
+function _initNewFileDialog() {
+  _newFileDialog = document.getElementById('new-file-dialog');
+  _newFileName  = document.getElementById('new-file-name');
+  _newFileType  = document.getElementById('new-file-type');
+  const ok = document.getElementById('new-file-ok');
+  const cancel = document.getElementById('new-file-cancel');
+  if (ok) ok.addEventListener('click', _confirmAddTab);
+  if (cancel) cancel.addEventListener('click', () => { _newFileDialog.style.display = 'none'; });
+  if (_newFileDialog) _newFileDialog.addEventListener('click', (e) => {
+    if (e.target === _newFileDialog) _newFileDialog.style.display = 'none';
+  });
+}
+
 function _addTab() {
-  const name = prompt('Nombre del archivo (ej: config.h):');
-  if (!name || !name.trim()) return;
+  if (!_newFileDialog) _initNewFileDialog();
+  _newFileName.value = '';
+  _newFileType.value = '.h';
+  _newFileDialog.style.display = 'flex';
+  _newFileName.focus();
+}
 
-  let filename = name.trim();
-  if (!filename.endsWith('.h') && !filename.endsWith('.hpp')) {
-    filename += '.h';
-  }
-
-  if (!/^[a-zA-Z0-9_-]+\.(h|hpp)$/.test(filename)) {
-    alert('Nombre inválido. Use solo letras, números, guiones y underscore (ej: config.h).');
+function _confirmAddTab() {
+  let name = _newFileName.value.trim();
+  const type = _newFileType.value || '.h';
+  name = name.replace(/\.[^.]+$/, '');   // quitar extensión si la escribió
+  if (!name) { alert('Escriba un nombre para el archivo.'); return; }
+  if (!/^[a-zA-Z0-9_-]+$/.test(name)) {
+    alert('Nombre inválido. Use solo letras, números, guiones y underscore.');
     return;
   }
-
+  const filename = name + type;
   if (tabs.find(t => t.filename === filename)) {
     alert(`Ya existe un archivo "${filename}".`);
     return;
   }
-
+  _newFileDialog.style.display = 'none';
   tabs.push({ filename, content: '', readonly: false });
   _renderTabs();
   _switchTab(filename);
@@ -194,7 +221,7 @@ function _switchTab(filename) {
   } else {
     inoContainer.style.display = 'none';
     hContainer.style.display = '';
-    // Actualizar contenido del editor .h
+    hView.dispatch({ effects: langCompartment.reconfigure(_langFor(filename)) });
     hView.dispatch({
       changes: {
         from: 0,
@@ -360,6 +387,7 @@ function _showActiveTab() {
   } else {
     inoContainer.style.display = 'none';
     hContainer.style.display = '';
+    hView.dispatch({ effects: langCompartment.reconfigure(_langFor(filename)) });
     hView.dispatch({
       changes: {
         from: 0,

@@ -200,6 +200,35 @@ describe('validator — reglas de validación', () => {
     });
   });
 
+  describe('R9b: servir página web sin iniciar servidor web', () => {
+    it('advierte si hay webserver_serve sin webserver_begin', () => {
+      const ws = mw(
+        [mb('arduino_setup'), mb('arduino_loop')],
+        [mb('arduino_setup'), mb('arduino_loop'), mb('webserver_serve')],
+      );
+      const w = validateWorkspace(ws);
+      expect(w.some(x => x.type === 'webserver_without_begin')).toBe(true);
+    });
+
+    it('advierte también con webserver_serve_file', () => {
+      const ws = mw(
+        [mb('arduino_setup'), mb('arduino_loop')],
+        [mb('arduino_setup'), mb('arduino_loop'), mb('webserver_serve_file')],
+      );
+      const w = validateWorkspace(ws);
+      expect(w.some(x => x.type === 'webserver_without_begin')).toBe(true);
+    });
+
+    it('no advierte si hay webserver_begin', () => {
+      const ws = mw(
+        [mb('arduino_setup'), mb('arduino_loop')],
+        [mb('arduino_setup'), mb('arduino_loop'), mb('webserver_begin'), mb('webserver_serve')],
+      );
+      const w = validateWorkspace(ws);
+      expect(w.some(x => x.type === 'webserver_without_begin')).toBe(false);
+    });
+  });
+
   // ── R6d: pinMode / attachInterrupt en setup ────
   describe('R6d: pinMode y attachInterrupt en setup', () => {
     it('advierte si pin_mode está fuera de setup', () => {

@@ -80,7 +80,7 @@
       <!-- Barra de tabs: .ino (fijo) + .h (dinámicos) -->
       <div id="code-tabs">
         <button class="code-tab active" data-tab="sketch.ino" data-readonly="true">📄 sketch.ino</button>
-        <button id="btn-add-tab" class="code-tab-add" title="Nuevo archivo .h">+</button>
+        <button id="btn-add-tab" class="code-tab-add" title="Nuevo archivo">+</button>
       </div>
 
       <div class="arduino-toolbar">
@@ -374,5 +374,27 @@
     });
   })();
 </script>
+
+<!-- Diálogo: nuevo archivo -->
+<div id="new-file-dialog" class="new-file-dialog" style="display:none">
+  <div class="new-file-dialog-card">
+    <h3>Nuevo archivo</h3>
+    <label class="new-file-field">
+      <span>Nombre</span>
+      <input id="new-file-name" type="text" placeholder="ej: index" autocomplete="off" spellcheck="false" />
+    </label>
+    <label class="new-file-field">
+      <span>Tipo</span>
+      <select id="new-file-type">
+        <option value=".h">Header C++ (.h)</option>
+        <option value=".html">Página web (.html)</option>
+      </select>
+    </label>
+    <div class="new-file-actions">
+      <button id="new-file-cancel" class="btn-secondary" type="button">Cancelar</button>
+      <button id="new-file-ok" class="btn-primary" type="button">Crear</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>

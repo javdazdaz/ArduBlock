@@ -7,7 +7,63 @@ import '../i18n.js';  // side-effect: puebla Blockly.Msg
  * - Conexión a una red existente: WiFi.begin() + espera a WL_CONNECTED.
  * - Modo Access Point: WiFi.beginAP().
  * - Servidor web: WiFiServer / WiFiClient (HTTP/1.1, página HTML simple).
+ * - webserver_serve_file sirve el contenido de un tab .html del proyecto.
  */
+
+// Escapa comillas/backslashes/saltos para embeber en un literal C++.
+function esc(s) {
+  return String(s == null ? '' : s)
+    .replace(/\\/g, '\\\\')
+    .replace(/"/g, '\\"')
+    .replace(/\r/g, '')
+    .replace(/\n/g, '\\n');
+}
+
+// Opciones del dropdown: tabs .html del proyecto.
+function _htmlFileOptions() {
+  const opts = [];
+  try {
+    if (window._tabManager) {
+      const tabs = window._tabManager.getTabs();
+      for (const t of tabs) {
+        if (t.filename && /\.html?$/i.test(t.filename)) {
+          opts.push([t.filename, t.filename]);
+        }
+      }
+    }
+  } catch (_) { /* ignore */ }
+  if (opts.length === 0) opts.push([Blockly.Msg.OPT_WEBSERVER_NO_HTML, '']);
+  return opts;
+}
+
+// Genera el handler HTTP que atiende clientes y sirve `html` (ya escapado).
+function _serveHtmlHandler(html) {
+  let code = '';
+  code += 'WiFiClient client = server.available();\n';
+  code += 'if (client) {\n';
+  code += '  String currentLine = "";\n';
+  code += '  while (client.connected()) {\n';
+  code += '    if (client.available()) {\n';
+  code += '      char c = client.read();\n';
+  code += '      if (c == \'\\n\') {\n';
+  code += '        if (currentLine.length() == 0) {\n';
+  code += '          client.println("HTTP/1.1 200 OK");\n';
+  code += '          client.println("Content-type:text/html");\n';
+  code += '          client.println();\n';
+  code += '          client.println("' + html + '");\n';
+  code += '          break;\n';
+  code += '        } else {\n';
+  code += '          currentLine = "";\n';
+  code += '        }\n';
+  code += '      } else if (c != \'\\r\') {\n';
+  code += '        currentLine += c;\n';
+  code += '      }\n';
+  code += '    }\n';
+  code += '  }\n';
+  code += '  client.stop();\n';
+  code += '}\n';
+  return code;
+}
 
 // ═══ Bloques ═══════════════════════════════════
 
@@ -68,6 +124,19 @@ export const blocks = [
     helpUrl: ''
   },
   {
+    type: 'webserver_serve_file',
+    message0: Blockly.Msg.MSG_WEBSERVER_SERVE_FILE,
+    args0: [
+      { type: 'field_dropdown', name: 'FILE', options: _htmlFileOptions }
+    ],
+    inputsInline: true,
+    previousStatement: null,
+    nextStatement: null,
+    colour: 210,
+    tooltip: Blockly.Msg.TOOLTIP_WEBSERVER_SERVE_FILE,
+    helpUrl: ''
+  },
+  {
     type: 'wifi_ip',
     message0: Blockly.Msg.MSG_WIFI_IP,
     inputsInline: true,
@@ -79,14 +148,6 @@ export const blocks = [
 ];
 
 // ═══ Generadores ═══════════════════════════════
-
-// Escapa comillas/backslashes/saltos para embeber en un literal C++.
-function esc(s) {
-  return String(s == null ? '' : s)
-    .replace(/\\/g, '\\\\')
-    .replace(/"/g, '\\"')
-    .replace(/\r?\n/g, ' ');
-}
 
 export function registerGenerators(cppGenerator) {
 
@@ -125,32 +186,21 @@ export function registerGenerators(cppGenerator) {
     const html = '<!DOCTYPE HTML><html><head><meta charset="utf-8">'
                + '<title>' + title + '</title></head>'
                + '<body><h1>' + title + '</h1><p>' + body + '</p></body></html>';
+    return _serveHtmlHandler(html);
+  };
 
-    let code = '';
-    code += 'WiFiClient client = server.available();\n';
-    code += 'if (client) {\n';
-    code += '  String currentLine = "";\n';
-    code += '  while (client.connected()) {\n';
-    code += '    if (client.available()) {\n';
-    code += '      char c = client.read();\n';
-    code += '      if (c == \'\\n\') {\n';
-    code += '        if (currentLine.length() == 0) {\n';
-    code += '          client.println("HTTP/1.1 200 OK");\n';
-    code += '          client.println("Content-type:text/html");\n';
-    code += '          client.println();\n';
-    code += '          client.println("' + html + '");\n';
-    code += '          break;\n';
-    code += '        } else {\n';
-    code += '          currentLine = "";\n';
-    code += '        }\n';
-    code += '      } else if (c != \'\\r\') {\n';
-    code += '        currentLine += c;\n';
-    code += '      }\n';
-    code += '    }\n';
-    code += '  }\n';
-    code += '  client.stop();\n';
-    code += '}\n';
-    return code;
+  // ── webserver_serve_file ─────────────────────
+  cppGenerator.forBlock['webserver_serve_file'] = function(block) {
+    cppGenerator._webserverUsed = true;
+    const file = block.getFieldValue('FILE') || '';
+    let content = '';
+    if (file && typeof window !== 'undefined' && window._tabManager) {
+      try {
+        const tab = window._tabManager.getTabs().find(t => t.filename === file);
+        if (tab) content = tab.content || '';
+      } catch (_) { /* ignore */ }
+    }
+    return _serveHtmlHandler(esc(content));
   };
 
   // ── wifi_ip ──────────────────────────────────

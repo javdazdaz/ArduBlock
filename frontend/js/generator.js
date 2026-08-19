@@ -500,7 +500,7 @@ export function generateArduinoCode(workspace) {
     if (b.type === 'wifi_connect' || b.type === 'wifi_access_point' || b.type === 'wifi_ip') {
       cppGenerator._wifiUsed = true;
     }
-    if (b.type === 'webserver_begin' || b.type === 'webserver_serve') {
+    if (b.type === 'webserver_begin' || b.type === 'webserver_serve' || b.type === 'webserver_serve_file') {
       cppGenerator._webserverUsed = true;
     }
     if (b.type === 'webserver_begin') {
@@ -523,11 +523,12 @@ export function generateArduinoCode(workspace) {
     }
   }
 
-  // 2. Tabs .h con contenido (desde TabManager)
+  // 2. Tabs .h/.hpp con contenido (desde TabManager).
+  //    .html/.js/.css NO se #include: son datos para webserver_serve_file.
   if (window._tabManager) {
     const tabs = window._tabManager.getTabs();
     for (const tab of tabs) {
-      if (tab.content && tab.content.trim() && tab.filename) {
+      if (tab.content && tab.content.trim() && tab.filename && /\.(h|hpp)$/i.test(tab.filename)) {
         userIncludes.push(tab.filename);
       }
     }
@@ -895,13 +896,6 @@ export function generateArduinoCode(workspace) {
                + '    digitalWrite(_md_cols[_d], HIGH);\n'
                + '  }\n';
     setupBody = init;
-  }
-
-  // ── Servidor web: auto-inyectar server.begin() en setup ──
-  if (cppGenerator._webserverUsed && setupBody && !setupBody.includes('server.begin()')) {
-    setupBody = '  server.begin();\n' + setupBody;
-  } else if (cppGenerator._webserverUsed && !setupBody) {
-    setupBody = '  server.begin();\n';
   }
 
   if (globals.trim()) {

@@ -30,17 +30,22 @@ _ARDUINO_CLI_MAX_CONCURRENT = max(
 )
 _ARDUINO_CLI_SEMAPHORE = threading.Semaphore(_ARDUINO_CLI_MAX_CONCURRENT)
 
-# Tope de memoria por invocación (ARDUBLOCK_COMPILE_MEMORY_MB, default 1024 MiB).
+# RLIMIT_AS (espacio de direcciones virtual, NO RAM física). El runtime de Go
+# (arduino-cli) reserva un arena grande de VA: con 1 GiB revienta (OOM /
+# pthread_create EAGAIN), con 4 GiB hay margen. Override: ARDUBLOCK_COMPILE_MEMORY_MB.
 _ARDUINO_CLI_MEM_BYTES = (
-    max(128, int(os.environ.get("ARDUBLOCK_COMPILE_MEMORY_MB", "1024"))) * 1024 * 1024
+    max(128, int(os.environ.get("ARDUBLOCK_COMPILE_MEMORY_MB", "4096"))) * 1024 * 1024
 )
 
-# Límites heredados por arduino-cli y sus hijos (avr-gcc, cc1plus, ...).
+# RLIMIT_NPROC se omite a propósito: en Linux es un límite POR UID (no por
+# proceso), así que no acota el subárbol del compilador y rompe el fork/clone
+# de bwrap en escritorios con miles de hilos (EAGAIN, "Resource temporarily
+# unavailable"). La contención real la dan RLIMIT_AS (memoria) y RLIMIT_CPU
+# (tiempo) + el semáforo de concurrencia.
 _ARDUINO_CLI_LIMITS = (
     (resource.RLIMIT_AS, (_ARDUINO_CLI_MEM_BYTES, _ARDUINO_CLI_MEM_BYTES)),
     (resource.RLIMIT_CPU, (60, 60)),  # 60 s de CPU
     (resource.RLIMIT_FSIZE, (256 * 1024 * 1024, 256 * 1024 * 1024)),  # 256 MB
-    (resource.RLIMIT_NPROC, (64, 64)),
 )
 
 

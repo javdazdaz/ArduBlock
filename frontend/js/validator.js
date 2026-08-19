@@ -149,7 +149,8 @@ function validateWorkspace(workspace) {
       'lcd_print', 'lcd_set_cursor', 'lcd_clear',
       'stepper_speed', 'stepper_step',
       'text_print',
-      'webserver_serve'
+      'webserver_serve',
+      'webserver_serve_file'
     ];
     if (statementTypes.includes(block.type)) {
       warnings.push({
@@ -454,6 +455,23 @@ function validateWorkspace(workspace) {
     }
   }
 
+  // ═══ R9b: servir página web sin iniciar servidor web ═══
+  const webserverBeginCount = findAllBlocksOfType(workspace, 'webserver_begin').length;
+  if (webserverBeginCount === 0) {
+    const serveBlocks = [
+      ...findAllBlocksOfType(workspace, 'webserver_serve'),
+      ...findAllBlocksOfType(workspace, 'webserver_serve_file'),
+    ];
+    if (serveBlocks.length > 0) {
+      warnings.push({
+        type: 'webserver_without_begin',
+        severity: 'warning',
+        message: t('val_webserver_without_begin'),
+        blocks: serveBlocks,
+      });
+    }
+  }
+
   // ═══ R10: text_join excesivo → fragmentación heap en AVR ═══
   const textJoinBlocks = findAllBlocksOfType(workspace, 'text_join');
   if (textJoinBlocks.length >= 3) {
@@ -591,6 +609,7 @@ const BLOCK_LABEL_KEYS = {
   'wifi_access_point': 'blk_wifi_access_point',
   'webserver_begin': 'blk_webserver_begin',
   'webserver_serve': 'blk_webserver_serve',
+  'webserver_serve_file': 'blk_webserver_serve_file',
   'wifi_ip': 'blk_wifi_ip',
   'variable_global': 'blk_variable_global',
   'variable_declare': 'blk_variable_declare',

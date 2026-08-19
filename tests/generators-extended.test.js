@@ -618,6 +618,23 @@ describe('generadores C++ — WiFi / Servidor Web', () => {
     expect(order).toBe(cppGenerator.ORDER_ATOMIC);
     expect(cppGenerator._wifiUsed).toBe(true);
   });
+
+  it('webserver_serve_file sirve el contenido del tab .html', () => {
+    window._tabManager = { getTabs: () => [{ filename: 'index.html', content: '<h1>Hola</h1>\n<p>mundo</p>' }] };
+    const code = cppGenerator.forBlock['webserver_serve_file'](b('webserver_serve_file', { FILE: 'index.html' }));
+    expect(code).toContain('<h1>Hola</h1>');
+    expect(code).toContain('HTTP/1.1 200 OK');
+    expect(cppGenerator._webserverUsed).toBe(true);
+    delete window._tabManager;
+  });
+
+  it('webserver_serve_file con archivo inexistente no rompe', () => {
+    window._tabManager = { getTabs: () => [] };
+    const code = cppGenerator.forBlock['webserver_serve_file'](b('webserver_serve_file', { FILE: 'nope.html' }));
+    expect(code).toContain('HTTP/1.1 200 OK');
+    expect(cppGenerator._webserverUsed).toBe(true);
+    delete window._tabManager;
+  });
 });
 
 // ═══ Integración: generateArduinoCode ═════════════
@@ -642,6 +659,23 @@ describe('generateArduinoCode — includes y helpers', () => {
       getAllBlocks: () => [b('arduino_setup'), b('arduino_loop'), b('include_header', { FILE: 'config.h' })],
     };
     expect(generateArduinoCode(ws)).toContain('#include "config.h"');
+  });
+
+  it('tabs .h se incluyen; .html/.js NO se incluyen', () => {
+    window._tabManager = { getTabs: () => [
+      { filename: 'config.h', content: '#define X 1' },
+      { filename: 'a.html', content: '<h1>hola</h1>' },
+      { filename: 'app.js', content: 'console.log(1)' },
+    ] };
+    const ws = {
+      getTopBlocks: () => [b('arduino_setup'), b('arduino_loop')],
+      getAllBlocks: () => [b('arduino_setup'), b('arduino_loop')],
+    };
+    const code = generateArduinoCode(ws);
+    expect(code).toContain('#include "config.h"');
+    expect(code).not.toContain('a.html');
+    expect(code).not.toContain('app.js');
+    delete window._tabManager;
   });
 
   it('incluye #include <Servo.h> con servo_create', () => {
@@ -680,7 +714,7 @@ describe('generateArduinoCode — includes y helpers', () => {
     expect(generateArduinoCode(ws)).toContain('#include <Stepper.h>');
   });
 
-  it('incluye #include <WiFiS3.h> y WiFiServer con bloques WiFi', () => {
+  it('incluye #include <WiFiS3.h> y WiFiServer con bloques WiFi (sin auto-inyectar server.begin)', () => {
     const ws = {
       getTopBlocks: () => [b('arduino_setup'), b('arduino_loop')],
       getAllBlocks: () => [b('arduino_setup'), b('arduino_loop'),
@@ -690,7 +724,9 @@ describe('generateArduinoCode — includes y helpers', () => {
     const code = generateArduinoCode(ws);
     expect(code).toContain('#include <WiFiS3.h>');
     expect(code).toContain('WiFiServer server(80);');
-    expect(code).toContain('server.begin();');
+    // server.begin() solo lo genera el bloque webserver_begin colocado en setup,
+    // nunca se auto-inyecta.
+    expect(code).not.toContain('server.begin();');
   });
 
   it('WiFiServer usa el puerto del bloque webserver_begin', () => {

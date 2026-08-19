@@ -1,6 +1,6 @@
 """
-Regresión de seguridad: endpoints de hardware exigen login; compile es público;
-y el rate limiter bloquea tras superar el umbral.
+Regresión de seguridad: install (cores/libs) exige login; upload, compile y
+serial son públicos (rate-limitados); y el rate limiter bloquea tras el umbral.
 """
 
 from backend.rate_limit import _record
@@ -17,18 +17,15 @@ def _login(client):
     )
 
 
-def test_upload_requires_login(client):
-    resp = client.post(
-        "/api/upload",
-        json={"code": "void setup(){}", "port": "/dev/ttyUSB0"},
-    )
-    assert resp.status_code in (302, 401)
+def test_upload_is_public(client):
+    # Público (rate-limitado): sin login no redirige; con código vacío responde 400.
+    resp = client.post("/api/upload", json={"code": "", "port": "/dev/ttyUSB0"})
+    assert resp.status_code == 400
 
 
-def test_serial_requires_login(client):
-    assert client.get("/api/serial/status").status_code in (302, 401)
-    assert client.post("/api/serial/open", json={}).status_code in (302, 401)
-    assert client.post("/api/serial/close", json={}).status_code in (302, 401)
+def test_serial_is_public(client):
+    # Público: sin login no redirige a /login (302/401).
+    assert client.get("/api/serial/status").status_code not in (302, 401)
 
 
 def test_board_install_requires_login(client):
