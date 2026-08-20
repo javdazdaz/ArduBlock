@@ -176,9 +176,20 @@ function showCurrent() {
   if (analyzeBody) analyzeBody.innerHTML = renderAnalysis(analyzeHtml(current.content));
 }
 
+// CSP que bloquea la red en la vista previa (no hay Arduino ahí): evita que
+// páginas con fetch()/WebSocket spammeen el servidor del editor con 404/CORS.
+const PREVIEW_CSP = '<meta http-equiv="Content-Security-Policy" content="connect-src \'none\'">';
+
 function reloadPreview() {
   if (!current || !iframe) return;
-  iframe.srcdoc = current.content;
+  let html = current.content;
+  const headTag = html.match(/<head[^>]*>/i);
+  if (headTag) {
+    html = html.replace(headTag[0], headTag[0] + PREVIEW_CSP);
+  } else {
+    html = PREVIEW_CSP + html;
+  }
+  iframe.srcdoc = html;
 }
 
 // ── Sub-tabs (preview / código / análisis) ─────

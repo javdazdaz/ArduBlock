@@ -7,6 +7,7 @@
   console.warn = function(...args) {
     const msg = args.join(' ');
     if (msg.includes('[procedures][serializer]')) return;
+    if (msg.includes('Empty string passed to getElementById')) return;
     _warn(...args);
   };
   const _gEBI = document.getElementById.bind(document);
