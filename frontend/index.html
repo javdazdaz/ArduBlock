@@ -73,6 +73,7 @@
           <div class="panel-mode-tabs">
             <button id="panel-tab-code" class="panel-mode-tab active">Código</button>
             <button id="panel-tab-anim" class="panel-mode-tab">Animación</button>
+            <button id="panel-tab-web" class="panel-mode-tab">Web</button>
           </div>
         </div>
       </div>
@@ -162,6 +163,38 @@
             </div>
           </div>
           <div id="matrix-timeline-track" class="matrix-timeline-track"></div>
+        </div>
+      </div>
+
+      <!-- Panel de sitios web (presets single-file + análisis + clonar) -->
+      <div id="code-view-web" style="display:none">
+        <div class="web-editor-body">
+          <div class="web-sidebar">
+            <div class="web-sidebar-cat">📦 Sitios de ejemplo</div>
+            <div id="web-preset-list" class="web-list"></div>
+            <div class="web-sidebar-cat">📝 Sitios del proyecto</div>
+            <div id="web-project-list" class="web-list"></div>
+          </div>
+          <div class="web-main">
+            <div class="web-tabs">
+              <button id="web-tab-preview" class="web-tab active">Vista previa</button>
+              <button id="web-tab-code" class="web-tab">Código</button>
+              <button id="web-tab-analyze" class="web-tab">Análisis</button>
+              <div class="web-actions">
+                <button id="web-btn-clone" class="web-btn primary" disabled>✂️ Clonar y editar</button>
+                <button id="web-btn-edit" class="web-btn" disabled>✏️ Editar</button>
+              </div>
+            </div>
+            <div id="web-preview" class="web-view">
+              <iframe id="web-iframe" sandbox="allow-scripts" title="Vista previa"></iframe>
+            </div>
+            <div id="web-code" class="web-view" style="display:none">
+              <pre id="web-code-pre"></pre>
+            </div>
+            <div id="web-analyze" class="web-view" style="display:none">
+              <div id="web-analyze-body"></div>
+            </div>
+          </div>
         </div>
       </div>
     </section>

@@ -322,6 +322,41 @@ export function loadTabs(tabData, sketchName = null) {
 }
 
 /**
+ * Crea un tab .html editable con contenido (usado para clonar presets web).
+ * Deduplica el nombre si ya existe (index.html → index-2.html).
+ * Devuelve el nombre final del tab creado.
+ */
+export function createHtmlTab(filename, content) {
+  let name = String(filename || 'index.html').trim();
+  if (!/\.[^.]+$/.test(name)) name = name + '.html';
+  if (!/\.html?$/i.test(name)) name = name + '.html';
+
+  const base = name.replace(/\.[^.]+$/, '');
+  const ext = name.slice(name.lastIndexOf('.'));
+  let candidate = name;
+  let n = 2;
+  while (tabs.some(t => t.filename === candidate)) {
+    candidate = base + '-' + n + ext;
+    n++;
+  }
+
+  tabs.push({ filename: candidate, content: content || '', readonly: false });
+  _renderTabs();
+  _switchTab(candidate);
+  return candidate;
+}
+
+/**
+ * Abre un tab existente (por nombre) en el editor CodeMirror.
+ * Devuelve true si el tab existe y se abrió.
+ */
+export function openTab(filename) {
+  if (!tabs.some(t => t.filename === filename)) return false;
+  _switchTab(filename);
+  return true;
+}
+
+/**
  * Actualiza el nombre del tab del sketch sin recargar tabs .h.
  */
 export function setSketchName(name) {

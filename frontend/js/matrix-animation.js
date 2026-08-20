@@ -182,9 +182,11 @@ export function initMatrixEditor() {
 export function initPanelModeTabs() {
   const tabCode = document.getElementById('panel-tab-code');
   const tabAnim = document.getElementById('panel-tab-anim');
+  const tabWeb  = document.getElementById('panel-tab-web');
   const codeViews = document.getElementById('code-view-ino');
   const hView = document.getElementById('code-edit-h');
   const animView = document.getElementById('code-view-animation');
+  const webView = document.getElementById('code-view-web');
   const codeTabs = document.getElementById('code-tabs');
   const arduinoToolbar = document.querySelector('.arduino-toolbar');
   const headerTitle = document.querySelector('.panel-header h2');
@@ -192,6 +194,7 @@ export function initPanelModeTabs() {
   function switchMode(mode) {
     tabCode.classList.toggle('active', mode === 'code');
     tabAnim.classList.toggle('active', mode === 'animation');
+    if (tabWeb) tabWeb.classList.toggle('active', mode === 'web');
 
     const editorPanel = document.getElementById('editor-panel');
     const resizer = document.getElementById('panel-resizer');
@@ -202,6 +205,7 @@ export function initPanelModeTabs() {
       codeTabs.style.display = '';
       if (arduinoToolbar) arduinoToolbar.style.display = '';
       animView.style.display = 'none';
+      if (webView) webView.style.display = 'none';
       if (editorPanel) editorPanel.style.display = '';
       if (resizer) resizer.style.display = '';
       if (codePanel) codePanel.style.flex = '';
@@ -214,15 +218,17 @@ export function initPanelModeTabs() {
         hView.style.display = '';
       }
     } else {
-      headerTitle.textContent = 'Matriz LED — Editor de frames';
+      headerTitle.textContent = mode === 'web' ? 'Sitios web' : 'Matriz LED — Editor de frames';
       codeTabs.style.display = 'none';
       if (arduinoToolbar) arduinoToolbar.style.display = 'none';
       codeViews.style.display = 'none';
       hView.style.display = 'none';
-      animView.style.display = '';
+      animView.style.display = mode === 'animation' ? '' : 'none';
+      if (webView) webView.style.display = mode === 'web' ? '' : 'none';
       if (editorPanel) editorPanel.style.display = 'none';
       if (resizer) resizer.style.display = 'none';
       if (codePanel) codePanel.style.flex = '1';
+      if (mode === 'web' && typeof window._refreshWebPanel === 'function') window._refreshWebPanel();
     }
 
     const lc = document.getElementById('line-count');
@@ -233,6 +239,10 @@ export function initPanelModeTabs() {
 
   tabCode.addEventListener('click', () => switchMode('code'));
   tabAnim.addEventListener('click', () => switchMode('animation'));
+  if (tabWeb) tabWeb.addEventListener('click', () => switchMode('web'));
+
+  // Expuesto para que otros módulos (web-presets.js) puedan volver al modo código.
+  window._setPanelMode = switchMode;
 }
 
 // ═══ Modo ════════════════════════════════════════
