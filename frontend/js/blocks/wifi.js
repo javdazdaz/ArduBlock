@@ -54,6 +54,8 @@ export function buildWebServer(page, routes) {
     : '<!DOCTYPE HTML><html><body>Servidor ArduBlock</body></html>';
 
   let helpers = '';
+  helpers += 'String _ardublock_query = "";\n';
+  helpers += 'String _ardublock_body = "";\n\n';
   helpers += 'String _readRequestPath(WiFiClient client) {\n';
   helpers += '  String line = "";\n';
   helpers += '  unsigned long _t = millis();\n';
@@ -64,10 +66,48 @@ export function buildWebServer(page, routes) {
   helpers += '    if (c != \'\\r\') line += c;\n';
   helpers += '  }\n';
   helpers += '  int _s = line.indexOf(\' \');\n';
-  helpers += '  if (_s < 0) return "/";\n';
-  helpers += '  int _e = line.indexOf(\' \', _s + 1);\n';
-  helpers += '  if (_e < 0) return "/";\n';
-  helpers += '  return line.substring(_s + 1, _e);\n';
+  helpers += '  int _e = (_s >= 0) ? line.indexOf(\' \', _s + 1) : -1;\n';
+  helpers += '  String full = (_s >= 0 && _e >= 0) ? line.substring(_s + 1, _e) : "/";\n';
+  helpers += '  int _q = full.indexOf(\'?\');\n';
+  helpers += '  if (_q >= 0) { _ardublock_query = full.substring(_q + 1); full = full.substring(0, _q); }\n';
+  helpers += '  else _ardublock_query = "";\n';
+  helpers += '  // leer el resto de headers y, si hay Content-Length, el body\n';
+  helpers += '  int _contentLength = 0;\n';
+  helpers += '  String _h = "";\n';
+  helpers += '  bool _inBody = false;\n';
+  helpers += '  _ardublock_body = "";\n';
+  helpers += '  while (client.connected() && client.available()) {\n';
+  helpers += '    char c = client.read();\n';
+  helpers += '    if (_inBody) {\n';
+  helpers += '      _ardublock_body += c;\n';
+  helpers += '      if ((int)_ardublock_body.length() >= _contentLength) break;\n';
+  helpers += '      continue;\n';
+  helpers += '    }\n';
+  helpers += '    if (c == \'\\n\') {\n';
+  helpers += '      if (_h.length() == 0) {\n';
+  helpers += '        if (_contentLength > 0) { _inBody = true; }\n';
+  helpers += '        else break;\n';
+  helpers += '      } else {\n';
+  helpers += '        if (_h.startsWith("Content-Length:")) {\n';
+  helpers += '          String _v = _h.substring(15); _v.trim();\n';
+  helpers += '          _contentLength = _v.toInt();\n';
+  helpers += '        }\n';
+  helpers += '        _h = "";\n';
+  helpers += '      }\n';
+  helpers += '    } else if (c != \'\\r\') {\n';
+  helpers += '      _h += c;\n';
+  helpers += '    }\n';
+  helpers += '  }\n';
+  helpers += '  return full;\n';
+  helpers += '}\n\n';
+  helpers += 'String _getQueryParam(String name) {\n';
+  helpers += '  String key = name + "=";\n';
+  helpers += '  int start = _ardublock_query.indexOf(key);\n';
+  helpers += '  if (start < 0) return "";\n';
+  helpers += '  start += key.length();\n';
+  helpers += '  int end = _ardublock_query.indexOf(\'&\', start);\n';
+  helpers += '  if (end < 0) end = _ardublock_query.length();\n';
+  helpers += '  return _ardublock_query.substring(start, end);\n';
   helpers += '}\n\n';
 
   helpers += 'void _handleWebRequest(WiFiClient client, String path) {\n';
@@ -189,12 +229,38 @@ export const blocks = [
     type: 'webserver_respond',
     message0: Blockly.Msg.MSG_WEBSERVER_RESPOND,
     args0: [
+      { type: 'field_dropdown', name: 'CTYPE', options: [
+        ['texto', 'text/plain'],
+        ['HTML', 'text/html'],
+        ['JSON', 'application/json']
+      ] },
       { type: 'input_value', name: 'VALUE' }
     ],
+    inputsInline: true,
     previousStatement: null,
     nextStatement: null,
     colour: 210,
     tooltip: Blockly.Msg.TOOLTIP_WEBSERVER_RESPOND,
+    helpUrl: ''
+  },
+  {
+    type: 'webserver_query',
+    message0: Blockly.Msg.MSG_WEBSERVER_QUERY,
+    args0: [
+      { type: 'field_input', name: 'NAME', text: 'angulo' }
+    ],
+    inputsInline: true,
+    output: 'String',
+    colour: 210,
+    tooltip: Blockly.Msg.TOOLTIP_WEBSERVER_QUERY,
+    helpUrl: ''
+  },
+  {
+    type: 'webserver_body',
+    message0: Blockly.Msg.MSG_WEBSERVER_BODY,
+    output: 'String',
+    colour: 210,
+    tooltip: Blockly.Msg.TOOLTIP_WEBSERVER_BODY,
     helpUrl: ''
   },
   {
@@ -316,12 +382,26 @@ export function registerGenerators(cppGenerator) {
   cppGenerator.forBlock['webserver_respond'] = function(block) {
     cppGenerator._webserverUsed = true;
     cppGenerator._webRespondUsed = true;
+    const ctype = block.getFieldValue('CTYPE') || 'text/plain';
     const v = cppGenerator.valueToCode(block, 'VALUE', cppGenerator.ORDER_NONE) || '""';
     return 'client.println("HTTP/1.1 200 OK");\n'
-         + 'client.println("Content-type:text/plain");\n'
+         + 'client.println("Content-type:' + ctype + '");\n'
          + 'client.println();\n'
          + 'client.println(String(' + v + '));\n'
          + 'return;\n';
+  };
+
+  // ── webserver_query (parámetro de URL) ───────
+  cppGenerator.forBlock['webserver_query'] = function(block) {
+    cppGenerator._webserverUsed = true;
+    const name = block.getFieldValue('NAME') || 'param';
+    return ['_getQueryParam("' + esc(name) + '")', cppGenerator.ORDER_ATOMIC];
+  };
+
+  // ── webserver_body (cuerpo del POST) ─────────
+  cppGenerator.forBlock['webserver_body'] = function(_block) {
+    cppGenerator._webserverUsed = true;
+    return ['_ardublock_body', cppGenerator.ORDER_ATOMIC];
   };
 
   // ── wifi_ip ──────────────────────────────────

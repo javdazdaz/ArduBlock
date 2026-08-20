@@ -694,6 +694,56 @@ describe('generadores C++ — WiFi / Servidor Web', () => {
     expect(code).toBe('WiFi.macAddress()');
     expect(cppGenerator._wifiUsed).toBe(true);
   });
+
+  it('text_to_number genera String(...).toInt()', () => {
+    const [code] = cppGenerator.forBlock['text_to_number'](b('text_to_number'));
+    expect(code).toBe('String(0).toInt()');
+  });
+
+  it('webserver_query genera _getQueryParam', () => {
+    const [code] = cppGenerator.forBlock['webserver_query'](b('webserver_query', { NAME: 'angulo' }));
+    expect(code).toBe('_getQueryParam("angulo")');
+    expect(cppGenerator._webserverUsed).toBe(true);
+  });
+
+  it('webserver_body genera _ardublock_body', () => {
+    const [code] = cppGenerator.forBlock['webserver_body'](b('webserver_body'));
+    expect(code).toBe('_ardublock_body');
+  });
+
+  it('websocket_begin genera _wsServer.begin() y registra puerto', () => {
+    const code = cppGenerator.forBlock['websocket_begin'](b('websocket_begin', { PORT: '81' }));
+    expect(code).toBe('_wsServer.begin();\n');
+    expect(cppGenerator._websocketUsed).toBe(true);
+    expect(cppGenerator._websocketPort).toBe(81);
+  });
+
+  it('websocket_send genera _wsSend(String(...))', () => {
+    const code = cppGenerator.forBlock['websocket_send'](b('websocket_send'));
+    expect(code).toContain('_wsSend(String(0));');
+  });
+
+  it('websocket_message genera _wsMessage', () => {
+    const [code] = cppGenerator.forBlock['websocket_message'](b('websocket_message'));
+    expect(code).toBe('_wsMessage');
+  });
+
+  it('websocket_connected genera _wsConnected', () => {
+    const [code] = cppGenerator.forBlock['websocket_connected'](b('websocket_connected'));
+    expect(code).toBe('_wsConnected');
+  });
+
+  it('buildWebSocket genera SHA1, handshake y codec de frames', async () => {
+    const { buildWebSocket } = await import('../frontend/js/blocks/websocket.js');
+    const { globals, helpers, loop } = buildWebSocket(81, '    _wsSend(_wsMessage);\n');
+    expect(globals).toContain('WiFiServer _wsServer(81)');
+    expect(helpers).toContain('void _sha1');
+    expect(helpers).toContain('258EAFA5-E914-47DA-95CA-C5AB0DC85B11');
+    expect(helpers).toContain('Sec-WebSocket-Accept');
+    expect(helpers).toContain('void _wsSend');
+    expect(loop).toContain('_wsServer.available()');
+    expect(loop).toContain('_wsSend(_wsMessage);');
+  });
 });
 
 // ═══ Integración: generateArduinoCode ═════════════

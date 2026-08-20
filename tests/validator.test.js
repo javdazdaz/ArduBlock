@@ -251,6 +251,26 @@ describe('validator — reglas de validación', () => {
     });
   });
 
+  describe('R9d: bloques WebSocket sin iniciar el servidor WebSocket', () => {
+    it('advierte si hay websocket_send sin websocket_begin', () => {
+      const ws = mw(
+        [mb('arduino_setup'), mb('arduino_loop')],
+        [mb('arduino_setup'), mb('arduino_loop'), mb('websocket_send')],
+      );
+      const w = validateWorkspace(ws);
+      expect(w.some(x => x.type === 'websocket_without_begin')).toBe(true);
+    });
+
+    it('no advierte si hay websocket_begin', () => {
+      const ws = mw(
+        [mb('arduino_setup'), mb('arduino_loop')],
+        [mb('arduino_setup'), mb('arduino_loop'), mb('websocket_begin'), mb('websocket_send')],
+      );
+      const w = validateWorkspace(ws);
+      expect(w.some(x => x.type === 'websocket_without_begin')).toBe(false);
+    });
+  });
+
   // ── R6d: pinMode / attachInterrupt en setup ────
   describe('R6d: pinMode y attachInterrupt en setup', () => {
     it('advierte si pin_mode está fuera de setup', () => {

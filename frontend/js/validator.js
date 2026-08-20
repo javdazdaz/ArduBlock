@@ -485,6 +485,25 @@ function validateWorkspace(workspace) {
     });
   }
 
+  // ═══ R9d: bloques WebSocket sin iniciar el servidor WebSocket ═══
+  const wsBeginCount = findAllBlocksOfType(workspace, 'websocket_begin').length;
+  if (wsBeginCount === 0) {
+    const wsBlocks = [
+      ...findAllBlocksOfType(workspace, 'websocket_on_message'),
+      ...findAllBlocksOfType(workspace, 'websocket_send'),
+      ...findAllBlocksOfType(workspace, 'websocket_message'),
+      ...findAllBlocksOfType(workspace, 'websocket_connected'),
+    ];
+    if (wsBlocks.length > 0) {
+      warnings.push({
+        type: 'websocket_without_begin',
+        severity: 'warning',
+        message: t('val_websocket_without_begin'),
+        blocks: wsBlocks,
+      });
+    }
+  }
+
   // ═══ R10: text_join excesivo → fragmentación heap en AVR ═══
   const textJoinBlocks = findAllBlocksOfType(workspace, 'text_join');
   if (textJoinBlocks.length >= 3) {
@@ -625,10 +644,18 @@ const BLOCK_LABEL_KEYS = {
   'webserver_serve_file': 'blk_webserver_serve_file',
   'webserver_on': 'blk_webserver_on',
   'webserver_respond': 'blk_webserver_respond',
+  'webserver_query': 'blk_webserver_query',
+  'webserver_body': 'blk_webserver_body',
+  'text_to_number': 'blk_text_to_number',
   'wifi_ip': 'blk_wifi_ip',
   'wifi_connected': 'blk_wifi_connected',
   'wifi_rssi': 'blk_wifi_rssi',
   'wifi_mac': 'blk_wifi_mac',
+  'websocket_begin': 'blk_websocket_begin',
+  'websocket_on_message': 'blk_websocket_on_message',
+  'websocket_send': 'blk_websocket_send',
+  'websocket_message': 'blk_websocket_message',
+  'websocket_connected': 'blk_websocket_connected',
   'variable_global': 'blk_variable_global',
   'variable_declare': 'blk_variable_declare',
   'variable_set': 'blk_variable_set',

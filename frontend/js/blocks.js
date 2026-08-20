@@ -132,7 +132,9 @@ import { blocks as afmotorBlocks }    from './blocks/afmotor.js';
 import { blocks as ledmatrixBlocks } from './blocks/ledmatrix.js';
 import { blocks as max7219Blocks } from './blocks/max7219.js';
 import { blocks as matrixdirectBlocks } from './blocks/matrixdirect.js';
+import { blocks as textBlocks } from './blocks/text.js';
 import { blocks as wifiBlocks } from './blocks/wifi.js';
+import { blocks as websocketBlocks } from './blocks/websocket.js';
 
 // ═══ Registrar todos los bloques ═══════════════
 
@@ -155,7 +157,9 @@ const allBlocks = [
   ...ledmatrixBlocks,
   ...max7219Blocks,
   ...matrixdirectBlocks,
+  ...textBlocks,
   ...wifiBlocks,
+  ...websocketBlocks,
 ];
 
 Blockly.common.defineBlocksWithJsonArray(allBlocks);
@@ -261,6 +265,7 @@ const _FULL_TOOLBOX_TEMPLATE = [
   { kind: 'block', type: 'text_join', level: 3 },
   { kind: 'block', type: 'text_print', level: 3 },
   { kind: 'block', type: 'text_length', level: 3 },
+  { kind: 'block', type: 'text_to_number', level: 3 },
   { kind: 'block', type: 'procedures_defnoreturn', level: 3 },
   { kind: 'block', type: 'procedures_defreturn', level: 3 },
   { kind: 'block', type: 'procedures_callnoreturn', level: 3 },
@@ -288,10 +293,17 @@ const _FULL_TOOLBOX_TEMPLATE = [
   { kind: 'block', type: 'webserver_serve_file', level: 3 },
   { kind: 'block', type: 'webserver_on', level: 3 },
   { kind: 'block', type: 'webserver_respond', level: 3 },
+  { kind: 'block', type: 'webserver_query', level: 3 },
+  { kind: 'block', type: 'webserver_body', level: 3 },
   { kind: 'block', type: 'wifi_ip', level: 3 },
   { kind: 'block', type: 'wifi_connected', level: 3 },
   { kind: 'block', type: 'wifi_rssi', level: 3 },
   { kind: 'block', type: 'wifi_mac', level: 3 },
+  { kind: 'block', type: 'websocket_begin', level: 3 },
+  { kind: 'block', type: 'websocket_on_message', level: 3 },
+  { kind: 'block', type: 'websocket_send', level: 3 },
+  { kind: 'block', type: 'websocket_message', level: 3 },
+  { kind: 'block', type: 'websocket_connected', level: 3 },
 ];
 
 export const BLOCK_LEVELS = _buildBlockLevelMap(_FULL_TOOLBOX_TEMPLATE);
@@ -423,7 +435,8 @@ export function buildToolboxForBoard(fqbn, level) {
           { 'kind': 'block', 'type': 'text', 'level': 3 },
           { 'kind': 'block', 'type': 'text_join', 'level': 3 },
           { 'kind': 'block', 'type': 'text_print', 'level': 3 },
-          { 'kind': 'block', 'type': 'text_length', 'level': 3 }
+          { 'kind': 'block', 'type': 'text_length', 'level': 3 },
+          { 'kind': 'block', 'type': 'text_to_number', 'level': 3 }
         ]},
       { 'kind': 'category', 'name': '%{BKY_CAT_FUNCIONES}', 'colour': '#8f6997', 'custom': 'PROCEDURE', 'level': 3 },
       { 'kind': 'sep' },
@@ -525,10 +538,21 @@ export function buildToolboxForBoard(fqbn, level) {
           { 'kind': 'block', 'type': 'webserver_serve_file', 'level': 3 },
           { 'kind': 'block', 'type': 'webserver_on', 'level': 3 },
           { 'kind': 'block', 'type': 'webserver_respond', 'level': 3 },
+          { 'kind': 'block', 'type': 'webserver_query', 'level': 3 },
+          { 'kind': 'block', 'type': 'webserver_body', 'level': 3 },
           { 'kind': 'block', 'type': 'wifi_ip', 'level': 3 },
           { 'kind': 'block', 'type': 'wifi_connected', 'level': 3 },
           { 'kind': 'block', 'type': 'wifi_rssi', 'level': 3 },
           { 'kind': 'block', 'type': 'wifi_mac', 'level': 3 },
+        ]},
+      { 'kind': 'category', 'name': '%{BKY_CAT_WEBSOCKET}', 'colour': '230', 'level': 3,
+        'boardFilter': /^arduino:renesas_uno:unor4wifi/,
+        'contents': [
+          { 'kind': 'block', 'type': 'websocket_begin', 'level': 3 },
+          { 'kind': 'block', 'type': 'websocket_on_message', 'level': 3 },
+          { 'kind': 'block', 'type': 'websocket_send', 'level': 3 },
+          { 'kind': 'block', 'type': 'websocket_message', 'level': 3 },
+          { 'kind': 'block', 'type': 'websocket_connected', 'level': 3 },
         ]},
       { 'kind': 'search', 'name': '%{BKY_CAT_BUSCAR}', 'contents': [] }
     ]

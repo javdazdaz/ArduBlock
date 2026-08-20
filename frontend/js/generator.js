@@ -52,7 +52,9 @@ import { registerGenerators as regLedmatrix,
 import { registerGenerators as regMax7219,
          MAX7219_FRAMES } from './blocks/max7219.js';
 import { registerGenerators as regMatrixdirect } from './blocks/matrixdirect.js';
+import { registerGenerators as regText } from './blocks/text.js';
 import { registerGenerators as regWifi, buildWebServer } from './blocks/wifi.js';
+import { registerGenerators as regWebsocket, buildWebSocket } from './blocks/websocket.js';
 
 regEstructura(cppGenerator);
 regDigital(cppGenerator);
@@ -66,6 +68,7 @@ regSensores(cppGenerator);
 regMotor(cppGenerator);
 regMatematicas(cppGenerator);
 regVariables(cppGenerator);
+regText(cppGenerator);
 regArrays(cppGenerator);
 regBucles(cppGenerator);
 regAfmotor(cppGenerator);
@@ -73,6 +76,7 @@ regLedmatrix(cppGenerator);
 regMax7219(cppGenerator);
 regMatrixdirect(cppGenerator);
 regWifi(cppGenerator);
+regWebsocket(cppGenerator);
 
 // ═══ Generadores built-in de Blockly ═══════════
 
@@ -453,6 +457,9 @@ export function generateArduinoCode(workspace) {
   cppGenerator._webserverPage = null;
   cppGenerator._webRoutes = [];
   cppGenerator._webRespondUsed = false;
+  cppGenerator._websocketUsed = false;
+  cppGenerator._websocketPort = 81;
+  cppGenerator._wsMessageBody = '';
 
   const topBlocks = workspace.getTopBlocks(true);
 
@@ -505,6 +512,10 @@ export function generateArduinoCode(workspace) {
     }
     if (b.type === 'webserver_begin' || b.type === 'webserver_serve' || b.type === 'webserver_serve_file' || b.type === 'webserver_on') {
       cppGenerator._webserverUsed = true;
+    }
+    if (b.type === 'websocket_begin' || b.type === 'websocket_on_message' || b.type === 'websocket_send' || b.type === 'websocket_message' || b.type === 'websocket_connected') {
+      cppGenerator._websocketUsed = true;
+      cppGenerator._wifiUsed = true;
     }
     if (b.type === 'webserver_begin') {
       const p = parseInt(b.getFieldValue('PORT'), 10);
@@ -773,6 +784,15 @@ export function generateArduinoCode(workspace) {
     webLoop = web.loop;
   }
 
+  // ── WebSocket: globals + helpers + loop ──
+  let wsLoop = '';
+  if (cppGenerator._websocketUsed) {
+    const ws = buildWebSocket(cppGenerator._websocketPort, cppGenerator._wsMessageBody);
+    sketch += ws.globals;
+    sketch += ws.helpers;
+    wsLoop = ws.loop;
+  }
+
   // ── Ultrasonic helpers ──
   if (usNames.size > 0) {
     for (const inst of cppGenerator._usInstances) {
@@ -918,7 +938,7 @@ export function generateArduinoCode(workspace) {
   sketch += '}\n\n';
 
   sketch += 'void loop() {\n';
-  sketch += (webLoop || '') + (loopBody || '  // sin bucle\n');
+  sketch += (webLoop || '') + (wsLoop || '') + (loopBody || '  // sin bucle\n');
   sketch += '}\n';
 
   return sketch;
