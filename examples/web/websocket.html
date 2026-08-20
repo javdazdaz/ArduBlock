@@ -1,0 +1,83 @@
+<!--
+name: Tiempo real (WebSocket)
+description: Comunicación bidireccional en vivo: control y datos sin recargar.
+category: WebSocket
+-->
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tiempo real</title>
+<style>
+  :root{--bg:#0d1117;--card:#161b22;--border:#30363d;--text:#e6edf3;--muted:#8b949e;--acc:#6c5ce7}
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;background:var(--bg);color:var(--text);font-family:system-ui,sans-serif;display:flex;align-items:center;justify-content:center;padding:16px}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:24px;width:100%;max-width:420px}
+  h1{font-size:1.2rem;margin:0 0 4px}
+  .sub{font-size:.8rem;color:var(--muted);margin:0 0 18px}
+  .status-row{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+  .badge{font-size:.78rem;padding:4px 10px;border-radius:999px;background:var(--bg);border:1px solid var(--border);color:var(--muted)}
+  .badge.ok{color:#4ade80;border-color:#4ade80}
+  .badge.err{color:#f87171;border-color:#f87171}
+  .row{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+  button{border:0;border-radius:8px;padding:9px 14px;font-size:.85rem;font-weight:600;cursor:pointer;color:#fff;font-family:inherit}
+  .btn{background:var(--acc)} .on{background:#4ade80;color:#0d1117} .off{background:#f87171}
+  .log{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px;min-height:80px;max-height:140px;overflow:auto}
+  .log .label{font-size:.7rem;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px}
+  #log{font-family:monospace;font-size:.8rem;white-space:pre-wrap;word-break:break-word}
+  .hint{font-size:.72rem;color:var(--muted);line-height:1.6;border-top:1px solid var(--border);padding-top:12px;margin-top:14px}
+  code{color:var(--acc)}
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>📡 Tiempo real</h1>
+  <p class="sub">Conexión WebSocket con el Arduino (puerto 81), sin recargar la página.</p>
+
+  <div class="status-row">
+    <span id="estado" class="badge">Desconectado</span>
+    <button class="btn" onclick="conectar()">Conectar</button>
+  </div>
+
+  <div class="row">
+    <button class="on" onclick="enviar('on')">Encender LED</button>
+    <button class="off" onclick="enviar('off')">Apagar LED</button>
+    <button class="btn" onclick="enviar('hola')">Saludar</button>
+  </div>
+
+  <div class="log">
+    <div class="label">Mensajes recibidos</div>
+    <div id="log"></div>
+  </div>
+
+  <p class="hint">
+    Use <code>iniciar WebSocket (81)</code> en setup. En <code>cuando llegue un mensaje</code>
+    lea <code>mensaje WebSocket</code> y responda con <code>enviar por WebSocket</code>.
+  </p>
+</div>
+<script>
+var ws;
+function conectar(){
+  if(ws) ws.close();
+  ws=new WebSocket('ws://'+location.hostname+':81');
+  ws.onopen=function(){estado('Conectado','ok')};
+  ws.onclose=function(){estado('Desconectado','')};
+  ws.onerror=function(){estado('Error','err')};
+  ws.onmessage=function(e){log(e.data)};
+}
+function estado(t,c){
+  var el=document.getElementById('estado');
+  el.textContent=t; el.className='badge '+(c||'');
+}
+function enviar(m){
+  if(ws && ws.readyState===1) ws.send(m);
+  else log('✕ no conectado');
+}
+function log(t){
+  var el=document.getElementById('log');
+  el.textContent='→ '+t+'\n'+el.textContent;
+}
+</script>
+</body>
+</html>

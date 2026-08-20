@@ -1,0 +1,71 @@
+<!--
+name: API REST
+description: Control por parámetros de URL (?angulo=90) y POST con JSON.
+category: REST
+-->
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>API REST</title>
+<style>
+  :root{--bg:#0d1117;--card:#161b22;--border:#30363d;--text:#e6edf3;--muted:#8b949e;--acc:#58a6ff}
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;background:var(--bg);color:var(--text);font-family:system-ui,sans-serif;display:flex;align-items:center;justify-content:center;padding:16px}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:24px;width:100%;max-width:420px}
+  h1{font-size:1.2rem;margin:0 0 4px}
+  .sub{font-size:.8rem;color:var(--muted);margin:0 0 18px}
+  .row{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+  .row label{font-size:.85rem}
+  .row input[type=range]{flex:1}
+  button{border:0;border-radius:8px;padding:9px 14px;font-size:.85rem;font-weight:600;cursor:pointer;color:#0d1117;font-family:inherit}
+  .btn{background:var(--acc)} .on{background:#4ade80} .off{background:#f87171}
+  #status{font-size:.8rem;color:var(--muted);min-height:1.4em;margin-bottom:14px}
+  .hint{font-size:.72rem;color:var(--muted);line-height:1.6;border-top:1px solid var(--border);padding-top:12px;margin:0}
+  code{color:var(--acc)}
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>🔌 API REST</h1>
+  <p class="sub">El navegador manda parámetros y JSON; el Arduino responde.</p>
+
+  <div class="row">
+    <label>Servo: <span id="val">90</span>°</label>
+    <input type="range" id="ang" min="0" max="180" value="90">
+    <button class="btn" onclick="mover()">Mover</button>
+  </div>
+
+  <div class="row">
+    <button class="on" onclick="led(1)">Encender LED</button>
+    <button class="off" onclick="led(0)">Apagar LED</button>
+  </div>
+
+  <div id="status">Listo.</div>
+
+  <p class="hint">
+    Atienda <code>/servo</code> con «cuando visiten» y lea el ángulo con
+    <code>parámetro "angulo"</code> + <code>texto a número</code>.
+    Atienda <code>/led</code> con «cuando visiten» y lea el JSON con
+    <code>cuerpo del pedido</code>. Para confirmar, use «responder como JSON».
+  </p>
+</div>
+<script>
+function mover(){
+  var v=document.getElementById('ang').value;
+  document.getElementById('val').textContent=v;
+  pedir('/servo?angulo='+v);
+}
+function led(e){
+  fetch('/led',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({estado:e})})
+    .then(function(r){return r.text()}).then(ok).catch(fallo);
+}
+function pedir(url){
+  fetch(url).then(function(r){return r.text()}).then(ok).catch(fallo);
+}
+function ok(t){document.getElementById('status').textContent='✔ '+t}
+function fallo(){document.getElementById('status').textContent='✕ sin conexión'}
+</script>
+</body>
+</html>
