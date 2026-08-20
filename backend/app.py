@@ -32,6 +32,7 @@ from backend.routes.upload import upload_bp
 from backend.routes.serial import serial_bp, init_serial_manager
 from backend.routes.boards import boards_bp
 from backend.routes.examples import examples_bp
+from backend.routes.web_presets import web_presets_bp
 from backend.routes.arduino_cli import arduino_cli_bp
 from backend.routes.drivers import drivers_bp
 from backend.routes.health import health_bp
@@ -84,6 +85,7 @@ def create_app() -> Flask:
     app.register_blueprint(serial_bp)
     app.register_blueprint(boards_bp)
     app.register_blueprint(examples_bp)
+    app.register_blueprint(web_presets_bp)
     app.register_blueprint(arduino_cli_bp)
     app.register_blueprint(drivers_bp)
     app.register_blueprint(health_bp)

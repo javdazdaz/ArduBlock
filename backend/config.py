@@ -51,6 +51,7 @@ FRONTEND_DIR = (
 )
 TEMPLATES_DIR = _FRONTEND_BASE / "templates"
 EXAMPLES_DIR = _BASE_DIR / "examples" / "arduino"
+WEB_PRESETS_DIR = _BASE_DIR / "examples" / "web"
 DATABASE_PATH = Path(os.environ.get(
     "ARDUBLOCK_DB", Path(__file__).resolve().parent / "ardublock.db"
 ))

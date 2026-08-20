@@ -1,0 +1,47 @@
+<!--
+name: Panel de control
+description: Botones que encienden, apagan y hacen parpadear un LED por Wi-Fi.
+category: Control
+-->
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Panel de control</title>
+<style>
+  :root{--bg:#0d1117;--card:#161b22;--border:#30363d;--text:#e6edf3;--acc:#4ade80;--acc2:#f472b6}
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;background:var(--bg);color:var(--text);font-family:system-ui,sans-serif;display:flex;align-items:center;justify-content:center;padding:16px}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:28px;width:100%;max-width:360px;text-align:center}
+  h1{font-size:1.25rem;margin:0 0 4px}
+  p{font-size:.85rem;color:#8b949e;margin:0 0 20px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  button{border:0;border-radius:10px;padding:16px 12px;font-size:1rem;font-weight:600;cursor:pointer;color:#0d1117;font-family:inherit}
+  .on{background:var(--acc)} .off{background:#f87171} .blink{background:#fbbf24}
+  .full{grid-column:1/-1}
+  #status{font-size:.8rem;color:#8b949e;margin-top:18px;min-height:1.2em}
+  a{color:var(--acc2)}
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>💡 Control de LED</h1>
+  <p>Esta página le habla al Arduino por Wi-Fi. Cada botón pide una ruta; usted la atiende con bloques "cuando visiten".</p>
+  <div class="grid">
+    <button class="on" onclick="pedir('/led/on')">Encender</button>
+    <button class="off" onclick="pedir('/led/off')">Apagar</button>
+    <button class="blink full" onclick="pedir('/blink')">Parpadear 5 veces</button>
+  </div>
+  <div id="status">Listo.</div>
+</div>
+<script>
+function pedir(ruta){
+  var s=document.getElementById('status');
+  s.textContent='Pidiendo '+ruta+' …';
+  fetch(ruta).then(function(){s.textContent='✔ '+ruta+' ejecutado';})
+    .catch(function(){s.textContent='✕ No se pudo contactar al Arduino';});
+}
+</script>
+</body>
+</html>

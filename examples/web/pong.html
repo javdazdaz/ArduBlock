@@ -1,0 +1,52 @@
+<!--
+name: Pong
+description: Pong clásico. Mueva la paleta con el mouse o las teclas W/S.
+category: Juegos
+-->
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pong</title>
+<style>
+  html,body{margin:0;height:100%;background:#0d1117;color:#e6edf3;font-family:system-ui,sans-serif;display:flex;align-items:center;justify-content:center}
+  .wrap{text-align:center}
+  canvas{background:#161b22;border:2px solid #30363d;display:block;margin:0 auto}
+  h1{font-size:1.2rem;margin:0 0 6px}
+  .score{font-size:1rem;margin-bottom:10px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🏓 Pong</h1>
+  <div class="score"><span id="a">0</span> — <span id="b">0</span></div>
+  <canvas id="c" width="480" height="320"></canvas>
+</div>
+<script>
+var cv=document.getElementById('c'),ctx=cv.getContext('2d');
+var W=cv.width,H=cv.height,PW=10,PH=70;
+var p1=H/2-PH/2,p2=H/2-PH/2;
+var ball={x:W/2,y:H/2,vx:4,vy:3};
+var s1=0,s2=0;
+function paso(){
+  ball.x+=ball.vx;ball.y+=ball.vy;
+  if(ball.y<=0||ball.y>=H)ball.vy*=-1;
+  if(ball.x<=PW&&ball.y>p1&&ball.y<p1+PH){ball.vx=Math.abs(ball.vx);ball.x=PW}
+  if(ball.x>=W-PW&&ball.y>p2&&ball.y<p2+PH){ball.vx=-Math.abs(ball.vx);ball.x=W-PW}
+  if(ball.x<0){s2++;document.getElementById('b').textContent=s2;reiniciar()}
+  if(ball.x>W){s1++;document.getElementById('a').textContent=s1;reiniciar()}
+  p2+=Math.sign(ball.y-(p2+PH/2))*3.2;
+}
+function reiniciar(){ball={x:W/2,y:H/2,vx:(Math.random()<.5?-4:4),vy:(Math.random()*6-3)}}
+function dibujar(){
+  ctx.fillStyle='#161b22';ctx.fillRect(0,0,W,H);
+  ctx.fillStyle='#4ade80';ctx.fillRect(0,p1,PW,PH);ctx.fillRect(W-PW,p2,PW,PH);
+  ctx.fillStyle='#fff';ctx.fillRect(ball.x-5,ball.y-5,10,10);
+}
+addEventListener('mousemove',function(e){var r=cv.getBoundingClientRect();p1=e.clientY-r.top-PH/2;if(p1<0)p1=0;if(p1>H-PH)p1=H-PH});
+addEventListener('keydown',function(e){if(e.key==='w')p1-=15;if(e.key==='s')p1+=15;if(p1<0)p1=0;if(p1>H-PH)p1=H-PH});
+setInterval(function(){paso();dibujar()},16);
+</script>
+</body>
+</html>
