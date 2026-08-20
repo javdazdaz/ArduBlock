@@ -627,7 +627,7 @@ initPanelModeTabs();
 initMatrixEditor();
 
 // Panel de sitios web (presets + análisis + clonar)
-initWebPresets({ showToast });
+initWebPresets({ showToast, workspace });
 
 // Undo tree: historial completo del proyecto (workspace + tabs + nombre + placa)
 initUndoTree({ workspace });

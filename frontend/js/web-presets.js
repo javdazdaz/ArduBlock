@@ -9,11 +9,14 @@
  *   - Clonar un preset a un tab .html editable (y editar los del proyecto).
  */
 
+import * as Blockly from 'blockly';
 import { getTabs, createHtmlTab, openTab } from './tab-manager.js';
+import { webPresetProjects, hasWebPresetProject } from './web-preset-projects.js';
 
 const BUDGET_KB = 180; // HTML aprox. para R4 WiFi (256 KB flash − sketch base ~61 KB)
 
 let showToast = () => {};
+let workspace;
 let presets = [];
 let presetsLoaded = false;
 let current = null; // { kind: 'preset'|'tab', key, name, content }
@@ -30,6 +33,7 @@ function esc(s) {
 
 export function initWebPresets(deps = {}) {
   showToast = deps.showToast || showToast;
+  workspace = deps.workspace;
 
   presetList  = document.getElementById('web-preset-list');
   projectList = document.getElementById('web-project-list');
@@ -47,6 +51,15 @@ export function initWebPresets(deps = {}) {
 
   if (btnEdit)  btnEdit.addEventListener('click', editCurrent);
   if (btnReload) btnReload.addEventListener('click', reloadPreview);
+
+  // Diálogo "clonar sitio": elegir solo HTML o proyecto completo.
+  const cloneDialog = document.getElementById('web-clone-dialog');
+  if (cloneDialog) {
+    document.getElementById('web-clone-cancel').addEventListener('click', () => { cloneDialog.style.display = 'none'; });
+    document.getElementById('web-clone-html').addEventListener('click', () => { cloneDialog.style.display = 'none'; cloneHtmlOnly(); });
+    document.getElementById('web-clone-full').addEventListener('click', () => { cloneDialog.style.display = 'none'; cloneFullProject(); });
+    cloneDialog.addEventListener('click', (e) => { if (e.target === cloneDialog) cloneDialog.style.display = 'none'; });
+  }
 
   // Al (re)cargar el srcdoc, enfocar el iframe para que los juegos
   // reciban el teclado (Snake/Pong usan addEventListener('keydown')).
@@ -222,10 +235,44 @@ function editCurrent() {
     return;
   }
 
-  // Preset: copiarlo a un tab .html del proyecto y abrirlo para editar.
+  // Preset con proyecto esperado: preguntar si clonar solo HTML o completo.
+  if (hasWebPresetProject(current.key)) {
+    const dialog = document.getElementById('web-clone-dialog');
+    if (dialog) dialog.style.display = 'flex';
+    return;
+  }
+
+  // Preset simple (sin proyecto): copiar solo el HTML.
+  cloneHtmlOnly();
+}
+
+function cloneHtmlOnly() {
+  if (!current || current.kind !== 'preset') return;
   const name = current.key.split('/').pop() || 'index.html';
   const created = createHtmlTab(name, current.content);
   showToast(`Sitio "${created}" copiado al editor. Publíquelo en la red del Arduino con el bloque "desplegar página de archivo".`);
+  refreshProjectList();
+  if (window._setPanelMode) window._setPanelMode('code');
+}
+
+function cloneFullProject() {
+  if (!current || current.kind !== 'preset') return;
+  const name = current.key.split('/').pop() || 'index.html';
+  const created = createHtmlTab(name, current.content);
+
+  const builder = webPresetProjects[current.key];
+  if (builder && workspace) {
+    try {
+      if (window._forceUndoPush) window._forceUndoPush();
+      workspace.clear();
+      Blockly.serialization.workspaces.load(builder(created), workspace);
+    } catch (e) {
+      console.error('Error al cargar el proyecto del sitio', e);
+      showToast('Error al cargar los bloques del proyecto');
+    }
+  }
+
+  showToast(`Proyecto "${created}" copiado con sus bloques.`);
   refreshProjectList();
   if (window._setPanelMode) window._setPanelMode('code');
 }
