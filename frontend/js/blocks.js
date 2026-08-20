@@ -287,7 +287,11 @@ const _FULL_TOOLBOX_TEMPLATE = [
   { kind: 'block', type: 'webserver_serve', level: 3 },
   { kind: 'block', type: 'webserver_serve_file', level: 3 },
   { kind: 'block', type: 'webserver_on', level: 3 },
+  { kind: 'block', type: 'webserver_respond', level: 3 },
   { kind: 'block', type: 'wifi_ip', level: 3 },
+  { kind: 'block', type: 'wifi_connected', level: 3 },
+  { kind: 'block', type: 'wifi_rssi', level: 3 },
+  { kind: 'block', type: 'wifi_mac', level: 3 },
 ];
 
 export const BLOCK_LEVELS = _buildBlockLevelMap(_FULL_TOOLBOX_TEMPLATE);
@@ -520,7 +524,11 @@ export function buildToolboxForBoard(fqbn, level) {
           { 'kind': 'block', 'type': 'webserver_serve', 'level': 3 },
           { 'kind': 'block', 'type': 'webserver_serve_file', 'level': 3 },
           { 'kind': 'block', 'type': 'webserver_on', 'level': 3 },
+          { 'kind': 'block', 'type': 'webserver_respond', 'level': 3 },
           { 'kind': 'block', 'type': 'wifi_ip', 'level': 3 },
+          { 'kind': 'block', 'type': 'wifi_connected', 'level': 3 },
+          { 'kind': 'block', 'type': 'wifi_rssi', 'level': 3 },
+          { 'kind': 'block', 'type': 'wifi_mac', 'level': 3 },
         ]},
       { 'kind': 'search', 'name': '%{BKY_CAT_BUSCAR}', 'contents': [] }
     ]

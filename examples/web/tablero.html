@@ -1,0 +1,50 @@
+<!--
+name: Tablero de sensores
+description: Muestra lecturas en vivo pidiendo /temp, /luz y /rssi al Arduino con fetch().
+category: Datos
+-->
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tablero de sensores</title>
+<style>
+  :root{--bg:#0d1117;--card:#161b22;--border:#30363d;--text:#e6edf3;--muted:#8b949e;--acc:#4ade80}
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;background:var(--bg);color:var(--text);font-family:system-ui,sans-serif;display:flex;align-items:center;justify-content:center;padding:16px}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:24px;width:100%;max-width:420px;text-align:center}
+  h1{font-size:1.25rem;margin:0 0 4px}
+  .sub{font-size:.8rem;color:var(--muted);margin:0 0 18px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .tile{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:16px}
+  .label{font-size:.72rem;color:var(--muted);margin-bottom:6px}
+  .value{font-size:1.8rem;font-weight:700;color:var(--acc);font-variant-numeric:tabular-nums}
+  .hint{font-size:.75rem;color:var(--muted);margin:18px 0 0;line-height:1.5}
+  code{color:var(--acc)}
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>📊 Tablero de sensores</h1>
+  <p class="sub">El navegador pide los valores al Arduino cada segundo con <code>fetch()</code>.</p>
+  <div class="grid">
+    <div class="tile"><div class="label">Temperatura (A0)</div><div class="value" id="temp">—</div></div>
+    <div class="tile"><div class="label">Luz (A1)</div><div class="value" id="luz">—</div></div>
+    <div class="tile"><div class="label">Señal WiFi</div><div class="value" id="rssi">—</div></div>
+  </div>
+  <p class="hint">Conecte un sensor a A0 y a A1. Atienda <code>/temp</code>, <code>/luz</code> y <code>/rssi</code> con bloques «cuando visiten» y dentro ponga «responder con valor» (por ejemplo <code>analogRead A0</code>).</p>
+</div>
+<script>
+function pedir(ruta, id){
+  fetch(ruta).then(function(r){return r.text()}).then(function(t){document.getElementById(id).textContent=t})
+    .catch(function(){document.getElementById(id).textContent='—'});
+}
+setInterval(function(){
+  pedir('/temp','temp');
+  pedir('/luz','luz');
+  pedir('/rssi','rssi');
+},1000);
+</script>
+</body>
+</html>

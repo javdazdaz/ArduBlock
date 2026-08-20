@@ -74,10 +74,12 @@ export function buildWebServer(page, routes) {
   for (const r of (routes || [])) {
     helpers += '  if (path == "' + r.path + '") {\n';
     helpers += (r.body || '  // sin acciones\n');
-    helpers += '    client.println("HTTP/1.1 303 See Other");\n';
-    helpers += '    client.println("Location: /");\n';
-    helpers += '    client.println();\n';
-    helpers += '    return;\n';
+    if (!r.respond) {
+      helpers += '    client.println("HTTP/1.1 303 See Other");\n';
+      helpers += '    client.println("Location: /");\n';
+      helpers += '    client.println();\n';
+      helpers += '    return;\n';
+    }
     helpers += '  }\n';
   }
   helpers += '  client.println("HTTP/1.1 200 OK");\n';
@@ -184,12 +186,48 @@ export const blocks = [
     helpUrl: ''
   },
   {
+    type: 'webserver_respond',
+    message0: Blockly.Msg.MSG_WEBSERVER_RESPOND,
+    args0: [
+      { type: 'input_value', name: 'VALUE' }
+    ],
+    previousStatement: null,
+    nextStatement: null,
+    colour: 210,
+    tooltip: Blockly.Msg.TOOLTIP_WEBSERVER_RESPOND,
+    helpUrl: ''
+  },
+  {
     type: 'wifi_ip',
     message0: Blockly.Msg.MSG_WIFI_IP,
     inputsInline: true,
     output: 'String',
     colour: 210,
     tooltip: Blockly.Msg.TOOLTIP_WIFI_IP,
+    helpUrl: ''
+  },
+  {
+    type: 'wifi_connected',
+    message0: Blockly.Msg.MSG_WIFI_CONNECTED,
+    output: 'Boolean',
+    colour: 210,
+    tooltip: Blockly.Msg.TOOLTIP_WIFI_CONNECTED,
+    helpUrl: ''
+  },
+  {
+    type: 'wifi_rssi',
+    message0: Blockly.Msg.MSG_WIFI_RSSI,
+    output: 'Number',
+    colour: 210,
+    tooltip: Blockly.Msg.TOOLTIP_WIFI_RSSI,
+    helpUrl: ''
+  },
+  {
+    type: 'wifi_mac',
+    message0: Blockly.Msg.MSG_WIFI_MAC,
+    output: 'String',
+    colour: 210,
+    tooltip: Blockly.Msg.TOOLTIP_WIFI_MAC,
     helpUrl: ''
   }
 ];
@@ -256,19 +294,57 @@ export function registerGenerators(cppGenerator) {
 
   // ── webserver_on (ruta dinámica) ─────────────
   // Registra una ruta: cuando el navegador pide PATH, ejecuta el cuerpo DO.
+  // Si el cuerpo incluye un bloque webserver_respond, responde con ese valor
+  // (sin redirect); si no, redirige a "/" tras ejecutar las acciones.
   cppGenerator.forBlock['webserver_on'] = function(block) {
     cppGenerator._webserverUsed = true;
     let path = (block.getFieldValue('PATH') || '/').trim();
     if (!path.startsWith('/')) path = '/' + path;
+    const prevRespond = cppGenerator._webRespondUsed;
+    cppGenerator._webRespondUsed = false;
     const body = cppGenerator.statementToCode(block, 'DO') || '  // sin acciones\n';
+    const respond = cppGenerator._webRespondUsed;
+    cppGenerator._webRespondUsed = prevRespond;
     cppGenerator._webRoutes = cppGenerator._webRoutes || [];
-    cppGenerator._webRoutes.push({ path: esc(path), body });
+    cppGenerator._webRoutes.push({ path: esc(path), body, respond });
     return '';
+  };
+
+  // ── webserver_respond (datos en vivo) ────────
+  // Responde a la petición con un valor (p. ej. analogRead) en text/plain.
+  // Va DENTRO de "cuando visiten"; su presencia desactiva el redirect.
+  cppGenerator.forBlock['webserver_respond'] = function(block) {
+    cppGenerator._webserverUsed = true;
+    cppGenerator._webRespondUsed = true;
+    const v = cppGenerator.valueToCode(block, 'VALUE', cppGenerator.ORDER_NONE) || '""';
+    return 'client.println("HTTP/1.1 200 OK");\n'
+         + 'client.println("Content-type:text/plain");\n'
+         + 'client.println();\n'
+         + 'client.println(String(' + v + '));\n'
+         + 'return;\n';
   };
 
   // ── wifi_ip ──────────────────────────────────
   cppGenerator.forBlock['wifi_ip'] = function(_block) {
     cppGenerator._wifiUsed = true;
     return ['WiFi.localIP().toString()', cppGenerator.ORDER_ATOMIC];
+  };
+
+  // ── wifi_connected ───────────────────────────
+  cppGenerator.forBlock['wifi_connected'] = function(_block) {
+    cppGenerator._wifiUsed = true;
+    return ['(WiFi.status() == WL_CONNECTED)', cppGenerator.ORDER_ATOMIC];
+  };
+
+  // ── wifi_rssi ────────────────────────────────
+  cppGenerator.forBlock['wifi_rssi'] = function(_block) {
+    cppGenerator._wifiUsed = true;
+    return ['WiFi.RSSI()', cppGenerator.ORDER_ATOMIC];
+  };
+
+  // ── wifi_mac ─────────────────────────────────
+  cppGenerator.forBlock['wifi_mac'] = function(_block) {
+    cppGenerator._wifiUsed = true;
+    return ['WiFi.macAddress()', cppGenerator.ORDER_ATOMIC];
   };
 }

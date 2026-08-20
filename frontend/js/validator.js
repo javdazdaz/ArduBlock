@@ -473,6 +473,18 @@ function validateWorkspace(workspace) {
     }
   }
 
+  // ═══ R9c: "responder con valor" fuera de "cuando visiten" ═══
+  const orphanRespond = findAllBlocksOfType(workspace, 'webserver_respond')
+    .filter(b => !isInsideBlockType(workspace, b, 'webserver_on'));
+  if (orphanRespond.length > 0) {
+    warnings.push({
+      type: 'webserver_respond_orphan',
+      severity: 'error',
+      message: t('val_webserver_respond_orphan'),
+      blocks: orphanRespond,
+    });
+  }
+
   // ═══ R10: text_join excesivo → fragmentación heap en AVR ═══
   const textJoinBlocks = findAllBlocksOfType(workspace, 'text_join');
   if (textJoinBlocks.length >= 3) {
@@ -612,7 +624,11 @@ const BLOCK_LABEL_KEYS = {
   'webserver_serve': 'blk_webserver_serve',
   'webserver_serve_file': 'blk_webserver_serve_file',
   'webserver_on': 'blk_webserver_on',
+  'webserver_respond': 'blk_webserver_respond',
   'wifi_ip': 'blk_wifi_ip',
+  'wifi_connected': 'blk_wifi_connected',
+  'wifi_rssi': 'blk_wifi_rssi',
+  'wifi_mac': 'blk_wifi_mac',
   'variable_global': 'blk_variable_global',
   'variable_declare': 'blk_variable_declare',
   'variable_set': 'blk_variable_set',

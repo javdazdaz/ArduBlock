@@ -452,6 +452,7 @@ export function generateArduinoCode(workspace) {
   cppGenerator._webserverPort = 80;
   cppGenerator._webserverPage = null;
   cppGenerator._webRoutes = [];
+  cppGenerator._webRespondUsed = false;
 
   const topBlocks = workspace.getTopBlocks(true);
 

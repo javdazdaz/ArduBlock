@@ -229,6 +229,28 @@ describe('validator — reglas de validación', () => {
     });
   });
 
+  describe('R9c: responder con valor debe ir dentro de cuando visiten', () => {
+    it('advierte si webserver_respond está fuera de webserver_on', () => {
+      const ws = mw(
+        [mb('arduino_setup'), mb('arduino_loop')],
+        [mb('arduino_setup'), mb('arduino_loop'), mb('webserver_respond')],
+      );
+      const w = validateWorkspace(ws);
+      expect(w.some(x => x.type === 'webserver_respond_orphan')).toBe(true);
+    });
+
+    it('no advierte si webserver_respond está dentro de webserver_on', () => {
+      const on = mb('webserver_on', { PATH: '/temp' });
+      const resp = mb('webserver_respond', {}, { parent: on });
+      const ws = mw(
+        [mb('arduino_setup'), mb('arduino_loop')],
+        [mb('arduino_setup'), mb('arduino_loop'), on, resp],
+      );
+      const w = validateWorkspace(ws);
+      expect(w.some(x => x.type === 'webserver_respond_orphan')).toBe(false);
+    });
+  });
+
   // ── R6d: pinMode / attachInterrupt en setup ────
   describe('R6d: pinMode y attachInterrupt en setup', () => {
     it('advierte si pin_mode está fuera de setup', () => {

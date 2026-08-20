@@ -656,6 +656,44 @@ describe('generadores C++ — WiFi / Servidor Web', () => {
     expect(helpers).toContain('<h1>Inicio</h1>');
     expect(loop).toContain('server.available()');
   });
+
+  it('buildWebServer omite redirect cuando la ruta responde con valor', async () => {
+    const { buildWebServer } = await import('../frontend/js/blocks/wifi.js');
+    const { helpers } = buildWebServer(
+      '<h1>Inicio</h1>',
+      [{ path: '/temp', body: '  client.println("HTTP/1.1 200 OK");\n  return;\n', respond: true }]
+    );
+    expect(helpers).toContain('if (path == "/temp")');
+    expect(helpers).not.toContain('303 See Other');
+  });
+
+  it('webserver_respond responde con el valor en text/plain', () => {
+    const code = cppGenerator.forBlock['webserver_respond'](b('webserver_respond'));
+    expect(code).toContain('Content-type:text/plain');
+    expect(code).toContain('client.println(String(0));');
+    expect(code).toContain('return;');
+    expect(cppGenerator._webserverUsed).toBe(true);
+    expect(cppGenerator._webRespondUsed).toBe(true);
+  });
+
+  it('wifi_connected genera comparación de estado', () => {
+    const [code, order] = cppGenerator.forBlock['wifi_connected'](b('wifi_connected'));
+    expect(code).toBe('(WiFi.status() == WL_CONNECTED)');
+    expect(order).toBe(cppGenerator.ORDER_ATOMIC);
+    expect(cppGenerator._wifiUsed).toBe(true);
+  });
+
+  it('wifi_rssi genera WiFi.RSSI()', () => {
+    const [code] = cppGenerator.forBlock['wifi_rssi'](b('wifi_rssi'));
+    expect(code).toBe('WiFi.RSSI()');
+    expect(cppGenerator._wifiUsed).toBe(true);
+  });
+
+  it('wifi_mac genera WiFi.macAddress()', () => {
+    const [code] = cppGenerator.forBlock['wifi_mac'](b('wifi_mac'));
+    expect(code).toBe('WiFi.macAddress()');
+    expect(cppGenerator._wifiUsed).toBe(true);
+  });
 });
 
 // ═══ Integración: generateArduinoCode ═════════════
