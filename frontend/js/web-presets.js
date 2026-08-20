@@ -18,7 +18,7 @@ let presets = [];
 let presetsLoaded = false;
 let current = null; // { kind: 'preset'|'tab', key, name, content }
 
-let presetList, projectList, iframe, codePre, analyzeBody, btnClone, btnEdit, btnReload;
+let presetList, projectList, iframe, codePre, analyzeBody, btnEdit, btnReload;
 
 function esc(s) {
   return String(s == null ? '' : s)
@@ -34,11 +34,9 @@ export function initWebPresets(deps = {}) {
   iframe      = document.getElementById('web-iframe');
   codePre     = document.getElementById('web-code-pre');
   analyzeBody = document.getElementById('web-analyze-body');
-  btnClone    = document.getElementById('web-btn-clone');
   btnEdit     = document.getElementById('web-btn-edit');
   btnReload   = document.getElementById('web-btn-reload');
 
-  if (btnClone) btnClone.addEventListener('click', cloneCurrent);
   if (btnEdit)  btnEdit.addEventListener('click', editCurrent);
   if (btnReload) btnReload.addEventListener('click', reloadPreview);
 
@@ -145,7 +143,6 @@ function selectTab(filename) {
 
 function setCurrent(c) {
   current = c;
-  if (btnClone) btnClone.disabled = !(c && c.kind === 'preset');
   if (btnEdit)  btnEdit.disabled = !c;
   if (btnReload) btnReload.disabled = !c;
 
@@ -187,22 +184,21 @@ function setSubTab(which) {
 
 // ── Acciones ──────────────────────────────────
 
-function cloneCurrent() {
-  if (!current || current.kind !== 'preset') return;
-  const name = current.key.split('/').pop() || 'index.html';
-  const created = createHtmlTab(name, current.content);
-  showToast(`Sitio "${created}" clonado. Sírvalo con el bloque "servir archivo .html".`);
-  refreshProjectList();
-  if (window._setPanelMode) window._setPanelMode('code');
-}
-
 function editCurrent() {
   if (!current) return;
+
+  // Archivo del proyecto: abrir el tab existente en el editor de código.
   if (current.kind === 'tab') {
     if (openTab(current.key) && window._setPanelMode) window._setPanelMode('code');
-  } else {
-    cloneCurrent();
+    return;
   }
+
+  // Preset: copiarlo a un tab .html del proyecto y abrirlo para editar.
+  const name = current.key.split('/').pop() || 'index.html';
+  const created = createHtmlTab(name, current.content);
+  showToast(`Sitio "${created}" copiado al editor. Sírvalo con el bloque "servir archivo .html".`);
+  refreshProjectList();
+  if (window._setPanelMode) window._setPanelMode('code');
 }
 
 // ── Análisis ──────────────────────────────────
