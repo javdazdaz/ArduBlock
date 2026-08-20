@@ -176,7 +176,7 @@
             <div id="web-project-list" class="web-list"></div>
           </div>
           <div class="web-main">
-            <div class="web-tabs">
+            <div class="web-tabs" id="web-tabs">
               <button id="web-tab-preview" class="web-tab active">Vista previa</button>
               <button id="web-tab-code" class="web-tab">Código</button>
               <button id="web-tab-analyze" class="web-tab">Análisis</button>
@@ -193,6 +193,16 @@
             </div>
             <div id="web-analyze" class="web-view" style="display:none">
               <div id="web-analyze-body"></div>
+            </div>
+            <div id="web-empty-state" class="web-empty-state">
+              <div class="web-empty-title">🌐 Sitios web</div>
+              <p class="web-empty-sub">Aquí elige y prueba la página que su Arduino UNO R4 WiFi servirá.</p>
+              <ul class="web-empty-steps">
+                <li><span class="step-icon">1</span><span>Elija un <strong>sitio de ejemplo</strong> del panel izquierdo para verlo y analizarlo.</span></li>
+                <li><span class="step-icon">2</span><span><strong>Editar en editor</strong> copia el sitio a un archivo .html y lo abre para editarlo.</span></li>
+                <li><span class="step-icon">3</span><span>Sírvalo con el bloque <strong>«servir página de archivo»</strong> (categoría Red WiFi).</span></li>
+                <li><span class="step-icon">↻</span><span><strong>Recargar</strong> reinicia la vista previa de un juego.</span></li>
+              </ul>
             </div>
           </div>
         </div>

@@ -19,6 +19,8 @@ let presetsLoaded = false;
 let current = null; // { kind: 'preset'|'tab', key, name, content }
 
 let presetList, projectList, iframe, codePre, analyzeBody, btnEdit, btnReload;
+let emptyState, webTabs, previewView, codeView, analyzeView;
+let activeSubTab = 'preview';
 
 function esc(s) {
   return String(s == null ? '' : s)
@@ -36,6 +38,12 @@ export function initWebPresets(deps = {}) {
   analyzeBody = document.getElementById('web-analyze-body');
   btnEdit     = document.getElementById('web-btn-edit');
   btnReload   = document.getElementById('web-btn-reload');
+
+  emptyState  = document.getElementById('web-empty-state');
+  webTabs     = document.getElementById('web-tabs');
+  previewView = document.getElementById('web-preview');
+  codeView    = document.getElementById('web-code');
+  analyzeView = document.getElementById('web-analyze');
 
   if (btnEdit)  btnEdit.addEventListener('click', editCurrent);
   if (btnReload) btnReload.addEventListener('click', reloadPreview);
@@ -57,6 +65,7 @@ export function initWebPresets(deps = {}) {
 
   window._refreshWebPanel = refreshProjectList;
   refreshProjectList();
+  updateViewVisibility();
   loadPresets();
 }
 
@@ -156,6 +165,7 @@ function setCurrent(c) {
     if (sel) sel.classList.add('selected');
   }
 
+  updateViewVisibility();
   if (c) showCurrent();
 }
 
@@ -173,13 +183,21 @@ function reloadPreview() {
 
 // ── Sub-tabs (preview / código / análisis) ─────
 
+function updateViewVisibility() {
+  const has = !!current;
+  if (emptyState) emptyState.style.display = has ? 'none' : '';
+  if (webTabs) webTabs.style.display = has ? '' : 'none';
+  if (previewView) previewView.style.display = (has && activeSubTab === 'preview') ? '' : 'none';
+  if (codeView) codeView.style.display = (has && activeSubTab === 'code') ? '' : 'none';
+  if (analyzeView) analyzeView.style.display = (has && activeSubTab === 'analyze') ? '' : 'none';
+}
+
 function setSubTab(which) {
+  activeSubTab = which;
   document.getElementById('web-tab-preview').classList.toggle('active', which === 'preview');
   document.getElementById('web-tab-code').classList.toggle('active', which === 'code');
   document.getElementById('web-tab-analyze').classList.toggle('active', which === 'analyze');
-  document.getElementById('web-preview').style.display = which === 'preview' ? '' : 'none';
-  document.getElementById('web-code').style.display = which === 'code' ? '' : 'none';
-  document.getElementById('web-analyze').style.display = which === 'analyze' ? '' : 'none';
+  updateViewVisibility();
 }
 
 // ── Acciones ──────────────────────────────────
