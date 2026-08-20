@@ -219,8 +219,6 @@ export const blocks = [
     args1: [
       { type: 'input_statement', name: 'DO' }
     ],
-    previousStatement: null,
-    nextStatement: null,
     colour: 210,
     tooltip: Blockly.Msg.TOOLTIP_WEBSERVER_ON,
     helpUrl: ''
