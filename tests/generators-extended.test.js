@@ -603,12 +603,11 @@ describe('generadores C++ — WiFi / Servidor Web', () => {
     expect(cppGenerator._webserverPort).toBe(8080);
   });
 
-  it('webserver_serve genera handler HTTP con título y texto', () => {
+  it('webserver_serve registra la página principal (título y texto)', () => {
     const code = cppGenerator.forBlock['webserver_serve'](b('webserver_serve', { TITLE: 'Hola', BODY: 'Mundo' }));
-    expect(code).toContain('WiFiClient client = server.available();');
-    expect(code).toContain('HTTP/1.1 200 OK');
-    expect(code).toContain('<title>Hola</title>');
-    expect(code).toContain('<p>Mundo</p>');
+    expect(code).toBe('');
+    expect(cppGenerator._webserverPage).toContain('<title>Hola</title>');
+    expect(cppGenerator._webserverPage).toContain('<p>Mundo</p>');
     expect(cppGenerator._webserverUsed).toBe(true);
   });
 
@@ -619,11 +618,11 @@ describe('generadores C++ — WiFi / Servidor Web', () => {
     expect(cppGenerator._wifiUsed).toBe(true);
   });
 
-  it('webserver_serve_file sirve el contenido del tab .html', () => {
+  it('webserver_serve_file registra el contenido del tab .html', () => {
     window._tabManager = { getTabs: () => [{ filename: 'index.html', content: '<h1>Hola</h1>\n<p>mundo</p>' }] };
     const code = cppGenerator.forBlock['webserver_serve_file'](b('webserver_serve_file', { FILE: 'index.html' }));
-    expect(code).toContain('<h1>Hola</h1>');
-    expect(code).toContain('HTTP/1.1 200 OK');
+    expect(code).toBe('');
+    expect(cppGenerator._webserverPage).toContain('<h1>Hola</h1>');
     expect(cppGenerator._webserverUsed).toBe(true);
     delete window._tabManager;
   });
@@ -631,9 +630,31 @@ describe('generadores C++ — WiFi / Servidor Web', () => {
   it('webserver_serve_file con archivo inexistente no rompe', () => {
     window._tabManager = { getTabs: () => [] };
     const code = cppGenerator.forBlock['webserver_serve_file'](b('webserver_serve_file', { FILE: 'nope.html' }));
-    expect(code).toContain('HTTP/1.1 200 OK');
+    expect(code).toBe('');
+    expect(cppGenerator._webserverPage).toBe('');
     expect(cppGenerator._webserverUsed).toBe(true);
     delete window._tabManager;
+  });
+
+  it('webserver_on registra una ruta dinámica (normaliza el path)', () => {
+    const code = cppGenerator.forBlock['webserver_on'](b('webserver_on', { PATH: 'led/on' }));
+    expect(code).toBe('');
+    expect(cppGenerator._webserverUsed).toBe(true);
+    expect(cppGenerator._webRoutes).toHaveLength(1);
+    expect(cppGenerator._webRoutes[0].path).toBe('/led/on');
+  });
+
+  it('buildWebServer genera handler unificado con rutas y página', async () => {
+    const { buildWebServer } = await import('../frontend/js/blocks/wifi.js');
+    const { helpers, loop } = buildWebServer(
+      '<h1>Inicio</h1>',
+      [{ path: '/led/on', body: '  digitalWrite(13, HIGH);\n' }]
+    );
+    expect(helpers).toContain('void _handleWebRequest');
+    expect(helpers).toContain('if (path == "/led/on")');
+    expect(helpers).toContain('digitalWrite(13, HIGH);');
+    expect(helpers).toContain('<h1>Inicio</h1>');
+    expect(loop).toContain('server.available()');
   });
 });
 
@@ -737,6 +758,20 @@ describe('generateArduinoCode — includes y helpers', () => {
         b('webserver_serve', { TITLE: 'T', BODY: 'B' })],
     };
     expect(generateArduinoCode(ws)).toContain('WiFiServer server(8080);');
+  });
+
+  it('servidor web unificado: emite helpers y loop de atención', () => {
+    const ws = {
+      getTopBlocks: () => [b('arduino_setup'), b('arduino_loop')],
+      getAllBlocks: () => [b('arduino_setup'), b('arduino_loop'),
+        b('webserver_begin', { PORT: '80' }),
+        b('webserver_serve', { TITLE: 'T', BODY: 'B' })],
+    };
+    const code = generateArduinoCode(ws);
+    expect(code).toContain('String _readRequestPath');
+    expect(code).toContain('void _handleWebRequest');
+    expect(code).toContain('server.available()');
+    expect(code).toContain('client.stop();');
   });
 
   it('orden canónico: #include → globales → setup → loop', () => {

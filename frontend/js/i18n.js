@@ -461,6 +461,10 @@ const messages = {
     TOOLTIP_WEBSERVER_SERVE_FILE: 'Sirve el contenido de un archivo .html del proyecto como página web. El CSS y el JS van inline dentro del .html.',
     OPT_WEBSERVER_NO_HTML: '— sin archivos .html —',
     blk_webserver_serve_file: 'servir página de archivo',
+    MSG_WEBSERVER_ON: 'cuando visiten %1',
+    MSG_WEBSERVER_ON_DO: 'hacer %1',
+    TOOLTIP_WEBSERVER_ON: 'Ejecuta los bloques de adentro cuando el navegador pide esa ruta (por ejemplo /led/on). Después responde redirigiendo a / para recargar la página.',
+    blk_webserver_on: 'cuando visiten (ruta web)',
     // ── Ejemplos ──
     examples_title: 'Ejemplos Arduino',
     examples_browse: '📂 Explorar todos los ejemplos...',
@@ -919,6 +923,10 @@ const messages = {
     TOOLTIP_WEBSERVER_SERVE_FILE: 'Serves the content of a project .html file as a web page. CSS and JS go inline inside the .html.',
     OPT_WEBSERVER_NO_HTML: '— no .html files —',
     blk_webserver_serve_file: 'serve page from file',
+    MSG_WEBSERVER_ON: 'when someone visits %1',
+    MSG_WEBSERVER_ON_DO: 'do %1',
+    TOOLTIP_WEBSERVER_ON: 'Runs the blocks inside when the browser requests that path (e.g. /led/on). Then responds redirecting to / to reload the page.',
+    blk_webserver_on: 'when visited (web route)',
     // ── Examples ──
     examples_title: 'Arduino Examples',
     examples_browse: '📂 Browse all examples...',

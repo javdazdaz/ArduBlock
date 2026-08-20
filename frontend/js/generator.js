@@ -52,7 +52,7 @@ import { registerGenerators as regLedmatrix,
 import { registerGenerators as regMax7219,
          MAX7219_FRAMES } from './blocks/max7219.js';
 import { registerGenerators as regMatrixdirect } from './blocks/matrixdirect.js';
-import { registerGenerators as regWifi } from './blocks/wifi.js';
+import { registerGenerators as regWifi, buildWebServer } from './blocks/wifi.js';
 
 regEstructura(cppGenerator);
 regDigital(cppGenerator);
@@ -450,6 +450,8 @@ export function generateArduinoCode(workspace) {
   cppGenerator._wifiUsed = false;
   cppGenerator._webserverUsed = false;
   cppGenerator._webserverPort = 80;
+  cppGenerator._webserverPage = null;
+  cppGenerator._webRoutes = [];
 
   const topBlocks = workspace.getTopBlocks(true);
 
@@ -500,7 +502,7 @@ export function generateArduinoCode(workspace) {
     if (b.type === 'wifi_connect' || b.type === 'wifi_access_point' || b.type === 'wifi_ip') {
       cppGenerator._wifiUsed = true;
     }
-    if (b.type === 'webserver_begin' || b.type === 'webserver_serve' || b.type === 'webserver_serve_file') {
+    if (b.type === 'webserver_begin' || b.type === 'webserver_serve' || b.type === 'webserver_serve_file' || b.type === 'webserver_on') {
       cppGenerator._webserverUsed = true;
     }
     if (b.type === 'webserver_begin') {
@@ -762,6 +764,14 @@ export function generateArduinoCode(workspace) {
     sketch += '\n';
   }
 
+  // ── Servidor web unificado: helpers + loop de atención ──
+  let webLoop = '';
+  if (cppGenerator._webserverUsed) {
+    const web = buildWebServer(cppGenerator._webserverPage, cppGenerator._webRoutes);
+    sketch += web.helpers;
+    webLoop = web.loop;
+  }
+
   // ── Ultrasonic helpers ──
   if (usNames.size > 0) {
     for (const inst of cppGenerator._usInstances) {
@@ -907,7 +917,7 @@ export function generateArduinoCode(workspace) {
   sketch += '}\n\n';
 
   sketch += 'void loop() {\n';
-  sketch += loopBody || '  // sin bucle\n';
+  sketch += (webLoop || '') + (loopBody || '  // sin bucle\n');
   sketch += '}\n';
 
   return sketch;

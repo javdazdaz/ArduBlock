@@ -6,12 +6,13 @@ import '../i18n.js';  // side-effect: puebla Blockly.Msg
  * Usa la librería WiFiS3 (incluida en el core renesas_uno, sin instalar nada).
  * - Conexión a una red existente: WiFi.begin() + espera a WL_CONNECTED.
  * - Modo Access Point: WiFi.beginAP().
- * - Servidor web: WiFiServer / WiFiClient (HTTP/1.1, página HTML simple).
- * - webserver_serve_file sirve el contenido de un tab .html del proyecto.
+ * - Servidor web unificado: un único handler atiende cada cliente, lee la ruta
+ *   pedida, ejecuta los bloques "cuando visiten" que coincidan y, si no hay
+ *   coincidencia, sirve la página principal (webserver_serve / _serve_file).
  */
 
 // Escapa comillas/backslashes/saltos para embeber en un literal C++.
-function esc(s) {
+export function esc(s) {
   return String(s == null ? '' : s)
     .replace(/\\/g, '\\\\')
     .replace(/"/g, '\\"')
@@ -36,33 +37,63 @@ function _htmlFileOptions() {
   return opts;
 }
 
-// Genera el handler HTTP que atiende clientes y sirve `html` (ya escapado).
-function _serveHtmlHandler(html) {
-  let code = '';
-  code += 'WiFiClient client = server.available();\n';
-  code += 'if (client) {\n';
-  code += '  String currentLine = "";\n';
-  code += '  while (client.connected()) {\n';
-  code += '    if (client.available()) {\n';
-  code += '      char c = client.read();\n';
-  code += '      if (c == \'\\n\') {\n';
-  code += '        if (currentLine.length() == 0) {\n';
-  code += '          client.println("HTTP/1.1 200 OK");\n';
-  code += '          client.println("Content-type:text/html");\n';
-  code += '          client.println();\n';
-  code += '          client.println("' + html + '");\n';
-  code += '          break;\n';
-  code += '        } else {\n';
-  code += '          currentLine = "";\n';
-  code += '        }\n';
-  code += '      } else if (c != \'\\r\') {\n';
-  code += '        currentLine += c;\n';
-  code += '      }\n';
-  code += '    }\n';
-  code += '  }\n';
-  code += '  client.stop();\n';
-  code += '}\n';
-  return code;
+// ═══════════════════════════════════════════════════════════
+//  Servidor web unificado (lo emite generateArduinoCode)
+// ═══════════════════════════════════════════════════════════
+
+/**
+ * Genera las funciones auxiliares del servidor + el fragmento de loop().
+ *
+ * @param {string|null} page   Contenido HTML de la página principal (raw).
+ * @param {Array} routes       Lista de {path, body} de bloques "cuando visiten".
+ * @returns {{helpers: string, loop: string}}
+ */
+export function buildWebServer(page, routes) {
+  const pageContent = page
+    ? esc(page)
+    : '<!DOCTYPE HTML><html><body>Servidor ArduBlock</body></html>';
+
+  let helpers = '';
+  helpers += 'String _readRequestPath(WiFiClient client) {\n';
+  helpers += '  String line = "";\n';
+  helpers += '  unsigned long _t = millis();\n';
+  helpers += '  while (client.connected() && !client.available() && (millis() - _t) < 1000) { }\n';
+  helpers += '  while (client.connected() && client.available()) {\n';
+  helpers += '    char c = client.read();\n';
+  helpers += '    if (c == \'\\n\') break;\n';
+  helpers += '    if (c != \'\\r\') line += c;\n';
+  helpers += '  }\n';
+  helpers += '  int _s = line.indexOf(\' \');\n';
+  helpers += '  if (_s < 0) return "/";\n';
+  helpers += '  int _e = line.indexOf(\' \', _s + 1);\n';
+  helpers += '  if (_e < 0) return "/";\n';
+  helpers += '  return line.substring(_s + 1, _e);\n';
+  helpers += '}\n\n';
+
+  helpers += 'void _handleWebRequest(WiFiClient client, String path) {\n';
+  for (const r of (routes || [])) {
+    helpers += '  if (path == "' + r.path + '") {\n';
+    helpers += (r.body || '  // sin acciones\n');
+    helpers += '    client.println("HTTP/1.1 303 See Other");\n';
+    helpers += '    client.println("Location: /");\n';
+    helpers += '    client.println();\n';
+    helpers += '    return;\n';
+    helpers += '  }\n';
+  }
+  helpers += '  client.println("HTTP/1.1 200 OK");\n';
+  helpers += '  client.println("Content-type:text/html");\n';
+  helpers += '  client.println();\n';
+  helpers += '  client.println("' + pageContent + '");\n';
+  helpers += '}\n\n';
+
+  const loop = 'WiFiClient client = server.available();\n'
+             + 'if (client) {\n'
+             + '  String path = _readRequestPath(client);\n'
+             + '  _handleWebRequest(client, path);\n'
+             + '  client.stop();\n'
+             + '}\n';
+
+  return { helpers, loop };
 }
 
 // ═══ Bloques ═══════════════════════════════════
@@ -137,6 +168,22 @@ export const blocks = [
     helpUrl: ''
   },
   {
+    type: 'webserver_on',
+    message0: Blockly.Msg.MSG_WEBSERVER_ON,
+    args0: [
+      { type: 'field_input', name: 'PATH', text: '/led/on' }
+    ],
+    message1: Blockly.Msg.MSG_WEBSERVER_ON_DO,
+    args1: [
+      { type: 'input_statement', name: 'DO' }
+    ],
+    previousStatement: null,
+    nextStatement: null,
+    colour: 210,
+    tooltip: Blockly.Msg.TOOLTIP_WEBSERVER_ON,
+    helpUrl: ''
+  },
+  {
     type: 'wifi_ip',
     message0: Blockly.Msg.MSG_WIFI_IP,
     inputsInline: true,
@@ -179,17 +226,20 @@ export function registerGenerators(cppGenerator) {
   };
 
   // ── webserver_serve ──────────────────────────
+  // Registra la página principal (título + texto). La sirve el handler unificado.
   cppGenerator.forBlock['webserver_serve'] = function(block) {
     cppGenerator._webserverUsed = true;
-    const title = esc(block.getFieldValue('TITLE') || '');
-    const body = esc(block.getFieldValue('BODY') || '');
+    const title = block.getFieldValue('TITLE') || '';
+    const body = block.getFieldValue('BODY') || '';
     const html = '<!DOCTYPE HTML><html><head><meta charset="utf-8">'
                + '<title>' + title + '</title></head>'
                + '<body><h1>' + title + '</h1><p>' + body + '</p></body></html>';
-    return _serveHtmlHandler(html);
+    cppGenerator._webserverPage = html;
+    return '';
   };
 
   // ── webserver_serve_file ─────────────────────
+  // Registra la página principal desde el contenido del tab .html.
   cppGenerator.forBlock['webserver_serve_file'] = function(block) {
     cppGenerator._webserverUsed = true;
     const file = block.getFieldValue('FILE') || '';
@@ -200,7 +250,20 @@ export function registerGenerators(cppGenerator) {
         if (tab) content = tab.content || '';
       } catch (_) { /* ignore */ }
     }
-    return _serveHtmlHandler(esc(content));
+    cppGenerator._webserverPage = content;
+    return '';
+  };
+
+  // ── webserver_on (ruta dinámica) ─────────────
+  // Registra una ruta: cuando el navegador pide PATH, ejecuta el cuerpo DO.
+  cppGenerator.forBlock['webserver_on'] = function(block) {
+    cppGenerator._webserverUsed = true;
+    let path = (block.getFieldValue('PATH') || '/').trim();
+    if (!path.startsWith('/')) path = '/' + path;
+    const body = cppGenerator.statementToCode(block, 'DO') || '  // sin acciones\n';
+    cppGenerator._webRoutes = cppGenerator._webRoutes || [];
+    cppGenerator._webRoutes.push({ path: esc(path), body });
+    return '';
   };
 
   // ── wifi_ip ──────────────────────────────────

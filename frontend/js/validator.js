@@ -461,6 +461,7 @@ function validateWorkspace(workspace) {
     const serveBlocks = [
       ...findAllBlocksOfType(workspace, 'webserver_serve'),
       ...findAllBlocksOfType(workspace, 'webserver_serve_file'),
+      ...findAllBlocksOfType(workspace, 'webserver_on'),
     ];
     if (serveBlocks.length > 0) {
       warnings.push({
@@ -610,6 +611,7 @@ const BLOCK_LABEL_KEYS = {
   'webserver_begin': 'blk_webserver_begin',
   'webserver_serve': 'blk_webserver_serve',
   'webserver_serve_file': 'blk_webserver_serve_file',
+  'webserver_on': 'blk_webserver_on',
   'wifi_ip': 'blk_wifi_ip',
   'variable_global': 'blk_variable_global',
   'variable_declare': 'blk_variable_declare',

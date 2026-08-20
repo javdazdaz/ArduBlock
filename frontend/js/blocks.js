@@ -286,6 +286,7 @@ const _FULL_TOOLBOX_TEMPLATE = [
   { kind: 'block', type: 'webserver_begin', level: 3 },
   { kind: 'block', type: 'webserver_serve', level: 3 },
   { kind: 'block', type: 'webserver_serve_file', level: 3 },
+  { kind: 'block', type: 'webserver_on', level: 3 },
   { kind: 'block', type: 'wifi_ip', level: 3 },
 ];
 
@@ -518,6 +519,7 @@ export function buildToolboxForBoard(fqbn, level) {
           { 'kind': 'block', 'type': 'webserver_begin', 'level': 3 },
           { 'kind': 'block', 'type': 'webserver_serve', 'level': 3 },
           { 'kind': 'block', 'type': 'webserver_serve_file', 'level': 3 },
+          { 'kind': 'block', 'type': 'webserver_on', 'level': 3 },
           { 'kind': 'block', 'type': 'wifi_ip', 'level': 3 },
         ]},
       { 'kind': 'search', 'name': '%{BKY_CAT_BUSCAR}', 'contents': [] }
