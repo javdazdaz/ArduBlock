@@ -44,12 +44,10 @@ category: REST
 
   <div id="status">Listo.</div>
 
-  <p class="hint">
-    Atienda <code>/servo</code> con «cuando visiten» y lea el ángulo con
-    <code>parámetro "angulo"</code> + <code>texto a número</code>.
-    Atienda <code>/led</code> con «cuando visiten» y lea el JSON con
-    <code>cuerpo del pedido</code>. Para confirmar, use «responder como JSON».
-  </p>
+  <p class="hint"><strong>Qué conectar:</strong> un servo en el pin 9 y un LED en el pin 13.<br>
+    <strong>Cómo:</strong> sirva la página con <code>"servir página web del archivo"</code>.
+    Servo: <code>"crear servo en pin 9"</code> en setup y <code>"cuando visiten /servo"</code> → <code>"mover servo a [texto a número de parámetro angulo]"</code>.
+    LED: <code>"cuando visiten /led"</code> → compare <code>"cuerpo del pedido"</code> y haga <code>"escribir digital pin 13"</code>; confirme con <code>"responder como JSON"</code>.</p>
 </div>
 <script>
 function mover(){

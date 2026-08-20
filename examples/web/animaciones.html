@@ -27,6 +27,7 @@ category: Visual
   @keyframes rebote{0%,100%{transform:translateY(0)}50%{transform:translateY(-30px)}}
   .spinner{width:28px;height:28px;border:4px solid #30363d;border-top-color:#58a6ff;border-radius:50%;animation:girar 1s linear infinite}
   @keyframes girar{to{transform:rotate(360deg)}}
+  .hint{font-size:.72rem;color:var(--muted);text-align:left;line-height:1.5;margin:16px 0 0;border-top:1px solid var(--border);padding-top:12px}
 </style>
 </head>
 <body>
@@ -37,6 +38,7 @@ category: Visual
   <div class="row"><span class="label">Texto</span><span id="maquina"></span></div>
   <div class="row"><span class="label">Rebote</span><span class="bounce"></span></div>
   <div class="row"><span class="label">Giro</span><span class="spinner"></span></div>
+  <p class="hint">No requiere componentes. Sírvala con "servir página web del archivo".</p>
 </div>
 <script>
 var t='¡Hola desde Arduino!',i=0,m=document.getElementById('maquina');

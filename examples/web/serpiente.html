@@ -15,6 +15,7 @@ category: Juegos
   canvas{background:#161b22;border:2px solid #30363d;display:block;margin:0 auto}
   h1{font-size:1.2rem;margin:0 0 6px}
   .score{font-size:1rem;margin-bottom:10px}
+  .hint{font-size:.72rem;color:#8b949e;margin:12px auto 0;max-width:400px;text-align:left;line-height:1.5}
 </style>
 </head>
 <body>
@@ -22,6 +23,7 @@ category: Juegos
   <h1>🐍 Serpiente</h1>
   <div class="score">Puntos: <span id="s">0</span></div>
   <canvas id="c" width="400" height="400"></canvas>
+  <p class="hint">No requiere componentes. Sírvala con "servir página web del archivo" y juegue con las flechas.</p>
 </div>
 <script>
 var cv=document.getElementById('c'),ctx=cv.getContext('2d');

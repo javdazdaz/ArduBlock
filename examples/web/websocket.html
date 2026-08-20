@@ -51,10 +51,9 @@ category: WebSocket
     <div id="log"></div>
   </div>
 
-  <p class="hint">
-    Use <code>iniciar WebSocket (81)</code> en setup. En <code>cuando llegue un mensaje</code>
-    lea <code>mensaje WebSocket</code> y responda con <code>enviar por WebSocket</code>.
-  </p>
+  <p class="hint"><strong>Qué conectar:</strong> un LED en el pin 13 (pata larga al 13, corta a GND).<br>
+    <strong>Cómo:</strong> <code>"iniciar servidor WebSocket en puerto 81"</code> en setup y sirva la página con <code>"servir página web del archivo"</code>.
+    En <code>"cuando llegue un mensaje"</code> compare <code>"mensaje WebSocket"</code> con "on"/"off" para <code>"escribir digital pin 13"</code>, y responda con <code>"enviar por WebSocket"</code>.</p>
 </div>
 <script>
 var ws;

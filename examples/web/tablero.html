@@ -33,7 +33,11 @@ category: Datos
     <div class="tile"><div class="label">Luz (A1)</div><div class="value" id="luz">—</div></div>
     <div class="tile"><div class="label">Señal WiFi</div><div class="value" id="rssi">—</div></div>
   </div>
-  <p class="hint">Conecte un sensor a A0 y a A1. Atienda <code>/temp</code>, <code>/luz</code> y <code>/rssi</code> con bloques «cuando visiten» y dentro ponga «responder con valor» (por ejemplo <code>analogRead A0</code>).</p>
+  <p class="hint"><strong>Qué conectar:</strong> un sensor en A0 (temperatura) y otro en A1 (luz); la señal WiFi no usa sensor.<br>
+    <strong>Cómo:</strong> sirva la página con <code>"servir página web del archivo"</code> y cree
+    <code>"cuando visiten /temp"</code> → <code>"responder como texto con leer pin analógico A0"</code>,
+    <code>"cuando visiten /luz"</code> → <code>"responder como texto con leer pin analógico A1"</code> y
+    <code>"cuando visiten /rssi"</code> → <code>"responder como texto con señal WiFi (RSSI)"</code>.</p>
 </div>
 <script>
 function pedir(ruta, id){

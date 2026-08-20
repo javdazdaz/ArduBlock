@@ -13,7 +13,7 @@ category: Control
   :root{--bg:#0d1117;--card:#161b22;--border:#30363d;--text:#e6edf3;--acc:#4ade80;--acc2:#f472b6}
   *{box-sizing:border-box}
   body{margin:0;min-height:100vh;background:var(--bg);color:var(--text);font-family:system-ui,sans-serif;display:flex;align-items:center;justify-content:center;padding:16px}
-  .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:28px;width:100%;max-width:360px;text-align:center}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:28px;width:100%;max-width:380px;text-align:center}
   h1{font-size:1.25rem;margin:0 0 4px}
   p{font-size:.85rem;color:#8b949e;margin:0 0 20px}
   .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
@@ -21,19 +21,26 @@ category: Control
   .on{background:var(--acc)} .off{background:#f87171} .blink{background:#fbbf24}
   .full{grid-column:1/-1}
   #status{font-size:.8rem;color:#8b949e;margin-top:18px;min-height:1.2em}
+  .hint{font-size:.72rem;color:#8b949e;text-align:left;line-height:1.6;margin:16px 0 0;border-top:1px solid var(--border);padding-top:12px}
+  .hint code{color:var(--acc2)}
   a{color:var(--acc2)}
 </style>
 </head>
 <body>
 <div class="card">
   <h1>💡 Control de LED</h1>
-  <p>Esta página le habla al Arduino por Wi-Fi. Cada botón pide una ruta; usted la atiende con bloques "cuando visiten".</p>
+  <p>Encienda, apague y haga parpadear un LED desde el navegador.</p>
   <div class="grid">
     <button class="on" onclick="pedir('/led/on')">Encender</button>
     <button class="off" onclick="pedir('/led/off')">Apagar</button>
     <button class="blink full" onclick="pedir('/blink')">Parpadear 5 veces</button>
   </div>
   <div id="status">Listo.</div>
+  <p class="hint"><strong>Qué conectar:</strong> un LED en el pin 13 (pata larga al 13, corta a GND).<br>
+    <strong>Cómo:</strong> sirva la página con <code>"servir página web del archivo"</code> y cree
+    <code>"cuando visiten /led/on"</code> → <code>"escribir digital pin 13 → ALTO"</code>,
+    <code>"cuando visiten /led/off"</code> → <code>"escribir digital pin 13 → BAJO"</code> y
+    <code>"cuando visiten /blink"</code> → encender y apagar 5 veces.</p>
 </div>
 <script>
 function pedir(ruta){
