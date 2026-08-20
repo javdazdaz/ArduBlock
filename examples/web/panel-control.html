@@ -36,11 +36,13 @@ category: Control
     <button class="blink full" onclick="pedir('/blink')">Parpadear 5 veces</button>
   </div>
   <div id="status">Listo.</div>
-  <p class="hint"><strong>Qué conectar:</strong> un LED en el pin 13 (pata larga al 13, corta a GND).<br>
-    <strong>Cómo:</strong> sirva la página con <code>"servir página web del archivo"</code> y cree
-    <code>"cuando visiten /led/on"</code> → <code>"escribir digital pin 13 → ALTO"</code>,
-    <code>"cuando visiten /led/off"</code> → <code>"escribir digital pin 13 → BAJO"</code> y
-    <code>"cuando visiten /blink"</code> → encender y apagar 5 veces.</p>
+  <p class="hint"><strong>Qué conectar</strong><br>
+    · un LED en el pin 13 (pata larga al 13, corta a GND)<br>
+    <strong>Cómo</strong><br>
+    1. Publique la página en la red del Arduino con <code>desplegar página web del archivo</code>.<br>
+    2. <code>cuando visiten /led/on</code> → <code>escribir digital pin 13 → ALTO</code><br>
+    3. <code>cuando visiten /led/off</code> → <code>escribir digital pin 13 → BAJO</code><br>
+    4. <code>cuando visiten /blink</code> → encender y apagar 5 veces</p>
 </div>
 <script>
 function pedir(ruta){

@@ -44,10 +44,14 @@ category: REST
 
   <div id="status">Listo.</div>
 
-  <p class="hint"><strong>Qué conectar:</strong> un servo en el pin 9 y un LED en el pin 13.<br>
-    <strong>Cómo:</strong> sirva la página con <code>"servir página web del archivo"</code>.
-    Servo: <code>"crear servo en pin 9"</code> en setup y <code>"cuando visiten /servo"</code> → <code>"mover servo a [texto a número de parámetro angulo]"</code>.
-    LED: <code>"cuando visiten /led"</code> → compare <code>"cuerpo del pedido"</code> y haga <code>"escribir digital pin 13"</code>; confirme con <code>"responder como JSON"</code>.</p>
+  <p class="hint"><strong>Qué conectar</strong><br>
+    · un servo en el pin 9<br>
+    · un LED en el pin 13<br>
+    <strong>Cómo</strong><br>
+    1. Publique la página en la red del Arduino con <code>desplegar página web del archivo</code>.<br>
+    2. <code>crear servo en pin 9</code> (en setup)<br>
+    3. <code>cuando visiten /servo</code> → <code>mover servo a [texto a número de parámetro angulo]</code><br>
+    4. <code>cuando visiten /led</code> → compare <code>cuerpo del pedido</code> y haga <code>escribir digital pin 13</code>; confirme con <code>responder como JSON</code></p>
 </div>
 <script>
 function mover(){

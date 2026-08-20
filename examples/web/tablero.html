@@ -33,11 +33,15 @@ category: Datos
     <div class="tile"><div class="label">Luz (A1)</div><div class="value" id="luz">—</div></div>
     <div class="tile"><div class="label">Señal WiFi</div><div class="value" id="rssi">—</div></div>
   </div>
-  <p class="hint"><strong>Qué conectar:</strong> un sensor en A0 (temperatura) y otro en A1 (luz); la señal WiFi no usa sensor.<br>
-    <strong>Cómo:</strong> sirva la página con <code>"servir página web del archivo"</code> y cree
-    <code>"cuando visiten /temp"</code> → <code>"responder como texto con leer pin analógico A0"</code>,
-    <code>"cuando visiten /luz"</code> → <code>"responder como texto con leer pin analógico A1"</code> y
-    <code>"cuando visiten /rssi"</code> → <code>"responder como texto con señal WiFi (RSSI)"</code>.</p>
+  <p class="hint"><strong>Qué conectar</strong><br>
+    · un sensor en A0 (temperatura)<br>
+    · otro sensor en A1 (luz)<br>
+    · la señal WiFi no usa sensor<br>
+    <strong>Cómo</strong><br>
+    1. Publique la página en la red del Arduino con <code>desplegar página web del archivo</code>.<br>
+    2. <code>cuando visiten /temp</code> → <code>responder como texto con leer pin analógico A0</code><br>
+    3. <code>cuando visiten /luz</code> → <code>responder como texto con leer pin analógico A1</code><br>
+    4. <code>cuando visiten /rssi</code> → <code>responder como texto con señal WiFi (RSSI)</code></p>
 </div>
 <script>
 function pedir(ruta, id){

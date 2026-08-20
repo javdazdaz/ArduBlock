@@ -225,7 +225,7 @@ function editCurrent() {
   // Preset: copiarlo a un tab .html del proyecto y abrirlo para editar.
   const name = current.key.split('/').pop() || 'index.html';
   const created = createHtmlTab(name, current.content);
-  showToast(`Sitio "${created}" copiado al editor. Sírvalo con el bloque "servir archivo .html".`);
+  showToast(`Sitio "${created}" copiado al editor. Publíquelo en la red del Arduino con el bloque "desplegar página de archivo".`);
   refreshProjectList();
   if (window._setPanelMode) window._setPanelMode('code');
 }
@@ -281,7 +281,7 @@ function renderAnalysis(a) {
   </div>`;
 
   if (!a.issues.length) {
-    html += `<div class="web-analyze-ok">✓ Sin problemas detectados para servir en el R4 WiFi.</div>`;
+    html += `<div class="web-analyze-ok">✓ Sin problemas detectados para publicar en el R4 WiFi.</div>`;
   } else {
     html += `<div class="web-analyze-list">`;
     for (const it of a.issues) {
