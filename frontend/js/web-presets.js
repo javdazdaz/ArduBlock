@@ -262,20 +262,25 @@ function cloneFullProject() {
   const created = createHtmlTab(name, current.content);
 
   const builder = webPresetProjects[current.key];
-  if (builder && workspace) {
-    try {
-      if (window._forceUndoPush) window._forceUndoPush();
-      workspace.clear();
-      Blockly.serialization.workspaces.load(builder(created), workspace);
-    } catch (e) {
-      console.error('Error al cargar el proyecto del sitio', e);
-      showToast('Error al cargar los bloques del proyecto');
-    }
+  if (!builder) { cloneHtmlOnly(); return; }
+  if (!workspace) { showToast('Error: workspace no disponible.'); refreshProjectList(); return; }
+
+  // Cambiar al editor de código ANTES de cargar, para que el workspace esté visible
+  // (si está oculto, Blockly renderiza los bloques con dimensiones incorrectas).
+  if (window._setPanelMode) window._setPanelMode('code');
+
+  try {
+    if (window._forceUndoPush) window._forceUndoPush();
+    workspace.clear();
+    Blockly.serialization.workspaces.load(builder(created), workspace);
+    if (typeof workspace.zoomToFit === 'function') workspace.zoomToFit();
+    showToast(`Proyecto "${created}" copiado con sus bloques.`);
+  } catch (e) {
+    console.error('Error al cargar el proyecto del sitio', e);
+    showToast('Error al cargar los bloques: ' + (e && e.message ? e.message : e));
   }
 
-  showToast(`Proyecto "${created}" copiado con sus bloques.`);
   refreshProjectList();
-  if (window._setPanelMode) window._setPanelMode('code');
 }
 
 // ── Análisis ──────────────────────────────────
