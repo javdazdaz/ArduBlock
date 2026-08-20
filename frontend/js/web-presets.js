@@ -189,18 +189,19 @@ function showCurrent() {
   if (analyzeBody) analyzeBody.innerHTML = renderAnalysis(analyzeHtml(current.content));
 }
 
-// CSP que bloquea la red en la vista previa (no hay Arduino ahí): evita que
-// páginas con fetch()/WebSocket spammeen el servidor del editor con 404/CORS.
-const PREVIEW_CSP = '<meta http-equiv="Content-Security-Policy" content="connect-src \'none\'">';
+// En la vista previa no hay Arduino: neutralizamos fetch/WebSocket en silencio
+// para que las páginas con sondeo (tablero) no llenen la consola con CORS/CSP/404.
+// El stub devuelve "—" y no toca la red (cero ruido en consola).
+const PREVIEW_STUB = '<script>(function(){var r={text:function(){return Promise.resolve("—")},json:function(){return Promise.resolve({})}};window.fetch=function(){return Promise.resolve(r)};window.WebSocket=function(){this.readyState=3;this.send=function(){};this.close=function(){}}})();</script>';
 
 function reloadPreview() {
   if (!current || !iframe) return;
   let html = current.content;
   const headTag = html.match(/<head[^>]*>/i);
   if (headTag) {
-    html = html.replace(headTag[0], headTag[0] + PREVIEW_CSP);
+    html = html.replace(headTag[0], headTag[0] + PREVIEW_STUB);
   } else {
-    html = PREVIEW_CSP + html;
+    html = PREVIEW_STUB + html;
   }
   iframe.srcdoc = html;
 }
