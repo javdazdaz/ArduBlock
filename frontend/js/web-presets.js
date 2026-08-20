@@ -18,7 +18,7 @@ let presets = [];
 let presetsLoaded = false;
 let current = null; // { kind: 'preset'|'tab', key, name, content }
 
-let presetList, projectList, iframe, codePre, analyzeBody, btnClone, btnEdit;
+let presetList, projectList, iframe, codePre, analyzeBody, btnClone, btnEdit, btnReload;
 
 function esc(s) {
   return String(s == null ? '' : s)
@@ -36,9 +36,22 @@ export function initWebPresets(deps = {}) {
   analyzeBody = document.getElementById('web-analyze-body');
   btnClone    = document.getElementById('web-btn-clone');
   btnEdit     = document.getElementById('web-btn-edit');
+  btnReload   = document.getElementById('web-btn-reload');
 
   if (btnClone) btnClone.addEventListener('click', cloneCurrent);
   if (btnEdit)  btnEdit.addEventListener('click', editCurrent);
+  if (btnReload) btnReload.addEventListener('click', reloadPreview);
+
+  // Al (re)cargar el srcdoc, enfocar el iframe para que los juegos
+  // reciban el teclado (Snake/Pong usan addEventListener('keydown')).
+  if (iframe) {
+    iframe.addEventListener('load', () => {
+      try {
+        iframe.focus();
+        if (iframe.contentWindow) iframe.contentWindow.focus();
+      } catch (_) { /* ignore */ }
+    });
+  }
 
   document.getElementById('web-tab-preview').addEventListener('click', () => setSubTab('preview'));
   document.getElementById('web-tab-code').addEventListener('click', () => setSubTab('code'));
@@ -134,6 +147,7 @@ function setCurrent(c) {
   current = c;
   if (btnClone) btnClone.disabled = !(c && c.kind === 'preset');
   if (btnEdit)  btnEdit.disabled = !c;
+  if (btnReload) btnReload.disabled = !c;
 
   presetList.querySelectorAll('.web-item').forEach(el => el.classList.remove('selected'));
   projectList.querySelectorAll('.web-item').forEach(el => el.classList.remove('selected'));
@@ -150,9 +164,14 @@ function setCurrent(c) {
 
 function showCurrent() {
   if (!current) return;
-  if (iframe) iframe.srcdoc = current.content;
+  reloadPreview();
   if (codePre) codePre.textContent = current.content;
   if (analyzeBody) analyzeBody.innerHTML = renderAnalysis(analyzeHtml(current.content));
+}
+
+function reloadPreview() {
+  if (!current || !iframe) return;
+  iframe.srcdoc = current.content;
 }
 
 // ── Sub-tabs (preview / código / análisis) ─────

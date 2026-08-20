@@ -183,10 +183,11 @@
               <div class="web-actions">
                 <button id="web-btn-clone" class="web-btn primary" disabled>✂️ Clonar y editar</button>
                 <button id="web-btn-edit" class="web-btn" disabled>✏️ Editar</button>
+                <button id="web-btn-reload" class="web-btn" disabled title="Recargar la vista previa">↻ Recargar</button>
               </div>
             </div>
             <div id="web-preview" class="web-view">
-              <iframe id="web-iframe" sandbox="allow-scripts" title="Vista previa"></iframe>
+              <iframe id="web-iframe" sandbox="allow-scripts" tabindex="0" title="Vista previa"></iframe>
             </div>
             <div id="web-code" class="web-view" style="display:none">
               <pre id="web-code-pre"></pre>
