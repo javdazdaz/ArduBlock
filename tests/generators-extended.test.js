@@ -38,6 +38,10 @@ vi.mock('blockly', () => {
       this.getName = (n) => n;
       this.safeName_ = (n) => n;
     },
+    // Stub mínimo: wifi.js define FieldHtmlFile extends FieldDropdown (UI de
+    // Blockly). En tests headless del generador no se instancia, solo se
+    // necesita la clase como base.
+    FieldDropdown: class FieldDropdown {},
     Msg: {},
   };
 });
