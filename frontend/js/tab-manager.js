@@ -1,10 +1,23 @@
 /**
  * ArduBlock — Gestión de Tabs de Código (CodeMirror 6)
  *
- * Maneja la barra de tabs: sketch.ino (readonly, fijo) + .h (editables).
+ * Maneja la barra de tabs: sketch.ino (readonly, fijo) + .h/.html (editables).
  * Usa CodeMirror 6 para syntax highlighting (C++) y números de línea.
  * Sincroniza contenido entre editor y estado interno, expone getTabs()
  * para el generador, upload y project-manager.
+ *
+ * Memoria de línea de trabajo (ago 2026):
+ * - Cada tab editable mantiene su propio `EditorState` (doc + selección +
+ *   historial de undo independientes). Al cambiar de tab se hace
+ *   `hView.setState(tab.state)`, así cursor y undo quedan por archivo.
+ * - El scroll vive en el DOM (no en el state), así que se guarda/restaura
+ *   manualmente por tab.
+ * - El cursor (línea/columna) de los tabs editables se persiste en el
+ *   proyecto guardado (campo opcional `cursor`); el scroll y la posición del
+ *   .ino (código generado) son solo de sesión.
+ *
+ * Buscador (ago 2026): @codemirror/search — Ctrl+F en .ino y tabs editables,
+ * botón 🔍 en la barra de tabs.
  */
 
 import { EditorView, keymap, lineNumbers, highlightActiveLine, highlightActiveLineGutter } from '@codemirror/view';
@@ -14,10 +27,14 @@ import { html } from '@codemirror/lang-html';
 import { oneDark } from '@codemirror/theme-one-dark';
 import { syntaxHighlighting, defaultHighlightStyle } from '@codemirror/language';
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
+import { search, searchKeymap, highlightSelectionMatches, openSearchPanel, closeSearchPanel } from '@codemirror/search';
 
 let tabs, activeFilename, tabBar, lineCount;
 let inoView, hView;           // CodeMirror EditorView instances
 let inoContainer, hContainer;  // DOM parents
+
+// Posición (sesión) del editor .ino para restaurar al volver a él.
+let _inoPos = null;
 
 // ═══ Tema dinámico (light/dark) ══════════════════
 
@@ -63,16 +80,31 @@ const sharedExtensions = [
   highlightActiveLineGutter(),
 ];
 
-const editableExtensions = [
-  langCompartment.of(cpp()),  // lenguaje dinámico (se cambia según extensión)
-  ...sharedExtensions,
-  history(),
-  keymap.of([...defaultKeymap, ...historyKeymap]),
-  highlightActiveLine(),
-  EditorView.updateListener.of((update) => {
-    if (update.docChanged) _syncContent();
-  }),
-];
+/**
+ * Extensiones de un tab editable (un estado por archivo, con su propio
+ * historial de undo). `lang` se fija al crear el estado según la extensión.
+ */
+function _editableExtensions(lang) {
+  return [
+    langCompartment.of(lang),
+    ...sharedExtensions,
+    history(),
+    keymap.of([...defaultKeymap, ...historyKeymap, ...searchKeymap]),
+    highlightActiveLine(),
+    highlightSelectionMatches(),
+    search({ top: true }),
+    EditorView.updateListener.of((update) => {
+      if (!update.docChanged) return;
+      const tab = tabs.find(t => t.filename === activeFilename);
+      if (tab && !tab.readonly) {
+        tab.content = update.state.doc.toString();
+        tab.state = update.state;   // mantener la referencia (selección + undo)
+        _updateLineCount();
+        if (window._scheduleUndoPush) window._scheduleUndoPush();
+      }
+    }),
+  ];
+}
 
 // ═══ Inicialización ══════════════════════════════
 
@@ -86,21 +118,24 @@ export function initTabManager(_deps = {}) {
   hContainer   = document.getElementById('code-edit-h');
   lineCount = document.getElementById('line-count');
 
-  // CodeMirror: editor .ino (readonly)
+  // CodeMirror: editor .ino (readonly, con búsqueda)
   inoView = new EditorView({
     doc: '',
     extensions: [
       cpp(),
       ...sharedExtensions,
+      keymap.of([...defaultKeymap, ...searchKeymap]),
+      highlightSelectionMatches(),
+      search({ top: true }),
       EditorState.readOnly.of(true),
     ],
     parent: inoContainer,
   });
 
-  // CodeMirror: editor .h (editable, oculto al inicio)
+  // CodeMirror: editor .h/.html (editable, oculto al inicio)
   hView = new EditorView({
     doc: '',
-    extensions: editableExtensions,
+    extensions: _editableExtensions(cpp()),
     parent: hContainer,
   });
 
@@ -121,6 +156,13 @@ export function initTabManager(_deps = {}) {
 function _bindEvents() {
   const addBtn = document.getElementById('btn-add-tab');
   if (addBtn) addBtn.addEventListener('click', () => _addTab());
+
+  const findBtn = document.getElementById('btn-find');
+  if (findBtn) findBtn.addEventListener('click', () => {
+    const tab = tabs.find(t => t.filename === activeFilename);
+    const view = (tab && !tab.readonly) ? hView : inoView;
+    openSearchPanel(view);
+  });
 
   // Delegación de clicks en la barra de tabs
   tabBar.addEventListener('click', (e) => {
@@ -182,7 +224,7 @@ function _confirmAddTab() {
     return;
   }
   _newFileDialog.style.display = 'none';
-  tabs.push({ filename, content: '', readonly: false });
+  tabs.push(_newTab(filename, ''));
   _renderTabs();
   _switchTab(filename);
 }
@@ -204,35 +246,123 @@ function _closeTab(filename) {
   _renderTabs();
 }
 
-function _switchTab(filename) {
-  if (activeFilename === filename) return;
+// ── Cambio de tab (memoria de posición) ──────────
 
-  // Guardar contenido del tab actual antes de salir
-  _syncContent();
+/**
+ * Crea un objeto tab editable con los campos de memoria de posición.
+ */
+function _newTab(filename, content, cursor = null) {
+  return {
+    filename,
+    content: content || '',
+    readonly: false,
+    state: null,                       // EditorState por archivo (lazy)
+    scroll: { top: 0, left: 0 },       // scroll de sesión
+    cursor,                            // cursor persistido {line, ch} o null
+  };
+}
 
-  activeFilename = filename;
-  const tab = tabs.find(t => t.filename === filename);
+/**
+ * Crea el EditorState del tab si aún no existe.
+ */
+function _ensureState(tab) {
+  if (tab.state) return;
+  tab.state = EditorState.create({
+    doc: tab.content || '',
+    extensions: _editableExtensions(_langFor(tab.filename)),
+  });
+}
+
+/**
+ * Guarda la posición (contenido + state + scroll, o posición del .ino) del
+ * tab que está saliendo.
+ */
+function _rememberCurrent() {
+  const tab = tabs.find(t => t.filename === activeFilename);
   if (!tab) return;
+  if (tab.readonly) {
+    _inoPos = {
+      head: inoView.state.selection.main.head,
+      top: inoView.scrollDOM.scrollTop,
+      left: inoView.scrollDOM.scrollLeft,
+    };
+  } else {
+    tab.content = hView.state.doc.toString();
+    tab.state = hView.state;
+    tab.scroll = { top: hView.scrollDOM.scrollTop, left: hView.scrollDOM.scrollLeft };
+  }
+}
+
+/**
+ * Aplica el cursor persistido (una sola vez) al entrar a un tab cargado de
+ * proyecto.
+ */
+function _applyCursor(tab) {
+  if (!tab.cursor) return;
+  const { line, ch } = tab.cursor;
+  const doc = hView.state.doc;
+  const ln = doc.line(Math.min(Math.max(line, 1), doc.lines));
+  const pos = ln.from + Math.min(Math.max(ch, 0), ln.length);
+  hView.dispatch({ selection: { anchor: pos, head: pos } });
+  tab.cursor = null;   // ya aplicado: la próxima vez manda el state
+}
+
+/**
+ * Restaura la posición del .ino (sesión) tras regenerar el código.
+ */
+function _restoreInoPos() {
+  if (!_inoPos || !inoView) return;
+  const len = inoView.state.doc.length;
+  const head = Math.min(_inoPos.head, len);
+  inoView.dispatch({ selection: { anchor: head, head } });
+  const { top, left } = _inoPos;
+  requestAnimationFrame(() => {
+    inoView.scrollDOM.scrollTop = top;
+    inoView.scrollDOM.scrollLeft = left;
+  });
+  _inoPos = null;
+}
+
+/**
+ * Muestra el tab indicado en el editor (sin tocar activeFilename).
+ */
+function _activateTab(tab) {
+  // Cerrar búsqueda para no arrastrar resultados de otro archivo.
+  if (inoView) closeSearchPanel(inoView);
+  if (hView) closeSearchPanel(hView);
 
   if (tab.readonly) {
     inoContainer.style.display = '';
     hContainer.style.display = 'none';
     if (typeof window.updateCode === 'function') window.updateCode();
+    _restoreInoPos();
   } else {
+    _ensureState(tab);
     inoContainer.style.display = 'none';
     hContainer.style.display = '';
-    hView.dispatch({ effects: langCompartment.reconfigure(_langFor(filename)) });
-    hView.dispatch({
-      changes: {
-        from: 0,
-        to: hView.state.doc.length,
-        insert: tab.content
-      }
-    });
+    hView.setState(tab.state);
+    _applyCursor(tab);
     hView.focus();
+    const { top, left } = tab.scroll || { top: 0, left: 0 };
+    requestAnimationFrame(() => {
+      hView.scrollDOM.scrollTop = top;
+      hView.scrollDOM.scrollLeft = left;
+    });
     _updateLineCount();
   }
+}
 
+function _switchTab(filename) {
+  if (activeFilename === filename) return;
+
+  // Guardar posición del tab actual antes de salir
+  _rememberCurrent();
+
+  activeFilename = filename;
+  const tab = tabs.find(t => t.filename === filename);
+  if (!tab) return;
+
+  _activateTab(tab);
   _renderTabs();
 }
 
@@ -240,13 +370,10 @@ function _switchTab(filename) {
 
 function _syncContent() {
   const tab = tabs.find(t => t.filename === activeFilename);
-  if (tab && tab.readonly) return;
-  if (tab && !tab.readonly) {
-    tab.content = hView.state.doc.toString();
-    _updateLineCount();
-    // Notificar al árbol de undo que hubo cambio en tabs
-    if (window._scheduleUndoPush) window._scheduleUndoPush();
-  }
+  if (!tab || tab.readonly) return;
+  tab.content = hView.state.doc.toString();
+  tab.state = hView.state;
+  _updateLineCount();
 }
 
 // ── Renderizado de la barra de tabs ──────────────
@@ -284,13 +411,29 @@ function _renderTabs() {
 // ── API pública ──────────────────────────────────
 
 /**
- * Devuelve los tabs .h con su contenido para guardar/cargar.
+ * Devuelve los tabs editables con su contenido y cursor (para guardar).
  */
 export function getTabs() {
   _syncContent();
   return tabs
     .filter(t => !t.readonly)
-    .map(t => ({ filename: t.filename, content: t.content }));
+    .map(t => ({
+      filename: t.filename,
+      content: t.content,
+      cursor: _cursorOf(t),
+    }));
+}
+
+/**
+ * Cursor del tab como {line, ch}, o undefined si no hay posición conocida.
+ */
+function _cursorOf(tab) {
+  if (tab.state) {
+    const head = tab.state.selection.main.head;
+    const line = tab.state.doc.lineAt(head);
+    return { line: line.number, ch: head - line.from };
+  }
+  return tab.cursor || undefined;
 }
 
 /**
@@ -309,11 +452,7 @@ export function loadTabs(tabData, sketchName = null) {
 
   tabs = [
     { filename: name, content: '', readonly: true },
-    ...tabData.map(t => ({
-      filename: t.filename,
-      content: t.content || '',
-      readonly: false
-    }))
+    ...tabData.map(t => _newTab(t.filename, t.content, t.cursor || null))
   ];
 
   activeFilename = name;
@@ -340,7 +479,7 @@ export function createHtmlTab(filename, content) {
     n++;
   }
 
-  tabs.push({ filename: candidate, content: content || '', readonly: false });
+  tabs.push(_newTab(candidate, content));
   _renderTabs();
   _switchTab(candidate);
   return candidate;
@@ -401,7 +540,18 @@ export function getInoContent() {
 export function setCodeTheme(isDark) {
   const theme = isDark ? [...oneDark] : lightTheme;
   if (inoView) inoView.dispatch({ effects: themeCompartment.reconfigure(theme) });
-  if (hView)   hView.dispatch({ effects: themeCompartment.reconfigure(theme) });
+
+  // Actualizar el tema en cada estado por archivo (preserva doc/selección/undo).
+  for (const tab of tabs) {
+    if (!tab.readonly && tab.state) {
+      tab.state = tab.state.update({ effects: themeCompartment.reconfigure(theme) }).state;
+    }
+  }
+  // Si el tab activo es editable, reflejar el nuevo estado en la vista.
+  const tab = tabs.find(t => t.filename === activeFilename);
+  if (tab && !tab.readonly && tab.state && hView) {
+    hView.setState(tab.state);
+  }
 }
 
 // ── Helpers internos ─────────────────────────────
@@ -415,24 +565,7 @@ function _showActiveTab() {
     if (typeof window.updateCode === 'function') window.updateCode();
     return;
   }
-  if (tab.readonly) {
-    inoContainer.style.display = '';
-    hContainer.style.display = 'none';
-    if (typeof window.updateCode === 'function') window.updateCode();
-  } else {
-    inoContainer.style.display = 'none';
-    hContainer.style.display = '';
-    hView.dispatch({ effects: langCompartment.reconfigure(_langFor(filename)) });
-    hView.dispatch({
-      changes: {
-        from: 0,
-        to: hView.state.doc.length,
-        insert: tab.content
-      }
-    });
-    hView.focus();
-    _updateLineCount();
-  }
+  _activateTab(tab);
 }
 
 function _updateLineCount() {
