@@ -14,6 +14,7 @@
  */
 
 import * as Blockly from 'blockly';
+import { restoreWorkspaceState } from './workspace-restore.js';
 
 const LS_KEY = 'ardublock:undo-tree';
 const MAX_NODES = 30;
@@ -382,14 +383,9 @@ export function restoreSnapshot(snap) {
 
   restoring = true;
 
-  // Workspace
-  workspace.clear();
-  Blockly.serialization.workspaces.load(snap.workspace, workspace);
-
-  // Tabs .h
-  if (window._tabManager) {
-    window._tabManager.loadTabs(snap.tabs || [], snap.name || 'sketch.ino');
-  }
+  // Tabs antes que bloques (ver workspace-restore.js): el campo FILE de
+  // webserver_serve_file depende de los tabs .html para conservar su valor.
+  restoreWorkspaceState(workspace, { state: snap.workspace, tabs: snap.tabs, sketchName: snap.name || 'sketch.ino' });
 
   // Nombre del proyecto
   const projectInput = document.getElementById('project-name');

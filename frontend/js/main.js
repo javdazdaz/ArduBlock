@@ -165,6 +165,7 @@ import { initExamples }  from './examples.js';
 import { initResize }   from './resize.js';
 import { exportSketch } from './download.js';
 import { initTabManager, getTabs, loadTabs, setSketchName, setInoContent, getInoContent, setCodeTheme } from './tab-manager.js';
+import { restoreWorkspaceState } from './workspace-restore.js';
 import { initMatrixEditor, initPanelModeTabs } from './matrix-animation.js';
 import { initWebPresets } from './web-presets.js';
 import { t, applyDOMLanguage } from './i18n.js';
@@ -686,15 +687,13 @@ workspace.addChangeListener((event) => {
     if (raw) {
       try {
         const record = JSON.parse(raw);
-        Blockly.serialization.workspaces.load(record.state, workspace);
         let displayName = record.name;
         if (!displayName.endsWith('.ino')) displayName += '.ino';
-        projectInput.value = displayName;
 
-        // Restaurar tabs .h del último proyecto
-        if (window._tabManager) {
-          window._tabManager.loadTabs(record.tabs || [], displayName);
-        }
+        // Tabs ANTES que bloques (ver workspace-restore.js): el campo FILE de
+        // webserver_serve_file arma sus opciones con los tabs .html cargados.
+        restoreWorkspaceState(workspace, { state: record.state, tabs: record.tabs, sketchName: displayName });
+        projectInput.value = displayName;
 
         // Restaurar metadatos de actividad
         if (record.activityMeta && window._applyActivityMeta) {

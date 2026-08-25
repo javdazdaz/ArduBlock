@@ -11,6 +11,21 @@ import { t } from './i18n.js';
 import { getBoardConfig, isValidDigitalPin, isValidAnalogPin } from './board.js';
 import { getSetting } from './settings.js';
 
+/**
+ * Nombres de los tabs .html abiertos en el proyecto, o `null` si el
+ * administrador de tabs no está disponible (tests headless).
+ */
+function _htmlTabs() {
+  try {
+    if (typeof window === 'undefined' || !window._tabManager) return null;
+    const tabs = window._tabManager.getTabs();
+    if (!Array.isArray(tabs)) return null;
+    return tabs.filter(t => t && /\.html?$/i.test(t.filename)).map(t => t.filename);
+  } catch (_) {
+    return null;
+  }
+}
+
 // ── Estado de validación ────────────────────────
 
 // ── Reglas de validación ────────────────────────
@@ -500,6 +515,26 @@ function validateWorkspace(workspace) {
         severity: 'warning',
         message: t('val_websocket_without_begin'),
         blocks: wsBlocks,
+      });
+    }
+  }
+
+  // ═══ R9e: "desplegar página web del archivo" sin archivo o con archivo
+  //         que ya no existe entre los tabs .html del proyecto ═══
+  const serveFileBlocks = findAllBlocksOfType(workspace, 'webserver_serve_file');
+  if (serveFileBlocks.length > 0) {
+    const htmlTabs = _htmlTabs();
+    const broken = serveFileBlocks.filter((b) => {
+      const file = (b.getFieldValue('FILE') || '').trim();
+      if (!file) return true; // sin archivo seleccionado
+      return htmlTabs != null && !htmlTabs.includes(file); // archivo referenciado inexistente
+    });
+    if (broken.length > 0) {
+      warnings.push({
+        type: 'webserver_file_missing',
+        severity: 'error',
+        message: t('val_webserver_file_missing', { file: broken.map(b => (b.getFieldValue('FILE') || '').trim() || '?').join(', ') }),
+        blocks: broken,
       });
     }
   }

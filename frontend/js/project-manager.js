@@ -7,6 +7,7 @@
 
 import * as Blockly from 'blockly';
 import { captureWorkspaceThumbnail } from './thumbnail.js';
+import { restoreWorkspaceState } from './workspace-restore.js';
 
 let workspace, projectInput, projectList, showToast;
 let LS_PREFIX, LAST_KEY, autoSaveTimer;
@@ -182,17 +183,13 @@ export async function loadProject(idOrName) {
   }
 
   if (window._forceUndoPush) window._forceUndoPush();
-  workspace.clear();
-  Blockly.serialization.workspaces.load(record.state, workspace);
-  currentProjectId = (typeof idOrName === 'number') ? idOrName : null;
   let displayName = record.name || 'sin-nombre';
   if (!displayName.endsWith('.ino')) displayName += '.ino';
+  // Tabs antes que bloques (ver workspace-restore.js).
+  restoreWorkspaceState(workspace, { state: record.state, tabs: record.tabs, sketchName: displayName });
+  currentProjectId = (typeof idOrName === 'number') ? idOrName : null;
   projectInput.value = displayName;
   window._exampleComment = null;
-
-  if (window._tabManager && record.tabs) {
-    window._tabManager.loadTabs(record.tabs, displayName);
-  }
   localStorage.setItem(LAST_KEY, displayName);
   showToast(`Proyecto "${displayName}" cargado`);
   projectList.classList.add('hidden');
@@ -212,16 +209,13 @@ async function loadForeignProject(id, url, editable) {
     const p = await res.json();
     const record = typeof p.data === 'string' ? JSON.parse(p.data) : p.data;
     if (window._forceUndoPush) window._forceUndoPush();
-    workspace.clear();
-    Blockly.serialization.workspaces.load(record.state, workspace);
-    currentProjectId = null; // proyecto ajeno: no se guarda como propio
     let displayName = record.name || 'sin-nombre';
     if (!displayName.endsWith('.ino')) displayName += '.ino';
+    // Tabs antes que bloques (ver workspace-restore.js).
+    restoreWorkspaceState(workspace, { state: record.state, tabs: record.tabs, sketchName: displayName });
+    currentProjectId = null; // proyecto ajeno: no se guarda como propio
     projectInput.value = displayName;
     window._exampleComment = null;
-    if (window._tabManager && record.tabs) {
-      window._tabManager.loadTabs(record.tabs, displayName);
-    }
     localStorage.setItem(LAST_KEY, displayName);
     return displayName;
   } catch (e) {

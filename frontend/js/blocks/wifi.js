@@ -37,6 +37,51 @@ function _htmlFileOptions() {
   return opts;
 }
 
+/**
+ * Campo para elegir el archivo .html que se sirve.
+ *
+ * Las opciones se generan desde los tabs .html abiertos. Con el FieldDropdown
+ * estándar eso rompe la deserialización: si el proyecto se carga antes que sus
+ * tabs (o si el alumno renombró/borró el archivo), el valor guardado no está
+ * entre las opciones, Blockly lo rechaza
+ * ("Cannot set the dropdown's value to an unavailable option") y deja el campo
+ * vacío → se pierde la referencia en silencio y el Arduino sirve una página
+ * vacía.
+ *
+ * Este campo conserva siempre el valor guardado y, si el archivo no está,
+ * lo muestra marcado como faltante (el validador R9e avisa del problema).
+ */
+export class FieldHtmlFile extends Blockly.FieldDropdown {
+  constructor(validator, config) {
+    super(_htmlFileOptions, validator, config);
+  }
+
+  static fromJson(options) {
+    return new FieldHtmlFile(undefined, options);
+  }
+
+  /** Acepta cualquier nombre de archivo, esté o no entre los tabs cargados. */
+  doClassValidation_(newValue) {
+    return newValue == null ? null : String(newValue);
+  }
+
+  /** Inyecta el archivo referenciado si no está entre los tabs .html. */
+  getOptions(useCache) {
+    const opts = super.getOptions(useCache);
+    const val = this.getValue();
+    if (!val || opts.some(o => o[1] === val)) return opts;
+    const suffix = Blockly.Msg.OPT_WEBSERVER_FILE_MISSING || '';
+    const missing = [(String(val) + ' ' + suffix).trim(), val];
+    return [missing, ...opts.filter(o => o[1] !== '')];
+  }
+}
+
+try {
+  Blockly.fieldRegistry.register('field_html_file', FieldHtmlFile);
+} catch (_) {
+  // Ya registrado (recarga en caliente de Vite): no es un error.
+}
+
 // ═══════════════════════════════════════════════════════════
 //  Servidor web unificado (lo emite generateArduinoCode)
 // ═══════════════════════════════════════════════════════════
@@ -200,7 +245,7 @@ export const blocks = [
     type: 'webserver_serve_file',
     message0: Blockly.Msg.MSG_WEBSERVER_SERVE_FILE,
     args0: [
-      { type: 'field_dropdown', name: 'FILE', options: _htmlFileOptions }
+      { type: 'field_html_file', name: 'FILE' }
     ],
     inputsInline: true,
     previousStatement: null,

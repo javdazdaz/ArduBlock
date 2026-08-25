@@ -271,6 +271,40 @@ describe('validator — reglas de validación', () => {
     });
   });
 
+  // ── R9e: servir archivo .html que no está en el editor ──
+  describe('R9e: desplegar página de archivo sin archivo válido', () => {
+    afterEach(() => { delete window._tabManager; });
+
+    it('advierte si el bloque no tiene archivo seleccionado', () => {
+      const ws = mw(
+        [mb('arduino_setup'), mb('arduino_loop')],
+        [mb('arduino_setup'), mb('arduino_loop'), mb('webserver_serve_file', { FILE: '' })],
+      );
+      const w = validateWorkspace(ws);
+      expect(w.some(x => x.type === 'webserver_file_missing')).toBe(true);
+    });
+
+    it('advierte si el archivo ya no está entre los tabs .html', () => {
+      window._tabManager = { getTabs: () => [{ filename: 'sketch.ino' }, { filename: 'otro.html' }] };
+      const ws = mw(
+        [mb('arduino_setup'), mb('arduino_loop')],
+        [mb('arduino_setup'), mb('arduino_loop'), mb('webserver_serve_file', { FILE: 'pagina.html' })],
+      );
+      const w = validateWorkspace(ws);
+      expect(w.some(x => x.type === 'webserver_file_missing')).toBe(true);
+    });
+
+    it('no advierte si el archivo está entre los tabs .html', () => {
+      window._tabManager = { getTabs: () => [{ filename: 'sketch.ino' }, { filename: 'pagina.html' }] };
+      const ws = mw(
+        [mb('arduino_setup'), mb('arduino_loop')],
+        [mb('arduino_setup'), mb('arduino_loop'), mb('webserver_serve_file', { FILE: 'pagina.html' })],
+      );
+      const w = validateWorkspace(ws);
+      expect(w.some(x => x.type === 'webserver_file_missing')).toBe(false);
+    });
+  });
+
   // ── R6d: pinMode / attachInterrupt en setup ────
   describe('R6d: pinMode y attachInterrupt en setup', () => {
     it('advierte si pin_mode está fuera de setup', () => {

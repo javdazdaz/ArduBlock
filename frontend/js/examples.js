@@ -18,7 +18,7 @@ import { remainingExamples } from './examples-remaining.js';
 import { missingExamples }   from './examples-missing.js';
 import { matrixExamples }   from './examples-matrix.js';
 import { escapeHtml, cancelAutoSave } from './project-manager.js';
-import * as Blockly from 'blockly';
+import { restoreWorkspaceState } from './workspace-restore.js';
 
 // ── Consolidar todos los ejemplos ─────────────────
 const allExamples = [
@@ -217,16 +217,17 @@ function loadPresetExample(ex) {
 
   // Guardar estado actual en el árbol de undo antes de limpiar
   if (window._forceUndoPush) window._forceUndoPush();
-  workspace.clear();
-  Blockly.serialization.workspaces.load(ex.state, workspace);
 
   const lang = getLang();
   const comment = i18n(ex.comment, lang);
 
+  // Tabs antes que bloques (ver workspace-restore.js): el campo FILE de
+  // webserver_serve_file depende de los tabs .html para conservar su valor.
+  restoreWorkspaceState(workspace, { state: ex.state, tabs: ex.tabs, sketchName: ex.name + '.ino' });
+
   window._exampleComment = comment;
   updateCodeFn();
   projectInput.value = ex.name + '.ino';
-  if (window._tabManager) window._tabManager.loadTabs(ex.tabs || [], ex.name + '.ino');
   cancelAutoSave();
   closeExamples();
   showToast(`${lang === 'es' ? 'Ejemplo' : 'Example'} "${ex.name}" ${lang === 'es' ? 'cargado' : 'loaded'}`);
