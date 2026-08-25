@@ -280,6 +280,7 @@ const messages = {
     btn_console: '🔌 Consola',
     btn_upload: '⚡ Subir',
     btn_export: '📦 Exportar',
+    btn_find_title: 'Buscar en el archivo (Ctrl+F)',
     // ── Menú hamburguesa ──
     hmenu_new: 'Nuevo proyecto',
     hmenu_open: 'Abrir proyecto',
@@ -781,6 +782,7 @@ const messages = {
     btn_console: '🔌 Console',
     btn_upload: '⚡ Upload',
     btn_export: '📦 Export',
+    btn_find_title: 'Find in file (Ctrl+F)',
     // ── Hamburger menu ──
     hmenu_new: 'New project',
     hmenu_open: 'Open project',
@@ -1090,6 +1092,10 @@ export function applyDOMLanguage() {
   document.querySelectorAll('[data-i18n]').forEach(el => {
     const key = el.dataset.i18n;
     if (langMsgs[key]) el.textContent = langMsgs[key];
+  });
+  document.querySelectorAll('[data-i18n-title]').forEach(el => {
+    const key = el.dataset.i18nTitle;
+    if (langMsgs[key]) el.title = langMsgs[key];
   });
   document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
     const key = el.dataset.i18nPlaceholder;
