@@ -450,6 +450,10 @@ if (boardSelector) {
     s.board = fqbn;
     saveSettings(s);
 
+    // Mantener sincronizado el espejo del modal de Configuración
+    const boardMirror = document.getElementById('setting-board');
+    if (boardMirror) boardMirror.value = fqbn;
+
     // Reconstruir toolbox
     if (window._rebuildToolbox) window._rebuildToolbox(fqbn);
 
@@ -517,6 +521,10 @@ if (levelSelector) {
     s.level = level;
     saveSettings(s);
 
+    // Mantener sincronizado el espejo del modal de Configuración
+    const levelMirror = document.getElementById('setting-level');
+    if (levelMirror) levelMirror.value = String(level);
+
     // Reconstruir toolbox con el nuevo nivel
     if (window._rebuildToolbox) {
       window._rebuildToolbox(getSetting('board'), level);
@@ -526,6 +534,25 @@ if (levelSelector) {
     applyLevelProtection(level);
 
     showToast(`Nivel: ${levelSelector.options[levelSelector.selectedIndex]?.text || level}`);
+  });
+}
+
+// ── Selectores espejo en el modal de Configuración ──────────────
+// Placa y nivel viven también en el modal de Configuración; los cambios
+// desde el modal se reenvían a la toolbar (que tiene la lógica completa:
+// guardar settings, rebuild toolbox, instalar cores, protección de nivel).
+const settingBoard = document.getElementById('setting-board');
+if (settingBoard && boardSelector) {
+  settingBoard.addEventListener('change', () => {
+    boardSelector.value = settingBoard.value;
+    boardSelector.dispatchEvent(new Event('change'));
+  });
+}
+const settingLevel = document.getElementById('setting-level');
+if (settingLevel && levelSelector) {
+  settingLevel.addEventListener('change', () => {
+    levelSelector.value = settingLevel.value;
+    levelSelector.dispatchEvent(new Event('change'));
   });
 }
 
