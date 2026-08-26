@@ -16,7 +16,7 @@ import { setLanguage, getLanguage } from './i18n.js';
 export const SETTINGS_KEY = 'ardublock:settings';
 export const defaultSettings = {
   board: 'arduino:avr:uno', baud: 9600,
-  renderer: 'geras', level: 1,
+  renderer: 'geras', level: 3,
   fontUi: 14, fontCode: 13, fontSerial: 12, fontBlocks: 16, fontToolbox: 13
 };
 
@@ -33,8 +33,8 @@ export function initSettings(deps) {
   const settingsModal = document.getElementById('settings-modal');
   document.getElementById('btn-settings').addEventListener('click', () => {
     const s = loadSettings();
-    document.getElementById('board-selector').value = s.board;
-    document.getElementById('level-selector').value = s.level;
+    document.getElementById('setting-board').value = s.board;
+    document.getElementById('setting-level').value = s.level;
     document.getElementById('setting-baud').value = s.baud;
     document.getElementById('setting-renderer').value = s.renderer;
     document.getElementById('setting-language').value = getLanguage();

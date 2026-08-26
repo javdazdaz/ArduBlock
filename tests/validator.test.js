@@ -305,6 +305,57 @@ describe('validator — reglas de validación', () => {
     });
   });
 
+  // ── R13: bloques R4 con otra placa seleccionada ──
+  describe('R13: bloques R4 con placa incorrecta', () => {
+    afterEach(() => { localStorage.removeItem('ardublock:settings'); });
+
+    function setBoard(fqbn) {
+      localStorage.setItem('ardublock:settings', JSON.stringify({ board: fqbn }));
+    }
+
+    it('advierte (error) si hay bloque WiFi con placa Uno', () => {
+      setBoard('arduino:avr:uno');
+      const ws = mw(
+        [mb('arduino_setup'), mb('arduino_loop')],
+        [mb('arduino_setup'), mb('arduino_loop'), mb('wifi_connect')],
+      );
+      const w = validateWorkspace(ws);
+      const m = w.filter(x => x.type === 'board_mismatch');
+      expect(m.length).toBeGreaterThan(0);
+      expect(m[0].severity).toBe('error');
+    });
+
+    it('no advierte si hay bloque WiFi con placa R4 WiFi', () => {
+      setBoard('arduino:renesas_uno:unor4wifi');
+      const ws = mw(
+        [mb('arduino_setup'), mb('arduino_loop')],
+        [mb('arduino_setup'), mb('arduino_loop'), mb('wifi_connect')],
+      );
+      const w = validateWorkspace(ws);
+      expect(w.some(x => x.type === 'board_mismatch')).toBe(false);
+    });
+
+    it('advierte si hay bloque de matriz con placa Uno (no R4)', () => {
+      setBoard('arduino:avr:uno');
+      const ws = mw(
+        [mb('arduino_setup'), mb('arduino_loop')],
+        [mb('arduino_setup'), mb('arduino_loop'), mb('matrix_init')],
+      );
+      const w = validateWorkspace(ws);
+      expect(w.some(x => x.type === 'board_mismatch')).toBe(true);
+    });
+
+    it('no advierte si hay bloque de matriz con placa R4 Minima', () => {
+      setBoard('arduino:renesas_uno:minima');
+      const ws = mw(
+        [mb('arduino_setup'), mb('arduino_loop')],
+        [mb('arduino_setup'), mb('arduino_loop'), mb('matrix_init')],
+      );
+      const w = validateWorkspace(ws);
+      expect(w.some(x => x.type === 'board_mismatch')).toBe(false);
+    });
+  });
+
   // ── R6d: pinMode / attachInterrupt en setup ────
   describe('R6d: pinMode y attachInterrupt en setup', () => {
     it('advierte si pin_mode está fuera de setup', () => {

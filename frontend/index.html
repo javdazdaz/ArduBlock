@@ -86,6 +86,18 @@
       </div>
 
       <div class="arduino-toolbar">
+        <select id="board-selector" class="arduino-select" title="Seleccionar placa Arduino">
+          <option value="arduino:avr:uno">Arduino Uno R3</option>
+          <option value="arduino:renesas_uno:minima">Arduino Uno R4 Minima</option>
+          <option value="arduino:renesas_uno:unor4wifi">Arduino Uno R4 WiFi</option>
+          <option value="arduino:esp32:nano_nora">Arduino Nano ESP32</option>
+          <option value="arduino:avr:mega">Arduino Mega</option>
+        </select>
+        <select id="level-selector" class="arduino-select" title="Nivel de bloques">
+          <option value="1">⚊ Básico</option>
+          <option value="2">⚌ Intermedio</option>
+          <option value="3">⚋ Avanzado</option>
+        </select>
         <button id="btn-console-toggle" class="arduino-btn console" data-i18n="btn_console" title="Abrir/cerrar monitor serial">🔌 Consola</button>
         <button id="btn-upload" class="arduino-btn upload" data-i18n="btn_upload" title="Compilar y subir al Arduino">⚡ Subir</button>
         <button id="btn-export" class="arduino-btn export" data-i18n="btn_export" title="Exportar sketch como .zip" style="display:none">📦 Exportar</button>
@@ -251,7 +263,7 @@
         <div class="setting-section" data-i18n="settings_hardware">Hardware</div>
         <div class="setting-row">
           <label data-i18n="settings_board">Placa</label>
-          <select id="board-selector" title="Seleccionar placa Arduino">
+          <select id="setting-board" title="Seleccionar placa Arduino">
             <option value="arduino:avr:uno">Arduino Uno R3</option>
             <option value="arduino:renesas_uno:minima">Arduino Uno R4 Minima</option>
             <option value="arduino:renesas_uno:unor4wifi">Arduino Uno R4 WiFi</option>
@@ -279,7 +291,7 @@
         </div>
         <div class="setting-row">
           <label data-i18n="settings_level">Nivel de bloques</label>
-          <select id="level-selector" title="Nivel de bloques">
+          <select id="setting-level" title="Nivel de bloques">
             <option value="1">⚊ Básico</option>
             <option value="2">⚌ Intermedio</option>
             <option value="3">⚋ Avanzado</option>

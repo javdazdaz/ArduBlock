@@ -613,6 +613,50 @@ function validateWorkspace(workspace) {
   }
 
 
+  // ═══ R13: bloques R4 con otra placa seleccionada ═══
+  // Los bloques WiFi/WebServer/WebSocket requieren el R4 WiFi; los de la
+  // matriz LED integrada requieren el R4 (Minima o WiFi). Si el alumno los
+  // colocó con R4 seleccionado y luego cambió la placa (o cargó un proyecto
+  // guardado con R4), quedan huérfanos y el sketch no compila en la placa
+  // actual (WiFiS3.h / Arduino_LED_Matrix.h no existen ahí).
+  const R4_WIFI_BLOCKS = [
+    'wifi_connect', 'wifi_access_point', 'webserver_begin', 'webserver_serve',
+    'webserver_serve_file', 'webserver_on', 'webserver_respond', 'webserver_query',
+    'webserver_body', 'wifi_ip', 'wifi_connected', 'wifi_rssi', 'wifi_mac',
+    'websocket_begin', 'websocket_on_message', 'websocket_send', 'websocket_message',
+    'websocket_connected'
+  ];
+  const R4_MATRIX_BLOCKS = [
+    'matrix_init', 'matrix_show_icon', 'matrix_play_animation', 'matrix_clear', 'matrix_sequence_done'
+  ];
+
+  const isR4Wifi = fqbn === 'arduino:renesas_uno:unor4wifi';
+  const isR4 = fqbn.startsWith('arduino:renesas_uno');
+
+  const r4Mismatch = [];
+  if (!isR4Wifi) {
+    for (const bt of R4_WIFI_BLOCKS) {
+      for (const block of findAllBlocksOfType(workspace, bt)) {
+        r4Mismatch.push({ block, required: 'Arduino Uno R4 WiFi' });
+      }
+    }
+  }
+  if (!isR4) {
+    for (const bt of R4_MATRIX_BLOCKS) {
+      for (const block of findAllBlocksOfType(workspace, bt)) {
+        r4Mismatch.push({ block, required: 'Arduino Uno R4' });
+      }
+    }
+  }
+  for (const { block, required } of r4Mismatch) {
+    warnings.push({
+      type: 'board_mismatch',
+      severity: 'error',
+      message: t('val_board_mismatch', { label: getBlockLabel(block), required, board: board.name }),
+      blocks: [block]
+    });
+  }
+
   // ═══ Deduplicar warnings idénticos (mismo type + mensaje) ═══
   // N bloques con el mismo problema se fusionan en una sola entrada
   // (evita llenar la lista con copias, p. ej. 2× digitalWrite en el mismo pin).
@@ -691,6 +735,11 @@ const BLOCK_LABEL_KEYS = {
   'websocket_send': 'blk_websocket_send',
   'websocket_message': 'blk_websocket_message',
   'websocket_connected': 'blk_websocket_connected',
+  'matrix_init': 'blk_matrix_init',
+  'matrix_show_icon': 'blk_matrix_show_icon',
+  'matrix_play_animation': 'blk_matrix_play_animation',
+  'matrix_clear': 'blk_matrix_clear',
+  'matrix_sequence_done': 'blk_matrix_sequence_done',
   'variable_global': 'blk_variable_global',
   'variable_declare': 'blk_variable_declare',
   'variable_set': 'blk_variable_set',
