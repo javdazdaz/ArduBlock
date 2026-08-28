@@ -17,12 +17,14 @@ import './blocks.js';
 import { applyAiPalette } from './palette.js';
 import { generateArduinoCode } from './generator.js';
 import { initValidator }       from './validator.js';
+import { csrfFetch }           from './csrf.js';
 
 // ═══ Modo invitado vs usuario logueado ═════════
 let IS_GUEST_MODE = true;
 window.IS_GUEST_MODE = true;
 let USER_NAME = '';
 let IS_TEACHER = false;
+let IS_PRODUCTION_MODE = false;
 let DASHBOARD_URL = '/';
 
 (async function detectMode() {
@@ -33,6 +35,8 @@ let DASHBOARD_URL = '/';
     window.IS_GUEST_MODE = IS_GUEST_MODE;
     USER_NAME = data.user_name || '';
     IS_TEACHER = !!data.is_teacher;
+    IS_PRODUCTION_MODE = data.mode === 'production';
+    window.IS_PRODUCTION_MODE = IS_PRODUCTION_MODE;
   } catch (_) {
     IS_GUEST_MODE = true;
   }
@@ -457,6 +461,7 @@ if (boardSelector) {
     // Reconstruir toolbox
     if (window._rebuildToolbox) window._rebuildToolbox(fqbn);
 
+    if (!IS_PRODUCTION_MODE) {
     // Verificar compatibilidad con chip detectado
     try {
       const brd = await fetch('/api/boards').then(r => r.json());
@@ -478,7 +483,7 @@ if (boardSelector) {
     // Instalar cores/libs con feedback (solo lo que falte)
     const boardName = boardSelector.options[boardSelector.selectedIndex]?.text || fqbn;
     try {
-      const res = await fetch('/api/board/install', {
+      const res = await csrfFetch('/api/board/install', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ fqbn })
@@ -505,6 +510,7 @@ if (boardSelector) {
     } catch (e) {
       showToast('⚠ Error de conexión al instalar dependencias');
       console.warn('[ArduBlock] board/install:', e);
+    }
     }
   });
 }
@@ -846,7 +852,7 @@ async function installCliFromModal() {
   cliInstallStatus.textContent = '';
   cliInstallStatus.className = '';
   try {
-    const res = await fetch('/api/arduino-cli/install', { method: 'POST' });
+    const res = await csrfFetch('/api/arduino-cli/install', { method: 'POST' });
     const data = await res.json();
     if (data.success) {
       cliInstallBtn.textContent = '✅ Instalado';

@@ -6,7 +6,6 @@ Ejecución de comandos, auto-instalación de cores, consulta de cores/libs insta
 
 import json
 import os
-import re
 import resource
 import shutil
 import subprocess
@@ -191,11 +190,10 @@ def run_arduino_cli(
         kwargs["preexec_fn"] = _set_rlimits
 
     scratch_dir = None
-    if _BWRAP and args and args[0] == "compile" and os.path.isdir(_ARDUINO_DATA_DIR):
-        try:
-            cmd, scratch_dir = _sandboxed_compile(cmd)
-        except Exception:
-            scratch_dir = None  # fallback: compilar sin sandbox
+    if args and args[0] == "compile":
+        if not _BWRAP or not os.path.isdir(_ARDUINO_DATA_DIR):
+            raise RuntimeError("Sandbox de compilación no disponible")
+        cmd, scratch_dir = _sandboxed_compile(cmd)
 
     _ARDUINO_CLI_SEMAPHORE.acquire()
     try:
@@ -204,47 +202,6 @@ def run_arduino_cli(
         _ARDUINO_CLI_SEMAPHORE.release()
         if scratch_dir:
             shutil.rmtree(scratch_dir, ignore_errors=True)
-
-
-def try_install_missing_core(stderr_text: str) -> bool:
-    """Intenta instalar un core faltante a partir del mensaje de error de arduino-cli.
-
-    Reconoce mensajes como:
-      "Error during build: Platform 'arduino:avr' not found: platform not installed"
-      "Invalid FQBN: board arduino:renesas_uno:wifi not found"
-    """
-    # Caso 1: "Platform 'arduino:avr' not found"
-    m = re.search(r"Platform '([^']+)' not found", stderr_text)
-    if m:
-        core_id = m.group(1)
-        try:
-            run_arduino_cli(
-                ["core", "install", core_id], capture_output=True, timeout=120
-            )
-            return True
-        except Exception:
-            return False
-
-    # Caso 2: "Invalid FQBN: board arduino:renesas_uno:wifi not found"
-    m = re.search(r"board (\S+) not found", stderr_text)
-    if m:
-        fqbn = m.group(1)
-        parts = fqbn.split(":")
-        if len(parts) >= 2:
-            core_id = f"{parts[0]}:{parts[1]}"
-            try:
-                run_arduino_cli(
-                    ["core", "install", core_id], capture_output=True, timeout=120
-                )
-                return True
-            except Exception:
-                return False
-
-    # Caso 3: "platform not installed" (genérico)
-    if "platform not installed" in stderr_text.lower():
-        return False
-
-    return False
 
 
 def get_installed_cores() -> set[str]:

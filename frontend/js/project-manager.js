@@ -8,6 +8,7 @@
 import * as Blockly from 'blockly';
 import { captureWorkspaceThumbnail } from './thumbnail.js';
 import { restoreWorkspaceState } from './workspace-restore.js';
+import { csrfFetch } from './csrf.js';
 
 let workspace, projectInput, projectList, showToast;
 let LS_PREFIX, LAST_KEY, autoSaveTimer;
@@ -136,7 +137,7 @@ export async function saveProject(name) {
     const thumbnail = await captureWorkspaceThumbnail(workspace);
     const body = { name, data: record, thumbnail };
     if (isCreate && currentClassId) body.class_id = currentClassId;
-    const res = await fetch(url, {
+    const res = await csrfFetch(url, {
       method: isCreate ? 'POST' : 'PUT', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     });
@@ -249,7 +250,7 @@ export async function deleteProject(idOrName) {
     if (localStorage.getItem(LAST_KEY) === idOrName) localStorage.removeItem(LAST_KEY);
   } else {
     try {
-      await fetch(`/api/projects/${idOrName}`, { method: 'DELETE' });
+      await csrfFetch(`/api/projects/${idOrName}`, { method: 'DELETE' });
     } catch (e) { /* ignore */ }
   }
 

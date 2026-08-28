@@ -21,8 +21,9 @@ from flask import Blueprint, jsonify, request
 from backend import compile_queue
 from backend.rate_limit import rate_limit
 from backend.sketch_guard import find_unsafe_include
-from backend.services.arduino_cli import run_arduino_cli, try_install_missing_core
+from backend.services.arduino_cli import run_arduino_cli
 from backend.routes.projects import _write_tabs
+from backend.payload_validation import validate_compile_payload
 
 compile_bp = Blueprint("compile", __name__)
 
@@ -54,12 +55,6 @@ def _do_compile(code: str, fqbn: str, tabs: list) -> dict:
             capture_output=True,
             timeout=60,
         )
-        if result.returncode != 0 and try_install_missing_core(result.stderr):
-            result = run_arduino_cli(
-                ["compile", "--fqbn", fqbn, str(sketch_dir)],
-                capture_output=True,
-                timeout=60,
-            )
         return {
             "success": result.returncode == 0,
             "stdout": result.stdout,
@@ -91,9 +86,6 @@ def _do_compile_hex(code: str, fqbn: str, tabs: list) -> dict:
             str(sketch_dir),
         ]
         result = run_arduino_cli(compile_args, capture_output=True, timeout=60)
-        if result.returncode != 0 and try_install_missing_core(result.stderr):
-            result = run_arduino_cli(compile_args, capture_output=True, timeout=60)
-
         if result.returncode != 0:
             return {
                 "success": False,
@@ -145,6 +137,9 @@ def compile_sketch():
     code, fqbn, tabs = _parse_payload()
     if not code.strip():
         return jsonify({"error": "Código vacío"}), 400
+    invalid = validate_compile_payload(fqbn, tabs)
+    if invalid:
+        return jsonify({"error": invalid}), 422
     unsafe = find_unsafe_include(code, tabs)
     if unsafe:
         return jsonify({"error": f"Include no permitido: \"{unsafe}\""}), 422
@@ -169,6 +164,9 @@ def compile_hex():
     code, fqbn, tabs = _parse_payload()
     if not code.strip():
         return jsonify({"error": "Código vacío"}), 400
+    invalid = validate_compile_payload(fqbn, tabs)
+    if invalid:
+        return jsonify({"error": invalid}), 422
     unsafe = find_unsafe_include(code, tabs)
     if unsafe:
         return jsonify({"error": f"Include no permitido: \"{unsafe}\""}), 422

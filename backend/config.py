@@ -61,6 +61,8 @@ DATABASE_PATH = Path(os.environ.get(
 HOST = os.environ.get("ARDUBLOCK_HOST", "0.0.0.0")
 PORT = int(os.environ.get("ARDUBLOCK_PORT", "5001"))
 SECRET_KEY = os.environ.get("ARDUBLOCK_SECRET_KEY", secrets.token_hex(32))
+IS_PRODUCTION = bool(os.environ.get("ARDUBLOCK_PRODUCTION"))
+RUNTIME_MODE = "production" if IS_PRODUCTION else "local"
 
 # ═══ Detección de arduino-cli ═════════════════════
 
@@ -129,6 +131,13 @@ BOARD_DEPS = {
     },
     "arduino:esp32:nano_nora": {"cores": ["arduino:esp32"], "libs": []},
 }
+
+# Fuente única de hardware permitido por la aplicación. El cliente nunca
+# puede convertir un FQBN arbitrario en una instalación de software.
+SUPPORTED_FQBNS = frozenset(BOARD_DEPS)
+SUPPORTED_LIBRARIES = frozenset(
+    lib for deps in BOARD_DEPS.values() for lib in deps.get("libs", [])
+)
 
 # ═══ Mapeo chips USB → placas ════════════════════
 
