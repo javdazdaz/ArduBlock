@@ -171,6 +171,30 @@ class ProjectFile(Base):
     updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)
 
     project = relationship("Project", back_populates="files")
+    operations = relationship(
+        "ProjectFileOperation", back_populates="file", cascade="all, delete-orphan",
+        order_by="ProjectFileOperation.revision.asc()",
+    )
+
+
+class ProjectFileOperation(Base):
+    """Operación de texto persistente para colaboración OT."""
+    __tablename__ = "project_file_operations"
+    __table_args__ = (
+        UniqueConstraint("file_id", "client_id", "sequence", name="uq_file_operation_sequence"),
+    )
+
+    id = Column(Integer, primary_key=True)
+    file_id = Column(Integer, ForeignKey("project_files.id"), nullable=False, index=True)
+    revision = Column(Integer, nullable=False)
+    base_revision = Column(Integer, nullable=False)
+    client_id = Column(String(100), nullable=False)
+    sequence = Column(Integer, nullable=False)
+    changes = Column(Text, nullable=False)
+    author_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    created_at = Column(DateTime, default=utcnow)
+
+    file = relationship("ProjectFile", back_populates="operations")
 
 
 class Activity(Base):

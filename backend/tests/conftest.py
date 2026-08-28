@@ -29,7 +29,7 @@ os.environ["ARDUBLOCK_RATE_LIMIT_DISABLED"] = "1"  # sin rate limit en tests
 
 from backend.app import create_app  # noqa: E402
 from backend.db import get_session  # noqa: E402
-from backend.models import User, Classroom, ClassroomStudent, Project, ProjectRevision, ProjectFile, Class, Activity, ClassActivity  # noqa: E402
+from backend.models import User, Classroom, ClassroomStudent, Project, ProjectRevision, ProjectFile, ProjectFileOperation, Class, Activity, ClassActivity  # noqa: E402
 from backend.routes.auth import _ensure_teacher  # noqa: E402
 
 
@@ -51,6 +51,7 @@ def clean_db(app):
             s.query(ClassActivity).delete()
             s.query(Activity).delete()
             s.query(ProjectRevision).delete()
+            s.query(ProjectFileOperation).delete()
             s.query(ProjectFile).delete()
             s.query(Project).delete()
             s.query(Class).delete()

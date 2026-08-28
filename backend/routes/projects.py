@@ -8,20 +8,23 @@ Modos:
 
 import json
 import os
+import threading
 from pathlib import Path
 
 from flask import Blueprint, jsonify, request
 from flask_login import current_user, login_required
 
-from backend.models import Project, ProjectRevision, Classroom, ClassroomStudent, Class, User, Activity, ClassActivity
+from backend.models import Project, ProjectFile, ProjectFileOperation, ProjectRevision, Classroom, ClassroomStudent, Class, User, Activity, ClassActivity
 from backend.db import get_session as _get_session
 from backend.project_history import record_project_revision
-from backend.project_files import sync_project_files
+from backend.project_files import sync_project_files, update_project_tab
+from backend.text_ot import apply_changes, transform_changes, validate_changes
 
 projects_bp = Blueprint("projects", __name__)
 
 MAX_NAME_LEN = 100
 STRICT_REVISIONS = os.environ.get("ARDUBLOCK_COLLAB_STRICT_REVISIONS") == "1"
+_FILE_OPERATION_LOCK = threading.Lock()
 
 
 def _clean_name(value, fallback="Sin título"):
@@ -215,6 +218,164 @@ def list_project_files(project_id):
         ])
     finally:
         s.close()
+
+
+def _owned_project_file(session, project_id, file_id):
+    return (
+        session.query(ProjectFile)
+        .join(Project, Project.id == ProjectFile.project_id)
+        .filter(
+            ProjectFile.id == file_id,
+            ProjectFile.project_id == project_id,
+            Project.user_id == current_user.id,
+        )
+        .first()
+    )
+
+
+@projects_bp.route("/api/projects/<int:project_id>/files/<int:file_id>/operations", methods=["GET"])
+@login_required
+def list_file_operations(project_id, file_id):
+    """Devuelve operaciones posteriores para polling/reconexión."""
+    since = request.args.get("since", default=0, type=int)
+    if since < 0:
+        return jsonify({"error": "since inválido"}), 400
+    s = _get_session()
+    try:
+        file = _owned_project_file(s, project_id, file_id)
+        if not file:
+            return jsonify({"error": "Archivo no encontrado"}), 404
+        operations = (
+            s.query(ProjectFileOperation)
+            .filter(
+                ProjectFileOperation.file_id == file.id,
+                ProjectFileOperation.revision > since,
+            )
+            .order_by(ProjectFileOperation.revision.asc())
+            .all()
+        )
+        return jsonify([
+            {
+                "id": operation.id,
+                "revision": operation.revision,
+                "base_revision": operation.base_revision,
+                "client_id": operation.client_id,
+                "sequence": operation.sequence,
+                "changes": json.loads(operation.changes),
+                "author_id": operation.author_id,
+                "created_at": operation.created_at.isoformat() if operation.created_at else None,
+            }
+            for operation in operations
+        ])
+    finally:
+        s.close()
+
+
+@projects_bp.route("/api/projects/<int:project_id>/files/<int:file_id>/operations", methods=["POST"])
+@login_required
+def submit_file_operation(project_id, file_id):
+    """Acepta una operación OT y la aplica en orden central del servidor."""
+    data = request.get_json(silent=True) or {}
+    base_revision = data.get("base_revision")
+    client_id = data.get("client_id")
+    sequence = data.get("sequence")
+    changes = data.get("changes")
+    if (
+        isinstance(base_revision, bool) or not isinstance(base_revision, int) or base_revision < 1
+        or not isinstance(client_id, str) or not client_id or len(client_id) > 100
+        or isinstance(sequence, bool) or not isinstance(sequence, int) or sequence < 0
+        or not isinstance(changes, list)
+    ):
+        return jsonify({"error": "Operación inválida"}), 400
+
+    _FILE_OPERATION_LOCK.acquire()
+    s = _get_session()
+    try:
+        file = _owned_project_file(s, project_id, file_id)
+        if not file:
+            return jsonify({"error": "Archivo no encontrado"}), 404
+
+        duplicate = s.query(ProjectFileOperation).filter_by(
+            file_id=file.id, client_id=client_id, sequence=sequence
+        ).first()
+        if duplicate:
+            return jsonify({
+                "accepted": True,
+                "revision": duplicate.revision,
+                "changes": json.loads(duplicate.changes),
+                "duplicate": True,
+            })
+
+        if base_revision > file.revision:
+            return jsonify({
+                "error": "revision_ahead",
+                "current_revision": file.revision,
+            }), 409
+        transformed = changes
+        remote_operations = []
+        base_length = len(file.content)
+        if base_revision < file.revision:
+            remote_operations = (
+                s.query(ProjectFileOperation)
+                .filter(
+                    ProjectFileOperation.file_id == file.id,
+                    ProjectFileOperation.revision > base_revision,
+                )
+                .order_by(ProjectFileOperation.revision.asc())
+                .all()
+            )
+            for remote in reversed(remote_operations):
+                remote_changes = json.loads(remote.changes)
+                base_length -= sum(
+                    len(change["insert"]) - (change["to"] - change["from"])
+                    for change in remote_changes
+                )
+        try:
+            validate_changes(base_length, changes)
+        except ValueError as error:
+            return jsonify({"error": str(error)}), 400
+
+        if base_revision < file.revision:
+            for remote in remote_operations:
+                transformed = transform_changes(
+                    transformed,
+                    json.loads(remote.changes),
+                    client_id,
+                    remote.client_id,
+                )
+        try:
+            transformed = validate_changes(len(file.content), transformed)
+        except ValueError as error:
+            return jsonify({"error": str(error)}), 400
+
+        new_revision = file.revision + 1
+        file.content = apply_changes(file.content, transformed)
+        file.revision = new_revision
+        file.updated_by = current_user.id
+        project = file.project
+        update_project_tab(project, file.filename, file.content)
+        project.revision = (project.revision or 1) + 1
+        project.updated_by = current_user.id
+        record_project_revision(s, project, current_user.id, "save")
+        operation = ProjectFileOperation(
+            file_id=file.id,
+            revision=new_revision,
+            base_revision=base_revision,
+            client_id=client_id,
+            sequence=sequence,
+            changes=json.dumps(transformed, ensure_ascii=False),
+            author_id=current_user.id,
+        )
+        s.add(operation)
+        s.commit()
+        return jsonify({
+            "accepted": True,
+            "revision": new_revision,
+            "changes": transformed,
+        })
+    finally:
+        s.close()
+        _FILE_OPERATION_LOCK.release()
 
 
 @projects_bp.route("/api/projects/<int:project_id>/history/<int:history_id>/restore", methods=["POST"])

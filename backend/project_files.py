@@ -18,6 +18,27 @@ def tabs_from_project(project: Project) -> list[dict]:
     return tabs if isinstance(tabs, list) else []
 
 
+def update_project_tab(project: Project, filename: str, content: str) -> None:
+    """Actualiza un tab dentro del formato legacy de Project.data."""
+    try:
+        data = json.loads(project.data) if isinstance(project.data, str) else project.data
+    except (TypeError, json.JSONDecodeError):
+        data = {}
+    if not isinstance(data, dict):
+        data = {}
+    tabs = data.get("tabs")
+    if not isinstance(tabs, list):
+        tabs = []
+        data["tabs"] = tabs
+    for tab in tabs:
+        if isinstance(tab, dict) and tab.get("filename") == filename:
+            tab["content"] = content
+            break
+    else:
+        tabs.append({"filename": filename, "content": content})
+    project.data = json.dumps(data)
+
+
 def _valid_tab(tab) -> bool:
     if not isinstance(tab, dict):
         return False
