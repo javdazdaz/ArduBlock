@@ -14,13 +14,14 @@ from pathlib import Path
 from flask import Blueprint, jsonify, request
 from flask_login import current_user, login_required
 
-from backend.models import Project, ProjectFile, ProjectFileOperation, ProjectBlockOperation, ProjectRevision, Classroom, ClassroomStudent, Class, User, Activity, ClassActivity
+from backend.models import Project, ProjectFile, ProjectFileOperation, ProjectBlockOperation, ProjectRevision, ProjectCollaborator, Classroom, ClassroomStudent, Class, User, Activity, ClassActivity
 from backend.db import get_session as _get_session
 from backend.project_history import record_project_revision
 from backend.project_files import sync_project_files, update_project_tab
 from backend.block_operations import apply_operation, semantic_state_from_workspace, validate_operation
 from backend.text_ot import apply_changes, transform_changes, validate_changes
 from backend.collaboration import broker
+from backend.project_permissions import ROLES, project_access
 
 projects_bp = Blueprint("projects", __name__)
 
@@ -181,9 +182,10 @@ def list_project_history(project_id):
     """Devuelve las revisiones persistentes del proyecto propio."""
     s = _get_session()
     try:
-        project = s.get(Project, project_id)
-        if not project or project.user_id != current_user.id:
+        access = project_access(s, project_id, current_user.id)
+        if not access:
             return jsonify({"error": "Proyecto no encontrado"}), 404
+        project, _role = access
         return jsonify([
             {
                 "id": revision.id,
@@ -198,15 +200,79 @@ def list_project_history(project_id):
         s.close()
 
 
+@projects_bp.route("/api/projects/<int:project_id>/collaborators", methods=["GET"])
+@login_required
+def list_project_collaborators(project_id):
+    s = _get_session()
+    try:
+        access = project_access(s, project_id, current_user.id)
+        if not access:
+            return jsonify({"error": "Proyecto no encontrado"}), 404
+        project, role = access
+        rows = s.query(ProjectCollaborator).filter_by(project_id=project_id).all()
+        return jsonify([{"user_id": row.user_id, "email": row.user.email,
+                         "role": row.role, "created_at": row.created_at.isoformat() if row.created_at else None}
+                        for row in rows])
+    finally:
+        s.close()
+
+
+@projects_bp.route("/api/projects/<int:project_id>/collaborators", methods=["POST"])
+@login_required
+def add_project_collaborator(project_id):
+    data = request.get_json(silent=True) or {}
+    email = data.get("email")
+    role = data.get("role", "viewer")
+    if not isinstance(email, str) or not email.strip() or role not in ROLES:
+        return jsonify({"error": "Colaborador inválido"}), 400
+    s = _get_session()
+    try:
+        project = s.get(Project, project_id)
+        if not project or project.user_id != current_user.id:
+            return jsonify({"error": "Proyecto no encontrado"}), 404
+        user = s.query(User).filter_by(email=email.strip().lower()).first()
+        if not user or user.id == project.user_id:
+            return jsonify({"error": "Usuario no encontrado"}), 404
+        row = s.query(ProjectCollaborator).filter_by(project_id=project_id, user_id=user.id).first()
+        if row:
+            row.role = role
+        else:
+            row = ProjectCollaborator(project_id=project_id, user_id=user.id, role=role)
+            s.add(row)
+        s.commit()
+        return jsonify({"user_id": user.id, "email": user.email, "role": role}), 200
+    finally:
+        s.close()
+
+
+@projects_bp.route("/api/projects/<int:project_id>/collaborators/<int:user_id>", methods=["DELETE"])
+@login_required
+def remove_project_collaborator(project_id, user_id):
+    s = _get_session()
+    try:
+        project = s.get(Project, project_id)
+        if not project or project.user_id != current_user.id:
+            return jsonify({"error": "Proyecto no encontrado"}), 404
+        row = s.query(ProjectCollaborator).filter_by(project_id=project_id, user_id=user_id).first()
+        if not row:
+            return jsonify({"error": "Colaborador no encontrado"}), 404
+        s.delete(row)
+        s.commit()
+        return jsonify({"removed": True})
+    finally:
+        s.close()
+
+
 @projects_bp.route("/api/projects/<int:project_id>/files", methods=["GET"])
 @login_required
 def list_project_files(project_id):
     """Devuelve los archivos de texto espejados del proyecto propio."""
     s = _get_session()
     try:
-        project = s.get(Project, project_id)
-        if not project or project.user_id != current_user.id:
+        access = project_access(s, project_id, current_user.id)
+        if not access:
             return jsonify({"error": "Proyecto no encontrado"}), 404
+        project, _role = access
         return jsonify([
             {
                 "id": file.id,
@@ -223,16 +289,10 @@ def list_project_files(project_id):
 
 
 def _owned_project_file(session, project_id, file_id):
-    return (
-        session.query(ProjectFile)
-        .join(Project, Project.id == ProjectFile.project_id)
-        .filter(
-            ProjectFile.id == file_id,
-            ProjectFile.project_id == project_id,
-            Project.user_id == current_user.id,
-        )
-        .first()
-    )
+    file = session.get(ProjectFile, file_id)
+    if not file or file.project_id != project_id:
+        return None
+    return file if project_access(session, project_id, current_user.id, write=False) else None
 
 
 @projects_bp.route("/api/projects/<int:project_id>/files/<int:file_id>/operations", methods=["GET"])
@@ -296,6 +356,8 @@ def submit_file_operation(project_id, file_id):
         file = _owned_project_file(s, project_id, file_id)
         if not file:
             return jsonify({"error": "Archivo no encontrado"}), 404
+        if not project_access(s, project_id, current_user.id, write=True):
+            return jsonify({"error": "Permiso de edición requerido"}), 403
 
         duplicate = s.query(ProjectFileOperation).filter_by(
             file_id=file.id, client_id=client_id, sequence=sequence
@@ -414,9 +476,10 @@ def list_block_operations(project_id):
         return jsonify({"error": "since inválido"}), 400
     s = _get_session()
     try:
-        project = s.get(Project, project_id)
-        if not project or project.user_id != current_user.id:
+        access = project_access(s, project_id, current_user.id)
+        if not access:
             return jsonify({"error": "Proyecto no encontrado"}), 404
+        project, _role = access
         rows = s.query(ProjectBlockOperation).filter(
             ProjectBlockOperation.project_id == project_id,
             ProjectBlockOperation.revision > since,
@@ -451,9 +514,10 @@ def submit_block_operation(project_id):
     _FILE_OPERATION_LOCK.acquire()
     s = _get_session()
     try:
-        project = s.get(Project, project_id)
-        if not project or project.user_id != current_user.id:
+        access = project_access(s, project_id, current_user.id, write=True)
+        if not access:
             return jsonify({"error": "Proyecto no encontrado"}), 404
+        project, _role = access
         duplicate = s.query(ProjectBlockOperation).filter_by(
             project_id=project_id, client_id=client_id, sequence=sequence
         ).first()

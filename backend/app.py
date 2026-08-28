@@ -26,6 +26,7 @@ from backend.config import (
 )
 from backend.db import SessionFactory, init_db
 from backend.models import ProjectFile, Project
+from backend.project_permissions import project_access
 from backend.messages import get_message, SUPPORTED_LANGS, DEFAULT_LANG
 from backend.services.serial_manager import SerialManager
 from flask_sock import Sock
@@ -116,16 +117,11 @@ def create_app() -> Flask:
             return
         session_db = SessionFactory()
         try:
-            file = (
-                session_db.query(ProjectFile)
-                .join(Project, Project.id == ProjectFile.project_id)
-                .filter(ProjectFile.id == file_id, ProjectFile.project_id == project_id,
-                        Project.user_id == current_user.id)
-                .first()
-            )
+            file = session_db.get(ProjectFile, file_id)
+            access = project_access(session_db, project_id, current_user.id)
         finally:
             session_db.close()
-        if not file:
+        if not file or file.project_id != project_id or not access:
             return
         client_id = request.args.get("client_id", "")
         if not client_id or len(client_id) > 100:
@@ -167,12 +163,10 @@ def create_app() -> Flask:
             return
         session_db = SessionFactory()
         try:
-            project = session_db.query(Project).filter_by(
-                id=project_id, user_id=current_user.id
-            ).first()
+            access = project_access(session_db, project_id, current_user.id)
         finally:
             session_db.close()
-        if not project:
+        if not access:
             return
         client_id = request.args.get("client_id", "")
         if not client_id or len(client_id) > 100:

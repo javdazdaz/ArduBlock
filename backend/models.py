@@ -129,6 +129,10 @@ class Project(Base):
         "ProjectBlockOperation", back_populates="project", cascade="all, delete-orphan",
         order_by="ProjectBlockOperation.revision.asc()",
     )
+    collaborators = relationship(
+        "ProjectCollaborator", back_populates="project", cascade="all, delete-orphan",
+        order_by="ProjectCollaborator.created_at.asc()",
+    )
 
     def to_dict(self):
         return {
@@ -219,6 +223,23 @@ class ProjectBlockOperation(Base):
     created_at = Column(DateTime, default=utcnow)
 
     project = relationship("Project", back_populates="block_operations")
+
+
+class ProjectCollaborator(Base):
+    """Permiso explícito de un usuario sobre un proyecto."""
+    __tablename__ = "project_collaborators"
+    __table_args__ = (
+        UniqueConstraint("project_id", "user_id", name="uq_project_collaborator"),
+    )
+
+    id = Column(Integer, primary_key=True)
+    project_id = Column(Integer, ForeignKey("projects.id"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    role = Column(String(20), nullable=False, default="viewer")
+    created_at = Column(DateTime, default=utcnow)
+
+    project = relationship("Project", back_populates="collaborators")
+    user = relationship("User")
 
 
 class Activity(Base):
