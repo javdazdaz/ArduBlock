@@ -160,6 +160,44 @@ def create_app() -> Flask:
                 "type": "presence", "event": "leave", "connection_id": peer.connection_id,
             })
 
+    @sock.route("/ws/projects/<int:project_id>/blocks")
+    def block_collaboration_socket(ws, project_id):
+        """Transport efímero del workspace Blockly."""
+        if not current_user.is_authenticated:
+            return
+        session_db = SessionFactory()
+        try:
+            project = session_db.query(Project).filter_by(
+                id=project_id, user_id=current_user.id
+            ).first()
+        finally:
+            session_db.close()
+        if not project:
+            return
+        client_id = request.args.get("client_id", "")
+        if not client_id or len(client_id) > 100:
+            return
+        peer = broker.join(project_id, 0, client_id, current_user.id,
+                           getattr(current_user, "name", None) or current_user.email, ws)
+        try:
+            ws.send(json.dumps({"type": "presence", "peers": broker.presence(project_id, 0)}))
+            while True:
+                raw = ws.receive()
+                if raw is None:
+                    break
+                message = json.loads(raw)
+                if message.get("type") == "presence":
+                    broker.broadcast(project_id, 0, {
+                        "type": "presence", "event": "update",
+                        "peer": {"connection_id": peer.connection_id, "client_id": peer.client_id,
+                                 "user_id": peer.user_id, "display_name": peer.display_name,
+                                 "selected_block": message.get("selected_block")},
+                    }, exclude=peer.connection_id)
+        except (ValueError, TypeError, json.JSONDecodeError):
+            pass
+        finally:
+            broker.leave(project_id, 0, peer.connection_id)
+
     # La compilación pública no muta sesión ni datos persistentes.
     csrf.exempt(compile_bp)
 

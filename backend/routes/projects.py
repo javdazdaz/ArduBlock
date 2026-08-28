@@ -475,6 +475,15 @@ def submit_block_operation(project_id):
         )
         s.add(row)
         s.commit()
+        broker.broadcast(project_id, 0, {
+            "type": "block_operation",
+            "revision": current_revision,
+            "base_revision": base_revision,
+            "client_id": client_id,
+            "sequence": sequence,
+            "operation": operation,
+            "author_id": current_user.id,
+        })
         return jsonify({"accepted": True, "revision": current_revision, "operation": operation})
     finally:
         s.close()

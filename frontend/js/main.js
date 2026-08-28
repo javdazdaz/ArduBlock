@@ -188,6 +188,8 @@ import { initExamples }  from './examples.js';
 import { initResize }   from './resize.js';
 import { exportSketch } from './download.js';
 import { initTabManager, getTabs, loadTabs, setSketchName, setInoContent, getInoContent, setCodeTheme, configureTextCollaboration } from './tab-manager.js';
+import { BlockCollaborationClient } from './block-collaboration.js';
+import { operationFromBlocklyEvent } from './block-operations.js';
 import { restoreWorkspaceState } from './workspace-restore.js';
 import { initMatrixEditor, initPanelModeTabs } from './matrix-animation.js';
 import { initWebPresets } from './web-presets.js';
@@ -219,7 +221,65 @@ const workspace = Blockly.inject('blocklyDiv', {
   plugins: { blockDragger: ScrollBlockDragger, metricsManager: FixedEdgesScrollMetricsManager }
 });
 
-// ═══ Tema: paleta App Inventor para bloques compartidos ═══
+let blockCollabClient = null;
+let applyingRemoteBlockOperation = false;
+
+function applyRemoteBlockOperation(operation) {
+  if (!operation) return;
+  applyingRemoteBlockOperation = true;
+  try {
+    const block = operation.block_id && workspace.getBlockById(operation.block_id);
+    if (operation.type === 'create_block' && !block) {
+      const created = workspace.newBlock(operation.block_type);
+      created.id = operation.block_id;
+      for (const [name, value] of Object.entries(operation.fields || {})) created.setFieldValue(value, name);
+      created.initSvg();
+      created.render();
+      created.moveBy(40, 40);
+    } else if (operation.type === 'delete_block' && block) {
+      block.dispose(false);
+    } else if (operation.type === 'set_field' && block) {
+      block.setFieldValue(operation.value, operation.field);
+    } else if (operation.type === 'connect_input' && block) {
+      const parent = workspace.getBlockById(operation.parent_id);
+      const child = workspace.getBlockById(operation.child_id);
+      const input = parent?.getInput(operation.input_name);
+      if (input && child) input.connection.connect(child.outputConnection || child.previousConnection);
+    } else if (operation.type === 'disconnect_input') {
+      const parent = workspace.getBlockById(operation.parent_id);
+      parent?.getInput(operation.input_name)?.connection?.disconnect();
+    } else if (operation.type === 'connect_next') {
+      const parent = workspace.getBlockById(operation.parent_id);
+      const child = workspace.getBlockById(operation.child_id);
+      if (parent && child) parent.nextConnection?.connect(child.previousConnection);
+    } else if (operation.type === 'disconnect_next') {
+      workspace.getBlockById(operation.parent_id)?.nextConnection?.disconnect();
+    }
+  } finally {
+    applyingRemoteBlockOperation = false;
+  }
+}
+
+window._configureBlockCollaboration = (projectId) => {
+  blockCollabClient?.stop();
+  if (window.IS_GUEST_MODE !== false || !projectId) { blockCollabClient = null; return; }
+  const clientId = localStorage.getItem('ardublock:client-id') || `tab-${crypto.randomUUID?.() || Math.random().toString(36).slice(2)}`;
+  localStorage.setItem('ardublock:client-id', clientId);
+  blockCollabClient = new BlockCollaborationClient({
+    projectId,
+    clientId,
+    applyRemote: applyRemoteBlockOperation,
+    onPresence: (message) => window.dispatchEvent(new CustomEvent('ardublock:block-presence', { detail: message })),
+  });
+  blockCollabClient.connect();
+};
+
+workspace.addChangeListener((event) => {
+  if (applyingRemoteBlockOperation || !blockCollabClient) return;
+  const operation = operationFromBlocklyEvent(event, workspace);
+  if (operation) blockCollabClient.enqueue(operation);
+});
+
 applyAiPalette(workspace);
 
 // ═══ Plugins ═════════════════════════════════
