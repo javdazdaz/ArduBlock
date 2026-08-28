@@ -6,7 +6,7 @@
   {{ render_flash() }}
   <div class="page-header"><h2>Mi perfil</h2></div>
   <section class="panel profile-card">
-    <button id="avatar-open" type="button" class="profile-avatar-button" aria-label="Cambiar foto de perfil" title="Cambiar foto de perfil">
+    <button id="avatar-open" type="button" class="profile-avatar-button" aria-label="Cambiar foto de perfil" title="Cambiar foto de perfil" onclick="document.getElementById('avatar-dialog').classList.remove('hidden')">
       <div class="profile-avatar-preview">
       {% if current_user.avatar_data %}<img id="profile-avatar" src="/api/profile/avatar/{{ current_user.id }}" alt="Foto de perfil">{% endif %}
       <span id="profile-initials"{% if current_user.avatar_data %} hidden{% endif %}>{{ current_user.name[:2]|upper }}</span>
@@ -31,7 +31,7 @@
 </main>
 <div id="avatar-dialog" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="avatar-dialog-title">
   <div class="modal-content avatar-dialog-content">
-    <button id="avatar-dialog-close" type="button" class="modal-close" aria-label="Cerrar">×</button>
+    <button id="avatar-dialog-close" type="button" class="modal-close" aria-label="Cerrar" onclick="document.getElementById('avatar-dialog').classList.add('hidden')">×</button>
     <h2 id="avatar-dialog-title">Cambiar foto de perfil</h2>
     <div class="avatar-actions">
       <label class="btn" for="avatar-file">Elegir una foto</label>
@@ -51,5 +51,5 @@
     </div>
   </div>
 </div>
-<script type="module" src="/js/profile-avatar.js"></script>
+<script type="module" src="/js/profile-avatar.js?v=2"></script>
 {% endblock %}
