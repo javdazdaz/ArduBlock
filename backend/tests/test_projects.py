@@ -118,6 +118,52 @@ def test_strict_revisions_reject_legacy_put(monkeypatch, client, seed_classroom)
     assert response.get_json()["error"] == "revision_required"
 
 
+def test_project_history_records_create_and_save(client, seed_classroom):
+    seed_classroom("ABC123")
+    _register(client, "a@example.com")
+    created = _create(client, name="historial.ino").get_json()
+
+    first = client.get(f"/api/projects/{created['id']}/history")
+    assert first.status_code == 200
+    assert [(item["revision"], item["reason"]) for item in first.get_json()] == [(1, "create")]
+
+    saved = client.put(
+        f"/api/projects/{created['id']}",
+        json={"name": "historial-2.ino", "revision": 1},
+    )
+    assert saved.status_code == 200
+
+    history = client.get(f"/api/projects/{created['id']}/history").get_json()
+    assert [item["revision"] for item in history] == [2, 1]
+    assert history[0]["reason"] == "save"
+
+
+def test_restore_history_creates_new_revision_without_deleting_history(
+    client, seed_classroom
+):
+    seed_classroom("ABC123")
+    _register(client, "a@example.com")
+    created = _create(client, name="original.ino", data={"state": {"x": 1}}).get_json()
+    client.put(
+        f"/api/projects/{created['id']}",
+        json={"name": "actual.ino", "data": {"state": {"x": 2}}, "revision": 1},
+    )
+
+    history = client.get(f"/api/projects/{created['id']}/history").get_json()
+    original = next(item for item in history if item["revision"] == 1)
+    restored = client.post(
+        f"/api/projects/{created['id']}/history/{original['id']}/restore",
+        json={"revision": 2},
+    )
+    assert restored.status_code == 200
+    assert restored.get_json()["name"] == "original.ino"
+    assert restored.get_json()["revision"] == 3
+
+    final_history = client.get(f"/api/projects/{created['id']}/history").get_json()
+    assert [item["revision"] for item in final_history] == [3, 2, 1]
+    assert final_history[0]["reason"] == "restore"
+
+
 def test_partial_update_keeps_data(client, seed_classroom):
     seed_classroom("ABC123")
     _register(client, "a@example.com")

@@ -117,6 +117,10 @@ class Project(Base):
     updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)
 
     user = relationship("User", back_populates="projects", foreign_keys=[user_id])
+    revisions = relationship(
+        "ProjectRevision", back_populates="project", cascade="all, delete-orphan",
+        order_by="ProjectRevision.revision.desc()",
+    )
 
     def to_dict(self):
         return {
@@ -129,6 +133,21 @@ class Project(Base):
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
+
+
+class ProjectRevision(Base):
+    """Snapshot persistente de un proyecto en una revisión confirmada."""
+    __tablename__ = "project_revisions"
+
+    id = Column(Integer, primary_key=True)
+    project_id = Column(Integer, ForeignKey("projects.id"), nullable=False, index=True)
+    revision = Column(Integer, nullable=False)
+    author_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    reason = Column(String(30), nullable=False, default="save")
+    snapshot = Column(Text, nullable=False)
+    created_at = Column(DateTime, default=utcnow)
+
+    project = relationship("Project", back_populates="revisions")
 
 
 class Activity(Base):

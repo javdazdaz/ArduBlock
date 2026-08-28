@@ -13,8 +13,9 @@ from pathlib import Path
 from flask import Blueprint, jsonify, request
 from flask_login import current_user, login_required
 
-from backend.models import Project, Classroom, ClassroomStudent, Class, User, Activity, ClassActivity
+from backend.models import Project, ProjectRevision, Classroom, ClassroomStudent, Class, User, Activity, ClassActivity
 from backend.db import get_session as _get_session
+from backend.project_history import record_project_revision
 
 projects_bp = Blueprint("projects", __name__)
 
@@ -81,14 +82,16 @@ def _update_project(s, project, data, actor_id):
                 "current_revision": current.revision,
                 "project": current.to_dict(),
             }), 409
-        s.commit()
         s.refresh(project)
+        record_project_revision(s, project, actor_id, "save")
+        s.commit()
         return None
 
     for field, value in values.items():
         setattr(project, field, value)
     project.revision = (project.revision or 1) + 1
     project.updated_by = actor_id
+    record_project_revision(s, project, actor_id, "save")
     s.commit()
     return None
 
@@ -160,6 +163,75 @@ def load_project(project_id):
         if not p or p.user_id != current_user.id:
             return jsonify({"error": "Proyecto no encontrado"}), 404
         return jsonify(p.to_dict())
+    finally:
+        s.close()
+
+
+@projects_bp.route("/api/projects/<int:project_id>/history", methods=["GET"])
+@login_required
+def list_project_history(project_id):
+    """Devuelve las revisiones persistentes del proyecto propio."""
+    s = _get_session()
+    try:
+        project = s.get(Project, project_id)
+        if not project or project.user_id != current_user.id:
+            return jsonify({"error": "Proyecto no encontrado"}), 404
+        return jsonify([
+            {
+                "id": revision.id,
+                "revision": revision.revision,
+                "author_id": revision.author_id,
+                "reason": revision.reason,
+                "created_at": revision.created_at.isoformat() if revision.created_at else None,
+            }
+            for revision in project.revisions
+        ])
+    finally:
+        s.close()
+
+
+@projects_bp.route("/api/projects/<int:project_id>/history/<int:history_id>/restore", methods=["POST"])
+@login_required
+def restore_project_history(project_id, history_id):
+    """Restaura un snapshot como una nueva revisión del proyecto propio."""
+    data = request.get_json(silent=True) or {}
+    expected = data.get("revision")
+    if expected is not None and (isinstance(expected, bool) or not isinstance(expected, int) or expected < 1):
+        return jsonify({"error": "revision inválida"}), 400
+    s = _get_session()
+    try:
+        project = s.get(Project, project_id)
+        if not project or project.user_id != current_user.id:
+            return jsonify({"error": "Proyecto no encontrado"}), 404
+        if expected is not None and project.revision != expected:
+            return jsonify({
+                "error": "conflict",
+                "current_revision": project.revision,
+                "project": project.to_dict(),
+            }), 409
+        history = s.query(ProjectRevision).filter_by(
+            id=history_id, project_id=project_id
+        ).first()
+        if not history:
+            return jsonify({"error": "Revisión no encontrada"}), 404
+        try:
+            snapshot = json.loads(history.snapshot)
+        except (TypeError, json.JSONDecodeError):
+            return jsonify({"error": "Snapshot inválido"}), 500
+        if not isinstance(snapshot, dict) or not isinstance(snapshot.get("data"), str):
+            return jsonify({"error": "Snapshot inválido"}), 500
+
+        project.name = _clean_name(snapshot.get("name"))
+        project.data = snapshot["data"]
+        project.board = snapshot.get("board", project.board)
+        restored_class_id = snapshot.get("class_id")
+        project.class_id = restored_class_id if restored_class_id and s.get(Class, restored_class_id) else None
+        project.thumbnail = snapshot.get("thumbnail")
+        project.revision = (project.revision or 1) + 1
+        project.updated_by = current_user.id
+        record_project_revision(s, project, current_user.id, "restore")
+        s.commit()
+        return jsonify(project.to_dict())
     finally:
         s.close()
 
@@ -272,6 +344,8 @@ def create_project():
             updated_by=current_user.id,
         )
         s.add(p)
+        s.flush()
+        record_project_revision(s, p, current_user.id, "create")
         s.commit()
         return jsonify(p.to_dict()), 201
     finally:
@@ -366,6 +440,7 @@ def teacher_regen_thumbnail(project_id):
         p.thumbnail = data.get("thumbnail")
         p.revision = (p.revision or 1) + 1
         p.updated_by = current_user.id
+        record_project_revision(s, p, current_user.id, "save")
         s.commit()
         return jsonify(p.to_dict())
     finally:

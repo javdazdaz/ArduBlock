@@ -28,6 +28,7 @@ from backend.db import get_session
 from backend.messages import get_message
 from backend.config import FRONTEND_DIR
 from backend.rate_limit import is_rate_limited
+from backend.project_history import record_project_revision
 
 auth_bp = Blueprint("auth", __name__)
 login_manager = LoginManager()
@@ -725,14 +726,12 @@ def delete_class(class_id):
             flash(get_message(g.lang, "classroom_not_found"), "error")
             return redirect(url_for("auth.teacher_dashboard"))
         if form.validate_on_submit():
-            s.query(Project).filter_by(class_id=class_id).update(
-                {
-                    Project.class_id: None,
-                    Project.revision: func.coalesce(Project.revision, 1) + 1,
-                    Project.updated_by: current_user.id,
-                },
-                synchronize_session=False,
-            )
+            projects = s.query(Project).filter_by(class_id=class_id).all()
+            for project in projects:
+                project.class_id = None
+                project.revision = (project.revision or 1) + 1
+                project.updated_by = current_user.id
+                record_project_revision(s, project, current_user.id, "class-unassigned")
             s.query(ClassActivity).filter_by(class_id=class_id).delete()
             s.delete(cls)
             s.commit()
@@ -945,6 +944,8 @@ def clone_activity(class_id, activity_id):
             updated_by=current_user.id,
         )
         s.add(clone)
+        s.flush()
+        record_project_revision(s, clone, current_user.id, "create")
         s.commit()
         flash(get_message(g.lang, "activity_cloned"), "success")
         return redirect(f"/project/{clone.id}")
@@ -1072,6 +1073,7 @@ def teacher_edit_project(student_id, project_id):
                 p.class_id = None
             p.revision = (p.revision or 1) + 1
             p.updated_by = current_user.id
+            record_project_revision(s, p, current_user.id, "save")
             s.commit()
             flash(get_message(g.lang, "project_updated"), "success")
     finally:
