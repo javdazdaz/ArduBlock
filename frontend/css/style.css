@@ -353,6 +353,15 @@ header .subtitle {
   display: none;
 }
 
+.collaborator-modal-content { width: 520px; max-width: calc(100vw - 2rem); }
+.collaborator-form { display: flex; gap: .5rem; margin: 1rem 0; flex-wrap: wrap; }
+.collaborator-form input { flex: 1 1 220px; min-width: 0; }
+.collaborator-form select { flex: 0 0 110px; }
+.collaborators-list { display: grid; gap: .5rem; }
+.collaborator-row { display: flex; justify-content: space-between; align-items: center; gap: .75rem; padding: .6rem; border: 1px solid var(--border); border-radius: 6px; }
+.collaborator-row small { color: var(--text-muted); }
+.collaborator-presence { color: var(--text-muted); min-height: 1.2em; }
+
 .project-dropdown-item {
   padding: 0.5rem 0.8rem;
   cursor: pointer;

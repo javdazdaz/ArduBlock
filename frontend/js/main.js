@@ -180,7 +180,8 @@ class FixedEdgesScrollMetricsManager extends ScrollMetricsManager {
 FixedEdgesScrollMetricsManager.setFixedEdges({ top: true, left: true });
 
 // Módulos de la aplicación
-import { initProjectManager, lsKey, isWorkspaceDirty, resetCurrentProject, loadProject, loadTeacherProject, loadReferenceProject, setClassId } from './project-manager.js';
+import { initProjectManager, lsKey, isWorkspaceDirty, resetCurrentProject, loadProject, loadTeacherProject, loadReferenceProject, setClassId, getCurrentProjectId } from './project-manager.js';
+import { initCollaboratorsUI } from './collaborators.js';
 import { initSettings, getSetting } from './settings.js';
 import { initSerial }        from './serial.js';
 import { initUpload }         from './upload.js';
@@ -514,6 +515,7 @@ const LAST_KEY  = LS_PREFIX + '__last__';
 initProjectManager({
   workspace, projectInput, projectList, showToast, LS_PREFIX, LAST_KEY
 });
+initCollaboratorsUI({ getProjectId: getCurrentProjectId, showToast });
 
 initSettings({
   workspace, toolbox, updateCode, initValidator, serialBaud

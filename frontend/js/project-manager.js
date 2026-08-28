@@ -30,6 +30,7 @@ export function resetCurrentProject() {
   conflictState = null;
   setReadOnly(false);
   delete projectInput?.dataset?.projectId;
+  window.dispatchEvent(new CustomEvent('ardublock:project-changed'));
 }
 
 export function setClassId(id) { currentClassId = id; }
@@ -97,6 +98,8 @@ export function initProjectManager(deps) {
 // ═══ Helpers ═════════════════════════════════════
 
 export function getProjectName() { return projectInput.value.trim(); }
+
+export function getCurrentProjectId() { return currentProjectId; }
 
 function lsKey(name) {
   const sanitized = name.trim().replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_\-.]/g, '').substring(0, 64) || 'sin-nombre';
@@ -216,6 +219,7 @@ export async function loadProject(idOrName) {
   // Tabs antes que bloques (ver workspace-restore.js).
   restoreWorkspaceState(workspace, { state: record.state, tabs: record.tabs, sketchName: displayName });
   currentProjectId = (typeof idOrName === 'number') ? idOrName : null;
+  window.dispatchEvent(new CustomEvent('ardublock:project-changed'));
   if (currentProjectId && !readOnly && window._configureBlockCollaboration) {
     window._configureBlockCollaboration(currentProjectId);
   }
