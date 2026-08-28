@@ -2,11 +2,16 @@ import { csrfFetch } from './csrf.js';
 import { drawAvatarOne, drawAvatarTwo } from './canvas-avatars.js';
 
 const file = document.getElementById('avatar-file');
+const dialog = document.getElementById('avatar-dialog');
 const area = document.getElementById('crop-area');
 const canvas = document.getElementById('crop-canvas');
 const ctx = canvas?.getContext('2d');
 const zoom = document.getElementById('crop-zoom');
 let image = null; let scale = 1; let offsetX = 0; let offsetY = 0; let dragging = false; let start = null;
+
+document.getElementById('avatar-open')?.addEventListener('click', () => dialog?.classList.remove('hidden'));
+document.getElementById('avatar-dialog-close')?.addEventListener('click', () => dialog?.classList.add('hidden'));
+dialog?.addEventListener('click', event => { if (event.target === dialog) dialog.classList.add('hidden'); });
 
 function drawCrop() {
   if (!image) return;
@@ -51,5 +56,5 @@ document.getElementById('crop-cancel')?.addEventListener('click', () => area.cla
 document.getElementById('avatar-remove')?.addEventListener('click', async () => { const r = await csrfFetch('/api/profile/avatar', {method: 'DELETE'}); if (r.ok) location.reload(); });
 for (const button of document.querySelectorAll('.avatar-choice')) {
   const c = button.querySelector('canvas'); (button.dataset.avatar === 'one' ? drawAvatarOne : drawAvatarTwo)(c.getContext('2d'), 96);
-  button.addEventListener('click', async () => { const temp = document.createElement('canvas'); temp.width = temp.height = 256; (button.dataset.avatar === 'one' ? drawAvatarOne : drawAvatarTwo)(temp.getContext('2d')); try { await saveData('canvas', temp.toDataURL('image/png')); } catch (e) { alert(e.message); } });
+  button.addEventListener('click', async () => { const temp = document.createElement('canvas'); temp.width = temp.height = 256; (button.dataset.avatar === 'one' ? drawAvatarOne : drawAvatarTwo)(temp.getContext('2d')); try { await saveData('canvas', temp.toDataURL('image/png')); dialog?.classList.add('hidden'); } catch (e) { alert(e.message); } });
 }
