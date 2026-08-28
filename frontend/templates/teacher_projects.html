@@ -5,13 +5,13 @@
 <main>
   <div class="page-header">
     <h2>📁 {{ _('my_projects') }} ({{ projects|length }})</h2>
-    <a href="/app#new" class="btn">{{ _('new_project') }}</a>
+    <a href="/project/new" class="btn">{{ _('new_project') }}</a>
   </div>
   <p class="muted">{{ _('teacher_projects_hint') }}</p>
   {% if projects %}
     <div class="project-grid">
       {% for p in projects %}
-        <a href="/app#project={{ p.id }}" class="project-card">
+        <a href="/project/{{ p.id }}" class="project-card">
           {% if p.thumbnail %}
             <img src="{{ p.thumbnail }}" alt="{{ p.name }}" class="project-thumb">
           {% else %}

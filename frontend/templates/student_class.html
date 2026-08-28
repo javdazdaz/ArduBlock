@@ -16,7 +16,7 @@
         <div class="project-edit-row">
           <div style="flex:1">{{ a.name }}</div>
           {% if a.reference_project %}
-            <a href="/app#project={{ a.reference_project.id }}&mode=reference" class="btn btn-ghost btn-small">{{ _('view_reference') }}</a>
+            <a href="/project/{{ a.reference_project.id }}/reference" class="btn btn-ghost btn-small">{{ _('view_reference') }}</a>
             <form method="POST" action="{{ url_for('auth.clone_activity', class_id=cls.id, activity_id=a.id) }}" class="inline-form">
               {{ clone_form.hidden_tag() }}
               <button type="submit" class="btn btn-small">{{ _('clone_activity') }}</button>
@@ -31,12 +31,12 @@
 
   <div class="page-header">
     <h2>📁 {{ _('my_projects') }}</h2>
-    <a href="/app#class={{ cls.id }}" class="btn-new">{{ _('new_project') }}</a>
+    <a href="/project/new/class/{{ cls.id }}" class="btn-new">{{ _('new_project') }}</a>
   </div>
   {% if projects %}
     <div class="project-grid">
       {% for p in projects %}
-        <a href="/app#project={{ p.id }}" class="project-card">
+        <a href="/project/{{ p.id }}" class="project-card">
           {% if p.thumbnail %}
             <img src="{{ p.thumbnail }}" alt="{{ p.name }}" class="project-thumb">
           {% else %}
@@ -51,7 +51,7 @@
   {% else %}
     <div class="empty">
       <p>{{ _('no_projects') }}</p>
-      <a href="/app#class={{ cls.id }}" class="btn-new">{{ _('first_project') }}</a>
+      <a href="/project/new/class/{{ cls.id }}" class="btn-new">{{ _('first_project') }}</a>
     </div>
   {% endif %}
 </main>

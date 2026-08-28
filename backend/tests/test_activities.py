@@ -270,7 +270,7 @@ def test_student_clones_activity_to_account(client, seed_classroom):
 
     # Redirige al editor con la copia abierta.
     assert r.status_code == 302
-    assert "/app#project=" in r.headers["Location"]
+    assert r.headers["Location"].endswith(f"/project/{pid + 1}")
 
     s = get_session()
     try:

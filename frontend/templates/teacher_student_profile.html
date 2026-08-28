@@ -28,8 +28,8 @@
               </select>
               <button type="submit" class="btn btn-small">{{ _('save') }}</button>
             </form>
-            <a href="/app#project={{ p.id }}&mode=view" class="btn btn-ghost btn-small">{{ _('view') }}</a>
-            <a href="/app#project={{ p.id }}&mode=edit" class="btn btn-small">{{ _('edit') }}</a>
+            <a href="/project/{{ p.id }}/view" class="btn btn-ghost btn-small">{{ _('view') }}</a>
+            <a href="/project/{{ p.id }}/edit" class="btn btn-small">{{ _('edit') }}</a>
           </div>
         {% endfor %}
       </div>

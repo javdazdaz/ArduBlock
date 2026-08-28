@@ -17,7 +17,7 @@
     <div class="project-grid">
       {% for p in projects %}
         <div class="project-card">
-          <a href="/app#project={{ p.id }}&mode=view" class="project-card-body">
+          <a href="/project/{{ p.id }}/view" class="project-card-body">
             {% if p.thumbnail %}
               <img src="{{ p.thumbnail }}" alt="{{ p.name }}" class="project-thumb">
             {% else %}
@@ -28,8 +28,8 @@
             <div class="meta">{{ p.updated_at.strftime('%d/%m/%Y %H:%M') if p.updated_at else '' }}</div>
           </a>
           <div class="project-card-actions">
-            <a href="/app#project={{ p.id }}&mode=view" class="btn btn-ghost btn-small">{{ _('view') }}</a>
-            <a href="/app#project={{ p.id }}&mode=edit" class="btn btn-small">{{ _('edit') }}</a>
+            <a href="/project/{{ p.id }}/view" class="btn btn-ghost btn-small">{{ _('view') }}</a>
+            <a href="/project/{{ p.id }}/edit" class="btn btn-small">{{ _('edit') }}</a>
           </div>
         </div>
       {% endfor %}

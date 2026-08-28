@@ -77,3 +77,15 @@ def test_production_does_not_register_host_hardware(monkeypatch):
     assert "/api/serial/open" not in routes
     assert "/api/boards" not in routes
     assert "/api/arduino-cli/install" not in routes
+
+
+def test_canonical_project_editor_routes(client):
+    for path in (
+        "/project/new",
+        "/project/new/class/12",
+        "/project/12",
+        "/project/12/edit",
+        "/project/12/view",
+        "/project/12/reference",
+    ):
+        assert client.get(path).status_code == 200

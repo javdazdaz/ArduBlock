@@ -938,7 +938,7 @@ def clone_activity(class_id, activity_id):
         s.add(clone)
         s.commit()
         flash(get_message(g.lang, "activity_cloned"), "success")
-        return redirect(f"/app#project={clone.id}")
+        return redirect(f"/project/{clone.id}")
     finally:
         s.close()
 

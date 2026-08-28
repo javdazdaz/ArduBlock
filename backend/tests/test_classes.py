@@ -200,4 +200,4 @@ def test_student_class_dashboard(client, seed_classroom):
     r = client.get(f"/student/class/{clid}")
     assert r.status_code == 200
     assert b"p.ino" in r.data
-    assert b"/app#class=" in r.data
+    assert b"/project/new/class/" in r.data

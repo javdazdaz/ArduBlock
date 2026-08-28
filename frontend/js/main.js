@@ -41,16 +41,18 @@ let DASHBOARD_URL = '/';
     IS_GUEST_MODE = true;
   }
 
-  // Estado nuevo: fragmento local, no se envía al servidor. Se mantienen
-  // los parámetros antiguos como compatibilidad para enlaces ya existentes.
+  // Estado canónico: /project/<id>[/edit|/view|/reference]. Se mantienen
+  // fragmentos y parámetros antiguos como compatibilidad temporal.
   const legacyParams = new URLSearchParams(window.location.search);
   const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
-  const pid = hashParams.get('project') || legacyParams.get('project');
-  const mode = hashParams.get('mode');
+  const projectMatch = window.location.pathname.match(/^\/project\/(\d+)(?:\/(edit|view|reference))?\/?$/);
+  const newClassMatch = window.location.pathname.match(/^\/project\/new\/class\/(\d+)\/?$/);
+  const pid = projectMatch?.[1] || hashParams.get('project') || legacyParams.get('project');
+  const mode = projectMatch?.[2] || hashParams.get('mode');
   const isView = mode === 'view' || legacyParams.get('view') === '1';
   const isEdit = mode === 'edit' || legacyParams.get('edit') === '1';
   const isRef = mode === 'reference' || legacyParams.get('ref') === '1';
-  const cid = hashParams.get('class') || legacyParams.get('class');
+  const cid = newClassMatch?.[1] || hashParams.get('class') || legacyParams.get('class');
   if (cid) {
     const c = Number(cid);
     if (Number.isInteger(c) && c > 0) setClassId(c);
@@ -70,7 +72,8 @@ let DASHBOARD_URL = '/';
     let internalReferrer = false;
     try {
       const ref = new URL(document.referrer);
-      internalReferrer = ref.origin === window.location.origin && ref.pathname !== '/app';
+      internalReferrer = ref.origin === window.location.origin &&
+        !/^\/app\/?$/.test(ref.pathname) && !/^\/project\//.test(ref.pathname);
     } catch (_) { /* navegación directa */ }
     backBtn.href = fromParam || (internalReferrer ? document.referrer : DASHBOARD_URL);
     if (!fromParam && internalReferrer) {
@@ -102,8 +105,8 @@ let DASHBOARD_URL = '/';
     brand.appendChild(badge);
   }
 
-  // Cargar proyecto por URL: /app?project=<id>  /app?project=<id>&view=1 (solo lectura)
-  // o /app?project=<id>&edit=1 (edición docente).
+  // Cargar proyecto por URL canónica: /project/<id>, con /edit, /view o
+  // /reference según el contexto. También se aceptan enlaces legacy.
   if (!IS_GUEST_MODE && pid) {
     const id = Number(pid);
     if (Number.isInteger(id) && id > 0) {
