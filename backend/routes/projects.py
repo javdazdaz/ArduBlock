@@ -14,10 +14,11 @@ from pathlib import Path
 from flask import Blueprint, jsonify, request
 from flask_login import current_user, login_required
 
-from backend.models import Project, ProjectFile, ProjectFileOperation, ProjectRevision, Classroom, ClassroomStudent, Class, User, Activity, ClassActivity
+from backend.models import Project, ProjectFile, ProjectFileOperation, ProjectBlockOperation, ProjectRevision, Classroom, ClassroomStudent, Class, User, Activity, ClassActivity
 from backend.db import get_session as _get_session
 from backend.project_history import record_project_revision
 from backend.project_files import sync_project_files, update_project_tab
+from backend.block_operations import apply_operation, semantic_state_from_workspace, validate_operation
 from backend.text_ot import apply_changes, transform_changes, validate_changes
 from backend.collaboration import broker
 
@@ -383,6 +384,98 @@ def submit_file_operation(project_id, file_id):
             "revision": new_revision,
             "changes": transformed,
         })
+    finally:
+        s.close()
+        _FILE_OPERATION_LOCK.release()
+
+
+def _current_block_state(session, project):
+    try:
+        payload = json.loads(project.data) if isinstance(project.data, str) else project.data
+    except (TypeError, json.JSONDecodeError):
+        payload = {}
+    state = semantic_state_from_workspace(payload.get("state", {}) if isinstance(payload, dict) else {})
+    operations = (
+        session.query(ProjectBlockOperation)
+        .filter_by(project_id=project.id)
+        .order_by(ProjectBlockOperation.revision.asc())
+        .all()
+    )
+    for stored in operations:
+        state = apply_operation(state, json.loads(stored.operation))
+    return state
+
+
+@projects_bp.route("/api/projects/<int:project_id>/block-operations", methods=["GET"])
+@login_required
+def list_block_operations(project_id):
+    since = request.args.get("since", default=0, type=int)
+    if since < 0:
+        return jsonify({"error": "since inválido"}), 400
+    s = _get_session()
+    try:
+        project = s.get(Project, project_id)
+        if not project or project.user_id != current_user.id:
+            return jsonify({"error": "Proyecto no encontrado"}), 404
+        rows = s.query(ProjectBlockOperation).filter(
+            ProjectBlockOperation.project_id == project_id,
+            ProjectBlockOperation.revision > since,
+        ).order_by(ProjectBlockOperation.revision.asc()).all()
+        return jsonify([{
+            "id": row.id, "revision": row.revision, "base_revision": row.base_revision,
+            "client_id": row.client_id, "sequence": row.sequence,
+            "operation": json.loads(row.operation), "author_id": row.author_id,
+            "created_at": row.created_at.isoformat() if row.created_at else None,
+        } for row in rows])
+    finally:
+        s.close()
+
+
+@projects_bp.route("/api/projects/<int:project_id>/block-operations", methods=["POST"])
+@login_required
+def submit_block_operation(project_id):
+    data = request.get_json(silent=True) or {}
+    base_revision = data.get("base_revision")
+    client_id = data.get("client_id")
+    sequence = data.get("sequence")
+    operation = data.get("operation")
+    if (isinstance(base_revision, bool) or not isinstance(base_revision, int) or base_revision < 1
+            or not isinstance(client_id, str) or not client_id or len(client_id) > 100
+            or isinstance(sequence, bool) or not isinstance(sequence, int) or sequence < 0
+            or not isinstance(operation, dict)):
+        return jsonify({"error": "Operación inválida"}), 400
+    try:
+        validate_operation(operation)
+    except ValueError as error:
+        return jsonify({"error": str(error)}), 400
+    _FILE_OPERATION_LOCK.acquire()
+    s = _get_session()
+    try:
+        project = s.get(Project, project_id)
+        if not project or project.user_id != current_user.id:
+            return jsonify({"error": "Proyecto no encontrado"}), 404
+        duplicate = s.query(ProjectBlockOperation).filter_by(
+            project_id=project_id, client_id=client_id, sequence=sequence
+        ).first()
+        if duplicate:
+            return jsonify({"accepted": True, "duplicate": True, "revision": duplicate.revision,
+                            "operation": json.loads(duplicate.operation)})
+        current_revision = s.query(ProjectBlockOperation).filter_by(project_id=project_id).count() + 2
+        if base_revision > current_revision:
+            return jsonify({"error": "revision_ahead", "current_revision": current_revision}), 409
+        try:
+            state = _current_block_state(s, project)
+            state = apply_operation(state, operation)
+        except ValueError as error:
+            return jsonify({"error": str(error), "current_revision": current_revision}), 409
+        row = ProjectBlockOperation(
+            project_id=project_id, revision=current_revision, base_revision=base_revision,
+            client_id=client_id, sequence=sequence, operation=json.dumps(operation, ensure_ascii=False),
+            author_id=current_user.id,
+        )
+        s.add(row)
+        s.commit()
+        return jsonify({"accepted": True, "revision": current_revision, "operation": operation})
     finally:
         s.close()
         _FILE_OPERATION_LOCK.release()

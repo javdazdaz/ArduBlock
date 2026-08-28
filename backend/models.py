@@ -125,6 +125,10 @@ class Project(Base):
         "ProjectFile", back_populates="project", cascade="all, delete-orphan",
         order_by="ProjectFile.filename.asc()",
     )
+    block_operations = relationship(
+        "ProjectBlockOperation", back_populates="project", cascade="all, delete-orphan",
+        order_by="ProjectBlockOperation.revision.asc()",
+    )
 
     def to_dict(self):
         return {
@@ -195,6 +199,26 @@ class ProjectFileOperation(Base):
     created_at = Column(DateTime, default=utcnow)
 
     file = relationship("ProjectFile", back_populates="operations")
+
+
+class ProjectBlockOperation(Base):
+    """Operación semántica persistente del grafo Blockly."""
+    __tablename__ = "project_block_operations"
+    __table_args__ = (
+        UniqueConstraint("project_id", "client_id", "sequence", name="uq_block_operation_sequence"),
+    )
+
+    id = Column(Integer, primary_key=True)
+    project_id = Column(Integer, ForeignKey("projects.id"), nullable=False, index=True)
+    revision = Column(Integer, nullable=False)
+    base_revision = Column(Integer, nullable=False)
+    client_id = Column(String(100), nullable=False)
+    sequence = Column(Integer, nullable=False)
+    operation = Column(Text, nullable=False)
+    author_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    created_at = Column(DateTime, default=utcnow)
+
+    project = relationship("Project", back_populates="block_operations")
 
 
 class Activity(Base):

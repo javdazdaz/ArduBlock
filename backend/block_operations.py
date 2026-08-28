@@ -1,6 +1,7 @@
 """Operaciones semánticas y validación de grafos Blockly."""
 
 from copy import deepcopy
+from typing import Any
 
 MAX_OPERATION_BYTES = 64 * 1024
 VALID_TYPES = {
@@ -8,6 +9,35 @@ VALID_TYPES = {
     "disconnect_input", "connect_next", "disconnect_next",
     "create_variable", "rename_variable",
 }
+
+
+def semantic_state_from_workspace(workspace: dict) -> dict:
+    """Reduce Blockly serialization to bloques, campos y conexiones semánticas."""
+    state: dict[str, Any] = {"blocks": {}, "variables": {}}
+    if not isinstance(workspace, dict):
+        return state
+    raw_variables = workspace.get("variables", {}).get("variables", []) if isinstance(workspace.get("variables"), dict) else workspace.get("variables", [])
+    for variable in raw_variables:
+        if isinstance(variable, dict) and variable.get("id"):
+            state["variables"][variable["id"]] = variable.get("name", "")
+    raw_blocks = workspace.get("blocks", {}).get("blocks", []) if isinstance(workspace.get("blocks"), dict) else []
+    def visit(raw):
+        if not isinstance(raw, dict) or not raw.get("id") or raw["id"] in state["blocks"]:
+            return
+        block = {"type": raw.get("type", ""), "fields": raw.get("fields", {}), "inputs": {}, "next": None}
+        for input_name, input_data in raw.get("inputs", {}).items():
+            child = input_data.get("block") if isinstance(input_data, dict) else None
+            if child and child.get("id"):
+                block["inputs"][input_name] = child["id"]
+                visit(child)
+        next_block = raw.get("next", {}).get("block") if isinstance(raw.get("next"), dict) else None
+        if next_block and next_block.get("id"):
+            block["next"] = next_block["id"]
+            visit(next_block)
+        state["blocks"][raw["id"]] = block
+    for raw in raw_blocks:
+        visit(raw)
+    return state
 
 
 def validate_operation(operation: dict) -> dict:
