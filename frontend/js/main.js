@@ -41,12 +41,18 @@ let DASHBOARD_URL = '/';
     IS_GUEST_MODE = true;
   }
 
-  const params = new URLSearchParams(window.location.search);
-  const pid = params.get('project');
-  const isView = params.get('view') === '1';
-  const isEdit = params.get('edit') === '1';
-  const isRef = params.get('ref') === '1';
-  const cid = params.get('class');
+  // Estado canónico: /project/<id>[/edit|/view|/reference]. Se mantienen
+  // fragmentos y parámetros antiguos como compatibilidad temporal.
+  const legacyParams = new URLSearchParams(window.location.search);
+  const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+  const projectMatch = window.location.pathname.match(/^\/project\/(\d+)(?:\/(edit|view|reference))?\/?$/);
+  const newClassMatch = window.location.pathname.match(/^\/project\/new\/class\/(\d+)\/?$/);
+  const pid = projectMatch?.[1] || hashParams.get('project') || legacyParams.get('project');
+  const mode = projectMatch?.[2] || hashParams.get('mode');
+  const isView = mode === 'view' || legacyParams.get('view') === '1';
+  const isEdit = mode === 'edit' || legacyParams.get('edit') === '1';
+  const isRef = mode === 'reference' || legacyParams.get('ref') === '1';
+  const cid = newClassMatch?.[1] || hashParams.get('class') || legacyParams.get('class');
   if (cid) {
     const c = Number(cid);
     if (Number.isInteger(c) && c > 0) setClassId(c);
@@ -58,13 +64,26 @@ let DASHBOARD_URL = '/';
   const brandLink = document.getElementById('brand-link');
   if (brandLink) brandLink.href = DASHBOARD_URL;
 
-  // Botón "volver": ?from=<ruta> si viene de un dashboard; si no, al dashboard del rol.
+  // Botón "volver": usa el historial cuando el origen es interno. El
+  // parámetro from antiguo se acepta solo para compatibilidad.
   const backBtn = document.getElementById('btn-back');
   if (backBtn) {
-    const fromParam = params.get('from');
-    backBtn.href = fromParam || DASHBOARD_URL;
+    const fromParam = legacyParams.get('from');
+    let internalReferrer = false;
+    try {
+      const ref = new URL(document.referrer);
+      internalReferrer = ref.origin === window.location.origin &&
+        !/^\/app\/?$/.test(ref.pathname) && !/^\/project\//.test(ref.pathname);
+    } catch (_) { /* navegación directa */ }
+    backBtn.href = fromParam || (internalReferrer ? document.referrer : DASHBOARD_URL);
+    if (!fromParam && internalReferrer) {
+      backBtn.addEventListener('click', (event) => {
+        event.preventDefault();
+        window.history.back();
+      });
+    }
     const label = document.getElementById('back-label');
-    if (label) label.textContent = fromParam ? 'Volver' : (IS_GUEST_MODE ? 'Inicio' : 'Dashboard');
+    if (label) label.textContent = (fromParam || internalReferrer) ? 'Volver' : (IS_GUEST_MODE ? 'Inicio' : 'Dashboard');
     backBtn.classList.remove('hidden');
   }
 
@@ -86,8 +105,8 @@ let DASHBOARD_URL = '/';
     brand.appendChild(badge);
   }
 
-  // Cargar proyecto por URL: /app?project=<id>  /app?project=<id>&view=1 (solo lectura)
-  // o /app?project=<id>&edit=1 (edición docente).
+  // Cargar proyecto por URL canónica: /project/<id>, con /edit, /view o
+  // /reference según el contexto. También se aceptan enlaces legacy.
   if (!IS_GUEST_MODE && pid) {
     const id = Number(pid);
     if (Number.isInteger(id) && id > 0) {

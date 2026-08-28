@@ -153,7 +153,14 @@ def create_app() -> Flask:
 
     @app.route("/app")
     @app.route("/app/")
-    def editor():
+    @app.route("/project/new")
+    @app.route("/project/new/")
+    @app.route("/project/new/class/<int:class_id>")
+    @app.route("/project/<int:project_id>")
+    @app.route("/project/<int:project_id>/edit")
+    @app.route("/project/<int:project_id>/view")
+    @app.route("/project/<int:project_id>/reference")
+    def editor(project_id=None, class_id=None):
         return send_from_directory(str(FRONTEND_DIR), "index.html")
 
     @app.route("/<path:filename>", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"])
