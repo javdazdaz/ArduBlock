@@ -99,7 +99,7 @@ export function initProjectManager(deps) {
 
 export function getProjectName() { return projectInput.value.trim(); }
 
-export function getCurrentProjectId() { return currentProjectId; }
+export function getCurrentProjectId() { return currentProjectId || teacherEditId; }
 
 function lsKey(name) {
   const sanitized = name.trim().replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_\-.]/g, '').substring(0, 64) || 'sin-nombre';
@@ -259,6 +259,16 @@ async function loadForeignProject(id, url, editable) {
     // Tabs antes que bloques (ver workspace-restore.js).
     restoreWorkspaceState(workspace, { state: record.state, tabs: record.tabs, sketchName: displayName });
     currentProjectId = null; // proyecto ajeno: no se guarda como propio
+    if (editable && window._configureBlockCollaboration) {
+      window._configureBlockCollaboration(id);
+    }
+    if (editable && window._tabManager?.configureTextCollaboration) {
+      try {
+        const filesResponse = await fetch(`/api/projects/${id}/files`);
+        const files = filesResponse.ok ? await filesResponse.json() : [];
+        window._tabManager.configureTextCollaboration(id, files);
+      } catch (_) { /* colaboración opcional; el editor docente sigue disponible */ }
+    }
     projectInput.value = displayName;
     window._exampleComment = null;
     localStorage.setItem(LAST_KEY, displayName);

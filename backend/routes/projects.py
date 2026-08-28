@@ -11,7 +11,7 @@ import os
 import threading
 from pathlib import Path
 
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, Response
 from flask_login import current_user, login_required
 
 from backend.models import Project, ProjectFile, ProjectFileOperation, ProjectBlockOperation, ProjectRevision, ProjectCollaborator, Classroom, ClassroomStudent, Class, User, Activity, ClassActivity
@@ -22,12 +22,35 @@ from backend.block_operations import apply_operation, semantic_state_from_worksp
 from backend.text_ot import apply_changes, transform_changes, validate_changes
 from backend.collaboration import broker
 from backend.project_permissions import ROLES, project_access
+from backend.avatar import avatar_response
 
 projects_bp = Blueprint("projects", __name__)
 
 MAX_NAME_LEN = 100
 STRICT_REVISIONS = os.environ.get("ARDUBLOCK_COLLAB_STRICT_REVISIONS") == "1"
 _FILE_OPERATION_LOCK = threading.Lock()
+
+
+@projects_bp.route("/api/projects/<int:project_id>/avatar/<int:user_id>")
+@login_required
+def project_avatar(project_id, user_id):
+    s = _get_session()
+    try:
+        requester_access = project_access(s, project_id, current_user.id)
+        if not requester_access:
+            return jsonify({"error": "Proyecto no encontrado"}), 404
+        project = requester_access[0]
+        user = s.get(User, user_id)
+        if not user:
+            return Response(status=404)
+        is_project_member = user.id == project.user_id or s.query(ProjectCollaborator).filter_by(
+            project_id=project_id, user_id=user_id
+        ).first() is not None
+        if not is_project_member and not current_user.is_teacher:
+            return jsonify({"error": "No autorizado"}), 403
+        return avatar_response(user) if user.avatar_data else Response(status=404)
+    finally:
+        s.close()
 
 
 def _clean_name(value, fallback="Sin título"):
@@ -168,9 +191,10 @@ def list_projects():
 def load_project(project_id):
     s = _get_session()
     try:
-        p = s.get(Project, project_id)
-        if not p or p.user_id != current_user.id:
+        access = project_access(s, project_id, current_user.id)
+        if not access:
             return jsonify({"error": "Proyecto no encontrado"}), 404
+        p, _role = access
         return jsonify(p.to_dict())
     finally:
         s.close()
@@ -213,6 +237,8 @@ def list_project_collaborators(project_id):
         return jsonify({
             "current_user_role": role,
             "collaborators": [{"user_id": row.user_id, "email": row.user.email,
+                         "name": row.user.name, "avatar_type": row.user.avatar_type or "initials",
+                         "avatar_url": f"/api/projects/{project_id}/avatar/{row.user_id}",
                          "role": row.role, "created_at": row.created_at.isoformat() if row.created_at else None}
                         for row in rows],
         })
@@ -230,9 +256,10 @@ def add_project_collaborator(project_id):
         return jsonify({"error": "Colaborador inválido"}), 400
     s = _get_session()
     try:
-        project = s.get(Project, project_id)
-        if not project or project.user_id != current_user.id:
+        access = project_access(s, project_id, current_user.id)
+        if not access or access[1] not in {"owner", "teacher"}:
             return jsonify({"error": "Proyecto no encontrado"}), 404
+        project, _role = access
         user = s.query(User).filter_by(email=email.strip().lower()).first()
         if not user or user.id == project.user_id:
             return jsonify({"error": "Usuario no encontrado"}), 404
@@ -243,7 +270,10 @@ def add_project_collaborator(project_id):
             row = ProjectCollaborator(project_id=project_id, user_id=user.id, role=role)
             s.add(row)
         s.commit()
-        return jsonify({"user_id": user.id, "email": user.email, "role": role}), 200
+        return jsonify({"user_id": user.id, "email": user.email, "name": user.name,
+                        "avatar_type": user.avatar_type or "initials",
+                        "avatar_url": f"/api/projects/{project_id}/avatar/{user.id}",
+                        "role": role}), 200
     finally:
         s.close()
 
@@ -253,9 +283,10 @@ def add_project_collaborator(project_id):
 def remove_project_collaborator(project_id, user_id):
     s = _get_session()
     try:
-        project = s.get(Project, project_id)
-        if not project or project.user_id != current_user.id:
+        access = project_access(s, project_id, current_user.id)
+        if not access or access[1] not in {"owner", "teacher"}:
             return jsonify({"error": "Proyecto no encontrado"}), 404
+        project, _role = access
         row = s.query(ProjectCollaborator).filter_by(project_id=project_id, user_id=user_id).first()
         if not row:
             return jsonify({"error": "Colaborador no encontrado"}), 404

@@ -443,9 +443,9 @@ export function configureTextCollaboration(projectId, files) {
   collaborationClients.forEach(client => client.stop());
   collaborationClients = new Map();
   collaborationFiles = new Map((files || []).map(file => [file.filename, file]));
-  const clientId = localStorage.getItem('ardublock:client-id') ||
+  const clientId = sessionStorage.getItem('ardublock:client-id') ||
     `tab-${crypto.randomUUID?.() || Math.random().toString(36).slice(2)}`;
-  localStorage.setItem('ardublock:client-id', clientId);
+  sessionStorage.setItem('ardublock:client-id', clientId);
   for (const file of files || []) {
     const client = new TextCollaborationClient({
       projectId,

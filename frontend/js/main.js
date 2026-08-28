@@ -264,8 +264,8 @@ function applyRemoteBlockOperation(operation) {
 window._configureBlockCollaboration = (projectId) => {
   blockCollabClient?.stop();
   if (window.IS_GUEST_MODE !== false || !projectId) { blockCollabClient = null; return; }
-  const clientId = localStorage.getItem('ardublock:client-id') || `tab-${crypto.randomUUID?.() || Math.random().toString(36).slice(2)}`;
-  localStorage.setItem('ardublock:client-id', clientId);
+  const clientId = sessionStorage.getItem('ardublock:client-id') || `tab-${crypto.randomUUID?.() || Math.random().toString(36).slice(2)}`;
+  sessionStorage.setItem('ardublock:client-id', clientId);
   blockCollabClient = new BlockCollaborationClient({
     projectId,
     clientId,

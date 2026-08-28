@@ -27,6 +27,11 @@ nav {
 }
 .nav-links { display: flex; align-items: center; gap: 0.75rem; }
 .nav-user { color: var(--text-muted); font-size: 0.9rem; }
+.nav-user-link { display: inline-flex; align-items: center; gap: .45rem; color: var(--text); text-decoration: none; }
+.avatar { display: inline-block; border-radius: 50%; object-fit: cover; background: var(--brand-soft); }
+.avatar-small { width: 30px; height: 30px; }
+.avatar-tiny { width: 24px; height: 24px; vertical-align: middle; }
+.presence-person { display: inline-flex; align-items: center; margin-left: .25rem; vertical-align: middle; }
 .nav-btn {
   color: var(--text); text-decoration: none; font-size: 0.85rem;
   padding: 0.4rem 0.9rem; border: 1px solid var(--border-input); border-radius: 6px;
@@ -59,6 +64,17 @@ main.narrow { max-width: 760px; }
   color: var(--text); font-size: 0.95rem;
 }
 .field input:focus { outline: none; border-color: var(--brand); }
+.profile-card { display: flex; align-items: center; gap: 1rem; }
+.profile-avatar-preview, .profile-avatar-preview img, .profile-avatar-preview > span { width: 112px; height: 112px; border-radius: 50%; }
+.profile-avatar-preview { flex: 0 0 auto; overflow: hidden; background: var(--brand-soft); display: grid; place-items: center; font-size: 2rem; font-weight: 700; }
+.profile-avatar-preview img { object-fit: cover; }
+.avatar-actions, .avatar-choices { display: flex; gap: .75rem; align-items: center; flex-wrap: wrap; margin-top: 1rem; }
+.avatar-choice { border: 1px solid var(--border-input); background: var(--bg-inset); color: var(--text); border-radius: 8px; padding: .5rem; cursor: pointer; display: grid; gap: .25rem; justify-items: center; }
+.avatar-choice:hover { border-color: var(--brand); }
+.avatar-choice canvas { border-radius: 50%; }
+.crop-area { display: grid; gap: .7rem; margin-top: 1rem; }
+#crop-canvas { width: 256px; height: 256px; max-width: 100%; background: #111; cursor: move; touch-action: none; }
+.collaborator-identity { display: flex; align-items: center; gap: .6rem; }
 
 /* ── Botones ─────────────────────────────────────────── */
 .btn {

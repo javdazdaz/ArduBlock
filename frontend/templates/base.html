@@ -12,7 +12,10 @@
   <h1 class="nav-brand">⚡ ArduBlock{% if current_user.is_authenticated %} <span class="nav-role">{{ _('teacher_label') if current_user.is_teacher else _('student_label') }}</span>{% endif %}</h1>
   <div class="nav-links">
     {% if current_user.is_authenticated %}
-      <span class="nav-user">{{ current_user.name }}</span>
+      <a href="{{ url_for('auth.profile') }}" class="nav-user-link">
+        <img class="avatar avatar-small" src="/api/profile/avatar/{{ current_user.id }}" alt="" onerror="this.hidden=true">
+        <span class="nav-user">{{ current_user.name }}</span>
+      </a>
       {% if current_user.is_teacher %}
         <a href="/dashboard" class="nav-btn">{{ _('my_classrooms') }}</a>
         <a href="/app" class="nav-btn">{{ _('editor_link') }}</a>

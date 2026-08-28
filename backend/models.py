@@ -33,6 +33,9 @@ class User(Base, UserMixin):
     password_hash = Column(String(255), nullable=False)
     name = Column(String(100), nullable=False)
     role = Column(String(20), nullable=False, default="student")
+    # Imagen procesada del perfil. Es un data URI pequeño, nunca un archivo público.
+    avatar_type = Column(String(20), nullable=False, default="initials")
+    avatar_data = Column(Text, nullable=True)
     # hash SHA-256 del token; nunca se guarda el token en claro.
     reset_token = Column(String(100), nullable=True)
     reset_token_expires = Column(DateTime, nullable=True)

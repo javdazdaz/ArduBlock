@@ -30,6 +30,8 @@ def session_info():
             "user_name": current_user.name,
             "email": current_user.email,
             "is_teacher": current_user.is_teacher,
+            "avatar_type": current_user.avatar_type or "initials",
+            "avatar_url": f"/api/profile/avatar/{current_user.id}",
             "mode": RUNTIME_MODE,
         })
     return jsonify({

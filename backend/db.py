@@ -68,6 +68,17 @@ def _migrate():
             with engine.begin() as conn:
                 conn.execute(text(f"ALTER TABLE projects ADD COLUMN {col} {sqltype}"))
 
+    if "users" in insp.get_table_names():
+        user_cols = {c["name"] for c in insp.get_columns("users")}
+        user_additions = {
+            "avatar_type": "VARCHAR(20) NOT NULL DEFAULT 'initials'",
+            "avatar_data": "TEXT",
+        }
+        for col, sqltype in user_additions.items():
+            if col not in user_cols:
+                with engine.begin() as conn:
+                    conn.execute(text(f"ALTER TABLE users ADD COLUMN {col} {sqltype}"))
+
 
 def _backfill_project_files():
     """Crea el espejo de tabs para proyectos anteriores, sin duplicarlo."""
