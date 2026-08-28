@@ -38,7 +38,7 @@ export function initCollaboratorsUI({ getProjectId, showToast }) {
     form.hidden = !isAdmin;
     list.innerHTML = collaborators.length ? collaborators.map(row => `
       <div class="collaborator-row" data-user-id="${row.user_id}">
-        <span class="collaborator-identity"><img class="avatar avatar-small" src="${escape(row.avatar_url || '')}" alt="" onerror="this.hidden=true"><span><strong>${escape(row.name || row.email)}</strong><br><small>${escape(row.email)} · ${escape(row.role)}</small></span></span>
+        <span class="collaborator-identity">${row.has_avatar ? `<img class="avatar avatar-small" src="${escape(row.avatar_url)}" alt="">` : ''}<span><strong>${escape(row.name || row.email)}</strong><br><small>${escape(row.email)} · ${escape(row.role)}</small></span></span>
         ${isAdmin ? `<span class="collaborator-actions">
           <select class="collaborator-role" aria-label="Rol de ${escape(row.email)}">
             <option value="viewer" ${row.role === 'viewer' ? 'selected' : ''}>Lector</option>

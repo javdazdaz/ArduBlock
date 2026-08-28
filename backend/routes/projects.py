@@ -238,6 +238,7 @@ def list_project_collaborators(project_id):
             "current_user_role": role,
             "collaborators": [{"user_id": row.user_id, "email": row.user.email,
                          "name": row.user.name, "avatar_type": row.user.avatar_type or "initials",
+                         "has_avatar": bool(row.user.avatar_data),
                          "avatar_url": f"/api/projects/{project_id}/avatar/{row.user_id}",
                          "role": row.role, "created_at": row.created_at.isoformat() if row.created_at else None}
                         for row in rows],

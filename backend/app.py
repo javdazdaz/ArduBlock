@@ -32,6 +32,14 @@ from backend.services.serial_manager import SerialManager
 from flask_sock import Sock
 from backend.collaboration import broker
 
+
+def _presence_peer(project_id, peer):
+    """Añade la URL protegida solo si el usuario tiene avatar."""
+    data = dict(peer)
+    if data.get("has_avatar"):
+        data["avatar_url"] = f"/api/projects/{project_id}/avatar/{data['user_id']}"
+    return data
+
 # ── Blueprints ──────────────────────────────────
 from backend.routes.projects import projects_bp
 from backend.routes.compile import compile_bp
@@ -127,17 +135,18 @@ def create_app() -> Flask:
         if not client_id or len(client_id) > 100:
             return
         peer = broker.join(project_id, file_id, client_id, current_user.id,
-                           getattr(current_user, "name", None) or current_user.email, ws)
+                           getattr(current_user, "name", None) or current_user.email, ws,
+                           bool(getattr(current_user, "avatar_data", None)))
         try:
-            peers = [{**p, "avatar_url": f"/api/projects/{project_id}/avatar/{p['user_id']}"}
-                     for p in broker.presence(project_id, file_id)]
+            peers = [_presence_peer(project_id, p) for p in broker.presence(project_id, file_id)]
             ws.send(json.dumps({"type": "presence", "peers": peers}))
             broker.broadcast(project_id, file_id, {
                 "type": "presence",
                 "event": "join",
                 "peer": {"connection_id": peer.connection_id, "client_id": peer.client_id,
                          "user_id": peer.user_id, "display_name": peer.display_name,
-                         "avatar_url": f"/api/projects/{project_id}/avatar/{peer.user_id}"},
+                         "has_avatar": peer.has_avatar,
+                         **({"avatar_url": f"/api/projects/{project_id}/avatar/{peer.user_id}"} if peer.has_avatar else {})},
             }, exclude=peer.connection_id)
             while True:
                 raw = ws.receive()
@@ -150,7 +159,8 @@ def create_app() -> Flask:
                         "peer": {"connection_id": peer.connection_id, "client_id": peer.client_id,
                                  "user_id": peer.user_id, "display_name": peer.display_name,
                                  "cursor": message.get("cursor"), "selection": message.get("selection"),
-                                 "avatar_url": f"/api/projects/{project_id}/avatar/{peer.user_id}"},
+                                 "has_avatar": peer.has_avatar,
+                                 **({"avatar_url": f"/api/projects/{project_id}/avatar/{peer.user_id}"} if peer.has_avatar else {})},
                     }, exclude=peer.connection_id)
         except (ValueError, TypeError, json.JSONDecodeError):
             pass
@@ -176,10 +186,10 @@ def create_app() -> Flask:
         if not client_id or len(client_id) > 100:
             return
         peer = broker.join(project_id, 0, client_id, current_user.id,
-                           getattr(current_user, "name", None) or current_user.email, ws)
+                           getattr(current_user, "name", None) or current_user.email, ws,
+                           bool(getattr(current_user, "avatar_data", None)))
         try:
-            peers = [{**p, "avatar_url": f"/api/projects/{project_id}/avatar/{p['user_id']}"}
-                     for p in broker.presence(project_id, 0)]
+            peers = [_presence_peer(project_id, p) for p in broker.presence(project_id, 0)]
             ws.send(json.dumps({"type": "presence", "peers": peers}))
             while True:
                 raw = ws.receive()
@@ -191,7 +201,8 @@ def create_app() -> Flask:
                         "type": "presence", "event": "update",
                         "peer": {"connection_id": peer.connection_id, "client_id": peer.client_id,
                                  "user_id": peer.user_id, "display_name": peer.display_name,
-                                 "avatar_url": f"/api/projects/{project_id}/avatar/{peer.user_id}",
+                                 "has_avatar": peer.has_avatar,
+                                 **({"avatar_url": f"/api/projects/{project_id}/avatar/{peer.user_id}"} if peer.has_avatar else {}),
                                  "selected_block": message.get("selected_block")},
                     }, exclude=peer.connection_id)
         except (ValueError, TypeError, json.JSONDecodeError):

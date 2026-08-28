@@ -15,6 +15,7 @@ class Peer:
     client_id: str
     user_id: int
     display_name: str
+    has_avatar: bool
     ws: Any
 
 
@@ -25,8 +26,8 @@ class CollaborationBroker:
         self._rooms: dict[tuple[int, int], dict[str, Peer]] = {}
         self._lock = threading.RLock()
 
-    def join(self, project_id: int, file_id: int, client_id: str, user_id: int, display_name: str, ws: Any) -> Peer:
-        peer = Peer(str(uuid.uuid4()), client_id, user_id, display_name, ws)
+    def join(self, project_id: int, file_id: int, client_id: str, user_id: int, display_name: str, ws: Any, has_avatar: bool = False) -> Peer:
+        peer = Peer(str(uuid.uuid4()), client_id, user_id, display_name, has_avatar, ws)
         with self._lock:
             self._rooms.setdefault((project_id, file_id), {})[peer.connection_id] = peer
         return peer
@@ -47,6 +48,7 @@ class CollaborationBroker:
                     "client_id": peer.client_id,
                     "user_id": peer.user_id,
                     "display_name": peer.display_name,
+                    "has_avatar": peer.has_avatar,
                 }
                 for peer in self._rooms.get((project_id, file_id), {}).values()
             ]
