@@ -7,6 +7,9 @@ export function initCollaboratorsUI({ getProjectId, showToast }) {
   const form = document.getElementById('collaborator-form');
   const list = document.getElementById('collaborators-list');
   const presence = document.getElementById('collaborators-presence');
+  const header = document.getElementById('collaboration-header');
+  const headerAvatars = document.getElementById('collaboration-avatars');
+  const headerStatus = document.getElementById('collaboration-status');
   if (!button || !modal || !form || !list) return;
 
   const escape = (value) => String(value).replace(/[&<>"']/g, char => ({
@@ -16,7 +19,18 @@ export function initCollaboratorsUI({ getProjectId, showToast }) {
   function renderPresence(peers, kind) {
     if (!Array.isArray(peers) || !presence) return;
     const label = kind === 'block' ? 'Blockly' : 'texto';
-    presence.innerHTML = `${peers.length} sesión(es) de ${label} conectada(s) ` + peers.map(peer => `<span class="presence-person" title="${escape(peer.display_name || '')}"><img class="avatar avatar-tiny" src="${escape(peer.avatar_url || '')}" alt="" onerror="this.hidden=true"><span>${escape((peer.display_name || '?').slice(0, 2).toUpperCase())}</span></span>`).join('');
+    const people = peers;
+    const avatarMarkup = people.map(peer => `<span class="presence-person" title="${escape(peer.display_name || '')}">${peer.has_avatar ? `<img class="avatar avatar-tiny" src="${escape(peer.avatar_url || '')}" alt="">` : `<span class="presence-initials">${escape((peer.display_name || '?').slice(0, 2).toUpperCase())}</span>`}</span>`).join('');
+    const status = people.map(peer => {
+      const place = kind === 'block' ? 'trabajando en un bloque' : (peer.filename ? `editando ${peer.filename}` : 'en el editor');
+      return `${escape(peer.display_name)}: ${place}`;
+    }).join(' · ');
+    presence.innerHTML = `${people.length} sesión(es) de ${label} conectada(s) ${avatarMarkup}`;
+    if (header && headerAvatars && headerStatus) {
+      header.classList.toggle('hidden', people.length === 0);
+      headerAvatars.innerHTML = avatarMarkup;
+      headerStatus.textContent = status;
+    }
   }
 
   function refreshVisibility() {

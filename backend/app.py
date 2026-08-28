@@ -159,6 +159,7 @@ def create_app() -> Flask:
                         "peer": {"connection_id": peer.connection_id, "client_id": peer.client_id,
                                  "user_id": peer.user_id, "display_name": peer.display_name,
                                  "cursor": message.get("cursor"), "selection": message.get("selection"),
+                                 "filename": message.get("filename"),
                                  "has_avatar": peer.has_avatar,
                                  **({"avatar_url": f"/api/projects/{project_id}/avatar/{peer.user_id}"} if peer.has_avatar else {})},
                     }, exclude=peer.connection_id)
