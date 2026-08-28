@@ -45,12 +45,12 @@
     <div class="page-header">
       <h2>📁 {{ _('my_projects') }} ({{ projects|length }})</h2>
       <a href="/teacher/regen-thumbnails" class="btn btn-ghost">{{ _('regen_thumbnails') }}</a>
-      <a href="/app?from={{ '/dashboard' | urlencode }}" class="btn">{{ _('new_project') }}</a>
+      <a href="/app#new" class="btn">{{ _('new_project') }}</a>
     </div>
     {% if projects %}
       <div class="project-grid">
         {% for p in projects %}
-          <a href="/app?project={{ p.id }}&from={{ '/dashboard' | urlencode }}" class="project-card">
+          <a href="/app#project={{ p.id }}" class="project-card">
             {% if p.thumbnail %}
               <img src="{{ p.thumbnail }}" alt="{{ p.name }}" class="project-thumb">
             {% else %}
@@ -90,7 +90,7 @@
       <div class="page-header"><h2>{{ _('unassigned_projects') }}</h2></div>
       <div class="project-grid">
         {% for p in unassigned %}
-          <a href="/app?project={{ p.id }}&from={{ '/dashboard' | urlencode }}" class="project-card">
+          <a href="/app#project={{ p.id }}" class="project-card">
             {% if p.thumbnail %}
               <img src="{{ p.thumbnail }}" alt="{{ p.name }}" class="project-thumb">
             {% else %}

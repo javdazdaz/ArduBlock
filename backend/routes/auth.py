@@ -12,7 +12,6 @@ import secrets
 import smtplib
 from email.mime.text import MIMEText
 from datetime import timedelta
-from urllib.parse import quote
 
 from flask import Blueprint, g, render_template, request, redirect, url_for, flash, send_from_directory
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
@@ -905,11 +904,10 @@ def clone_activity(class_id, activity_id):
     if current_user.is_teacher:
         return redirect(url_for("auth.dashboard"))
     form = EmptyForm()
-    back = url_for("auth.student_class", class_id=class_id)
     s = _get_session()
     try:
         if not form.validate_on_submit():
-            return redirect(back)
+            return redirect(url_for("auth.student_class", class_id=class_id))
         cls = s.get(Class, class_id)
         enrolled = (
             s.query(ClassroomStudent)
@@ -927,7 +925,7 @@ def clone_activity(class_id, activity_id):
         ref = activity.reference_project if activity else None
         if not activity or not ref:
             flash(get_message(g.lang, "activity_no_reference"), "error")
-            return redirect(back)
+            return redirect(url_for("auth.student_class", class_id=class_id))
         name = (activity.name or ref.name or "").strip()[:100] or "Sin título"
         clone = Project(
             user_id=current_user.id,
@@ -940,7 +938,7 @@ def clone_activity(class_id, activity_id):
         s.add(clone)
         s.commit()
         flash(get_message(g.lang, "activity_cloned"), "success")
-        return redirect(f"/app?project={clone.id}&from={quote(back)}")
+        return redirect(f"/app#project={clone.id}")
     finally:
         s.close()
 

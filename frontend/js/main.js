@@ -41,12 +41,16 @@ let DASHBOARD_URL = '/';
     IS_GUEST_MODE = true;
   }
 
-  const params = new URLSearchParams(window.location.search);
-  const pid = params.get('project');
-  const isView = params.get('view') === '1';
-  const isEdit = params.get('edit') === '1';
-  const isRef = params.get('ref') === '1';
-  const cid = params.get('class');
+  // Estado nuevo: fragmento local, no se envía al servidor. Se mantienen
+  // los parámetros antiguos como compatibilidad para enlaces ya existentes.
+  const legacyParams = new URLSearchParams(window.location.search);
+  const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+  const pid = hashParams.get('project') || legacyParams.get('project');
+  const mode = hashParams.get('mode');
+  const isView = mode === 'view' || legacyParams.get('view') === '1';
+  const isEdit = mode === 'edit' || legacyParams.get('edit') === '1';
+  const isRef = mode === 'reference' || legacyParams.get('ref') === '1';
+  const cid = hashParams.get('class') || legacyParams.get('class');
   if (cid) {
     const c = Number(cid);
     if (Number.isInteger(c) && c > 0) setClassId(c);
@@ -58,13 +62,25 @@ let DASHBOARD_URL = '/';
   const brandLink = document.getElementById('brand-link');
   if (brandLink) brandLink.href = DASHBOARD_URL;
 
-  // Botón "volver": ?from=<ruta> si viene de un dashboard; si no, al dashboard del rol.
+  // Botón "volver": usa el historial cuando el origen es interno. El
+  // parámetro from antiguo se acepta solo para compatibilidad.
   const backBtn = document.getElementById('btn-back');
   if (backBtn) {
-    const fromParam = params.get('from');
-    backBtn.href = fromParam || DASHBOARD_URL;
+    const fromParam = legacyParams.get('from');
+    let internalReferrer = false;
+    try {
+      const ref = new URL(document.referrer);
+      internalReferrer = ref.origin === window.location.origin && ref.pathname !== '/app';
+    } catch (_) { /* navegación directa */ }
+    backBtn.href = fromParam || (internalReferrer ? document.referrer : DASHBOARD_URL);
+    if (!fromParam && internalReferrer) {
+      backBtn.addEventListener('click', (event) => {
+        event.preventDefault();
+        window.history.back();
+      });
+    }
     const label = document.getElementById('back-label');
-    if (label) label.textContent = fromParam ? 'Volver' : (IS_GUEST_MODE ? 'Inicio' : 'Dashboard');
+    if (label) label.textContent = (fromParam || internalReferrer) ? 'Volver' : (IS_GUEST_MODE ? 'Inicio' : 'Dashboard');
     backBtn.classList.remove('hidden');
   }
 
