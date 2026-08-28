@@ -8,7 +8,7 @@ import subprocess
 from flask import Blueprint, jsonify, request
 from flask_login import login_required
 
-from backend.config import CHIP_BOARD_MAP
+from backend.config import CHIP_BOARD_MAP, SUPPORTED_FQBNS
 from backend.services.arduino_cli import run_arduino_cli, install_board_deps
 from backend.services.usb_detection import extract_vid_pid, is_fake_serial_port
 
@@ -58,5 +58,7 @@ def list_boards():
 def board_install():
     data = request.get_json() or {}
     fqbn = data.get("fqbn", "arduino:avr:uno")
+    if fqbn not in SUPPORTED_FQBNS:
+        return jsonify({"error": "Placa no soportada"}), 422
     result = install_board_deps(fqbn)
     return jsonify(result)

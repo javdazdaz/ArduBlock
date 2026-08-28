@@ -12,8 +12,9 @@ from flask import Blueprint, jsonify, request
 
 from backend.rate_limit import rate_limit
 from backend.sketch_guard import find_unsafe_include
-from backend.services.arduino_cli import run_arduino_cli, try_install_missing_core
+from backend.services.arduino_cli import run_arduino_cli
 from backend.routes.projects import _write_tabs
+from backend.payload_validation import validate_compile_payload
 
 upload_bp = Blueprint("upload", __name__)
 
@@ -29,6 +30,10 @@ def upload_sketch():
 
     if not code.strip():
         return jsonify({"error": "Código vacío"}), 400
+
+    invalid = validate_compile_payload(fqbn, tabs)
+    if invalid:
+        return jsonify({"error": invalid}), 422
 
     unsafe = find_unsafe_include(code, tabs)
     if unsafe:
@@ -57,15 +62,6 @@ def upload_sketch():
             capture_output=True,
             timeout=60,
         )
-
-        if compile_result.returncode != 0 and try_install_missing_core(
-            compile_result.stderr
-        ):
-            compile_result = run_arduino_cli(
-                ["compile", "--fqbn", fqbn, str(sketch_dir)],
-                capture_output=True,
-                timeout=60,
-            )
 
         if compile_result.returncode != 0:
             return jsonify(

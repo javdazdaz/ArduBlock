@@ -5,7 +5,7 @@ ArduBlock — Health check + Session info
 from flask import Blueprint, jsonify
 from flask_login import current_user
 
-from backend.config import get_arduino_cli_path
+from backend.config import get_arduino_cli_path, RUNTIME_MODE
 
 health_bp = Blueprint("health", __name__)
 
@@ -16,10 +16,8 @@ def health():
     return jsonify({
         "status": "ok",
         "app": "ArduBlock",
-        "arduino_cli": {
-            "available": cli_path is not None,
-            "path": cli_path,
-        },
+        "mode": RUNTIME_MODE,
+        "arduino_cli_available": cli_path is not None,
     })
 
 
@@ -32,9 +30,11 @@ def session_info():
             "user_name": current_user.name,
             "email": current_user.email,
             "is_teacher": current_user.is_teacher,
+            "mode": RUNTIME_MODE,
         })
     return jsonify({
         "authenticated": False,
         "user_name": "",
         "is_teacher": False,
+        "mode": RUNTIME_MODE,
     })

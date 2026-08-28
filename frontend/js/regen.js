@@ -10,6 +10,7 @@ import DarkTheme from '@blockly/theme-dark';
 import './blocks.js';
 import { captureWorkspaceThumbnail } from './thumbnail.js';
 import { applyAiPalette } from './palette.js';
+import { csrfFetch } from './csrf.js';
 
 const workspace = Blockly.inject('regen-workspace', {
   theme: DarkTheme,
@@ -70,7 +71,7 @@ btn.addEventListener('click', async () => {
         continue;
       }
 
-      const saveRes = await fetch(`/api/teacher/regen/projects/${p.id}/thumbnail`, {
+      const saveRes = await csrfFetch(`/api/teacher/regen/projects/${p.id}/thumbnail`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ thumbnail: thumb }),

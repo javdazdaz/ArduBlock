@@ -14,12 +14,14 @@ if _src_dir not in sys.path:
 import signal
 from pathlib import Path
 
-from flask import Flask, g, request, send_from_directory, session, redirect, url_for, Response
+from flask import Flask, g, request, send_from_directory, session, redirect, url_for, Response, jsonify
+from flask_wtf.csrf import CSRFProtect, generate_csrf
 from flask_login import current_user
+from werkzeug.middleware.proxy_fix import ProxyFix
 from backend import compile_queue
 from backend.config import (
     FRONTEND_DIR, TEMPLATES_DIR, HOST, PORT, SECRET_KEY,
-    get_arduino_cli_path,
+    get_arduino_cli_path, IS_PRODUCTION,
 )
 from backend.db import SessionFactory, init_db
 from backend.messages import get_message, SUPPORTED_LANGS, DEFAULT_LANG
@@ -50,6 +52,11 @@ def create_app() -> Flask:
 
     app = Flask(__name__, static_folder=None, template_folder=str(TEMPLATES_DIR))
     app.secret_key = SECRET_KEY
+    if IS_PRODUCTION:
+        # Caddy es el único proxy confiable del despliegue actual. Esto hace
+        # que el rate limiter vea la IP del cliente, no la de Caddy.
+        app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
+    csrf = CSRFProtect(app)
     # Hardening de la cookie de sesión: HttpOnly, SameSite=Lax y (en producción)
     # Secure para que solo viaje por HTTPS.
     app.config["SESSION_COOKIE_HTTPONLY"] = True
@@ -81,15 +88,28 @@ def create_app() -> Flask:
     # ── Blueprints ────────────────────────────────
     app.register_blueprint(projects_bp)
     app.register_blueprint(compile_bp)
-    app.register_blueprint(upload_bp)
-    app.register_blueprint(serial_bp)
-    app.register_blueprint(boards_bp)
+    # En producción el servidor solo compila. El USB se maneja en el
+    # navegador mediante Web Serial; nunca se exponen puertos del host.
+    if not IS_PRODUCTION:
+        app.register_blueprint(upload_bp)
+        app.register_blueprint(serial_bp)
+        app.register_blueprint(boards_bp)
+        csrf.exempt(upload_bp)
+        csrf.exempt(serial_bp)
     app.register_blueprint(examples_bp)
     app.register_blueprint(web_presets_bp)
-    app.register_blueprint(arduino_cli_bp)
+    if not IS_PRODUCTION:
+        app.register_blueprint(arduino_cli_bp)
     app.register_blueprint(drivers_bp)
     app.register_blueprint(health_bp)
     app.register_blueprint(auth_bp)
+
+    # La compilación pública no muta sesión ni datos persistentes.
+    csrf.exempt(compile_bp)
+
+    @app.route("/api/csrf-token")
+    def csrf_token():
+        return jsonify({"csrf_token": generate_csrf()})
 
     # ── Rutas de frontend ────────────────────────
     @app.route("/")

@@ -43,14 +43,24 @@ def _write_tabs(sketch_dir: Path, tabs: list[dict]) -> None:
     """
     if not tabs:
         return
+    if not isinstance(tabs, list) or len(tabs) > 32:
+        raise ValueError("Tabs inválidos")
     for tab in tabs:
+        if not isinstance(tab, dict):
+            raise ValueError("Tabs inválidos")
         filename = tab.get("filename", "")
         content = tab.get("content", "")
+        if not isinstance(filename, str) or not isinstance(content, str):
+            raise ValueError("Tabs inválidos")
         if not filename or not content.strip():
             continue
         safe = os.path.basename(filename)
-        if safe != filename or ".." in safe:
-            continue
+        if safe != filename or ".." in safe or safe == "ardublock_sketch.ino":
+            raise ValueError("Nombre de tab no permitido")
+        if not safe.endswith((".h", ".hpp", ".html")):
+            raise ValueError("Extensión de tab no permitida")
+        if len(content.encode("utf-8")) > 512 * 1024:
+            raise ValueError("Tab demasiado grande")
         (sketch_dir / safe).write_text(content)
 
 
