@@ -28,10 +28,15 @@ import { oneDark } from '@codemirror/theme-one-dark';
 import { syntaxHighlighting, defaultHighlightStyle } from '@codemirror/language';
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
 import { search, searchKeymap, highlightSelectionMatches, openSearchPanel, closeSearchPanel } from '@codemirror/search';
+import { changesFromUpdate } from './text-collaboration.js';
+import { TextCollaborationClient } from './text-collaboration.js';
 
 let tabs, activeFilename, tabBar, lineCount;
 let inoView, hView;           // CodeMirror EditorView instances
 let inoContainer, hContainer;  // DOM parents
+let collaborationClient = null;
+let collaborationClients = new Map();
+let collaborationFiles = new Map();
 
 // Posición (sesión) del editor .ino para restaurar al volver a él.
 let _inoPos = null;
@@ -99,6 +104,7 @@ function _editableExtensions(lang) {
       if (tab && !tab.readonly) {
         tab.content = update.state.doc.toString();
         tab.state = update.state;   // mantener la referencia (selección + undo)
+        collaborationClient?.enqueue(changesFromUpdate(update));
         _updateLineCount();
         if (window._scheduleUndoPush) window._scheduleUndoPush();
       }
@@ -363,6 +369,9 @@ function _switchTab(filename) {
   if (!tab) return;
 
   _activateTab(tab);
+  collaborationClient?.stop();
+  collaborationClient = collaborationClients.get(filename) || null;
+  collaborationClient?.connect();
   _renderTabs();
 }
 
@@ -422,6 +431,46 @@ export function getTabs() {
       content: t.content,
       cursor: _cursorOf(t),
     }));
+}
+
+export function setTextCollaborationClient(client) {
+  collaborationClient?.stop();
+  collaborationClient = client;
+  collaborationClient?.connect();
+}
+
+export function configureTextCollaboration(projectId, files) {
+  collaborationClients.forEach(client => client.stop());
+  collaborationClients = new Map();
+  collaborationFiles = new Map((files || []).map(file => [file.filename, file]));
+  const clientId = localStorage.getItem('ardublock:client-id') ||
+    `tab-${crypto.randomUUID?.() || Math.random().toString(36).slice(2)}`;
+  localStorage.setItem('ardublock:client-id', clientId);
+  for (const file of files || []) {
+    const client = new TextCollaborationClient({
+      projectId,
+      fileId: file.id,
+      clientId,
+      applyRemote: (changes) => {
+        if (activeFilename === file.filename) applyRemoteTextChanges(changes);
+      },
+      onPresence: (message) => window.dispatchEvent(new CustomEvent('ardublock:presence', { detail: message })),
+    });
+    client.revision = file.revision || 1;
+    collaborationClients.set(file.filename, client);
+  }
+  collaborationClient = collaborationClients.get(activeFilename) || null;
+  collaborationClient?.connect();
+}
+
+export function applyRemoteTextChanges(changes) {
+  if (!hView || !changes?.length) return;
+  if (collaborationClient) collaborationClient.suppressLocal = true;
+  try {
+    hView.dispatch({ changes });
+  } finally {
+    if (collaborationClient) collaborationClient.suppressLocal = false;
+  }
 }
 
 /**

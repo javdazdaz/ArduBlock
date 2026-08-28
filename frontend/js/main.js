@@ -187,7 +187,7 @@ import { initUpload }         from './upload.js';
 import { initExamples }  from './examples.js';
 import { initResize }   from './resize.js';
 import { exportSketch } from './download.js';
-import { initTabManager, getTabs, loadTabs, setSketchName, setInoContent, getInoContent, setCodeTheme } from './tab-manager.js';
+import { initTabManager, getTabs, loadTabs, setSketchName, setInoContent, getInoContent, setCodeTheme, configureTextCollaboration } from './tab-manager.js';
 import { restoreWorkspaceState } from './workspace-restore.js';
 import { initMatrixEditor, initPanelModeTabs } from './matrix-animation.js';
 import { initWebPresets } from './web-presets.js';
@@ -671,7 +671,7 @@ initResize({
 
 // Tab manager: barra de tabs .ino + .h
 initTabManager();
-window._tabManager = { getTabs, loadTabs, setSketchName, setInoContent, getInoContent, setCodeTheme };
+window._tabManager = { getTabs, loadTabs, setSketchName, setInoContent, getInoContent, setCodeTheme, configureTextCollaboration };
 window.updateCode = updateCode;  // para que tab-manager refresque el .ino
 window._showToast = showToast;   // para download.js y otros módulos
 

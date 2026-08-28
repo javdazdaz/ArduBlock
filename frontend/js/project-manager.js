@@ -216,6 +216,15 @@ export async function loadProject(idOrName) {
   // Tabs antes que bloques (ver workspace-restore.js).
   restoreWorkspaceState(workspace, { state: record.state, tabs: record.tabs, sketchName: displayName });
   currentProjectId = (typeof idOrName === 'number') ? idOrName : null;
+  if (!isGuest() && currentProjectId && !readOnly && window._tabManager?.configureTextCollaboration) {
+    try {
+      const filesResponse = await fetch(`/api/projects/${currentProjectId}/files`);
+      const files = filesResponse.ok ? await filesResponse.json() : [];
+      window._tabManager.configureTextCollaboration(currentProjectId, files);
+    } catch (_) {
+      // El editor sigue funcionando con el flujo legacy/polling.
+    }
+  }
   projectInput.value = displayName;
   window._exampleComment = null;
   localStorage.setItem(LAST_KEY, displayName);
