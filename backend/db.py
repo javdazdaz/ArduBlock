@@ -28,6 +28,7 @@ def init_db():
     _drop_old_activities()
     Base.metadata.create_all(engine)
     _migrate()
+    _backfill_project_files()
 
 
 def _drop_old_activities():
@@ -66,3 +67,14 @@ def _migrate():
         if col not in cols:
             with engine.begin() as conn:
                 conn.execute(text(f"ALTER TABLE projects ADD COLUMN {col} {sqltype}"))
+
+
+def _backfill_project_files():
+    """Crea el espejo de tabs para proyectos anteriores, sin duplicarlo."""
+    from backend.project_files import backfill_project_files
+
+    session = SessionFactory()
+    try:
+        backfill_project_files(session)
+    finally:
+        session.close()

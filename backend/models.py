@@ -11,7 +11,7 @@ from datetime import datetime, timezone
 
 from flask_login import UserMixin
 from sqlalchemy import (
-    Column, Integer, String, DateTime, Text, ForeignKey,
+    Column, Integer, String, DateTime, Text, ForeignKey, UniqueConstraint,
 )
 from sqlalchemy.orm import DeclarativeBase, relationship
 
@@ -121,6 +121,10 @@ class Project(Base):
         "ProjectRevision", back_populates="project", cascade="all, delete-orphan",
         order_by="ProjectRevision.revision.desc()",
     )
+    files = relationship(
+        "ProjectFile", back_populates="project", cascade="all, delete-orphan",
+        order_by="ProjectFile.filename.asc()",
+    )
 
     def to_dict(self):
         return {
@@ -148,6 +152,25 @@ class ProjectRevision(Base):
     created_at = Column(DateTime, default=utcnow)
 
     project = relationship("Project", back_populates="revisions")
+
+
+class ProjectFile(Base):
+    """Archivo de texto independiente asociado a un proyecto."""
+    __tablename__ = "project_files"
+    __table_args__ = (
+        UniqueConstraint("project_id", "filename", name="uq_project_file_name"),
+    )
+
+    id = Column(Integer, primary_key=True)
+    project_id = Column(Integer, ForeignKey("projects.id"), nullable=False, index=True)
+    filename = Column(String(255), nullable=False)
+    content = Column(Text, nullable=False, default="")
+    revision = Column(Integer, nullable=False, default=1)
+    updated_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+    created_at = Column(DateTime, default=utcnow)
+    updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)
+
+    project = relationship("Project", back_populates="files")
 
 
 class Activity(Base):

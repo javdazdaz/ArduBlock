@@ -16,6 +16,7 @@ from flask_login import current_user, login_required
 from backend.models import Project, ProjectRevision, Classroom, ClassroomStudent, Class, User, Activity, ClassActivity
 from backend.db import get_session as _get_session
 from backend.project_history import record_project_revision
+from backend.project_files import sync_project_files
 
 projects_bp = Blueprint("projects", __name__)
 
@@ -83,6 +84,7 @@ def _update_project(s, project, data, actor_id):
                 "project": current.to_dict(),
             }), 409
         s.refresh(project)
+        sync_project_files(s, project, actor_id)
         record_project_revision(s, project, actor_id, "save")
         s.commit()
         return None
@@ -91,6 +93,7 @@ def _update_project(s, project, data, actor_id):
         setattr(project, field, value)
     project.revision = (project.revision or 1) + 1
     project.updated_by = actor_id
+    sync_project_files(s, project, actor_id)
     record_project_revision(s, project, actor_id, "save")
     s.commit()
     return None
@@ -190,6 +193,30 @@ def list_project_history(project_id):
         s.close()
 
 
+@projects_bp.route("/api/projects/<int:project_id>/files", methods=["GET"])
+@login_required
+def list_project_files(project_id):
+    """Devuelve los archivos de texto espejados del proyecto propio."""
+    s = _get_session()
+    try:
+        project = s.get(Project, project_id)
+        if not project or project.user_id != current_user.id:
+            return jsonify({"error": "Proyecto no encontrado"}), 404
+        return jsonify([
+            {
+                "id": file.id,
+                "filename": file.filename,
+                "content": file.content,
+                "revision": file.revision,
+                "updated_by": file.updated_by,
+                "updated_at": file.updated_at.isoformat() if file.updated_at else None,
+            }
+            for file in project.files
+        ])
+    finally:
+        s.close()
+
+
 @projects_bp.route("/api/projects/<int:project_id>/history/<int:history_id>/restore", methods=["POST"])
 @login_required
 def restore_project_history(project_id, history_id):
@@ -229,6 +256,7 @@ def restore_project_history(project_id, history_id):
         project.thumbnail = snapshot.get("thumbnail")
         project.revision = (project.revision or 1) + 1
         project.updated_by = current_user.id
+        sync_project_files(s, project, current_user.id)
         record_project_revision(s, project, current_user.id, "restore")
         s.commit()
         return jsonify(project.to_dict())
@@ -345,6 +373,7 @@ def create_project():
         )
         s.add(p)
         s.flush()
+        sync_project_files(s, p, current_user.id)
         record_project_revision(s, p, current_user.id, "create")
         s.commit()
         return jsonify(p.to_dict()), 201

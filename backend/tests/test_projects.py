@@ -5,8 +5,11 @@ Cubre: crear/listar/leer/actualizar/eliminar, el PUT parcial (que no pisa el
 sketch al renombrar) y el aislamiento entre usuarios.
 """
 
+import json
+
 from backend.db import get_session
-from backend.models import User
+from backend.models import Project, ProjectFile, User
+from backend.project_files import backfill_project_files
 import backend.routes.projects as projects_module
 
 
@@ -162,6 +165,86 @@ def test_restore_history_creates_new_revision_without_deleting_history(
     final_history = client.get(f"/api/projects/{created['id']}/history").get_json()
     assert [item["revision"] for item in final_history] == [3, 2, 1]
     assert final_history[0]["reason"] == "restore"
+
+
+def test_project_files_mirror_tabs_on_create(client, seed_classroom):
+    seed_classroom("ABC123")
+    _register(client, "a@example.com")
+    created = _create(
+        client,
+        name="con-tabs.ino",
+        data={
+            "state": {"blocks": {}},
+            "tabs": [{"filename": "motores.h", "content": "void motor() {}"}],
+        },
+    ).get_json()
+
+    response = client.get(f"/api/projects/{created['id']}/files")
+    assert response.status_code == 200
+    files = response.get_json()
+    assert len(files) == 1
+    assert files[0]["filename"] == "motores.h"
+    assert files[0]["content"] == "void motor() {}"
+    assert files[0]["revision"] == 1
+
+
+def test_project_files_mirror_tab_changes_without_changing_project_contract(
+    client, seed_classroom
+):
+    seed_classroom("ABC123")
+    _register(client, "a@example.com")
+    created = _create(
+        client,
+        data={
+            "state": {"blocks": {}},
+            "tabs": [{"filename": "motores.h", "content": "v1"}],
+        },
+    ).get_json()
+
+    saved = client.put(
+        f"/api/projects/{created['id']}",
+        json={
+            "revision": 1,
+            "data": {
+                "state": {"blocks": {}},
+                "tabs": [{"filename": "motores.h", "content": "v2"}],
+            },
+        },
+    )
+    assert saved.status_code == 200
+    assert json.loads(saved.get_json()["data"])["tabs"] == [
+        {"filename": "motores.h", "content": "v2"}
+    ]
+
+    files = client.get(f"/api/projects/{created['id']}/files").get_json()
+    assert files[0]["content"] == "v2"
+    assert files[0]["revision"] == 2
+
+
+def test_backfill_old_project_files_is_idempotent(client, seed_classroom):
+    seed_classroom("ABC123")
+    _register(client, "a@example.com")
+    s = get_session()
+    try:
+        student = s.query(User).filter_by(email="a@example.com").first()
+        project = Project(
+            user_id=student.id,
+            name="antiguo.ino",
+            data=json.dumps({
+                "state": {"blocks": {}},
+                "tabs": [{"filename": "legacy.h", "content": "v1"}],
+            }),
+        )
+        s.add(project)
+        s.commit()
+        backfill_project_files(s)
+        backfill_project_files(s)
+        files = s.query(ProjectFile).filter_by(project_id=project.id).all()
+        assert len(files) == 1
+        assert files[0].filename == "legacy.h"
+        assert files[0].revision == 1
+    finally:
+        s.close()
 
 
 def test_partial_update_keeps_data(client, seed_classroom):
