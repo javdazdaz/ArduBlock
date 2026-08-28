@@ -19,6 +19,7 @@ from backend.db import get_session as _get_session
 projects_bp = Blueprint("projects", __name__)
 
 MAX_NAME_LEN = 100
+STRICT_REVISIONS = os.environ.get("ARDUBLOCK_COLLAB_STRICT_REVISIONS") == "1"
 
 
 def _clean_name(value, fallback="Sin título"):
@@ -33,6 +34,63 @@ def _coerce_data(value):
     if isinstance(value, str):
         return value
     return json.dumps(value)
+
+
+def _update_project(s, project, data, actor_id):
+    """Actualiza un proyecto y devuelve una respuesta de conflicto o None."""
+    missing = object()
+    expected = data.get("revision", missing)
+    if expected is missing and STRICT_REVISIONS:
+        return jsonify({"error": "revision_required"}), 428
+    if expected is not missing:
+        if isinstance(expected, bool) or not isinstance(expected, int) or expected < 1:
+            return jsonify({"error": "revision inválida"}), 400
+        if project.revision != expected:
+            return jsonify({
+                "error": "conflict",
+                "current_revision": project.revision,
+                "project": project.to_dict(),
+            }), 409
+
+    values = {}
+    if "name" in data:
+        values["name"] = _clean_name(data.get("name"))
+    if "data" in data:
+        new_data = _coerce_data(data.get("data"))
+        if not new_data:
+            return jsonify({"error": "'data' inválido"}), 400
+        values["data"] = new_data
+    if "board" in data:
+        values["board"] = data.get("board", project.board)
+    if "thumbnail" in data:
+        values["thumbnail"] = data.get("thumbnail")
+
+    if expected is not missing:
+        values["revision"] = Project.revision + 1
+        values["updated_by"] = actor_id
+        changed = (
+            s.query(Project)
+            .filter(Project.id == project.id, Project.revision == expected)
+            .update(values, synchronize_session=False)
+        )
+        if changed != 1:
+            s.rollback()
+            current = s.get(Project, project.id)
+            return jsonify({
+                "error": "conflict",
+                "current_revision": current.revision,
+                "project": current.to_dict(),
+            }), 409
+        s.commit()
+        s.refresh(project)
+        return None
+
+    for field, value in values.items():
+        setattr(project, field, value)
+    project.revision = (project.revision or 1) + 1
+    project.updated_by = actor_id
+    s.commit()
+    return None
 
 
 def _write_tabs(sketch_dir: Path, tabs: list[dict]) -> None:
@@ -142,21 +200,9 @@ def save_student_project(project_id):
         if not _teacher_owns_enrollment(s, p.user_id):
             return jsonify({"error": "No autorizado"}), 403
 
-        # Solo actualiza campos presentes (mismo criterio que PUT /api/projects).
-        if "name" in data:
-            p.name = _clean_name(data.get("name"))
-        if "data" in data:
-            new_data = _coerce_data(data.get("data"))
-            if not new_data:
-                return jsonify({"error": "'data' inválido"}), 400
-            p.data = new_data
-        if "board" in data:
-            p.board = data.get("board", p.board)
-        if "thumbnail" in data:
-            p.thumbnail = data.get("thumbnail")
-        p.revision = (p.revision or 1) + 1
-        p.updated_by = current_user.id
-        s.commit()
+        conflict = _update_project(s, p, data, current_user.id)
+        if conflict:
+            return conflict
         return jsonify(p.to_dict())
     finally:
         s.close()
@@ -245,22 +291,9 @@ def save_project(project_id):
         if not p or p.user_id != current_user.id:
             return jsonify({"error": "Proyecto no encontrado"}), 404
 
-        # Solo actualiza campos presentes: un PUT parcial (ej. renombrar)
-        # no debe pisar el sketch con datos vacíos.
-        if "name" in data:
-            p.name = _clean_name(data.get("name"))
-        if "data" in data:
-            new_data = _coerce_data(data.get("data"))
-            if not new_data:
-                return jsonify({"error": "'data' inválido"}), 400
-            p.data = new_data
-        if "board" in data:
-            p.board = data.get("board", p.board)
-        if "thumbnail" in data:
-            p.thumbnail = data.get("thumbnail")
-        p.revision = (p.revision or 1) + 1
-        p.updated_by = current_user.id
-        s.commit()
+        conflict = _update_project(s, p, data, current_user.id)
+        if conflict:
+            return conflict
         return jsonify(p.to_dict())
     finally:
         s.close()

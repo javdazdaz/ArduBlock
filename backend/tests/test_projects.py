@@ -7,6 +7,7 @@ sketch al renombrar) y el aislamiento entre usuarios.
 
 from backend.db import get_session
 from backend.models import User
+import backend.routes.projects as projects_module
 
 
 def _register(client, email, code="ABC123", password="secreto123"):
@@ -60,6 +61,61 @@ def test_project_revision_and_author_increment_on_save(client, seed_classroom):
     loaded = client.get(f"/api/projects/{created['id']}").get_json()
     assert loaded["revision"] == 2
     assert loaded["updated_by"] == created["updated_by"]
+
+
+def test_stale_project_revision_returns_conflict_without_overwriting(
+    client, seed_classroom
+):
+    seed_classroom("ABC123")
+    _register(client, "a@example.com")
+    created = _create(client, name="original.ino").get_json()
+
+    current = client.put(
+        f"/api/projects/{created['id']}",
+        json={"name": "version-2.ino", "revision": created["revision"]},
+    )
+    assert current.status_code == 200
+    assert current.get_json()["revision"] == 2
+
+    stale = client.put(
+        f"/api/projects/{created['id']}",
+        json={"name": "stale.ino", "revision": created["revision"]},
+    )
+    assert stale.status_code == 409
+    body = stale.get_json()
+    assert body["error"] == "conflict"
+    assert body["current_revision"] == 2
+    assert body["project"]["name"] == "version-2.ino"
+
+    unchanged = client.get(f"/api/projects/{created['id']}").get_json()
+    assert unchanged["name"] == "version-2.ino"
+    assert unchanged["revision"] == 2
+
+
+def test_invalid_project_revision_returns_bad_request(client, seed_classroom):
+    seed_classroom("ABC123")
+    _register(client, "a@example.com")
+    created = _create(client).get_json()
+
+    for revision in (0, -1, True, "1"):
+        response = client.put(
+            f"/api/projects/{created['id']}",
+            json={"name": "invalido.ino", "revision": revision},
+        )
+        assert response.status_code == 400
+
+
+def test_strict_revisions_reject_legacy_put(monkeypatch, client, seed_classroom):
+    seed_classroom("ABC123")
+    _register(client, "a@example.com")
+    created = _create(client).get_json()
+    monkeypatch.setattr(projects_module, "STRICT_REVISIONS", True)
+
+    response = client.put(
+        f"/api/projects/{created['id']}", json={"name": "legacy.ino"}
+    )
+    assert response.status_code == 428
+    assert response.get_json()["error"] == "revision_required"
 
 
 def test_partial_update_keeps_data(client, seed_classroom):

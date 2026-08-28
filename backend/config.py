@@ -63,6 +63,7 @@ PORT = int(os.environ.get("ARDUBLOCK_PORT", "5001"))
 SECRET_KEY = os.environ.get("ARDUBLOCK_SECRET_KEY", secrets.token_hex(32))
 IS_PRODUCTION = bool(os.environ.get("ARDUBLOCK_PRODUCTION"))
 RUNTIME_MODE = "production" if IS_PRODUCTION else "local"
+STRICT_REVISIONS = os.environ.get("ARDUBLOCK_COLLAB_STRICT_REVISIONS") == "1"
 
 # ═══ Detección de arduino-cli ═════════════════════
 

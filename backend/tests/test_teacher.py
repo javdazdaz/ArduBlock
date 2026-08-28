@@ -207,6 +207,12 @@ def test_teacher_edits_enrolled_student_project(client, seed_classroom):
     finally:
         s.close()
 
+    stale = client.put(
+        f"/api/teacher/projects/{pid}",
+        json={"name": "stale.ino", "revision": 1},
+    )
+    assert stale.status_code == 409
+
 
 def test_teacher_cannot_edit_foreign_project(client, seed_classroom):
     seed_classroom("ABC123")
