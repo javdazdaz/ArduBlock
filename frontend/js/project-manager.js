@@ -17,12 +17,17 @@ let currentProjectId = null;  // ID del proyecto actual en servidor
 let readOnly = false;         // modo solo-lectura (profesor viendo proyecto de alumno)
 let currentClassId = null;    // clase en la que se crean proyectos (?class=)
 let teacherEditId = null;     // id del proyecto de alumno en edición docente
+let currentRevision = null;   // revisión confirmada por el servidor
+let conflictState = null;     // copia local y proyecto remoto en conflicto
+let saveInFlight = false;
 
 export function cancelAutoSave() { clearTimeout(autoSaveTimer); }
 
 export function resetCurrentProject() {
   currentProjectId = null;
   teacherEditId = null;
+  currentRevision = null;
+  conflictState = null;
   setReadOnly(false);
   delete projectInput?.dataset?.projectId;
 }
@@ -60,6 +65,9 @@ export function initProjectManager(deps) {
     if (!projectInput.value.trim()) { showToast('Escriba el nombre del proyecto a eliminar'); return; }
     deleteProject(name);
   });
+  document.getElementById('conflict-reload')?.addEventListener('click', reloadConflictRemote);
+  document.getElementById('conflict-save-copy')?.addEventListener('click', saveConflictCopy);
+  document.getElementById('conflict-cancel')?.addEventListener('click', closeConflictDialog);
 
   document.addEventListener('click', (e) => {
     if (!projectList.classList.contains('hidden') &&
@@ -75,7 +83,7 @@ export function initProjectManager(deps) {
     autoSaveTimer = setTimeout(() => {
       if (readOnly) { workspaceDirty = false; return; }
       const name = projectInput.value.trim();
-      if (name) { saveProject(name); workspaceDirty = false; }
+      if (name) saveProject(name);
     }, 2000);
   });
 
@@ -108,6 +116,7 @@ function isGuest() { return window.IS_GUEST_MODE !== false; }
 
 export async function saveProject(name) {
   if (readOnly) { showToast('Solo lectura: no se puede guardar'); return; }
+  if (saveInFlight) { workspaceDirty = true; return; }
   name = name || getProjectName();
   if (!name.endsWith('.ino')) name += '.ino';
   projectInput.value = name;
@@ -127,6 +136,7 @@ export async function saveProject(name) {
   }
 
   // Usuario logueado: API
+  saveInFlight = true;
   try {
     // Edición docente → endpoint de profesor; proyecto propio → endpoint normal.
     const method = 'PUT';
@@ -137,6 +147,7 @@ export async function saveProject(name) {
     const thumbnail = await captureWorkspaceThumbnail(workspace);
     const body = { name, data: record, thumbnail };
     if (isCreate && currentClassId) body.class_id = currentClassId;
+    if (!isCreate && currentRevision != null) body.revision = currentRevision;
     const res = await csrfFetch(url, {
       method: isCreate ? 'POST' : 'PUT', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -144,15 +155,29 @@ export async function saveProject(name) {
     if (res.ok) {
       const saved = await res.json();
       if (isCreate) currentProjectId = saved.id;
+      currentRevision = saved.revision ?? 1;
+      conflictState = null;
+      workspaceDirty = false;
       projectInput.dataset.projectId = teacherEditId || currentProjectId || '';
       showToast(teacherEditId
         ? `Trabajo del estudiante guardado`
         : `Proyecto "${name}" guardado en servidor`);
       localStorage.setItem(LAST_KEY, name);
+    } else if (res.status === 409) {
+      const conflict = await res.json();
+      conflictState = {
+        localRecord: record,
+        remoteProject: conflict.project,
+        remoteRevision: conflict.current_revision,
+      };
+      workspaceDirty = true;
+      cancelAutoSave();
+      openConflictDialog(conflict.current_revision);
     } else {
       showToast('Error al guardar en servidor');
     }
-  } catch (e) { showToast('Error de conexión al guardar'); }
+  } catch (e) { workspaceDirty = true; showToast('Error de conexión al guardar'); }
+  finally { saveInFlight = false; }
 }
 
 
@@ -167,6 +192,7 @@ export async function loadProject(idOrName) {
   let record;
   if (isGuest() || typeof idOrName === 'string') {
     // localStorage
+    currentRevision = null;
     try {
       const raw = localStorage.getItem(lsKey(idOrName));
       if (!raw) { showToast(`Proyecto "${idOrName}" no encontrado`); return; }
@@ -180,6 +206,7 @@ export async function loadProject(idOrName) {
       if (!res.ok) { showToast('Proyecto no encontrado'); return; }
       const p = await res.json();
       record = typeof p.data === 'string' ? JSON.parse(p.data) : p.data;
+      currentRevision = p.revision ?? 1;
     } catch (e) { showToast('Error de conexión al cargar'); return; }
   }
 
@@ -209,6 +236,7 @@ async function loadForeignProject(id, url, editable) {
     }
     const p = await res.json();
     const record = typeof p.data === 'string' ? JSON.parse(p.data) : p.data;
+    currentRevision = p.revision ?? 1;
     if (window._forceUndoPush) window._forceUndoPush();
     let displayName = record.name || 'sin-nombre';
     if (!displayName.endsWith('.ino')) displayName += '.ino';
@@ -238,6 +266,45 @@ export async function loadReferenceProject(id) {
   if (name) showToast(`Referencia: "${name}"`);
 }
 
+
+// ═══ Resolución de conflictos ════════════════════
+
+function openConflictDialog(revision) {
+  const modal = document.getElementById('conflict-modal');
+  const revisionEl = document.getElementById('conflict-revision');
+  if (revisionEl) revisionEl.textContent = String(revision ?? '?');
+  modal?.classList.remove('hidden');
+}
+
+function closeConflictDialog() {
+  document.getElementById('conflict-modal')?.classList.add('hidden');
+}
+
+function reloadConflictRemote() {
+  if (!conflictState?.remoteProject) return;
+  const remote = conflictState.remoteProject;
+  const record = typeof remote.data === 'string' ? JSON.parse(remote.data) : remote.data;
+  restoreWorkspaceState(workspace, {
+    state: record.state,
+    tabs: record.tabs,
+    sketchName: remote.name || 'sin-nombre.ino',
+  });
+  currentRevision = conflictState.remoteRevision;
+  projectInput.value = remote.name || 'sin-nombre.ino';
+  conflictState = null;
+  workspaceDirty = false;
+  closeConflictDialog();
+  showToast('Versión del servidor cargada');
+}
+
+async function saveConflictCopy() {
+  if (!conflictState) return;
+  const baseName = getProjectName().replace(/\.ino$/i, '') || 'proyecto';
+  const copyName = `${baseName} - copia local.ino`;
+  resetCurrentProject();
+  closeConflictDialog();
+  await saveProject(copyName);
+}
 
 // ═══ Delete ══════════════════════════════════════
 

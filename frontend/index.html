@@ -346,6 +346,25 @@
     </div>
   </div>
 
+  <!-- Conflict Modal -->
+  <div id="conflict-modal" class="modal hidden">
+    <div class="modal-content" style="width:460px">
+      <div class="modal-header">
+        <h2>⚠ Cambios simultáneos</h2>
+      </div>
+      <div class="modal-body" style="padding:1.5rem">
+        <p>Este proyecto cambió mientras usted lo editaba.</p>
+        <p class="muted">La versión disponible en el servidor es la revisión <strong id="conflict-revision">?</strong>.</p>
+        <p>Elija si quiere cargar esa versión o conservar su trabajo como un proyecto nuevo.</p>
+        <div style="display:flex;gap:0.5rem;justify-content:flex-end;flex-wrap:wrap;margin-top:1.2rem">
+          <button id="conflict-cancel" class="btn btn-ghost">Cancelar</button>
+          <button id="conflict-save-copy" class="btn btn-ghost">Guardar copia local</button>
+          <button id="conflict-reload" class="btn">Cargar versión del servidor</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Diagnostics Modal -->
   <div id="diagnostics-modal" class="modal hidden">
     <div class="modal-content" style="width:520px">
