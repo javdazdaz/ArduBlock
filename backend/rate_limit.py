@@ -15,7 +15,7 @@ from functools import wraps
 from flask import jsonify, request
 
 _lock = threading.Lock()
-_hits = defaultdict(deque)
+_hits: defaultdict[str, deque[float]] = defaultdict(deque)
 _MAX_KEYS = 10_000
 
 

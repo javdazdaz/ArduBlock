@@ -139,8 +139,8 @@ def _sandboxed_compile(cmd: list[str]):
     try:
         build_cache.mkdir(parents=True, exist_ok=True)
     except OSError:
-        build_cache = None
-    if build_cache is not None and os.access(build_cache, os.W_OK):
+        pass
+    if os.access(build_cache, os.W_OK):
         bwrap += ["--bind", str(build_cache), os.path.join(scratch, ".cache")]
 
     packages_dir = os.path.join(_ARDUINO_DATA_DIR, "packages")

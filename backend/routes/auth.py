@@ -77,6 +77,7 @@ def send_email(to: str, subject: str, body: str) -> bool:
 </body></html>"""
         msg.attach(MIMEText(html, "html", "utf-8"))
 
+        s: smtplib.SMTP
         if SMTP_PORT == 465:
             s = smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT, timeout=10)
         else:

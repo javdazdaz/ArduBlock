@@ -77,10 +77,13 @@ def detect_driver_issues() -> dict[str, Any]:
             continue
 
         chip_info = KNOWN_USB_SERIAL.get((vid, pid))
-        if not chip_info:
+        if not isinstance(chip_info, dict):
             continue
 
-        driver_url = chip_info["drivers"].get(sys.platform)
+        drivers = chip_info.get("drivers")
+        if not isinstance(drivers, dict):
+            continue
+        driver_url = drivers.get(sys.platform)
         driver_needed = driver_url is not None
 
         board_map = CHIP_BOARD_MAP.get((vid, pid), {})
