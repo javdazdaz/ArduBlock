@@ -19,6 +19,7 @@ from backend.db import get_session as _get_session
 from backend.project_history import record_project_revision
 from backend.project_files import sync_project_files, update_project_tab
 from backend.text_ot import apply_changes, transform_changes, validate_changes
+from backend.collaboration import broker
 
 projects_bp = Blueprint("projects", __name__)
 
@@ -368,6 +369,15 @@ def submit_file_operation(project_id, file_id):
         )
         s.add(operation)
         s.commit()
+        broker.broadcast(project_id, file_id, {
+            "type": "operation",
+            "revision": new_revision,
+            "base_revision": base_revision,
+            "client_id": client_id,
+            "sequence": sequence,
+            "changes": transformed,
+            "author_id": current_user.id,
+        })
         return jsonify({
             "accepted": True,
             "revision": new_revision,

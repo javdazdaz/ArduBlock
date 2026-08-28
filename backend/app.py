@@ -6,6 +6,7 @@ Factory que crea la aplicación, registra blueprints y configura CORS.
 
 import os
 import sys
+import json
 
 _src_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if _src_dir not in sys.path:
@@ -24,8 +25,11 @@ from backend.config import (
     get_arduino_cli_path, IS_PRODUCTION,
 )
 from backend.db import SessionFactory, init_db
+from backend.models import ProjectFile, Project
 from backend.messages import get_message, SUPPORTED_LANGS, DEFAULT_LANG
 from backend.services.serial_manager import SerialManager
+from flask_sock import Sock
+from backend.collaboration import broker
 
 # ── Blueprints ──────────────────────────────────
 from backend.routes.projects import projects_bp
@@ -51,6 +55,7 @@ def create_app() -> Flask:
     _ensure_teacher()
 
     app = Flask(__name__, static_folder=None, template_folder=str(TEMPLATES_DIR))
+    sock = Sock(app)
     app.secret_key = SECRET_KEY
     if IS_PRODUCTION:
         # Caddy es el único proxy confiable del despliegue actual. Esto hace
@@ -103,6 +108,57 @@ def create_app() -> Flask:
     app.register_blueprint(drivers_bp)
     app.register_blueprint(health_bp)
     app.register_blueprint(auth_bp)
+
+    @sock.route("/ws/projects/<int:project_id>/files/<int:file_id>")
+    def collaboration_socket(ws, project_id, file_id):
+        """Transport efímero de presencia; las operaciones siguen siendo HTTP."""
+        if not current_user.is_authenticated:
+            return
+        session_db = SessionFactory()
+        try:
+            file = (
+                session_db.query(ProjectFile)
+                .join(Project, Project.id == ProjectFile.project_id)
+                .filter(ProjectFile.id == file_id, ProjectFile.project_id == project_id,
+                        Project.user_id == current_user.id)
+                .first()
+            )
+        finally:
+            session_db.close()
+        if not file:
+            return
+        client_id = request.args.get("client_id", "")
+        if not client_id or len(client_id) > 100:
+            return
+        peer = broker.join(project_id, file_id, client_id, current_user.id,
+                           getattr(current_user, "name", None) or current_user.email, ws)
+        try:
+            ws.send(json.dumps({"type": "presence", "peers": broker.presence(project_id, file_id)}))
+            broker.broadcast(project_id, file_id, {
+                "type": "presence",
+                "event": "join",
+                "peer": {"connection_id": peer.connection_id, "client_id": peer.client_id,
+                         "user_id": peer.user_id, "display_name": peer.display_name},
+            }, exclude=peer.connection_id)
+            while True:
+                raw = ws.receive()
+                if raw is None:
+                    break
+                message = json.loads(raw)
+                if message.get("type") == "presence":
+                    broker.broadcast(project_id, file_id, {
+                        "type": "presence", "event": "update",
+                        "peer": {"connection_id": peer.connection_id, "client_id": peer.client_id,
+                                 "user_id": peer.user_id, "display_name": peer.display_name,
+                                 "cursor": message.get("cursor"), "selection": message.get("selection")},
+                    }, exclude=peer.connection_id)
+        except (ValueError, TypeError, json.JSONDecodeError):
+            pass
+        finally:
+            broker.leave(project_id, file_id, peer.connection_id)
+            broker.broadcast(project_id, file_id, {
+                "type": "presence", "event": "leave", "connection_id": peer.connection_id,
+            })
 
     # La compilación pública no muta sesión ni datos persistentes.
     csrf.exempt(compile_bp)
