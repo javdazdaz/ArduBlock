@@ -191,6 +191,25 @@ header .subtitle {
 
 .toolbar button:hover { opacity: 0.85; }
 
+.collaboration-header {
+  flex: 0 0 auto;
+  min-width: 0;
+  max-width: min(32vw, 280px);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: .2rem;
+  margin-left: auto;
+  overflow: hidden;
+}
+.collaboration-avatars { display: flex; align-items: center; gap: .25rem; }
+.collaboration-header .presence-person { margin-left: 0; }
+.collaboration-header .presence-initials { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--accent); color: #fff; font-size: .65rem; font-weight: 700; }
+.collaboration-header .avatar { display: block; border-radius: 50%; object-fit: cover; }
+.collaboration-header .avatar-tiny { width: 28px; height: 28px; }
+.collaboration-status { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-dim); font-size: .72rem; }
+.collaboration-header.hidden { display: none; }
+
 .btn-primary { background: var(--accent); color: #fff; }
 .btn-secondary { background: var(--btn-secondary-bg); color: var(--btn-secondary-text); }
 .btn-danger { background: var(--btn-danger-bg); color: var(--btn-danger-text); }

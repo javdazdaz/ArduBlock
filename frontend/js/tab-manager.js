@@ -99,6 +99,11 @@ function _editableExtensions(lang) {
     highlightSelectionMatches(),
     search({ top: true }),
     EditorView.updateListener.of((update) => {
+      if ((update.selectionSet || update.docChanged) && collaborationClient) {
+        const head = update.state.selection.main.head;
+        const line = update.state.doc.lineAt(head);
+        collaborationClient.sendPresence({ filename: activeFilename, cursor: { line: line.number, ch: head - line.from } });
+      }
       if (!update.docChanged) return;
       const tab = tabs.find(t => t.filename === activeFilename);
       if (tab && !tab.readonly) {
@@ -461,6 +466,7 @@ export function configureTextCollaboration(projectId, files) {
   }
   collaborationClient = collaborationClients.get(activeFilename) || null;
   collaborationClient?.connect();
+  collaborationClient?.sendPresence({ filename: activeFilename });
 }
 
 export function applyRemoteTextChanges(changes) {

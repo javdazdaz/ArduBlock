@@ -277,6 +277,9 @@ window._configureBlockCollaboration = (projectId) => {
 
 workspace.addChangeListener((event) => {
   if (applyingRemoteBlockOperation || !blockCollabClient) return;
+  if (event.type === Blockly.Events.SELECTED) {
+    blockCollabClient.sendPresence({ selected_block: event.newElementId || null });
+  }
   const operation = operationFromBlocklyEvent(event, workspace);
   if (operation) blockCollabClient.enqueue(operation);
 });
