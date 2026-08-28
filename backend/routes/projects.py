@@ -210,9 +210,12 @@ def list_project_collaborators(project_id):
             return jsonify({"error": "Proyecto no encontrado"}), 404
         project, role = access
         rows = s.query(ProjectCollaborator).filter_by(project_id=project_id).all()
-        return jsonify([{"user_id": row.user_id, "email": row.user.email,
+        return jsonify({
+            "current_user_role": role,
+            "collaborators": [{"user_id": row.user_id, "email": row.user.email,
                          "role": row.role, "created_at": row.created_at.isoformat() if row.created_at else None}
-                        for row in rows])
+                        for row in rows],
+        })
     finally:
         s.close()
 

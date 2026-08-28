@@ -360,6 +360,7 @@ header .subtitle {
 .collaborators-list { display: grid; gap: .5rem; }
 .collaborator-row { display: flex; justify-content: space-between; align-items: center; gap: .75rem; padding: .6rem; border: 1px solid var(--border); border-radius: 6px; }
 .collaborator-row small { color: var(--text-muted); }
+.collaborator-actions { display: flex; align-items: center; gap: .35rem; flex-wrap: wrap; }
 .collaborator-presence { color: var(--text-muted); min-height: 1.2em; }
 
 .project-dropdown-item {

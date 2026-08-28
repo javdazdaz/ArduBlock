@@ -15,11 +15,20 @@ describe('collaborators UI', () => {
   beforeEach(() => { dom(); window.IS_GUEST_MODE = false; });
 
   it('loads collaborators and escapes email HTML', async () => {
-    const fetchImpl = vi.spyOn(globalThis, 'fetch').mockResolvedValue({ ok: true, json: async () => [{ user_id: 2, email: '<x>', role: 'viewer' }] });
+    const fetchImpl = vi.spyOn(globalThis, 'fetch').mockResolvedValue({ ok: true, json: async () => ({ current_user_role: 'owner', collaborators: [{ user_id: 2, email: '<x>', role: 'viewer' }] }) });
     initCollaboratorsUI({ getProjectId: () => 7 });
     await document.getElementById('btn-collaborators').click();
     await vi.waitFor(() => expect(document.getElementById('collaborators-list').innerHTML).toContain('&lt;x&gt;'));
     expect(document.getElementById('btn-collaborators').hidden).toBe(false);
+    fetchImpl.mockRestore();
+  });
+
+  it('hides management controls for an editor', async () => {
+    const fetchImpl = vi.spyOn(globalThis, 'fetch').mockResolvedValue({ ok: true, json: async () => ({ current_user_role: 'editor', collaborators: [{ user_id: 2, email: 'viewer@example.com', role: 'viewer' }] }) });
+    initCollaboratorsUI({ getProjectId: () => 7 });
+    await document.getElementById('btn-collaborators').click();
+    await vi.waitFor(() => expect(document.querySelector('.collaborator-update')).toBeNull());
+    expect(document.getElementById('collaborator-form').hidden).toBe(true);
     fetchImpl.mockRestore();
   });
 

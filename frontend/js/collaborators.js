@@ -21,13 +21,30 @@ export function initCollaboratorsUI({ getProjectId, showToast }) {
     const projectId = getProjectId();
     if (!projectId) return;
     const response = await fetch(`/api/projects/${projectId}/collaborators`);
-    if (!response.ok) { showToast?.('No se pudieron cargar los colaboradores'); return; }
-    const collaborators = await response.json();
+    if (!response.ok) {
+      showToast?.(response.status === 403 ? 'Solo el propietario puede administrar accesos' : 'No se pudieron cargar los colaboradores');
+      return;
+    }
+    const payload = await response.json();
+    const currentRole = payload.current_user_role;
+    const collaborators = payload.collaborators || [];
+    const isOwner = currentRole === 'owner';
+    form.hidden = !isOwner;
     list.innerHTML = collaborators.length ? collaborators.map(row => `
       <div class="collaborator-row" data-user-id="${row.user_id}">
         <span>${escape(row.email)} <small>(${escape(row.role)})</small></span>
-        <button type="button" class="btn-danger collaborator-remove" data-user-id="${row.user_id}">Revocar</button>
+        ${isOwner ? `<span class="collaborator-actions">
+          <select class="collaborator-role" aria-label="Rol de ${escape(row.email)}">
+            <option value="viewer" ${row.role === 'viewer' ? 'selected' : ''}>Lector</option>
+            <option value="editor" ${row.role === 'editor' ? 'selected' : ''}>Editor</option>
+          </select>
+          <button type="button" class="btn-secondary collaborator-update" data-email="${escape(row.email)}">Aplicar</button>
+          <button type="button" class="btn-danger collaborator-remove" data-user-id="${row.user_id}">Revocar</button>
+        </span>` : ''}
       </div>`).join('') : '<p class="muted">No hay colaboradores.</p>';
+    if (!isOwner) {
+      list.insertAdjacentHTML('afterbegin', `<p class="muted">Usted tiene permiso de ${escape(currentRole)}; solo el propietario administra accesos.</p>`);
+    }
   }
 
   button.addEventListener('click', async () => {
@@ -55,6 +72,18 @@ export function initCollaboratorsUI({ getProjectId, showToast }) {
   });
 
   list.addEventListener('click', async event => {
+    const update = event.target.closest('.collaborator-update');
+    if (update) {
+      const role = update.parentElement.querySelector('.collaborator-role').value;
+      const response = await csrfFetch(`/api/projects/${getProjectId()}/collaborators`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: update.dataset.email, role }),
+      });
+      if (!response.ok) { showToast?.('Solo el propietario puede cambiar permisos'); return; }
+      await load();
+      showToast?.('Permiso actualizado');
+      return;
+    }
     const remove = event.target.closest('.collaborator-remove');
     if (!remove) return;
     const response = await csrfFetch(`/api/projects/${getProjectId()}/collaborators/${remove.dataset.userId}`, { method: 'DELETE' });
