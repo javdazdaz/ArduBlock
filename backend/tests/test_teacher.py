@@ -195,12 +195,15 @@ def test_teacher_edits_enrolled_student_project(client, seed_classroom):
                    json={"name": "corregido.ino", "data": {"state": {"x": 2}}})
     assert r.status_code == 200
     assert r.get_json()["name"] == "corregido.ino"
+    assert r.get_json()["revision"] == 2
 
     s = get_session()
     try:
         p = s.get(Project, pid)
+        teacher = s.query(User).filter_by(role="teacher").first()
         assert p.name == "corregido.ino"
         assert json.loads(p.data)["state"]["x"] == 2
+        assert p.updated_by == teacher.id
     finally:
         s.close()
 

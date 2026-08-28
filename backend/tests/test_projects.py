@@ -6,6 +6,7 @@ sketch al renombrar) y el aislamiento entre usuarios.
 """
 
 from backend.db import get_session
+from backend.models import User
 
 
 def _register(client, email, code="ABC123", password="secreto123"):
@@ -40,6 +41,25 @@ def test_load_project(client, seed_classroom):
     r = client.get(f"/api/projects/{pid}")
     assert r.status_code == 200
     assert r.get_json()["data"] == '{"state": {"x": 1}}'
+
+
+def test_project_revision_and_author_increment_on_save(client, seed_classroom):
+    seed_classroom("ABC123")
+    _register(client, "a@example.com")
+
+    created = _create(client).get_json()
+    assert created["revision"] == 1
+    assert isinstance(created["updated_by"], int)
+
+    saved = client.put(
+        f"/api/projects/{created['id']}", json={"name": "revision-2.ino"}
+    ).get_json()
+    assert saved["revision"] == 2
+    assert saved["updated_by"] == created["updated_by"]
+
+    loaded = client.get(f"/api/projects/{created['id']}").get_json()
+    assert loaded["revision"] == 2
+    assert loaded["updated_by"] == created["updated_by"]
 
 
 def test_partial_update_keeps_data(client, seed_classroom):
@@ -116,12 +136,21 @@ def test_teacher_regen_list_and_save(client, seed_classroom):
     assert len(items) == 1
     assert items[0]["name"] == "p.ino"
     assert "data" in items[0]
+    assert items[0]["revision"] == 1
+    assert isinstance(items[0]["updated_by"], int)
 
     pid = items[0]["id"]
     r2 = client.post(f"/api/teacher/regen/projects/{pid}/thumbnail",
                      json={"thumbnail": "data:image/png;base64,BBBB"})
+    s = get_session()
+    try:
+        teacher_id = s.query(User).filter_by(role="teacher").first().id
+    finally:
+        s.close()
     assert r2.status_code == 200
     assert r2.get_json()["thumbnail"] == "data:image/png;base64,BBBB"
+    assert r2.get_json()["revision"] == 2
+    assert r2.get_json()["updated_by"] == teacher_id
 
 
 def test_student_cannot_regen(client, seed_classroom):

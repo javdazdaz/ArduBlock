@@ -154,6 +154,8 @@ def save_student_project(project_id):
             p.board = data.get("board", p.board)
         if "thumbnail" in data:
             p.thumbnail = data.get("thumbnail")
+        p.revision = (p.revision or 1) + 1
+        p.updated_by = current_user.id
         s.commit()
         return jsonify(p.to_dict())
     finally:
@@ -220,6 +222,8 @@ def create_project():
             board=data.get("board", "arduino:avr:uno"),
             class_id=class_id,
             thumbnail=data.get("thumbnail"),
+            revision=1,
+            updated_by=current_user.id,
         )
         s.add(p)
         s.commit()
@@ -254,6 +258,8 @@ def save_project(project_id):
             p.board = data.get("board", p.board)
         if "thumbnail" in data:
             p.thumbnail = data.get("thumbnail")
+        p.revision = (p.revision or 1) + 1
+        p.updated_by = current_user.id
         s.commit()
         return jsonify(p.to_dict())
     finally:
@@ -303,6 +309,8 @@ def teacher_regen_projects():
             "name": p.name,
             "data": p.data,
             "has_thumbnail": bool(p.thumbnail),
+            "revision": p.revision,
+            "updated_by": p.updated_by,
         } for p in rows])
     finally:
         s.close()
@@ -323,6 +331,8 @@ def teacher_regen_thumbnail(project_id):
         if not _teacher_owns_enrollment(s, p.user_id):
             return jsonify({"error": "No autorizado"}), 403
         p.thumbnail = data.get("thumbnail")
+        p.revision = (p.revision or 1) + 1
+        p.updated_by = current_user.id
         s.commit()
         return jsonify(p.to_dict())
     finally:

@@ -38,7 +38,10 @@ class User(Base, UserMixin):
     reset_token_expires = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=utcnow)
 
-    projects = relationship("Project", back_populates="user", cascade="all, delete-orphan")
+    projects = relationship(
+        "Project", back_populates="user", foreign_keys="Project.user_id",
+        cascade="all, delete-orphan",
+    )
     classrooms_owned = relationship(
         "Classroom", back_populates="teacher", foreign_keys="Classroom.teacher_id",
         cascade="all, delete-orphan",
@@ -108,10 +111,12 @@ class Project(Base):
     board = Column(String(50), default="arduino:avr:uno")
     class_id = Column(Integer, ForeignKey("classes.id"), nullable=True, index=True)
     thumbnail = Column(Text, nullable=True)  # data URI PNG 128x128 del workspace
+    revision = Column(Integer, nullable=False, default=1)
+    updated_by = Column(Integer, ForeignKey("users.id"), nullable=True)
     created_at = Column(DateTime, default=utcnow)
     updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)
 
-    user = relationship("User", back_populates="projects")
+    user = relationship("User", back_populates="projects", foreign_keys=[user_id])
 
     def to_dict(self):
         return {
@@ -119,6 +124,8 @@ class Project(Base):
             "data": self.data,
             "class_id": self.class_id,
             "thumbnail": self.thumbnail,
+            "revision": self.revision,
+            "updated_by": self.updated_by,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }

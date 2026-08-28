@@ -104,8 +104,11 @@ def test_teacher_edits_project_name_and_class(client, seed_classroom):
     s = get_session()
     try:
         p = s.get(Project, pid)
+        teacher = s.query(User).filter_by(role="teacher").first()
         assert p.name == "renombrado.ino"
         assert p.class_id == clid
+        assert p.revision == 2
+        assert p.updated_by == teacher.id
     finally:
         s.close()
 

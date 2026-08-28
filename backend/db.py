@@ -59,6 +59,8 @@ def _migrate():
     additions = {
         "class_id": "INTEGER",
         "thumbnail": "TEXT",
+        "revision": "INTEGER NOT NULL DEFAULT 1",
+        "updated_by": "INTEGER",
     }
     for col, sqltype in additions.items():
         if col not in cols:

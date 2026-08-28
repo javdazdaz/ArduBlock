@@ -280,6 +280,8 @@ def test_student_clones_activity_to_account(client, seed_classroom):
         clone = clones[0]
         assert clone.class_id == clid
         assert clone.name == "Semáforo"
+        assert clone.revision == 1
+        assert clone.updated_by == student.id
         ref = s.get(Project, pid)
         assert clone.data == ref.data
         assert clone.board == ref.board

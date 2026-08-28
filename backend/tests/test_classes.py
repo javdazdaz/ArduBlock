@@ -103,8 +103,11 @@ def test_teacher_deletes_class_keeps_projects(client, seed_classroom):
     try:
         assert s.get(Class, clid) is None
         proj = s.get(Project, pid)
+        teacher = s.query(User).filter_by(role="teacher").first()
         assert proj is not None          # el proyecto no se borra
         assert proj.class_id is None     # queda sin clase
+        assert proj.revision == 2
+        assert proj.updated_by == teacher.id
     finally:
         s.close()
 

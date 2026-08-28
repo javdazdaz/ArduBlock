@@ -4,6 +4,8 @@ status de arduino-cli sin ruta del binario."""
 from backend.routes.examples import _safe_example_path
 from backend.payload_validation import validate_compile_payload
 from backend.routes.projects import _write_tabs
+from sqlalchemy import create_engine, inspect, text
+import backend.db as db_module
 
 
 def test_safe_example_path_rejects_null_byte():
@@ -89,3 +91,28 @@ def test_canonical_project_editor_routes(client):
         "/project/12/reference",
     ):
         assert client.get(path).status_code == 200
+
+
+def test_migrate_adds_revision_columns_without_losing_projects(monkeypatch, tmp_path):
+    legacy_engine = create_engine(f"sqlite:///{tmp_path / 'legacy.db'}")
+    with legacy_engine.begin() as conn:
+        conn.execute(text(
+            "CREATE TABLE projects ("
+            "id INTEGER PRIMARY KEY, user_id INTEGER NOT NULL, "
+            "name VARCHAR(100) NOT NULL, data TEXT NOT NULL)"
+        ))
+        conn.execute(text(
+            "INSERT INTO projects (id, user_id, name, data) "
+            "VALUES (7, 3, 'antiguo.ino', '{}')"
+        ))
+
+    monkeypatch.setattr(db_module, "engine", legacy_engine)
+    db_module._migrate()
+
+    columns = {column["name"] for column in inspect(legacy_engine).get_columns("projects")}
+    assert {"revision", "updated_by"} <= columns
+    with legacy_engine.connect() as conn:
+        row = conn.execute(text(
+            "SELECT id, name, revision, updated_by FROM projects WHERE id = 7"
+        )).mappings().one()
+    assert row == {"id": 7, "name": "antiguo.ino", "revision": 1, "updated_by": None}

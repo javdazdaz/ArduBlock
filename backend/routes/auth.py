@@ -725,7 +725,14 @@ def delete_class(class_id):
             flash(get_message(g.lang, "classroom_not_found"), "error")
             return redirect(url_for("auth.teacher_dashboard"))
         if form.validate_on_submit():
-            s.query(Project).filter_by(class_id=class_id).update({"class_id": None})
+            s.query(Project).filter_by(class_id=class_id).update(
+                {
+                    Project.class_id: None,
+                    Project.revision: func.coalesce(Project.revision, 1) + 1,
+                    Project.updated_by: current_user.id,
+                },
+                synchronize_session=False,
+            )
             s.query(ClassActivity).filter_by(class_id=class_id).delete()
             s.delete(cls)
             s.commit()
@@ -934,6 +941,8 @@ def clone_activity(class_id, activity_id):
             board=ref.board,
             class_id=class_id,
             thumbnail=ref.thumbnail,
+            revision=1,
+            updated_by=current_user.id,
         )
         s.add(clone)
         s.commit()
@@ -1061,6 +1070,8 @@ def teacher_edit_project(student_id, project_id):
                 p.class_id = new_class_id
             else:
                 p.class_id = None
+            p.revision = (p.revision or 1) + 1
+            p.updated_by = current_user.id
             s.commit()
             flash(get_message(g.lang, "project_updated"), "success")
     finally:
