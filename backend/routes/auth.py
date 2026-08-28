@@ -13,7 +13,7 @@ import smtplib
 from email.mime.text import MIMEText
 from datetime import timedelta
 
-from flask import Blueprint, g, render_template, request, redirect, url_for, flash, send_from_directory
+from flask import Blueprint, g, render_template, request, redirect, url_for, flash, send_from_directory, jsonify, Response
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, EmailField
@@ -27,6 +27,7 @@ from backend.models import User, Classroom, ClassroomStudent, Project, Class, Ac
 from backend.db import get_session
 from backend.messages import get_message
 from backend.config import FRONTEND_DIR
+from backend.avatar import validate_avatar_data, avatar_response
 from backend.rate_limit import is_rate_limited
 from backend.project_history import record_project_revision
 from backend.project_files import sync_project_files
@@ -136,6 +137,11 @@ class EditStudentForm(FlaskForm):
     email = EmailField("Email", validators=[DataRequired(), Email()])
 
 
+class ProfileForm(FlaskForm):
+    name = StringField("Nombre", validators=[DataRequired(), Length(min=2, max=100)])
+    email = EmailField("Email", validators=[DataRequired(), Email()])
+
+
 class ProjectEditForm(FlaskForm):
     name = StringField("Nombre", validators=[DataRequired(), Length(max=100)])
 
@@ -168,6 +174,69 @@ def init_auth(app, session_factory):
 def _get_session():
     """Sesión única compartida (backend.db)."""
     return get_session()
+
+
+@auth_bp.route("/profile")
+@login_required
+def profile():
+    return render_template("profile.html", profile_form=ProfileForm(obj=current_user))
+
+
+@auth_bp.route("/profile/edit", methods=["POST"])
+@login_required
+def edit_profile():
+    form = ProfileForm()
+    if not form.validate_on_submit():
+        flash("Revise los datos del perfil.", "error")
+        return redirect(url_for("auth.profile"))
+    s = _get_session()
+    try:
+        user = s.get(User, current_user.id)
+        email = form.email.data.strip().lower()
+        duplicate = s.query(User).filter(User.email == email, User.id != user.id).first()
+        if duplicate:
+            flash(get_message(g.lang, "email_registered"), "error")
+        else:
+            user.name, user.email = form.name.data.strip(), email
+            s.commit()
+            flash("Perfil actualizado.", "success")
+    finally:
+        s.close()
+    return redirect(url_for("auth.profile"))
+
+
+@auth_bp.route("/api/profile/avatar", methods=["POST", "DELETE"])
+@login_required
+def update_avatar():
+    s = _get_session()
+    try:
+        user = s.get(User, current_user.id)
+        if request.method == "DELETE":
+            user.avatar_type, user.avatar_data = "initials", None
+        else:
+            data = request.get_json(silent=True) or {}
+            avatar_type, avatar_data = data.get("avatar_type", "upload"), data.get("avatar_data")
+            if avatar_type not in {"upload", "canvas"} or not validate_avatar_data(avatar_data):
+                return jsonify({"error": "Avatar inválido"}), 400
+            user.avatar_type, user.avatar_data = avatar_type, avatar_data
+        s.commit()
+        return jsonify({"avatar_type": user.avatar_type or "initials",
+                        "avatar_url": f"/api/profile/avatar/{user.id}"})
+    finally:
+        s.close()
+
+
+@auth_bp.route("/api/profile/avatar/<int:user_id>")
+@login_required
+def profile_avatar(user_id):
+    s = _get_session()
+    try:
+        user = s.get(User, user_id)
+        if not user or (user.id != current_user.id and not current_user.is_teacher):
+            return jsonify({"error": "No autorizado"}), 403
+        return avatar_response(user) or Response(status=404)
+    finally:
+        s.close()
 
 
 def _student_enrolled_in_teacher_classroom(s, student_id) -> bool:

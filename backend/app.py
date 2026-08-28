@@ -129,12 +129,15 @@ def create_app() -> Flask:
         peer = broker.join(project_id, file_id, client_id, current_user.id,
                            getattr(current_user, "name", None) or current_user.email, ws)
         try:
-            ws.send(json.dumps({"type": "presence", "peers": broker.presence(project_id, file_id)}))
+            peers = [{**p, "avatar_url": f"/api/projects/{project_id}/avatar/{p['user_id']}"}
+                     for p in broker.presence(project_id, file_id)]
+            ws.send(json.dumps({"type": "presence", "peers": peers}))
             broker.broadcast(project_id, file_id, {
                 "type": "presence",
                 "event": "join",
                 "peer": {"connection_id": peer.connection_id, "client_id": peer.client_id,
-                         "user_id": peer.user_id, "display_name": peer.display_name},
+                         "user_id": peer.user_id, "display_name": peer.display_name,
+                         "avatar_url": f"/api/projects/{project_id}/avatar/{peer.user_id}"},
             }, exclude=peer.connection_id)
             while True:
                 raw = ws.receive()
@@ -146,7 +149,8 @@ def create_app() -> Flask:
                         "type": "presence", "event": "update",
                         "peer": {"connection_id": peer.connection_id, "client_id": peer.client_id,
                                  "user_id": peer.user_id, "display_name": peer.display_name,
-                                 "cursor": message.get("cursor"), "selection": message.get("selection")},
+                                 "cursor": message.get("cursor"), "selection": message.get("selection"),
+                                 "avatar_url": f"/api/projects/{project_id}/avatar/{peer.user_id}"},
                     }, exclude=peer.connection_id)
         except (ValueError, TypeError, json.JSONDecodeError):
             pass
@@ -174,7 +178,9 @@ def create_app() -> Flask:
         peer = broker.join(project_id, 0, client_id, current_user.id,
                            getattr(current_user, "name", None) or current_user.email, ws)
         try:
-            ws.send(json.dumps({"type": "presence", "peers": broker.presence(project_id, 0)}))
+            peers = [{**p, "avatar_url": f"/api/projects/{project_id}/avatar/{p['user_id']}"}
+                     for p in broker.presence(project_id, 0)]
+            ws.send(json.dumps({"type": "presence", "peers": peers}))
             while True:
                 raw = ws.receive()
                 if raw is None:
@@ -185,6 +191,7 @@ def create_app() -> Flask:
                         "type": "presence", "event": "update",
                         "peer": {"connection_id": peer.connection_id, "client_id": peer.client_id,
                                  "user_id": peer.user_id, "display_name": peer.display_name,
+                                 "avatar_url": f"/api/projects/{project_id}/avatar/{peer.user_id}",
                                  "selected_block": message.get("selected_block")},
                     }, exclude=peer.connection_id)
         except (ValueError, TypeError, json.JSONDecodeError):

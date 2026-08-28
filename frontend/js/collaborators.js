@@ -13,6 +13,12 @@ export function initCollaboratorsUI({ getProjectId, showToast }) {
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
   }[char]));
 
+  function renderPresence(peers, kind) {
+    if (!Array.isArray(peers) || !presence) return;
+    const label = kind === 'block' ? 'Blockly' : 'texto';
+    presence.innerHTML = `${peers.length} sesión(es) de ${label} conectada(s) ` + peers.map(peer => `<span class="presence-person" title="${escape(peer.display_name || '')}"><img class="avatar avatar-tiny" src="${escape(peer.avatar_url || '')}" alt="" onerror="this.hidden=true"><span>${escape((peer.display_name || '?').slice(0, 2).toUpperCase())}</span></span>`).join('');
+  }
+
   function refreshVisibility() {
     button.hidden = window.IS_GUEST_MODE !== false || !getProjectId();
   }
@@ -32,7 +38,7 @@ export function initCollaboratorsUI({ getProjectId, showToast }) {
     form.hidden = !isAdmin;
     list.innerHTML = collaborators.length ? collaborators.map(row => `
       <div class="collaborator-row" data-user-id="${row.user_id}">
-        <span>${escape(row.email)} <small>(${escape(row.role)})</small></span>
+        <span class="collaborator-identity"><img class="avatar avatar-small" src="${escape(row.avatar_url || '')}" alt="" onerror="this.hidden=true"><span><strong>${escape(row.name || row.email)}</strong><br><small>${escape(row.email)} · ${escape(row.role)}</small></span></span>
         ${isAdmin ? `<span class="collaborator-actions">
           <select class="collaborator-role" aria-label="Rol de ${escape(row.email)}">
             <option value="viewer" ${row.role === 'viewer' ? 'selected' : ''}>Lector</option>
@@ -91,14 +97,8 @@ export function initCollaboratorsUI({ getProjectId, showToast }) {
     await load();
   });
 
-  window.addEventListener('ardublock:presence', event => {
-    const peers = event.detail?.peers;
-    if (Array.isArray(peers) && presence) presence.textContent = `${peers.length} sesión(es) de texto conectada(s)`;
-  });
-  window.addEventListener('ardublock:block-presence', event => {
-    const peers = event.detail?.peers;
-    if (Array.isArray(peers) && presence) presence.textContent = `${peers.length} sesión(es) Blockly conectada(s)`;
-  });
+  window.addEventListener('ardublock:presence', event => renderPresence(event.detail?.peers, 'text'));
+  window.addEventListener('ardublock:block-presence', event => renderPresence(event.detail?.peers, 'block'));
   window.addEventListener('ardublock:project-changed', refreshVisibility);
   refreshVisibility();
 }

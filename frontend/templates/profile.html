@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Mi perfil — ArduBlock{% endblock %}
+{% block content %}
+{{ nav_bar() }}
+<main class="narrow profile-page" data-user-id="{{ current_user.id }}">
+  {{ render_flash() }}
+  <div class="page-header"><h2>Mi perfil</h2></div>
+  <section class="panel profile-card">
+    <div class="profile-avatar-preview">
+      <img id="profile-avatar" src="/api/profile/avatar/{{ current_user.id }}" alt="Foto de perfil" onerror="this.hidden=true; document.getElementById('profile-initials').hidden=false">
+      <span id="profile-initials"{% if current_user.avatar_data %} hidden{% endif %}>{{ current_user.name[:2]|upper }}</span>
+    </div>
+    <div>
+      <h3>{{ current_user.name }}</h3>
+      <p class="muted">La imagen es privada y solo se comparte con usuarios autorizados en una colaboración.</p>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>Datos de la cuenta</h2>
+    <form method="POST" action="{{ url_for('auth.edit_profile') }}" class="account-form">
+      {{ profile_form.hidden_tag() }}
+      <div class="field"><label for="name">Nombre</label>{{ profile_form.name(id="name") }}</div>
+      <div class="field"><label for="email">Email</label>{{ profile_form.email(id="email") }}</div>
+      <button type="submit" class="btn">Guardar datos</button>
+    </form>
+  </section>
+
+  <section class="panel">
+    <h2>Imagen de perfil</h2>
+    <p class="muted">Puede subir una imagen o elegir uno de los avatares prediseñados.</p>
+    <div class="avatar-actions">
+      <label class="btn btn-ghost" for="avatar-file">Subir imagen</label>
+      <input id="avatar-file" type="file" accept="image/png,image/jpeg,image/webp" hidden>
+      <button id="avatar-remove" type="button" class="btn-danger">Usar iniciales</button>
+    </div>
+    <div id="crop-area" class="crop-area hidden">
+      <canvas id="crop-canvas" width="256" height="256"></canvas>
+      <label>Zoom <input id="crop-zoom" type="range" min="1" max="3" step="0.01" value="1"></label>
+      <div><button id="crop-save" type="button" class="btn">Guardar recorte</button><button id="crop-cancel" type="button" class="btn-ghost">Cancelar</button></div>
+    </div>
+    <div class="avatar-choices">
+      <button type="button" class="avatar-choice" data-avatar="one"><canvas width="96" height="96"></canvas><span>Avatar 1</span></button>
+      <button type="button" class="avatar-choice" data-avatar="two"><canvas width="96" height="96"></canvas><span>Avatar 2</span></button>
+    </div>
+  </section>
+</main>
+<script type="module" src="/js/profile-avatar.js"></script>
+{% endblock %}

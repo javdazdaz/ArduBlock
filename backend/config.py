@@ -64,6 +64,7 @@ SECRET_KEY = os.environ.get("ARDUBLOCK_SECRET_KEY", secrets.token_hex(32))
 IS_PRODUCTION = bool(os.environ.get("ARDUBLOCK_PRODUCTION"))
 RUNTIME_MODE = "production" if IS_PRODUCTION else "local"
 STRICT_REVISIONS = os.environ.get("ARDUBLOCK_COLLAB_STRICT_REVISIONS") == "1"
+MAX_AVATAR_DATA = 700_000
 
 # ═══ Detección de arduino-cli ═════════════════════
 
