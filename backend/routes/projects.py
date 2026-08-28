@@ -168,9 +168,10 @@ def list_projects():
 def load_project(project_id):
     s = _get_session()
     try:
-        p = s.get(Project, project_id)
-        if not p or p.user_id != current_user.id:
+        access = project_access(s, project_id, current_user.id)
+        if not access:
             return jsonify({"error": "Proyecto no encontrado"}), 404
+        p, _role = access
         return jsonify(p.to_dict())
     finally:
         s.close()
@@ -230,9 +231,10 @@ def add_project_collaborator(project_id):
         return jsonify({"error": "Colaborador inválido"}), 400
     s = _get_session()
     try:
-        project = s.get(Project, project_id)
-        if not project or project.user_id != current_user.id:
+        access = project_access(s, project_id, current_user.id)
+        if not access or access[1] not in {"owner", "teacher"}:
             return jsonify({"error": "Proyecto no encontrado"}), 404
+        project, _role = access
         user = s.query(User).filter_by(email=email.strip().lower()).first()
         if not user or user.id == project.user_id:
             return jsonify({"error": "Usuario no encontrado"}), 404
@@ -253,9 +255,10 @@ def add_project_collaborator(project_id):
 def remove_project_collaborator(project_id, user_id):
     s = _get_session()
     try:
-        project = s.get(Project, project_id)
-        if not project or project.user_id != current_user.id:
+        access = project_access(s, project_id, current_user.id)
+        if not access or access[1] not in {"owner", "teacher"}:
             return jsonify({"error": "Proyecto no encontrado"}), 404
+        project, _role = access
         row = s.query(ProjectCollaborator).filter_by(project_id=project_id, user_id=user_id).first()
         if not row:
             return jsonify({"error": "Colaborador no encontrado"}), 404

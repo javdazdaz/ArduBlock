@@ -28,12 +28,12 @@ export function initCollaboratorsUI({ getProjectId, showToast }) {
     const payload = await response.json();
     const currentRole = payload.current_user_role;
     const collaborators = payload.collaborators || [];
-    const isOwner = currentRole === 'owner';
-    form.hidden = !isOwner;
+    const isAdmin = currentRole === 'owner' || currentRole === 'teacher';
+    form.hidden = !isAdmin;
     list.innerHTML = collaborators.length ? collaborators.map(row => `
       <div class="collaborator-row" data-user-id="${row.user_id}">
         <span>${escape(row.email)} <small>(${escape(row.role)})</small></span>
-        ${isOwner ? `<span class="collaborator-actions">
+        ${isAdmin ? `<span class="collaborator-actions">
           <select class="collaborator-role" aria-label="Rol de ${escape(row.email)}">
             <option value="viewer" ${row.role === 'viewer' ? 'selected' : ''}>Lector</option>
             <option value="editor" ${row.role === 'editor' ? 'selected' : ''}>Editor</option>
@@ -42,8 +42,8 @@ export function initCollaboratorsUI({ getProjectId, showToast }) {
           <button type="button" class="btn-danger collaborator-remove" data-user-id="${row.user_id}">Revocar</button>
         </span>` : ''}
       </div>`).join('') : '<p class="muted">No hay colaboradores.</p>';
-    if (!isOwner) {
-      list.insertAdjacentHTML('afterbegin', `<p class="muted">Usted tiene permiso de ${escape(currentRole)}; solo el propietario administra accesos.</p>`);
+    if (!isAdmin) {
+      list.insertAdjacentHTML('afterbegin', `<p class="muted">Usted tiene permiso de ${escape(currentRole)}; solo el propietario o el profesor administra accesos.</p>`);
     }
   }
 
