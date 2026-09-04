@@ -663,7 +663,7 @@ describe('generadores C++ — WiFi / Servidor Web', () => {
 
   it('buildWebServer fragmenta la página en llamadas client.print de máximo 2048 bytes', async () => {
     const { buildWebServer, splitCppLiteral } = await import('../frontend/js/blocks/wifi.js');
-    const page = '<main>' + 'á'.repeat(2600) + '\\n<script>const x = "\\\\ok";</script></main>';
+    const page = '<main>' + 'á'.repeat(2600) + '\\r\\n<script>const x = "\\\\ok";</script></main>';
     const { helpers } = buildWebServer(page, []);
     const printCalls = [...helpers.matchAll(/client\.print\("((?:\\\\.|[^"\\])*)"\);/g)]
       .map(match => match[1]);
