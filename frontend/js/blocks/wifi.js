@@ -20,6 +20,32 @@ export function esc(s) {
     .replace(/\n/g, '\\n');
 }
 
+export const WEB_RESPONSE_CHUNK_BYTES = 2048;
+
+// Divide un literal C++ sin separar escapes (\\n, \\\\, \\").
+export function splitCppLiteral(escaped, maxBytes = WEB_RESPONSE_CHUNK_BYTES) {
+  const tokens = String(escaped).match(/\\.|[\s\S]/gu) || [];
+  const chunks = [];
+  let current = '';
+  let currentBytes = 0;
+
+  for (const token of tokens) {
+    const tokenBytes = new TextEncoder().encode(token).length;
+    if (tokenBytes > maxBytes) {
+      throw new Error('Token C++ demasiado grande para fragmentar');
+    }
+    if (current && currentBytes + tokenBytes > maxBytes) {
+      chunks.push(current);
+      current = '';
+      currentBytes = 0;
+    }
+    current += token;
+    currentBytes += tokenBytes;
+  }
+  if (current) chunks.push(current);
+  return chunks;
+}
+
 // Opciones del dropdown: tabs .html del proyecto.
 function _htmlFileOptions() {
   const opts = [];
@@ -94,9 +120,10 @@ try {
  * @returns {{helpers: string, loop: string}}
  */
 export function buildWebServer(page, routes) {
-  const pageContent = page
-    ? esc(page)
+  const rawPage = page
+    ? String(page)
     : '<!DOCTYPE HTML><html><body>Servidor ArduBlock</body></html>';
+  const pageChunks = splitCppLiteral(esc(rawPage));
 
   let helpers = '';
   helpers += 'String _ardublock_query = "";\n';
@@ -162,6 +189,7 @@ export function buildWebServer(page, routes) {
     if (!r.respond) {
       helpers += '    client.println("HTTP/1.1 303 See Other");\n';
       helpers += '    client.println("Location: /");\n';
+      helpers += '    client.println("Connection: close");\n';
       helpers += '    client.println();\n';
       helpers += '    return;\n';
     }
@@ -169,8 +197,11 @@ export function buildWebServer(page, routes) {
   }
   helpers += '  client.println("HTTP/1.1 200 OK");\n';
   helpers += '  client.println("Content-type:text/html");\n';
+  helpers += '  client.println("Connection: close");\n';
   helpers += '  client.println();\n';
-  helpers += '  client.println("' + pageContent + '");\n';
+  for (const chunk of pageChunks) {
+    helpers += '  client.print("' + chunk + '");\n';
+  }
   helpers += '}\n\n';
 
   const loop = 'WiFiClient client = server.available();\n'
@@ -429,6 +460,7 @@ export function registerGenerators(cppGenerator) {
     const v = cppGenerator.valueToCode(block, 'VALUE', cppGenerator.ORDER_NONE) || '""';
     return 'client.println("HTTP/1.1 200 OK");\n'
          + 'client.println("Content-type:' + ctype + '");\n'
+         + 'client.println("Connection: close");\n'
          + 'client.println();\n'
          + 'client.println(String(' + v + '));\n'
          + 'return;\n';
