@@ -661,6 +661,20 @@ describe('generadores C++ — WiFi / Servidor Web', () => {
     expect(loop).toContain('server.available()');
   });
 
+  it('buildWebServer fragmenta la página en llamadas client.print de máximo 2048 bytes', async () => {
+    const { buildWebServer, splitCppLiteral } = await import('../frontend/js/blocks/wifi.js');
+    const page = '<main>' + 'á'.repeat(2600) + '\\n<script>const x = "\\\\ok";</script></main>';
+    const { helpers } = buildWebServer(page, []);
+    const printCalls = [...helpers.matchAll(/client\.print\("((?:\\\\.|[^"\\])*)"\);/g)]
+      .map(match => match[1]);
+
+    expect(printCalls.length).toBeGreaterThan(1);
+    expect(helpers).not.toContain('client.println("' + page + '");');
+    expect(helpers).toContain('client.println("Connection: close");');
+    expect(printCalls.every(chunk => new TextEncoder().encode(chunk).length <= 2048)).toBe(true);
+    expect(splitCppLiteral('abc\\n\\\\\\"def', 4)).toEqual(['abc', '\\n\\\\', '\\"de', 'f']);
+  });
+
   it('buildWebServer omite redirect cuando la ruta responde con valor', async () => {
     const { buildWebServer } = await import('../frontend/js/blocks/wifi.js');
     const { helpers } = buildWebServer(
