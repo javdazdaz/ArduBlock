@@ -380,7 +380,16 @@ export async function deleteProject(idOrName) {
     if (localStorage.getItem(LAST_KEY) === idOrName) localStorage.removeItem(LAST_KEY);
   } else {
     try {
-      await csrfFetch(`/api/projects/${idOrName}`, { method: 'DELETE' });
+      const res = await csrfFetch(`/api/projects/${idOrName}`, { method: 'DELETE' });
+      if (res.status === 409) {
+        const body = await res.json();
+        const nombres = (body.activities || []).join(', ');
+        const aviso = `Este proyecto es la referencia de ${body.activities.length} actividad(es): ${nombres}.` +
+          ' Si lo elimina, quedarán sin proyecto de referencia. ¿Eliminar de todos modos?';
+        if (!confirm(aviso)) return;
+        await csrfFetch(`/api/projects/${idOrName}?force=1`, { method: 'DELETE' });
+        showToast('Proyecto eliminado; actividades sin referencia');
+      }
     } catch (e) { /* ignore */ }
   }
 

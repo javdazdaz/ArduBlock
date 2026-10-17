@@ -13,14 +13,34 @@
     <div class="page-header"><h2>📋 {{ _('activities') }}</h2></div>
     <div class="project-edit-list">
       {% for a in activities %}
-        <div class="project-edit-row">
-          <div style="flex:1">{{ a.name }}</div>
+        <div class="project-edit-row" style="align-items:flex-start">
+          <div style="flex:1">
+            <strong>{{ a.name }}</strong>
+            {% if a.description %}<div class="muted">{{ a.description }}</div>{% endif %}
+            {% if a.instructions %}
+              <details style="margin-top:0.3rem">
+                <summary class="muted" style="cursor:pointer">{{ _('activity_instructions_label') }}</summary>
+                <div style="white-space:pre-wrap;margin-top:0.3rem">{{ a.instructions }}</div>
+              </details>
+            {% endif %}
+          </div>
           {% if a.reference_project %}
             <a href="/project/{{ a.reference_project.id }}/reference" class="btn btn-ghost btn-small">{{ _('view_reference') }}</a>
-            <form method="POST" action="{{ url_for('auth.clone_activity', class_id=cls.id, activity_id=a.id) }}" class="inline-form">
-              {{ clone_form.hidden_tag() }}
-              <button type="submit" class="btn btn-small">{{ _('clone_activity') }}</button>
-            </form>
+            {% if clones.get(a.id) %}
+              <span class="muted">{{ _('activity_your_copy') }}</span>
+              <a href="/project/{{ clones[a.id] }}" class="btn btn-small">{{ _('open_editor') }}</a>
+              <form method="POST" action="{{ url_for('auth.clone_activity', class_id=cls.id, activity_id=a.id) }}" class="inline-form"
+                    onsubmit="return confirm('{{ _('activity_clone_again_confirm') }}')">
+                {{ clone_form.hidden_tag() }}
+                <input type="hidden" name="force" value="1">
+                <button type="submit" class="btn btn-ghost btn-small">{{ _('activity_clone_again') }}</button>
+              </form>
+            {% else %}
+              <form method="POST" action="{{ url_for('auth.clone_activity', class_id=cls.id, activity_id=a.id) }}" class="inline-form">
+                {{ clone_form.hidden_tag() }}
+                <button type="submit" class="btn btn-small">{{ _('clone_activity') }}</button>
+              </form>
+            {% endif %}
           {% else %}
             <span class="muted">{{ _('no_reference') }}</span>
           {% endif %}

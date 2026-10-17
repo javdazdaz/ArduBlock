@@ -782,13 +782,21 @@ def delete_project(project_id):
         p = s.get(Project, project_id)
         if not p or p.user_id != current_user.id:
             return jsonify({"error": "Proyecto no encontrado"}), 404
+        # Un proyecto usado como referencia de actividades no se borra sin
+        # confirmación explícita: se avisa qué actividades quedarían sin él.
+        referencias = s.query(Activity).filter_by(reference_project_id=project_id).all()
+        if referencias and request.args.get("force") != "1":
+            return jsonify({
+                "error": "reference_in_use",
+                "activities": [a.name for a in referencias],
+            }), 409
         # Si era referencia de alguna actividad, desvincularla (evita FK colgante).
         s.query(Activity).filter_by(reference_project_id=project_id).update(
             {"reference_project_id": None}
         )
         s.delete(p)
         s.commit()
-        return jsonify({"status": "ok"})
+        return jsonify({"status": "ok", "unlinked_activities": len(referencias)})
     finally:
         s.close()
 
