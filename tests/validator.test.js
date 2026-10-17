@@ -470,6 +470,32 @@ describe('validator — reglas de validación', () => {
     });
   });
 
+  // ── Servo del shield AFMotor ───────────────────
+  describe('Servo del shield AFMotor', () => {
+    it('no advierte de servo no declarado si lo creó el bloque del shield', () => {
+      const ws = mw([
+        mb('arduino_setup'),
+        mb('arduino_loop'),
+        mb('library_include', { LIB: 'AFMotor_R4.h' }),
+        mb('afmotor_servo_create', { NAME: 'servo1', SERVO: '1' }),
+        mb('afmotor_servo_write', { NAME: 'servo1', ANGLE: '90' }),
+      ]);
+      const w = validateWorkspace(ws);
+      expect(w.some(x => x.type === 'servo_not_declared')).toBe(false);
+    });
+
+    it('advierte si el servo del shield se usa sin crearlo', () => {
+      const ws = mw([
+        mb('arduino_setup'),
+        mb('arduino_loop'),
+        mb('library_include', { LIB: 'AFMotor_R4.h' }),
+        mb('afmotor_servo_write', { NAME: 'servo2', ANGLE: '90' }),
+      ]);
+      const w = validateWorkspace(ws);
+      expect(w.some(x => x.type === 'servo_not_declared')).toBe(true);
+    });
+  });
+
   // ── R6e: bloques AFMotor sin su include ────────
   describe('R6e: AFMotor sin include', () => {
     it('advierte si hay bloques del shield y falta el include', () => {

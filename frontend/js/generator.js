@@ -546,6 +546,7 @@ export function generateArduinoCode(workspace) {
 
   const instanciasPorTipo = {
     servo_create: servoNames,
+    afmotor_servo_create: servoNames,
     lcd_create: lcdNames,
     lcd_i2c_create: lcdI2cNames,
     dht_create: dhtNames,

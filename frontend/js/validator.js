@@ -201,7 +201,8 @@ function validateWorkspace(workspace) {
   const servoNames = new Set();
   const servoCreateBlocks = [
     ...findAllBlocksOfType(workspace, 'servo_create'),
-    ...findAllBlocksOfType(workspace, 'servo_create_advanced')
+    ...findAllBlocksOfType(workspace, 'servo_create_advanced'),
+    ...findAllBlocksOfType(workspace, 'afmotor_servo_create')
   ];
   for (const block of servoCreateBlocks) {
     const name = block.getFieldValue('NAME');
@@ -223,7 +224,11 @@ function validateWorkspace(workspace) {
 
   const servoUsageBlocks = [
     ...findAllBlocksOfType(workspace, 'servo_write'),
-    ...findAllBlocksOfType(workspace, 'servo_write_us')
+    ...findAllBlocksOfType(workspace, 'servo_write_us'),
+    ...findAllBlocksOfType(workspace, 'afmotor_servo_write'),
+    ...findAllBlocksOfType(workspace, 'afmotor_servo_write_us'),
+    ...findAllBlocksOfType(workspace, 'afmotor_servo_read'),
+    ...findAllBlocksOfType(workspace, 'afmotor_servo_detach')
   ];
   for (const block of servoUsageBlocks) {
     const name = (block.getFieldValue('NAME') || '').trim();
@@ -250,7 +255,8 @@ function validateWorkspace(workspace) {
     { type: 'stepper_create', field: 'NAME', labelKey: 'lbl_stepper' },
     { type: 'stepper_create_advanced', field: 'NAME', labelKey: 'lbl_stepper' },
     { type: 'afmotor_dc_create', field: 'NAME', labelKey: 'lbl_motor_dc' },
-    { type: 'afmotor_stepper_create', field: 'NAME', labelKey: 'lbl_stepper_afmotor' }
+    { type: 'afmotor_stepper_create', field: 'NAME', labelKey: 'lbl_stepper_afmotor' },
+    { type: 'afmotor_servo_create', field: 'NAME', labelKey: 'lbl_servo_afmotor' }
   ];
 
   for (const cfg of inSetupTypes) {
@@ -276,7 +282,9 @@ function validateWorkspace(workspace) {
   const afmotorTypes = [
     'afmotor_dc_create', 'afmotor_dc_speed', 'afmotor_dc_run',
     'afmotor_stepper_create', 'afmotor_stepper_speed', 'afmotor_stepper_step',
-    'afmotor_stepper_onestep', 'afmotor_stepper_release'
+    'afmotor_stepper_onestep', 'afmotor_stepper_release',
+    'afmotor_servo_create', 'afmotor_servo_write', 'afmotor_servo_write_us',
+    'afmotor_servo_read', 'afmotor_servo_detach'
   ];
   const afmotorBlocks = [];
   for (const type of afmotorTypes) afmotorBlocks.push(...findAllBlocksOfType(workspace, type));
@@ -775,7 +783,12 @@ const BLOCK_LABEL_KEYS = {
   'afmotor_stepper_speed': 'blk_afmotor_stepper_speed',
   'afmotor_stepper_step': 'blk_afmotor_stepper_step',
   'afmotor_stepper_onestep': 'blk_afmotor_stepper_onestep',
-  'afmotor_stepper_release': 'blk_afmotor_stepper_release'
+  'afmotor_stepper_release': 'blk_afmotor_stepper_release',
+  'afmotor_servo_create': 'blk_afmotor_servo_create',
+  'afmotor_servo_write': 'blk_afmotor_servo_write',
+  'afmotor_servo_write_us': 'blk_afmotor_servo_write_us',
+  'afmotor_servo_read': 'blk_afmotor_servo_read',
+  'afmotor_servo_detach': 'blk_afmotor_servo_detach'
 };
 
 function getBlockLabel(block) {
