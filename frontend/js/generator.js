@@ -545,11 +545,13 @@ export function generateArduinoCode(workspace) {
     } else if (block.type.startsWith('procedures_def')) {
       // Las definiciones de funciones van antes de setup.
       globals += cppGenerator.blockToCode(block);
-    } else if (block.previousConnection && !block.outputConnection) {
+    } else {
+      // Cualquier otro bloque suelto con código de sentencia (los `crear` de
+      // librería, por ejemplo) se ejecuta al inicio de setup. Los bloques de
+      // valor devuelven un array y se ignoran.
       const code = cppGenerator.blockToCode(block);
       if (typeof code === 'string') setupSueltos += code;
     }
-    // Los bloques de valor sueltos no emiten nada.
   }
 
   // Detectar librerías usadas (para generar #include + objetos globales)

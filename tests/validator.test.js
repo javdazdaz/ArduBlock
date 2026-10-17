@@ -586,4 +586,28 @@ describe('validator — reglas de validación', () => {
       expect(w.some(x => x.type === 'afmotor_include_missing')).toBe(false);
     });
   });
+
+  // ── Los create del shield no se conectan ──
+  describe('ubicación de los create', () => {
+    it('el create del shield va suelto y no exige estar en setup', () => {
+      const motor = mb('afmotor_dc_create', { NAME: 'motor1' });
+      motor.previousConnection = null;
+      const ws = mw([
+        mb('arduino_setup'),
+        mb('arduino_loop'),
+        mb('library_include', { LIB: 'AFMotor_R4.h' }),
+        motor,
+      ]);
+      const w = validateWorkspace(ws);
+      expect(w.some(x => x.type === 'lib_not_in_setup')).toBe(false);
+    });
+
+    it('un create que sí se conecta sigue avisando fuera de setup', () => {
+      const stepper = mb('stepper_create', { NAME: 'motor_pap' });
+      stepper.previousConnection = { fake: true };
+      const ws = mw([mb('arduino_setup'), mb('arduino_loop'), stepper]);
+      const w = validateWorkspace(ws);
+      expect(w.some(x => x.type === 'lib_not_in_setup')).toBe(true);
+    });
+  });
 });
