@@ -61,6 +61,8 @@ export default [
         afterAll: 'readonly',
         afterEach: 'readonly',
         vi: 'readonly',
+        MouseEvent: 'readonly',
+        KeyboardEvent: 'readonly',
       },
     },
   },
