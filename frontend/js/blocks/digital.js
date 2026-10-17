@@ -80,6 +80,35 @@ export const blocks = [
     "helpUrl": ""
   },
 {
+    // Alias del nombre anterior al split basic/advanced: lo usan las
+    // actividades de Fundación BH y proyectos guardados con ellas.
+    "type": "digital_write",
+    "message0": Blockly.Msg.MSG_DIGITAL_WRITE,
+    "args0": [
+      { "type": "field_dropdown", "name": "PIN",
+        "options": [
+          ["0", "0"], ["1", "1"],
+          ["2", "2"], ["3", "3"], ["4", "4"], ["5", "5"],
+          ["6", "6"], ["7", "7"], ["8", "8"], ["9", "9"],
+          ["10", "10"], ["11", "11"], ["12", "12"], ["13", "13"],
+          ["A0", "A0"], ["A1", "A1"], ["A2", "A2"],
+          ["A3", "A3"], ["A4", "A4"], ["A5", "A5"]
+        ]
+      },
+      { "type": "field_dropdown", "name": "VALUE",
+        "options": [
+          ["HIGH", "HIGH"],
+          ["LOW", "LOW"]
+        ]
+      }
+    ],
+    "previousStatement": null,
+    "nextStatement": null,
+    "colour": 60,
+    "tooltip": "Nombre anterior del bloque de escritura digital; se conserva para abrir proyectos guardados con él.",
+    "helpUrl": ""
+  },
+{
     "type": "digital_write_advanced",
     "message0": Blockly.Msg.MSG_DIGITAL_WRITE,
     "args0": [
@@ -165,4 +194,6 @@ cppGenerator.forBlock['digital_read_advanced'] = function(block) {
   const pin = cppGenerator.valueToCode(block, 'PIN', cppGenerator.ORDER_ATOMIC) || '0';
   return ['digitalRead(' + pin + ')', cppGenerator.ORDER_ATOMIC];
 };
+// ── digital_write (nombre anterior) ───────────
+cppGenerator.forBlock['digital_write'] = cppGenerator.forBlock['digital_write_basic'];
 }

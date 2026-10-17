@@ -286,7 +286,7 @@ export const activity = {
           "inputs": {
             "STACK": {
               "block": {
-                "type": "digital_write",
+                "type": "digital_write_basic",
                 "id": "P6B1",
                 "fields": {
                   "PIN": "A5",
@@ -301,7 +301,7 @@ export const activity = {
                     },
                     "next": {
                       "block": {
-                        "type": "digital_write",
+                        "type": "digital_write_basic",
                         "id": "P6B3",
                         "fields": {
                           "PIN": "A5",
@@ -316,7 +316,7 @@ export const activity = {
                             },
                             "next": {
                               "block": {
-                                "type": "digital_write",
+                                "type": "digital_write_basic",
                                 "id": "P6B5",
                                 "fields": {
                                   "PIN": "A5",
