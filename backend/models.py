@@ -113,6 +113,8 @@ class Project(Base):
     data = Column(Text, nullable=False)
     board = Column(String(50), default="arduino:avr:uno")
     class_id = Column(Integer, ForeignKey("classes.id"), nullable=True, index=True)
+    # Actividad de la que salió este proyecto al clonarla (None si es propio).
+    activity_id = Column(Integer, ForeignKey("activities.id"), nullable=True, index=True)
     thumbnail = Column(Text, nullable=True)  # data URI PNG 128x128 del workspace
     revision = Column(Integer, nullable=False, default=1)
     updated_by = Column(Integer, ForeignKey("users.id"), nullable=True)
@@ -256,6 +258,8 @@ class Activity(Base):
     teacher_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
     name = Column(String(200), nullable=False)
     reference_project_id = Column(Integer, ForeignKey("projects.id"), nullable=True)
+    description = Column(Text, nullable=True)
+    instructions = Column(Text, nullable=True)
     created_at = Column(DateTime, default=utcnow)
 
     teacher = relationship("User", foreign_keys=[teacher_id])

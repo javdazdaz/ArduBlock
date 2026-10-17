@@ -16,7 +16,7 @@ from datetime import timedelta
 from flask import Blueprint, g, render_template, request, redirect, url_for, flash, send_from_directory, jsonify, Response
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, EmailField
+from wtforms import StringField, PasswordField, EmailField, TextAreaField
 from wtforms.validators import DataRequired, Email, Length
 from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy import func
@@ -130,6 +130,8 @@ class ClassNameForm(FlaskForm):
 
 class ActivityForm(FlaskForm):
     name = StringField("Nombre de la actividad", validators=[DataRequired(), Length(max=200)])
+    description = TextAreaField("Descripción", validators=[Length(max=500)])
+    instructions = TextAreaField("Instrucciones", validators=[Length(max=4000)])
 
 
 class EditStudentForm(FlaskForm):
@@ -514,11 +516,17 @@ def teacher_projects():
             .order_by(Project.updated_at.desc())
             .all()
         )
+        # Cuántas actividades usan cada proyecto como referencia: se avisa
+        # antes de borrarlo.
+        ref_counts = {}
+        for activity in s.query(Activity).filter_by(teacher_id=current_user.id).all():
+            if activity.reference_project_id:
+                ref_counts[activity.reference_project_id] = ref_counts.get(activity.reference_project_id, 0) + 1
     finally:
         s.close()
     return render_template(
         "teacher_projects.html",
-        user=current_user, projects=projects,
+        user=current_user, projects=projects, ref_counts=ref_counts,
     )
 
 
@@ -868,6 +876,8 @@ def create_activity():
             activity = Activity(
                 teacher_id=current_user.id,
                 name=form.name.data.strip(),
+                description=(form.description.data or "").strip() or None,
+                instructions=(form.instructions.data or "").strip() or None,
                 reference_project_id=ref.id if ref else None,
             )
             s.add(activity)
@@ -892,6 +902,8 @@ def edit_activity(activity_id):
             return redirect(url_for("auth.teacher_activities"))
         if form.validate_on_submit():
             activity.name = form.name.data.strip()
+            activity.description = (form.description.data or "").strip() or None
+            activity.instructions = (form.instructions.data or "").strip() or None
             ref = _valid_reference_project(s, request.form.get("reference_project_id", type=int))
             activity.reference_project_id = ref.id if ref else None
             s.commit()
@@ -1003,6 +1015,17 @@ def clone_activity(class_id, activity_id):
         if not activity or not ref:
             flash(get_message(g.lang, "activity_no_reference"), "error")
             return redirect(url_for("auth.student_class", class_id=class_id))
+        # Si ya clonó esta actividad, abrir su copia en vez de crear otra.
+        force = request.form.get("force") == "1"
+        existing = (
+            s.query(Project)
+            .filter_by(user_id=current_user.id, activity_id=activity.id, class_id=class_id)
+            .order_by(Project.id.asc())
+            .first()
+        )
+        if existing and not force:
+            flash(get_message(g.lang, "activity_already_cloned"), "info")
+            return redirect(f"/project/{existing.id}")
         name = (activity.name or ref.name or "").strip()[:100] or "Sin título"
         clone = Project(
             user_id=current_user.id,
@@ -1010,6 +1033,7 @@ def clone_activity(class_id, activity_id):
             data=ref.data,
             board=ref.board,
             class_id=class_id,
+            activity_id=activity.id,
             thumbnail=ref.thumbnail,
             revision=1,
             updated_by=current_user.id,
@@ -1227,10 +1251,15 @@ def student_class(class_id):
             .order_by(Activity.created_at.asc())
             .all()
         )
+        # Proyectos que ya salieron de una actividad: activity_id → project_id
+        clones = {}
+        for project in sorted(projects, key=lambda p: p.id):
+            if project.activity_id:
+                clones.setdefault(project.activity_id, project.id)
     finally:
         s.close()
     return render_template(
         "student_class.html",
         cls=cls, projects=projects, activities=activities, user=current_user,
-        clone_form=EmptyForm(),
+        clone_form=EmptyForm(), clones=clones,
     )

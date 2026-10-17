@@ -158,6 +158,19 @@ journalctl -u ardublock -f          # logs en vivo
 tail -f /var/log/ardublock.log      # logs del archivo
 ```
 
+## Migraciones de base de datos
+
+La app crea las tablas con `create_all`, que no altera las que ya existen. Las columnas nuevas se
+aplican con un script idempotente, después de actualizar el código:
+
+```bash
+cd /opt/ardublock
+backend/.venv/bin/python scripts/migrate_activity_links.py
+systemctl restart ardublock
+```
+
+Se puede correr varias veces: la segunda vez informa «Sin cambios: el esquema ya estaba al día».
+
 ## Acceso
 
 ```

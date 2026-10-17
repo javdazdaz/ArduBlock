@@ -19,6 +19,14 @@
           {{ form.name() }}
         </div>
         <div class="field">
+          <label>{{ _('activity_description_label') }}</label>
+          {{ form.description(rows=2, maxlength=500) }}
+        </div>
+        <div class="field">
+          <label>{{ _('activity_instructions_label') }}</label>
+          {{ form.instructions(rows=4, maxlength=4000) }}
+        </div>
+        <div class="field">
           <label>{{ _('reference_project') }}</label>
           <select name="reference_project_id">
             <option value="">{{ _('no_reference') }}</option>
@@ -43,6 +51,10 @@
                   <option value="{{ pr.id }}" {% if a.reference_project_id == pr.id %}selected{% endif %}>{{ pr.name }}</option>
                 {% endfor %}
               </select>
+              <div style="width:100%;display:flex;flex-direction:column;gap:0.4rem;margin-top:0.4rem">
+                <textarea name="description" rows="2" maxlength="500" placeholder="{{ _('activity_description_label') }}" aria-label="{{ _('activity_description_label') }}" style="width:100%">{{ a.description or '' }}</textarea>
+                <textarea name="instructions" rows="3" maxlength="4000" placeholder="{{ _('activity_instructions_label') }}" aria-label="{{ _('activity_instructions_label') }}" style="width:100%">{{ a.instructions or '' }}</textarea>
+              </div>
               <button type="submit" class="btn btn-small">{{ _('save') }}</button>
             </form>
             <form method="POST" action="{{ url_for('auth.delete_activity', activity_id=a.id) }}" onsubmit="return confirm('{{ _('confirm_delete_activity') }}')">
