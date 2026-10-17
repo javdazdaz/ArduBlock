@@ -139,6 +139,73 @@ export const blocks = [
     "colour": 310,
     "tooltip": Blockly.Msg.TOOLTIP_AFMOTOR_STEPPER_RELEASE,
     "helpUrl": ""
+  },
+{
+    "type": "afmotor_servo_create",
+    "message0": Blockly.Msg.MSG_AFMOTOR_SERVO_CREATE,
+    "args0": [
+      { "type": "field_input", "name": "NAME", "text": "servo1" },
+      { "type": "field_dropdown", "name": "SERVO", "options": [
+        ["1", "1"], ["2", "2"]
+      ]}
+    ],
+    "inputsInline": true,
+    "colour": 310,
+    "tooltip": Blockly.Msg.TOOLTIP_AFMOTOR_SERVO_CREATE,
+    "helpUrl": ""
+  },
+{
+    "type": "afmotor_servo_write",
+    "message0": Blockly.Msg.MSG_AFMOTOR_SERVO_WRITE,
+    "args0": [
+      { "type": "field_input", "name": "NAME", "text": "servo1" },
+      { "type": "field_number", "name": "ANGLE", "value": 90, "min": 0, "max": 180 }
+    ],
+    "inputsInline": true,
+    "previousStatement": null,
+    "nextStatement": null,
+    "colour": 310,
+    "tooltip": Blockly.Msg.TOOLTIP_AFMOTOR_SERVO_WRITE,
+    "helpUrl": ""
+  },
+{
+    "type": "afmotor_servo_write_us",
+    "message0": Blockly.Msg.MSG_AFMOTOR_SERVO_WRITE_US,
+    "args0": [
+      { "type": "field_input", "name": "NAME", "text": "servo1" },
+      { "type": "field_number", "name": "US", "value": 1500, "min": 500, "max": 2500 }
+    ],
+    "inputsInline": true,
+    "previousStatement": null,
+    "nextStatement": null,
+    "colour": 310,
+    "tooltip": Blockly.Msg.TOOLTIP_AFMOTOR_SERVO_WRITE_US,
+    "helpUrl": ""
+  },
+{
+    "type": "afmotor_servo_read",
+    "message0": Blockly.Msg.MSG_AFMOTOR_SERVO_READ,
+    "args0": [
+      { "type": "field_input", "name": "NAME", "text": "servo1" }
+    ],
+    "output": "Number",
+    "inputsInline": true,
+    "colour": 310,
+    "tooltip": Blockly.Msg.TOOLTIP_AFMOTOR_SERVO_READ,
+    "helpUrl": ""
+  },
+{
+    "type": "afmotor_servo_detach",
+    "message0": Blockly.Msg.MSG_AFMOTOR_SERVO_DETACH,
+    "args0": [
+      { "type": "field_input", "name": "NAME", "text": "servo1" }
+    ],
+    "inputsInline": true,
+    "previousStatement": null,
+    "nextStatement": null,
+    "colour": 310,
+    "tooltip": Blockly.Msg.TOOLTIP_AFMOTOR_SERVO_DETACH,
+    "helpUrl": ""
   }
 ];
 
@@ -197,5 +264,38 @@ cppGenerator.forBlock['afmotor_stepper_onestep'] = function(block) {
 cppGenerator.forBlock['afmotor_stepper_release'] = function(block) {
   const name = block.getFieldValue('NAME') || 'stepper1';
   return name + '.release();\n';
+};
+// ── Servo del shield ──────────────────────────
+// El shield no tiene electrónica de servo: la señal de la bornera SERVO_1
+// llega al pin 9 y la de SERVO_2 al pin 10. Se controla con la librería
+// Servo, cuyo #include y declaración emite generateArduinoCode.
+const AFMOTOR_SERVO_PINES = { '1': '9', '2': '10' };
+
+cppGenerator.forBlock['afmotor_servo_create'] = function(block) {
+  const name = (block.getFieldValue('NAME') || 'servo1').trim();
+  const pin = AFMOTOR_SERVO_PINES[block.getFieldValue('SERVO')] || '9';
+  return name + '.attach(' + pin + ');\n';
+};
+// ── afmotor_servo_write ───────────────────────
+cppGenerator.forBlock['afmotor_servo_write'] = function(block) {
+  const name = (block.getFieldValue('NAME') || 'servo1').trim();
+  const angle = block.getFieldValue('ANGLE');
+  return name + '.write(' + angle + ');\n';
+};
+// ── afmotor_servo_write_us ────────────────────
+cppGenerator.forBlock['afmotor_servo_write_us'] = function(block) {
+  const name = (block.getFieldValue('NAME') || 'servo1').trim();
+  const us = block.getFieldValue('US');
+  return name + '.writeMicroseconds(' + us + ');\n';
+};
+// ── afmotor_servo_read ────────────────────────
+cppGenerator.forBlock['afmotor_servo_read'] = function(block) {
+  const name = (block.getFieldValue('NAME') || 'servo1').trim();
+  return [name + '.read()', cppGenerator.ORDER_ATOMIC];
+};
+// ── afmotor_servo_detach ──────────────────────
+cppGenerator.forBlock['afmotor_servo_detach'] = function(block) {
+  const name = (block.getFieldValue('NAME') || 'servo1').trim();
+  return name + '.detach();\n';
 };
 }
