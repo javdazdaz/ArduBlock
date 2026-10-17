@@ -63,6 +63,13 @@ _ARDUINO_DATA_DIR = os.environ.get("ARDUINO_DATA_DIR") or str(
     Path.home() / ".arduino15"
 )
 
+# Librerías de usuario (las que instala el docente: AFMotor_R4, DHT…). arduino-cli
+# las busca en `directories.user` ($HOME/Arduino por defecto); el sandbox debe
+# montarlas o el compilador no las ve.
+_ARDUINO_USER_DIR = os.environ.get("ARDUINO_USER_DIR") or str(
+    Path.home() / "Arduino"
+)
+
 # Directorio del caché de build de arduino-cli (core compilado + objetos por
 # sketch). Por defecto $HOME/.cache (arduino-cli cachea en $HOME/.cache/arduino).
 # Override con ARDUBLOCK_BUILD_CACHE_DIR.
@@ -150,6 +157,14 @@ def _sandboxed_compile(cmd: list[str]):
         p = os.path.join(_ARDUINO_DATA_DIR, name)
         if os.path.isfile(p):
             bwrap += ["--ro-bind", p, os.path.join(scratch, name)]
+
+    # Librerías de usuario en solo lectura: con HOME=scratch, arduino-cli las
+    # busca en scratch/Arduino/libraries.
+    user_libs = Path(_ARDUINO_USER_DIR) / "libraries"
+    if user_libs.is_dir():
+        destino = os.path.join(scratch, "Arduino", "libraries")
+        os.makedirs(destino, exist_ok=True)
+        bwrap += ["--ro-bind", str(user_libs), destino]
 
     if output_dir:
         bwrap += ["--bind", output_dir, output_dir]

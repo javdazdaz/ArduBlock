@@ -158,6 +158,22 @@ journalctl -u ardublock -f          # logs en vivo
 tail -f /var/log/ardublock.log      # logs del archivo
 ```
 
+## Librerías de Arduino instaladas a mano
+
+El generador emite `#include` de librerías que no vienen con los cores: el shield
+AFMotor (`AFMotor_R4.h`) y el sensor DHT (`DHT.h`). Se instalan en el directorio de
+usuario de arduino-cli, que en el servidor es `/var/lib/ardublock/Arduino/libraries`:
+
+```bash
+sudo -u ardublock git clone --depth 1 \
+  https://github.com/PhoenixSmaug/AFMotor-Shield-R4-Compatible \
+  /var/lib/ardublock/Arduino/libraries/AFMotor_R4
+sudo -u ardublock /var/lib/ardublock/.ardublock/bin/arduino-cli lib list
+```
+
+La compilación corre en un sandbox que monta ese directorio en solo lectura; sin él,
+cualquier sketch con `AFMotor_R4.h` falla con «No such file or directory».
+
 ## Migraciones de base de datos
 
 La app crea las tablas con `create_all`, que no altera las que ya existen. Las columnas nuevas se
