@@ -15,6 +15,7 @@
 
 import * as Blockly from 'blockly';
 import { restoreWorkspaceState } from './workspace-restore.js';
+import { stripCollapsedState } from './block-collapse.js';
 
 const LS_KEY = 'ardublock:undo-tree';
 const MAX_NODES = 30;
@@ -97,7 +98,7 @@ function loadTree() {
  */
 function captureState() {
   if (!workspace) return null;
-  const state = Blockly.serialization.workspaces.save(workspace);
+  const state = stripCollapsedState(Blockly.serialization.workspaces.save(workspace));
   const name = document.getElementById('project-name')?.value?.trim() || 'sin-nombre';
   const board = (() => {
     try {

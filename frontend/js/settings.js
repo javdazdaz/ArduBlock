@@ -6,6 +6,7 @@
 
 import * as Blockly from 'blockly';
 import DarkTheme from '@blockly/theme-dark';
+import { installBlockCollapse } from './block-collapse.js';
 import { WorkspaceSearch } from '@blockly/plugin-workspace-search';
 import { Backpack } from '@blockly/workspace-backpack';
 import { shadowBlockConversionChangeListener } from '@blockly/shadow-block-converter';
@@ -151,6 +152,7 @@ export function applyRenderer(renderer) {
   });
   Object.assign(workspace, newWs);
   Blockly.serialization.workspaces.load(state, workspace);
+  installBlockCollapse(workspace);
 
   new WorkspaceSearch(workspace).init();
   new Backpack(workspace).init();
