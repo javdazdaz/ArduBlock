@@ -145,19 +145,22 @@ function createRoot() {
 
 /**
  * Elimina los nodos más antiguos si se excede MAX_NODES.
- * Preserva la rama activa (camino de root → current).
+ * Preserva la rama activa (camino de root → current) y, si la rama activa por
+ * sí sola excede el límite (historial lineal), recorta su extremo antiguo y
+ * mueve la raíz al primer nodo que sobrevive.
  */
 function pruneOldNodes() {
   if (nodes.size <= MAX_NODES) return;
 
-  // Recolectar ids en la rama activa
-  const activeSet = new Set();
+  // Camino activo, del nodo más antiguo al actual
+  const activePath = [];
   let cursor = currentId;
   while (cursor) {
-    activeSet.add(cursor);
+    activePath.unshift(cursor);
     const node = nodes.get(cursor);
     cursor = node ? node.parentId : null;
   }
+  const activeSet = new Set(activePath);
 
   // Eliminar nodos no activos, más antiguos primero
   const candidates = [];
@@ -179,6 +182,20 @@ function pruneOldNodes() {
       }
     }
     nodes.delete(id);
+  }
+
+  // Si la rama activa sola supera el límite, recortar su inicio
+  if (nodes.size > MAX_NODES) {
+    const excess = nodes.size - MAX_NODES;
+    const dropped = activePath.slice(0, excess);
+    for (const id of dropped) nodes.delete(id);
+
+    const newRootId = activePath[excess];
+    const newRoot = newRootId ? nodes.get(newRootId) : null;
+    if (newRoot) {
+      newRoot.parentId = null;
+      rootId = newRootId;
+    }
   }
 }
 
