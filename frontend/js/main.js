@@ -784,6 +784,8 @@ workspace.registerToolboxCategoryCallback('CAT_AFMOTOR', function(_ws) {
     { kind: 'block', type: 'afmotor_stepper_create' },
     { kind: 'block', type: 'afmotor_stepper_speed' },
     { kind: 'block', type: 'afmotor_stepper_step' },
+    { kind: 'block', type: 'afmotor_stepper_onestep' },
+    { kind: 'block', type: 'afmotor_stepper_release' },
   ];
 });
 

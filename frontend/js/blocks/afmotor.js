@@ -41,6 +41,7 @@ export const blocks = [
       { "type": "field_dropdown", "name": "DIR", "options": [
         [Blockly.Msg.OPT_FORWARD, "FORWARD"],
         [Blockly.Msg.OPT_BACKWARD, "BACKWARD"],
+        [Blockly.Msg.OPT_BRAKE, "BRAKE"],
         [Blockly.Msg.OPT_RELEASE, "RELEASE"]
       ]}
     ],
@@ -103,6 +104,41 @@ export const blocks = [
     "colour": 310,
     "tooltip": Blockly.Msg.TOOLTIP_AFMOTOR_STEPPER_STEP,
     "helpUrl": ""
+  },
+{
+    "type": "afmotor_stepper_onestep",
+    "message0": Blockly.Msg.MSG_AFMOTOR_STEPPER_ONESTEP,
+    "args0": [
+      { "type": "field_input", "name": "NAME", "text": "stepper1" },
+      { "type": "field_dropdown", "name": "DIR", "options": [
+        [Blockly.Msg.OPT_FORWARD, "FORWARD"],
+        [Blockly.Msg.OPT_BACKWARD, "BACKWARD"]
+      ]},
+      { "type": "field_dropdown", "name": "STYLE", "options": [
+        ["SINGLE", "SINGLE"],
+        ["DOUBLE", "DOUBLE"],
+        ["INTERLEAVE", "INTERLEAVE"],
+        ["MICROSTEP", "MICROSTEP"]
+      ]}
+    ],
+    "output": "Number",
+    "inputsInline": true,
+    "colour": 310,
+    "tooltip": Blockly.Msg.TOOLTIP_AFMOTOR_STEPPER_ONESTEP,
+    "helpUrl": ""
+  },
+{
+    "type": "afmotor_stepper_release",
+    "message0": Blockly.Msg.MSG_AFMOTOR_STEPPER_RELEASE,
+    "args0": [
+      { "type": "field_input", "name": "NAME", "text": "stepper1" }
+    ],
+    "inputsInline": true,
+    "previousStatement": null,
+    "nextStatement": null,
+    "colour": 310,
+    "tooltip": Blockly.Msg.TOOLTIP_AFMOTOR_STEPPER_RELEASE,
+    "helpUrl": ""
   }
 ];
 
@@ -148,5 +184,18 @@ cppGenerator.forBlock['afmotor_stepper_step'] = function(block) {
   const dir = block.getFieldValue('DIR');
   const style = block.getFieldValue('STYLE');
   return name + '.step(' + count + ', ' + dir + ', ' + style + ');\n';
+};
+// ── afmotor_stepper_onestep ───────────────────
+// Devuelve uint8_t: la posición tras el paso.
+cppGenerator.forBlock['afmotor_stepper_onestep'] = function(block) {
+  const name = block.getFieldValue('NAME') || 'stepper1';
+  const dir = block.getFieldValue('DIR');
+  const style = block.getFieldValue('STYLE');
+  return [name + '.onestep(' + dir + ', ' + style + ')', cppGenerator.ORDER_ATOMIC];
+};
+// ── afmotor_stepper_release ───────────────────
+cppGenerator.forBlock['afmotor_stepper_release'] = function(block) {
+  const name = block.getFieldValue('NAME') || 'stepper1';
+  return name + '.release();\n';
 };
 }

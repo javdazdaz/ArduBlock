@@ -305,7 +305,8 @@ function validateWorkspace(workspace) {
     },
     {
       createTypes: ['afmotor_stepper_create'],
-      useTypes: ['afmotor_stepper_speed', 'afmotor_stepper_step'],
+      useTypes: ['afmotor_stepper_speed', 'afmotor_stepper_step',
+                 'afmotor_stepper_onestep', 'afmotor_stepper_release'],
       labelKey: 'lbl_stepper_afmotor'
     }
   ];
@@ -749,7 +750,9 @@ const BLOCK_LABEL_KEYS = {
   'afmotor_dc_run': 'blk_afmotor_dc_run',
   'afmotor_stepper_create': 'blk_afmotor_stepper_create',
   'afmotor_stepper_speed': 'blk_afmotor_stepper_speed',
-  'afmotor_stepper_step': 'blk_afmotor_stepper_step'
+  'afmotor_stepper_step': 'blk_afmotor_stepper_step',
+  'afmotor_stepper_onestep': 'blk_afmotor_stepper_onestep',
+  'afmotor_stepper_release': 'blk_afmotor_stepper_release'
 };
 
 function getBlockLabel(block) {
