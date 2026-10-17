@@ -14,6 +14,8 @@ export const blocks = [
         ["1", "1"], ["2", "2"], ["3", "3"], ["4", "4"]
       ]}
     ],
+    "previousStatement": null,
+    "nextStatement": null,
     "inputsInline": true,
     "colour": 310,
     "tooltip": Blockly.Msg.TOOLTIP_AFMOTOR_DC_CREATE,
@@ -62,6 +64,8 @@ export const blocks = [
         ["1", "1"], ["2", "2"]
       ]}
     ],
+    "previousStatement": null,
+    "nextStatement": null,
     "inputsInline": true,
     "colour": 310,
     "tooltip": Blockly.Msg.TOOLTIP_AFMOTOR_STEPPER_CREATE,
@@ -149,6 +153,8 @@ export const blocks = [
         ["1", "1"], ["2", "2"]
       ]}
     ],
+    "previousStatement": null,
+    "nextStatement": null,
     "inputsInline": true,
     "colour": 310,
     "tooltip": Blockly.Msg.TOOLTIP_AFMOTOR_SERVO_CREATE,
