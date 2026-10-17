@@ -9,6 +9,7 @@ import * as Blockly from 'blockly';
 import { captureWorkspaceThumbnail } from './thumbnail.js';
 import { restoreWorkspaceState } from './workspace-restore.js';
 import { csrfFetch } from './csrf.js';
+import { describeTabDiff } from './tab-diff.js';
 
 let workspace, projectInput, projectList, showToast;
 let LS_PREFIX, LAST_KEY, autoSaveTimer;
@@ -295,10 +296,46 @@ export async function loadReferenceProject(id) {
 
 // ═══ Resolución de conflictos ════════════════════
 
+function _escapeHtml(texto) {
+  return String(texto).replace(/[&<>"']/g, c => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+  ));
+}
+
+function _tabsDelRemoto() {
+  const remote = conflictState?.remoteProject;
+  if (!remote) return [];
+  try {
+    const record = typeof remote.data === 'string' ? JSON.parse(remote.data) : remote.data;
+    return record?.tabs || [];
+  } catch (_) { return []; }
+}
+
+/**
+ * Muestra qué archivos quedan solo en la copia local y cuáles solo en el
+ * servidor, para que "guardar copia local" no se elija a ciegas.
+ */
+function renderConflictFiles() {
+  const contenedor = document.getElementById('conflict-files');
+  if (!contenedor) return;
+  const locales = (window._tabManager && window._tabManager.getTabs)
+    ? window._tabManager.getTabs() : [];
+  const { soloLocal, soloRemoto } = describeTabDiff(locales, _tabsDelRemoto());
+  const partes = [];
+  if (soloLocal.length) {
+    partes.push(`<p><strong>Solo en su copia:</strong> ${soloLocal.map(_escapeHtml).join(', ')}</p>`);
+  }
+  if (soloRemoto.length) {
+    partes.push(`<p><strong>Solo en el servidor:</strong> ${soloRemoto.map(_escapeHtml).join(', ')}</p>`);
+  }
+  contenedor.innerHTML = partes.join('');
+}
+
 function openConflictDialog(revision) {
   const modal = document.getElementById('conflict-modal');
   const revisionEl = document.getElementById('conflict-revision');
   if (revisionEl) revisionEl.textContent = String(revision ?? '?');
+  renderConflictFiles();
   modal?.classList.remove('hidden');
 }
 

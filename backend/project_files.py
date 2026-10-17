@@ -51,15 +51,39 @@ def _valid_tab(tab) -> bool:
     return filename.endswith(_ALLOWED_EXTENSIONS)
 
 
+def _document_tabs(project: Project):
+    """Lista de tabs si el documento la declara; None si no se puede afirmar.
+
+    None significa "no sabemos qué archivos tiene el proyecto" (data inválido o
+    sin la clave 'tabs'): en ese caso no se poda el espejo.
+    """
+    try:
+        data = json.loads(project.data) if isinstance(project.data, str) else project.data
+    except (TypeError, json.JSONDecodeError):
+        return None
+    if not isinstance(data, dict):
+        return None
+    tabs = data.get("tabs")
+    return tabs if isinstance(tabs, list) else None
+
+
 def sync_project_files(session, project: Project, actor_id: int | None = None) -> None:
-    """Crea/actualiza el espejo sin borrar archivos ausentes del snapshot."""
+    """Espeja los tabs del documento y retira los que ya no están.
+
+    El documento (Project.data) manda: un archivo que salió del proyecto no debe
+    seguir en la tabla, porque se arrastra al copiar o guardar el proyecto en
+    otra sesión. El contenido retirado sigue disponible en las revisiones.
+    """
     existing = {file.filename: file for file in project.files}
     author_id = actor_id if actor_id is not None else project.updated_by
+    tabs = _document_tabs(project)
+    conservados = set()
     for tab in tabs_from_project(project):
         if not _valid_tab(tab):
             continue
         filename = tab["filename"]
         content = tab["content"]
+        conservados.add(filename)
         file = existing.get(filename)
         if file is None:
             session.add(ProjectFile(
@@ -73,6 +97,13 @@ def sync_project_files(session, project: Project, actor_id: int | None = None) -
             file.content = content
             file.revision = (file.revision or 1) + 1
             file.updated_by = author_id
+
+    # Poda: solo cuando el documento declara su lista de tabs.
+    if tabs is None:
+        return
+    for filename, file in existing.items():
+        if filename not in conservados:
+            session.delete(file)
 
 
 def backfill_project_files(session) -> None:
