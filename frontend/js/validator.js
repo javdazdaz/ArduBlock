@@ -305,6 +305,9 @@ function validateWorkspace(workspace) {
   for (const cfg of inSetupTypes) {
     const blocks = findAllBlocksOfType(workspace, cfg.type);
     for (const block of blocks) {
+      // Un bloque sin conexión no puede estar dentro de setup: pedirlo sería
+      // un aviso imposible de cumplir. El generador resuelve su inicialización.
+      if (block.previousConnection === null) continue;
       if (!isInsideBlockType(workspace, block, 'arduino_setup')) {
         const name = block.getFieldValue(cfg.field) || '?';
         const context = getArduinoContext(workspace, block);

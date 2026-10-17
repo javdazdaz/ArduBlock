@@ -28,7 +28,9 @@ describe('orden del sketch', () => {
   it('el include va antes de la declaración del motor', () => {
     const sketch = sketchDe({
       blocks: { languageVersion: 0, blocks: [
-        { type: 'arduino_setup', id: 'S1', x: 20, y: 20, inputs: { BODY: { block: { ...incl, next: { block: { type: 'afmotor_dc_create', id: 'C1', fields: { NAME: 'motor1', CHANNEL: '1' } } } } } } },
+        incl,
+        { type: 'afmotor_dc_create', id: 'C1', x: 400, y: 100, fields: { NAME: 'motor1', CHANNEL: '1' } },
+        { type: 'arduino_setup', id: 'S1', x: 20, y: 20 },
         { type: 'arduino_loop', id: 'L1', x: 20, y: 300 },
       ] },
     });
@@ -97,14 +99,14 @@ describe('bloques sueltos', () => {
   });
 });
 
-describe('los create del shield se conectan', () => {
+describe('los create del shield van sueltos', () => {
   for (const tipo of ['afmotor_dc_create', 'afmotor_stepper_create', 'afmotor_servo_create']) {
-    it(`${tipo} acepta bloque anterior y siguiente`, () => {
+    it(`${tipo} no acepta bloque anterior ni siguiente`, () => {
       const ws = new Blockly.Workspace();
       try {
         const bloque = ws.newBlock(tipo);
-        expect(bloque.previousConnection).toBeTruthy();
-        expect(bloque.nextConnection).toBeTruthy();
+        expect(bloque.previousConnection).toBeNull();
+        expect(bloque.nextConnection).toBeNull();
       } finally {
         ws.dispose();
       }
