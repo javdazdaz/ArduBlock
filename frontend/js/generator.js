@@ -487,6 +487,15 @@ cppGenerator.forBlock['procedures_ifreturn'] = function(block) {
 };
 
 
+/** Indenta con dos espacios cada línea que no lo esté ya. */
+function indentar(codigo) {
+  if (!codigo) return '';
+  return codigo
+    .split('\n')
+    .map(linea => (linea && !linea.startsWith(' ') && !linea.startsWith('\t') ? '  ' + linea : linea))
+    .join('\n');
+}
+
 export function generateArduinoCode(workspace) {
   let setupBody = '';
   let loopBody = '';
@@ -524,15 +533,23 @@ export function generateArduinoCode(workspace) {
 
   const topBlocks = workspace.getTopBlocks(true);
 
+  // Código de bloques de sentencia que quedaron sueltos: corre al inicio del
+  // setup, no fuera de las funciones, donde no compila.
+  let setupSueltos = '';
+
   for (const block of topBlocks) {
     if (block.type === 'arduino_setup') {
       setupBody = cppGenerator.blockToCode(block);
     } else if (block.type === 'arduino_loop') {
       loopBody = cppGenerator.blockToCode(block);
-    } else {
+    } else if (block.type.startsWith('procedures_def')) {
+      // Las definiciones de funciones van antes de setup.
+      globals += cppGenerator.blockToCode(block);
+    } else if (block.previousConnection && !block.outputConnection) {
       const code = cppGenerator.blockToCode(block);
-      globals += code;
+      if (typeof code === 'string') setupSueltos += code;
     }
+    // Los bloques de valor sueltos no emiten nada.
   }
 
   // Detectar librerías usadas (para generar #include + objetos globales)
@@ -608,6 +625,19 @@ export function generateArduinoCode(workspace) {
   }
 
   let sketch = '';
+
+  // ── Includes del proyecto, antes que cualquier declaración ──
+  // Un `AF_DCMotor motor1(1);` antes de su `#include` no compila: los
+  // encabezados van primero, siempre.
+  if (userIncludes.length > 0) {
+    const seenIncludes = new Set();
+    for (const file of userIncludes) {
+      if (seenIncludes.has(file)) continue;
+      seenIncludes.add(file);
+      sketch += '#include "' + file + '"\n';
+    }
+    sketch += '\n';
+  }
 
   // ── Servo ──
   if (servoNames.size > 0) {
@@ -897,15 +927,8 @@ export function generateArduinoCode(workspace) {
   }
 
   // ── Includes de archivos .h del proyecto ──
-  if (userIncludes.length > 0) {
-    const seen = new Set();
-    for (const file of userIncludes) {
-      if (seen.has(file)) continue;
-      seen.add(file);
-      sketch += '#include "' + file + '"\n';
-    }
-    sketch += '\n';
-  }
+  // Se emiten al principio del sketch; este bloque queda sin efecto y se
+  // conserva solo como marca del lugar donde estaban antes.
 
   // Emitir ISR functions (de attach_interrupt)
   if (cppGenerator._isrBodies.length > 0) {
@@ -993,7 +1016,7 @@ export function generateArduinoCode(workspace) {
   }
 
   sketch += 'void setup() {\n';
-  sketch += setupBody || '  // sin configuración\n';
+  sketch += indentar(setupSueltos) + (setupBody || '  // sin configuración\n');
   sketch += '}\n\n';
 
   sketch += 'void loop() {\n';
