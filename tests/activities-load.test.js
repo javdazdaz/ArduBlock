@@ -1,14 +1,17 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, beforeAll } from 'vitest';
 import * as Blockly from 'blockly';
 import '../frontend/js/blocks.js';
 import { generateArduinoCode } from '../frontend/js/generator.js';
+import { installIncludeDetach } from '../frontend/js/include-blocks.js';
 
 /**
  * Las diez actividades de Fundación BH traen un bloque library_include dentro
- * de setup y bloques digital_write_basic. Con un tipo desconocido o un bloque
- * sin conexiones, Blockly aborta la carga y el editor muestra
- * "Error al cargar actividad".
+ * de setup y bloques digital_write_basic. El include ya no lleva conexiones, así
+ * que la carga sanea el estado antes de deserializarlo: eso lo instala main.js
+ * al arrancar y aquí se reproduce.
  */
+
+beforeAll(() => installIncludeDetach());
 
 const modulos = import.meta.glob('../frontend/activities/*.js');
 
@@ -71,22 +74,18 @@ describe('actividades: deserialización', () => {
   });
 });
 
-describe('regresión: bloques de librería en la pila', () => {
-  it('library_include acepta un bloque siguiente dentro de setup', () => {
+describe('regresión: ubicación del include', () => {
+  it('el include se arrastra suelto: no acepta conexiones', () => {
     const ws = new Blockly.Workspace();
     try {
       const setup = ws.newBlock('arduino_setup');
       const include = ws.newBlock('library_include');
-      const write = ws.newBlock('digital_write_basic');
       include.setFieldValue('AFMotor_R4.h', 'LIB');
 
-      expect(include.previousConnection).toBeTruthy();
-      expect(include.nextConnection).toBeTruthy();
-
-      setup.getInput('BODY').connection.connect(include.previousConnection);
-      include.nextConnection.connect(write.previousConnection);
-
-      expect(ws.getAllBlocks(false)).toHaveLength(3);
+      expect(include.previousConnection).toBeNull();
+      expect(include.nextConnection).toBeNull();
+      expect(include.getPreviousBlock()).toBeNull();
+      expect(include.getNextBlock()).toBeNull();
     } finally {
       ws.dispose();
     }
