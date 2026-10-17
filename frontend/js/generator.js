@@ -78,6 +78,40 @@ regMatrixdirect(cppGenerator);
 regWifi(cppGenerator);
 regWebsocket(cppGenerator);
 
+// ═══ Alias de nombres anteriores al split basic/advanced ═══
+// tone_output, tone_duration, no_tone_output, pulse_in y attach_interrupt
+// siguen definidos como bloques y aparecen en el validador, y los proyectos
+// guardados antes del split los usan. Sin generador propio, Blockly lanzaba
+// "does not know how to generate code" al abrirlos.
+const _aliasGeneradores = {
+  tone_output: 'tone_output_basic',
+  tone_duration: 'tone_duration_basic',
+  pulse_in: 'pulse_in_basic',
+  attach_interrupt: 'attach_interrupt_basic',
+};
+for (const [viejo, nuevo] of Object.entries(_aliasGeneradores)) {
+  if (!cppGenerator.forBlock[viejo] && cppGenerator.forBlock[nuevo]) {
+    cppGenerator.forBlock[viejo] = cppGenerator.forBlock[nuevo];
+  }
+}
+
+// no_tone_output guarda el pin en un campo, no en un input: el generador
+// _advanced no le sirve.
+cppGenerator.forBlock['no_tone_output'] = function(block) {
+  const pin = block.getFieldValue('PIN') || '8';
+  return 'noTone(' + pin + ');\n';
+};
+
+// tone_duration mezcla un pin fijo con frecuencia y duración variables: no
+// encaja ni en el generador _basic (lee los tres como campos) ni en el
+// _advanced (lee el pin como input).
+cppGenerator.forBlock['tone_duration'] = function(block) {
+  const pin  = block.getFieldValue('PIN') || '8';
+  const freq = cppGenerator.valueToCode(block, 'FREQ', cppGenerator.ORDER_ATOMIC) || '440';
+  const dur  = cppGenerator.valueToCode(block, 'DURATION', cppGenerator.ORDER_ATOMIC) || '500';
+  return 'tone(' + pin + ', ' + freq + ', ' + dur + ');\n';
+};
+
 // ═══ Generadores built-in de Blockly ═══════════
 
 // ── controls_for (for loop con índices) ───────
@@ -510,26 +544,23 @@ export function generateArduinoCode(workspace) {
   const stepperNames = new Set();
   const usNames = new Set();
 
+  const instanciasPorTipo = {
+    servo_create: servoNames,
+    lcd_create: lcdNames,
+    lcd_i2c_create: lcdI2cNames,
+    dht_create: dhtNames,
+    stepper_create: stepperNames,
+    ultrasonic_create: usNames,
+  };
+
   for (const b of allBlocks) {
-    if (b.type === 'servo_create') {
-      const n = (b.getFieldValue('NAME') || '').trim();
-      if (n) servoNames.add(n);
-    } else if (b.type === 'lcd_create') {
-      const n = (b.getFieldValue('NAME') || '').trim();
-      if (n) lcdNames.add(n);
-    } else if (b.type === 'lcd_i2c_create') {
-      const n = (b.getFieldValue('NAME') || '').trim();
-      if (n) lcdI2cNames.add(n);
-    } else if (b.type === 'dht_create') {
-      const n = (b.getFieldValue('NAME') || '').trim();
-      if (n) dhtNames.add(n);
-    } else if (b.type === 'stepper_create') {
-      const n = (b.getFieldValue('NAME') || '').trim();
-      if (n) stepperNames.add(n);
-    } else if (b.type === 'ultrasonic_create') {
-      const n = (b.getFieldValue('NAME') || '').trim();
-      if (n) usNames.add(n);
-    }
+    // Las variantes _advanced declaran la misma instancia y sin el #include
+    // el sketch no compila.
+    const base = b.type.endsWith('_advanced') ? b.type.slice(0, -'_advanced'.length) : b.type;
+    const destino = instanciasPorTipo[base];
+    if (!destino) continue;
+    const n = (b.getFieldValue('NAME') || '').trim();
+    if (n) destino.add(n);
   }
 
   // ── WiFi (R4): detectar bloques por tipo (scan, igual que servo/lcd) ──
