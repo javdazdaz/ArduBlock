@@ -199,6 +199,7 @@ import { initActivityProtection, getActivityMeta, applyActivityMeta, clearActivi
 import { initUndoTree, undo as treeUndo, redo as treeRedo, canUndo, canRedo, schedulePush, forcePush, restoreSnapshot, resetTree } from './undo-tree.js';
 import { initActivities, getActivityList, loadActivity } from './activities.js';
 import { installBlockCollapse } from './block-collapse.js';
+import { hasAfmotorInclude, AFMOTOR_CATEGORY_BLOCKS } from './afmotor-category.js';
 
 // ═══ Toolbox ══════════════════════════════════
 import { buildToolboxForBoard, getBlockLevel } from './blocks.js';
@@ -208,7 +209,9 @@ const toolbox = buildToolboxForBoard(getSetting('board'), getSetting('level'));
 // Función para reconstruir toolbox al cambiar de placa o nivel
 window._rebuildToolbox = function(fqbn, level) {
   const currentLevel = level ?? getSetting('level');
-  const newToolbox = buildToolboxForBoard(fqbn, currentLevel);
+  const has = hasAfmotorInclude(workspace);
+  afmotorCategoryShown = has;
+  const newToolbox = buildToolboxForBoard(fqbn, currentLevel, { withAfmotor: has });
   workspace.updateToolbox(newToolbox);
 };
 
@@ -774,35 +777,56 @@ window._isActivityLoaded = isActivityLoaded;
 
 // ═══ Toolbox dinámico: Motor AF solo si hay AFMotor_R4.h ═══
 workspace.registerToolboxCategoryCallback('CAT_AFMOTOR', function(_ws) {
-  const allBlocks = _ws.getAllBlocks(false);
-  const hasAfmotor = allBlocks.some(b =>
-    b.type === 'library_include' && b.getFieldValue('LIB') === 'AFMotor_R4.h'
-  );
-  if (!hasAfmotor) return [];
-
-  return [
-    { kind: 'block', type: 'afmotor_dc_create' },
-    { kind: 'block', type: 'afmotor_dc_speed' },
-    { kind: 'block', type: 'afmotor_dc_run' },
-    { kind: 'block', type: 'afmotor_stepper_create' },
-    { kind: 'block', type: 'afmotor_stepper_speed' },
-    { kind: 'block', type: 'afmotor_stepper_step' },
-    { kind: 'block', type: 'afmotor_stepper_onestep' },
-    { kind: 'block', type: 'afmotor_stepper_release' },
-    { kind: 'block', type: 'afmotor_servo_create' },
-    { kind: 'block', type: 'afmotor_servo_write' },
-    { kind: 'block', type: 'afmotor_servo_write_us' },
-    { kind: 'block', type: 'afmotor_servo_read' },
-    { kind: 'block', type: 'afmotor_servo_detach' },
-  ];
+  if (!hasAfmotorInclude(_ws)) return [];
+  return AFMOTOR_CATEGORY_BLOCKS;
 });
+
+// La categoría no se muestra vacía: aparece al poner el include y se retira al
+// quitarlo. Solo se reconstruye el toolbox cuando la condición cambia.
+// null = todavía no se comparó, fuerza el primer ajuste.
+let afmotorCategoryShown = null;
+
+function syncAfmotorCategory() {
+  const has = hasAfmotorInclude(workspace);
+  if (has === afmotorCategoryShown) return;
+  afmotorCategoryShown = has;
+  workspace.updateToolbox(
+    buildToolboxForBoard(getSetting('board'), getSetting('level'), { withAfmotor: has })
+  );
+}
+window._syncAfmotorCategory = syncAfmotorCategory;
+// Acceso para diagnósticos en consola y pruebas manuales.
+window._ardublockWorkspace = workspace;
+
+// Al arrastrar un bloque desde el flyout, el evento llega antes de que el bloque
+// quede en el workspace: la comprobación se difiere al final del gesto.
+let afmotorSyncPending = null;
+function scheduleAfmotorSync() {
+  if (afmotorSyncPending) return;
+  afmotorSyncPending = setTimeout(() => {
+    afmotorSyncPending = null;
+    syncAfmotorCategory();
+  }, 0);
+}
 
 // Refrescar toolbox cuando cambian los bloques
 workspace.addChangeListener((event) => {
+  if (event.type === Blockly.Events.FINISHED_LOADING) {
+    syncAfmotorCategory();
+    return;
+  }
   if (event.type === Blockly.Events.BLOCK_CREATE ||
       event.type === Blockly.Events.BLOCK_DELETE ||
+      event.type === Blockly.Events.BLOCK_MOVE ||
       event.type === Blockly.Events.BLOCK_CHANGE) {
-    workspace.refreshToolboxSelection();
+    // La sincronización va primero: refreshToolboxSelection puede fallar si el
+    // bloque que cambió estaba seleccionado y dejaría la categoría desfasada.
+    scheduleAfmotorSync();
+    try {
+      workspace.refreshToolboxSelection();
+    } catch (e) {
+      console.warn('[ArduBlock] refreshToolboxSelection:', e.message);
+    }
   }
 });
 
@@ -840,6 +864,9 @@ workspace.addChangeListener((event) => {
     console.warn('[ArduBlock] Default state:', e.message);
   }
 })();
+
+// Ajusta la categoría del shield al estado que quedó cargado.
+syncAfmotorCategory();
 
 // ═══ Validación pedagógica ═══════════════════
 initValidator(workspace);

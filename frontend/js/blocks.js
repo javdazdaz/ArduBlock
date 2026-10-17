@@ -315,7 +315,7 @@ export function getBlockLevel(blockType) {
 // ═══ Toolbox dinámico por placa ═════════════════
 import { getBoardConfig, getDefaultFqbn } from './board.js';
 
-export function buildToolboxForBoard(fqbn, level) {
+export function buildToolboxForBoard(fqbn, level, options = {}) {
   const board = getBoardConfig(fqbn || getDefaultFqbn());
   // Por ahora el toolbox es idéntico para todas las placas.
   // En el futuro se filtrarán bloques según capacidades (WiFi, BLE, etc.).
@@ -557,6 +557,13 @@ export function buildToolboxForBoard(fqbn, level) {
       { 'kind': 'search', 'name': '%{BKY_CAT_BUSCAR}', 'contents': [] }
     ]
   };
+
+  // ═══ Categoría del shield: solo con el include puesto ═════
+  // Sin `library_include` con AFMotor_R4.h la categoría queda vacía y solo
+  // agrega ruido al panel, así que se quita del toolbox.
+  if (options.withAfmotor === false) {
+    toolbox.contents = toolbox.contents.filter(cat => cat.custom !== 'CAT_AFMOTOR');
+  }
 
   // ═══ Filtrar por placa ═════════════════════
   // Categorías con boardFilter: solo visibles si el FQBN coincide
