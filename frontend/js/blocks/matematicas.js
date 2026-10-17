@@ -53,7 +53,7 @@ export const blocks = [
 export function registerGenerators(cppGenerator) {
 // ── map_value (expression) ────────────────────
 cppGenerator.forBlock['map_value'] = function(block) {
-  const val     = cppGenerator.valueToCode(block, 'VALUE', cppGenerator.ORDER_NONE);
+  const val     = cppGenerator.valueToCode(block, 'VALUE', cppGenerator.ORDER_NONE) || '0';
   const fromLow  = block.getFieldValue('FROM_LOW');
   const fromHigh = block.getFieldValue('FROM_HIGH');
   const toLow    = block.getFieldValue('TO_LOW');
@@ -63,7 +63,7 @@ cppGenerator.forBlock['map_value'] = function(block) {
 };
 // ── map_value_advanced (N3) ──────────────────
 cppGenerator.forBlock['map_value_advanced'] = function(block) {
-  const val      = cppGenerator.valueToCode(block, 'VALUE', cppGenerator.ORDER_NONE);
+  const val      = cppGenerator.valueToCode(block, 'VALUE', cppGenerator.ORDER_NONE) || '0';
   const fromLow  = cppGenerator.valueToCode(block, 'FROM_LOW', cppGenerator.ORDER_ATOMIC) || '0';
   const fromHigh = cppGenerator.valueToCode(block, 'FROM_HIGH', cppGenerator.ORDER_ATOMIC) || '1023';
   const toLow    = cppGenerator.valueToCode(block, 'TO_LOW', cppGenerator.ORDER_ATOMIC) || '0';
