@@ -26,6 +26,18 @@ export default [
         atob: 'readonly',
         Uint8Array: 'readonly',
         DataView: 'readonly',
+        Headers: 'readonly',
+        URLSearchParams: 'readonly',
+        sessionStorage: 'readonly',
+        crypto: 'readonly',
+        CustomEvent: 'readonly',
+        Event: 'readonly',
+        Image: 'readonly',
+        FileReader: 'readonly',
+        CSS: 'readonly',
+        XMLSerializer: 'readonly',
+        requestAnimationFrame: 'readonly',
+        location: 'readonly',
       },
     },
     rules: {
@@ -53,6 +65,16 @@ export default [
     },
   },
   {
-    ignores: ['node_modules/', 'dist/', '.vite/', 'backend/.venv/'],
+    files: ['scripts/**/*.mjs'],
+    languageOptions: {
+      globals: {
+        process: 'readonly',
+        console: 'readonly',
+      },
+    },
+  },
+  {
+    // `dist/` solo cubre la raíz; el build de Vite escribe en frontend/dist.
+    ignores: ['node_modules/', '**/node_modules/', 'dist/', '**/dist/', '.vite/', 'backend/.venv/'],
   },
 ];

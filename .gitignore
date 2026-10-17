@@ -13,8 +13,19 @@ backend/**/__pycache__/
 dist/
 .vite/
 
-# ── Tests ───────────────────────────────────────
+# ── Tests ────────────────────────────────────────
 coverage/
+.coverage
+.coverage.*
+
+# ── Estáticos generados por scripts/sync-public.mjs ──
+# La fuente vive en frontend/js y frontend/css; frontend/public es el
+# artefacto que Vite copia a dist/.
+frontend/public/js/csrf.js
+frontend/public/js/canvas-avatars.js
+frontend/public/js/profile-avatar.js
+frontend/public/css/palettes.css
+frontend/public/css/pages.css
 
 # ── Runtime state ────────────────────────────────
 .ardublock-*.pid
