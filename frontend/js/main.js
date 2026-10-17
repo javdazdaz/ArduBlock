@@ -199,6 +199,7 @@ import { initActivityProtection, getActivityMeta, applyActivityMeta, clearActivi
 import { initUndoTree, undo as treeUndo, redo as treeRedo, canUndo, canRedo, schedulePush, forcePush, restoreSnapshot, resetTree } from './undo-tree.js';
 import { initActivities, getActivityList, loadActivity } from './activities.js';
 import { installBlockCollapse } from './block-collapse.js';
+import { installIncludeDetach } from './include-blocks.js';
 import { hasAfmotorInclude, AFMOTOR_CATEGORY_BLOCKS } from './afmotor-category.js';
 
 // ═══ Toolbox ══════════════════════════════════
@@ -230,6 +231,8 @@ let blockCollabClient = null;
 let applyingRemoteBlockOperation = false;
 
 installBlockCollapse(workspace);
+// Los includes no llevan conexiones: al cargar, salen de la pila.
+installIncludeDetach();
 
 function applyRemoteBlockOperation(operation) {
   if (!operation) return;
