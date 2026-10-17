@@ -22,7 +22,9 @@ import * as Blockly from 'blockly';
  * @param {Blockly.Workspace} workspace  Workspace destino.
  * @param {object} record                { state, tabs, sketchName }
  *   - state: estado serializado de Blockly (obligatorio).
- *   - tabs: lista de tabs del proyecto; `null`/`undefined` = no tocar los tabs.
+ *   - tabs: lista de tabs del proyecto. Ausente o inválida = sin archivos: se
+ *     limpian los del proyecto anterior, para que una carga nunca herede los
+ *     tabs de otra sesión y los arrastre al siguiente guardado.
  *   - sketchName: nombre a mostrar en el tab del .ino (opcional).
  */
 export function restoreWorkspaceState(workspace, record = {}) {
@@ -30,8 +32,9 @@ export function restoreWorkspaceState(workspace, record = {}) {
 
   // 1) Tabs primero: los campos que dependen de archivos (FILE de
   //    webserver_serve_file) necesitan ver los .html antes de deserializar.
-  if (tabs && typeof window !== 'undefined' && window._tabManager) {
-    window._tabManager.loadTabs(tabs, sketchName || null);
+  if (typeof window !== 'undefined' && window._tabManager) {
+    const lista = Array.isArray(tabs) ? tabs : [];
+    window._tabManager.loadTabs(lista, sketchName || null);
   }
 
   // 2) Bloques después.

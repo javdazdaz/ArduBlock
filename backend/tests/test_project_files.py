@@ -162,3 +162,56 @@ def test_stale_operation_validates_against_its_base_document_length(
     )
     assert inserted.status_code == 200
     assert client.get(f"/api/projects/{project_id}/files").get_json()[0]["content"] == "ab!"
+
+
+def test_saving_without_a_tab_removes_its_mirror(client, seed_classroom):
+    """Un archivo que sale del documento deja de existir en la tabla."""
+    seed_classroom("ABC123")
+    _register(client, "a@example.com")
+    project_id, _ = _project_with_file(client)
+
+    saved = client.put(
+        f"/api/projects/{project_id}",
+        json={"revision": 1, "data": {"state": {"blocks": {}}, "tabs": []}},
+    )
+    assert saved.status_code == 200
+
+    files = client.get(f"/api/projects/{project_id}/files").get_json()
+    assert files == []
+
+
+def test_saving_with_fewer_tabs_keeps_only_the_listed_ones(client, seed_classroom):
+    seed_classroom("ABC123")
+    _register(client, "a@example.com")
+    project_id, _ = _project_with_file(client)
+
+    saved = client.put(
+        f"/api/projects/{project_id}",
+        json={
+            "revision": 1,
+            "data": {
+                "state": {"blocks": {}},
+                "tabs": [{"filename": "otro.html", "content": "<p>nuevo</p>"}],
+            },
+        },
+    )
+    assert saved.status_code == 200
+
+    files = client.get(f"/api/projects/{project_id}/files").get_json()
+    assert [f["filename"] for f in files] == ["otro.html"]
+
+
+def test_document_without_a_tab_list_does_not_prune(client, seed_classroom):
+    """Si el documento no declara tabs, no se borra el espejo existente."""
+    seed_classroom("ABC123")
+    _register(client, "a@example.com")
+    project_id, _ = _project_with_file(client)
+
+    saved = client.put(
+        f"/api/projects/{project_id}",
+        json={"revision": 1, "data": {"state": {"blocks": {}}}},
+    )
+    assert saved.status_code == 200
+
+    files = client.get(f"/api/projects/{project_id}/files").get_json()
+    assert [f["filename"] for f in files] == ["motores.h"]
