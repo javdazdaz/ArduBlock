@@ -249,6 +249,21 @@ cppGenerator.forBlock['controls_whileUntil'] = function(block) {
   return code;
 };
 
+// ── controls_flow_statements (break / continue) ─
+cppGenerator.forBlock['controls_flow_statements'] = function(block) {
+  const flow = block.getFieldValue('FLOW');
+  return (flow === 'CONTINUE' ? 'continue;' : 'break;') + '\n';
+};
+
+// ── logic_ternary (condición ? a : b) ────────
+cppGenerator.forBlock['logic_ternary'] = function(block) {
+  const cond = cppGenerator.valueToCode(block, 'IF', cppGenerator.ORDER_NONE) || 'false';
+  const then = cppGenerator.valueToCode(block, 'THEN', cppGenerator.ORDER_NONE) || '0';
+  const otherwise = cppGenerator.valueToCode(block, 'ELSE', cppGenerator.ORDER_NONE) || '0';
+  // Paréntesis propios: el operador condicional tiene precedencia baja en C++.
+  return ['(' + cond + ' ? ' + then + ' : ' + otherwise + ')', cppGenerator.ORDER_ATOMIC];
+};
+
 // ── variables_get ────────────────────────────
 cppGenerator.forBlock['variables_get'] = function(block) {
   // Usar nombre amigable, no el interno ofuscado de Blockly
@@ -423,6 +438,18 @@ cppGenerator.forBlock['procedures_callreturn'] = function(block) {
     }
   } catch (_) { /* sin modelo, sin args */ }
   return [name + '(' + args.join(', ') + ')', cppGenerator.ORDER_ATOMIC];
+};
+
+// ── procedures_ifreturn (salida anticipada) ───
+// Sirve en funciones void y con retorno: el bloque trae el input VALUE solo
+// cuando el procedimiento declara retorno.
+cppGenerator.forBlock['procedures_ifreturn'] = function(block) {
+  const cond = cppGenerator.valueToCode(block, 'CONDITION', cppGenerator.ORDER_NONE) || 'false';
+  const hasValue = Boolean(block.getInput('VALUE'));
+  const retorno = hasValue
+    ? 'return ' + (cppGenerator.valueToCode(block, 'VALUE', cppGenerator.ORDER_NONE) || '0') + ';'
+    : 'return;';
+  return 'if (' + cond + ') { ' + retorno + ' }\n';
 };
 
 
