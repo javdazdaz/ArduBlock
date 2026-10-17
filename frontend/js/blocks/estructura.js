@@ -33,6 +33,8 @@ export const blocks = [
     "args0": [
       { "type": "field_input", "name": "FILE", "text": "config.h" }
     ],
+    "previousStatement": null,
+    "nextStatement": null,
     "colour": 200,
     "tooltip": Blockly.Msg.TOOLTIP_INCLUDE_HEADER,
     "helpUrl": ""
@@ -45,6 +47,8 @@ export const blocks = [
         ["AFMotor_R4.h", "AFMotor_R4.h"]
       ]}
     ],
+    "previousStatement": null,
+    "nextStatement": null,
     "colour": 200,
     "tooltip": Blockly.Msg.TOOLTIP_LIBRARY_INCLUDE,
     "helpUrl": ""
