@@ -108,3 +108,27 @@ describe('regresión: bloques de librería en la pila', () => {
     }
   });
 });
+
+describe('presets web: deserialización', () => {
+  it('los cuatro presets cargan y generan sketch', async () => {
+    const { webPresetProjects } = await import('../frontend/js/web-preset-projects.js');
+    const rutas = Object.keys(webPresetProjects);
+    expect(rutas).toHaveLength(4);
+
+    const fallos = [];
+    for (const ruta of rutas) {
+      const estado = webPresetProjects[ruta]();
+      const ws = new Blockly.Workspace();
+      try {
+        Blockly.serialization.workspaces.load(estado, ws);
+        const sketch = generateArduinoCode(ws);
+        if (!sketch.includes('void setup()')) fallos.push(`${ruta}: sin setup`);
+      } catch (e) {
+        fallos.push(`${ruta}: ${e.message}`);
+      } finally {
+        ws.dispose();
+      }
+    }
+    expect(fallos).toEqual([]);
+  });
+});

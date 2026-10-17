@@ -421,6 +421,7 @@ function validateWorkspace(workspace) {
   const pinConsumers = {
     'digital_write_basic': { pinField: 'PIN', mode: 'OUTPUT', label: 'digitalWrite' },
     'digital_write_advanced': { pinField: 'PIN', mode: 'OUTPUT', label: 'digitalWrite' },
+    'digital_write': { pinField: 'PIN', mode: 'OUTPUT', label: 'digitalWrite' },
     'tone_duration_basic': { pinField: 'PIN', mode: 'OUTPUT', label: 'tone' },
     'analog_read_basic': { pinField: 'PIN', mode: 'INPUT', label: 'analogRead', optional: true },
     'analog_read_advanced': { pinField: 'PIN', mode: 'INPUT', label: 'analogRead', optional: true },
@@ -632,7 +633,7 @@ function validateWorkspace(workspace) {
   if (hasSerialActive) {
     const serialPinBlocks = [
       'pin_mode_basic', 'pin_mode_advanced',
-      'digital_write_basic', 'digital_write_advanced',
+      'digital_write_basic', 'digital_write_advanced', 'digital_write',
       'digital_read_basic', 'digital_read_advanced',
       'tone_output_basic', 'tone_output_advanced',
       'tone_duration_basic', 'tone_duration_advanced',
@@ -662,7 +663,7 @@ function validateWorkspace(workspace) {
   if (hasLcdI2c) {
     const i2cPinBlocks = [
       'pin_mode_basic', 'pin_mode_advanced',
-      'digital_write_basic', 'digital_write_advanced',
+      'digital_write_basic', 'digital_write_advanced', 'digital_write',
       'digital_read_basic', 'digital_read_advanced',
       'analog_read_basic', 'analog_read_advanced',
       'tone_output_basic', 'tone_output_advanced',
