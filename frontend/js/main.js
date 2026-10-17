@@ -198,6 +198,7 @@ import { t, applyDOMLanguage } from './i18n.js';
 import { initActivityProtection, getActivityMeta, applyActivityMeta, clearActivityMeta, isActivityLoaded } from './activity-protection.js';
 import { initUndoTree, undo as treeUndo, redo as treeRedo, canUndo, canRedo, schedulePush, forcePush, restoreSnapshot, resetTree } from './undo-tree.js';
 import { initActivities, getActivityList, loadActivity } from './activities.js';
+import { installBlockCollapse } from './block-collapse.js';
 
 // ═══ Toolbox ══════════════════════════════════
 import { buildToolboxForBoard, getBlockLevel } from './blocks.js';
@@ -224,6 +225,8 @@ const workspace = Blockly.inject('blocklyDiv', {
 
 let blockCollabClient = null;
 let applyingRemoteBlockOperation = false;
+
+installBlockCollapse(workspace);
 
 function applyRemoteBlockOperation(operation) {
   if (!operation) return;

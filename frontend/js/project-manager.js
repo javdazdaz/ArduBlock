@@ -7,6 +7,7 @@
 
 import * as Blockly from 'blockly';
 import { captureWorkspaceThumbnail } from './thumbnail.js';
+import { stateForStorage } from './block-collapse.js';
 import { restoreWorkspaceState } from './workspace-restore.js';
 import { csrfFetch } from './csrf.js';
 import { describeTabDiff } from './tab-diff.js';
@@ -125,7 +126,7 @@ export async function saveProject(name) {
   if (!name.endsWith('.ino')) name += '.ino';
   projectInput.value = name;
 
-  const state = Blockly.serialization.workspaces.save(workspace);
+  const state = stateForStorage(workspace);
   const tabs = window._tabManager ? window._tabManager.getTabs() : [];
   const record = { name, state, tabs };
 
