@@ -270,6 +270,29 @@ function validateWorkspace(workspace) {
     }
   }
 
+  // ═══ R6e: bloques del shield AFMotor sin su include ═══
+  // Sin el bloque library_include, el generador declara AF_DCMotor y
+  // AF_Stepper pero no emite el #include: el sketch no compila.
+  const afmotorTypes = [
+    'afmotor_dc_create', 'afmotor_dc_speed', 'afmotor_dc_run',
+    'afmotor_stepper_create', 'afmotor_stepper_speed', 'afmotor_stepper_step',
+    'afmotor_stepper_onestep', 'afmotor_stepper_release'
+  ];
+  const afmotorBlocks = [];
+  for (const type of afmotorTypes) afmotorBlocks.push(...findAllBlocksOfType(workspace, type));
+  if (afmotorBlocks.length > 0) {
+    const hasInclude = findAllBlocksOfType(workspace, 'library_include')
+      .some(block => block.getFieldValue('LIB') === 'AFMotor_R4.h');
+    if (!hasInclude) {
+      warnings.push({
+        type: 'afmotor_include_missing',
+        severity: 'error',
+        message: t('val_afmotor_include_missing'),
+        blocks: afmotorBlocks
+      });
+    }
+  }
+
   // ═══ R6d: pinMode() y attachInterrupt() deben ir en setup ═══
   const setupStatements = [
     { types: ['pin_mode_basic', 'pin_mode_advanced'], msgKey: 'val_pinmode_position', type: 'pin_mode_position' },
