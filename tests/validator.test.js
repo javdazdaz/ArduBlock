@@ -469,4 +469,45 @@ describe('validator — reglas de validación', () => {
       expect(isInsideBlockType(ws, child, 'arduino_setup')).toBe(false);
     });
   });
+
+  // ── R6e: bloques AFMotor sin su include ────────
+  describe('R6e: AFMotor sin include', () => {
+    it('advierte si hay bloques del shield y falta el include', () => {
+      const ws = mw([
+        mb('arduino_setup'),
+        mb('arduino_loop'),
+        mb('afmotor_dc_create', { NAME: 'motor1', CHANNEL: '1' }),
+      ]);
+      const w = validateWorkspace(ws);
+      expect(w.some(x => x.type === 'afmotor_include_missing')).toBe(true);
+    });
+
+    it('no advierte con el include de AFMotor_R4 puesto', () => {
+      const ws = mw([
+        mb('arduino_setup'),
+        mb('arduino_loop'),
+        mb('library_include', { LIB: 'AFMotor_R4.h' }),
+        mb('afmotor_stepper_step', { NAME: 'stepper1' }),
+      ]);
+      const w = validateWorkspace(ws);
+      expect(w.some(x => x.type === 'afmotor_include_missing')).toBe(false);
+    });
+
+    it('advierte con un include de otra librería', () => {
+      const ws = mw([
+        mb('arduino_setup'),
+        mb('arduino_loop'),
+        mb('library_include', { LIB: 'Servo.h' }),
+        mb('afmotor_dc_run', { NAME: 'motor1' }),
+      ]);
+      const w = validateWorkspace(ws);
+      expect(w.some(x => x.type === 'afmotor_include_missing')).toBe(true);
+    });
+
+    it('no advierte si no hay bloques del shield', () => {
+      const ws = mw([mb('arduino_setup'), mb('arduino_loop')]);
+      const w = validateWorkspace(ws);
+      expect(w.some(x => x.type === 'afmotor_include_missing')).toBe(false);
+    });
+  });
 });
