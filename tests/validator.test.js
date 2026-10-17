@@ -36,6 +36,7 @@ function mb(type, fields = {}, opts = {}) {
     getField: (name) => ({ getText: () => fields[name] ?? '' }),
     getParent: () => parent,
     getNextBlock: () => null,
+    getInputTargetBlock: (name) => (opts.inputs && opts.inputs[name]) || null,
     setWarningText: vi.fn(),
     setDisabledReason: vi.fn(),
     setEnabled: vi.fn(),
@@ -493,6 +494,55 @@ describe('validator — reglas de validación', () => {
       ]);
       const w = validateWorkspace(ws);
       expect(w.some(x => x.type === 'servo_not_declared')).toBe(true);
+    });
+  });
+
+  // ── R6f: servo y analogWrite en el mismo pin ───
+  describe('R6f: servo y analogWrite en el mismo pin', () => {
+    it('advierte si el servo y analogWrite comparten el pin 9', () => {
+      const ws = mw([
+        mb('arduino_setup'),
+        mb('arduino_loop'),
+        mb('servo_create', { NAME: 'base', PIN: '9' }),
+        mb('analog_write_basic', { PIN: '9' }),
+      ]);
+      const w = validateWorkspace(ws);
+      expect(w.some(x => x.type === 'servo_pwm_conflict')).toBe(true);
+    });
+
+    it('advierte con el servo del shield en la salida 1', () => {
+      const ws = mw([
+        mb('arduino_setup'),
+        mb('arduino_loop'),
+        mb('library_include', { LIB: 'AFMotor_R4.h' }),
+        mb('afmotor_servo_create', { NAME: 's1', SERVO: '1' }),
+        mb('analog_write_basic', { PIN: '9' }),
+      ]);
+      const w = validateWorkspace(ws);
+      expect(w.some(x => x.type === 'servo_pwm_conflict')).toBe(true);
+    });
+
+    it('no advierte si el PWM va a otro pin', () => {
+      const ws = mw([
+        mb('arduino_setup'),
+        mb('arduino_loop'),
+        mb('servo_create', { NAME: 'base', PIN: '9' }),
+        mb('analog_write_basic', { PIN: '3' }),
+      ]);
+      const w = validateWorkspace(ws);
+      expect(w.some(x => x.type === 'servo_pwm_conflict')).toBe(false);
+    });
+
+    it('advierte con el pin conectado como número en analogWrite avanzado', () => {
+      const numero = mb('math_number', { NUM: '10' });
+      const ws = mw([
+        mb('arduino_setup'),
+        mb('arduino_loop'),
+        mb('servo_create', { NAME: 'base', PIN: '10' }),
+        mb('analog_write_advanced', {}, { inputs: { PIN: numero } }),
+      ]);
+      const w = validateWorkspace(ws);
+      expect(w.some(x => x.type === 'servo_pwm_conflict')).toBe(true);
     });
   });
 

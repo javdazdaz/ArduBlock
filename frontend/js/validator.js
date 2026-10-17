@@ -242,6 +242,49 @@ function validateWorkspace(workspace) {
     }
   }
 
+  // ═══ R6f: servo y analogWrite() en el mismo pin ═══
+  // La librería Servo deshabilita el PWM en los pines 9 y 10 de las placas
+  // que no son Mega: un analogWrite() ahí no regula la salida.
+  const PWM_SERVO_PINS = new Set(['9', '10']);
+  const servoPins = new Map();   // pin → nombre del servo
+  for (const block of findAllBlocksOfType(workspace, 'servo_create')) {
+    const pin = String(block.getFieldValue('PIN') || '');
+    if (pin) servoPins.set(pin, (block.getFieldValue('NAME') || '').trim());
+  }
+  for (const block of findAllBlocksOfType(workspace, 'servo_create_advanced')) {
+    const target = block.getInputTargetBlock?.('PIN');
+    if (target && target.type === 'math_number') {
+      const pin = String(target.getFieldValue('NUM'));
+      if (pin) servoPins.set(pin, (block.getFieldValue('NAME') || '').trim());
+    }
+  }
+  for (const block of findAllBlocksOfType(workspace, 'afmotor_servo_create')) {
+    const pin = block.getFieldValue('SERVO') === '2' ? '10' : '9';
+    servoPins.set(pin, (block.getFieldValue('NAME') || '').trim());
+  }
+
+  if (servoPins.size > 0) {
+    const conflictos = [];
+    for (const block of findAllBlocksOfType(workspace, 'analog_write_basic')) {
+      const pin = String(block.getFieldValue('PIN') || '');
+      if (PWM_SERVO_PINS.has(pin) && servoPins.has(pin)) conflictos.push({ block, pin });
+    }
+    for (const block of findAllBlocksOfType(workspace, 'analog_write_advanced')) {
+      const target = block.getInputTargetBlock?.('PIN');
+      if (!target || target.type !== 'math_number') continue;
+      const pin = String(target.getFieldValue('NUM'));
+      if (PWM_SERVO_PINS.has(pin) && servoPins.has(pin)) conflictos.push({ block, pin });
+    }
+    for (const { block, pin } of conflictos) {
+      warnings.push({
+        type: 'servo_pwm_conflict',
+        severity: 'warning',
+        message: t('val_servo_pwm_conflict', { name: servoPins.get(pin) || '?', pin }),
+        blocks: [block]
+      });
+    }
+  }
+
   // ═══ R6c: Librerías create deben ir en setup ═══
   const inSetupTypes = [
     { type: 'lcd_create', field: 'NAME', labelKey: 'lbl_lcd' },
