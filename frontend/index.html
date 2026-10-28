@@ -122,6 +122,7 @@
             <button class="matrix-mode-tab active" data-mode="r4">R4 12×8</button>
             <button class="matrix-mode-tab" data-mode="max7219">MAX7219 8×8</button>
             <button class="matrix-mode-tab" data-mode="direct">Directa 8×8</button>
+            <button class="matrix-mode-tab" data-mode="oled">OLED SSD1315</button>
           </div>
           <span class="matrix-toolbar-sep">|</span>
           <select id="matrix-preset" class="matrix-preset-select">
@@ -182,6 +183,8 @@
           </div>
           <div id="matrix-timeline-track" class="matrix-timeline-track"></div>
         </div>
+        <!-- Editor OLED SSD1315: se muestra al elegir su pestaña -->
+        <div id="oled-editor" class="oled-editor" style="display:none"></div>
       </div>
 
       <!-- Panel de sitios web (presets single-file + análisis + clonar) -->

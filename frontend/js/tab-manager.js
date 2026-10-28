@@ -541,6 +541,40 @@ export function createHtmlTab(filename, content) {
 }
 
 /**
+ * Crea un tab .h editable con contenido. Si el nombre ya existe, no lo
+ * duplica: devuelve el existente. Se usa para los recursos que el editor de
+ * animaciones vuelca al proyecto (las tablas de Bad Apple).
+ * Devuelve el nombre final del tab.
+ */
+export function createHeaderTab(filename, content) {
+  let name = String(filename || 'tabla.h').trim();
+  if (!/\.[^.]+$/.test(name)) name = name + '.h';
+  if (!/\.h(pp)?$/i.test(name)) name = name + '.h';
+
+  const existente = tabs.find(t => t.filename === name);
+  if (existente) {
+    if (!existente.content && content) {
+      existente.content = content;
+      existente.state = EditorState.create({ doc: content });
+    }
+    return name;
+  }
+
+  const base = name.replace(/\.[^.]+$/, '');
+  const ext = name.slice(name.lastIndexOf('.'));
+  let candidate = name;
+  let n = 2;
+  while (tabs.some(t => t.filename === candidate)) {
+    candidate = base + '-' + n + ext;
+    n++;
+  }
+
+  tabs.push(_newTab(candidate, content));
+  _renderTabs();
+  return candidate;
+}
+
+/**
  * Abre un tab existente (por nombre) en el editor CodeMirror.
  * Devuelve true si el tab existe y se abrió.
  */

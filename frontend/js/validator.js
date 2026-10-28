@@ -659,9 +659,10 @@ function validateWorkspace(workspace) {
     }
   }
 
-  // ═══ R12: Conflicto LCD I2C → pines A4/A5 ═════
+  // ═══ R12: Conflicto de pantalla I2C → pines A4/A5 ═════
   const hasLcdI2c = workspace.getAllBlocks(false).some(
     b => b.type === 'lcd_i2c_create' || b.type === 'lcd_i2c_create_advanced'
+      || b.type === 'oled_create'
   );
   if (hasLcdI2c) {
     const i2cPinBlocks = [
@@ -786,6 +787,12 @@ const BLOCK_LABEL_KEYS = {
   'lcd_print': 'blk_lcd_print',
   'lcd_set_cursor': 'blk_lcd_set_cursor',
   'lcd_clear': 'blk_lcd_clear',
+  'oled_create': 'blk_oled_create',
+  'oled_clear': 'blk_oled_clear',
+  'oled_show': 'blk_oled_show',
+  'oled_pixel': 'blk_oled_pixel',
+  'oled_text': 'blk_oled_text',
+  'oled_play_animation': 'blk_oled_play_animation',
   'dht_create': 'blk_dht_create',
   'dht_temp': 'blk_dht_temp',
   'dht_humidity': 'blk_dht_humidity',
