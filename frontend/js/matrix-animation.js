@@ -11,9 +11,18 @@
 
 import { MATRIX_FRAMES, MATRIX_ANIMATIONS } from './blocks/ledmatrix.js';
 import { MAX7219_FRAMES } from './blocks/max7219.js';
-import { mostrarEditorOled, ocultarEditorOled } from './oled-editor.js';
+import {
+  encodeCuadros, decodificarCuadros, desdeBase64, partirEnTabs,
+} from './oled-animations.js';
+import { createHeaderTab } from './tab-manager.js';
 
 // ═══ Configuración por modo ════════════════════
+
+const OLED_ANCHO = 128;
+const OLED_ALTO = 64;
+
+/** Lado del canvas del editor OLED en píxeles de pantalla. */
+const OLED_ESCALA = 3;
 
 const MODES = {
   r4: {
@@ -139,6 +148,68 @@ const MODES = {
     playCode(frameVar) {
       return '_direct_show(' + frameVar + ', 100);  // mostrar frame por 100ms\n';
     },
+  },
+
+  // ── OLED SSD1315 128x64 ──
+  // Comparte el panel con los otros modos: mismo toolbar, mismo panel lateral,
+  // misma línea de tiempo. Cambia el reticulado por un lienzo y el formato del
+  // cuadro: 8 páginas de 128 columnas, que es lo que envía el driver del sketch.
+  oled: {
+    label: 'OLED SSD1315',
+    cols: OLED_ANCHO,
+    rows: OLED_ALTO,
+    canvas: true,
+    framesKey: 'ardublock:oled-frames',
+    animsKey: 'ardublock:oled-animations',
+    presets: () => ({}),
+    animPresets: () => ({ badapple: { cuadros: 871, recurso: true } }),
+    empty() { return new Uint8Array(1024); },
+    encode(fd) {
+      const buf = new Uint8Array(1024);
+      for (let p = 0; p < 8; p++) {
+        for (let x = 0; x < OLED_ANCHO; x++) {
+          let byte = 0;
+          for (let b = 0; b < 8; b++) if (fd[p * 8 + b][x]) byte |= 1 << b;
+          buf[p * OLED_ANCHO + x] = byte;
+        }
+      }
+      return buf;
+    },
+    decode(bytes) {
+      const buf = bytes instanceof Uint8Array ? bytes : Uint8Array.from(bytes || []);
+      const fd = [];
+      for (let y = 0; y < OLED_ALTO; y++) fd.push(new Array(OLED_ANCHO).fill(0));
+      for (let p = 0; p < 8; p++) {
+        for (let x = 0; x < OLED_ANCHO; x++) {
+          const byte = buf[p * OLED_ANCHO + x] || 0;
+          for (let b = 0; b < 8; b++) fd[p * 8 + b][x] = (byte >> b) & 1;
+        }
+      }
+      return fd;
+    },
+    renderHex(bytes) {
+      const el = document.getElementById('matrix-hex-all');
+      if (el) {
+        const primeros = Array.from(bytes.slice(0, 8))
+          .map(b => '0x' + b.toString(16).padStart(2, '0')).join(', ');
+        el.textContent = `uint8_t frame[1024] = {${primeros}, ...};`;
+      }
+    },
+    copyCode(bytes) {
+      const hex = Array.from(bytes).map(b => '0x' + b.toString(16).padStart(2, '0'));
+      const lineas = [];
+      for (let i = 0; i < hex.length; i += 16) {
+        lineas.push('  ' + hex.slice(i, i + 16).join(', ') + ',');
+      }
+      return 'const uint8_t frame[1024] PROGMEM = {\n' + lineas.join('\n') + '\n};';
+    },
+    fromStorageFrame(bytes) { return Array.from(bytes); },
+    toStorageFrame(bytes) { return Array.from(bytes); },
+    fromAnimFrame(f) { return { name: f.name || '', data: Array.from(f.data), dur: f.dur || 100 }; },
+    toAnimFrame(item) {
+      return { name: item.name || '', data: Array.from(item.data), dur: item.dur || 100 };
+    },
+    playCode() { return ''; },
   },
 };
 
@@ -267,40 +338,25 @@ function _applyMode() {
     tab.classList.toggle('active', tab.dataset.mode === mode);
   });
 
-  // El modo OLED tiene panel propio: 128x64 píxeles no caben en el reticulado
-  // de 8 filas del editor de matriz. Se muestra su editor y se oculta el resto.
   const titulo = document.querySelector('.panel-header h2');
   if (titulo && /Matriz LED|OLED SSD1315/.test(titulo.textContent)) {
     titulo.textContent = _tituloPanelAnimacion();
   }
-  const panelOled = document.getElementById('oled-editor');
-  const cuerpo = document.querySelector('.matrix-editor-body');
-  const linea = document.querySelector('.matrix-timeline');
   const vista = document.getElementById('code-view-animation');
   if (vista) vista.classList.toggle('modo-oled', mode === 'oled');
 
-  if (mode === 'oled') {
-    if (panelOled) panelOled.style.display = '';
-    if (cuerpo) cuerpo.style.display = 'none';
-    if (linea) linea.style.display = 'none';
-    mostrarEditorOled();
-    localStorage.setItem('ardublock:matrix-editor-mode', mode);
-    return;
-  }
-
-  if (panelOled) panelOled.style.display = 'none';
-  if (cuerpo) cuerpo.style.display = '';
-  if (linea) linea.style.display = '';
-  ocultarEditorOled();
-
   cfg = MODES[mode];
-  frameData = new Array(8).fill(0).map(() => new Array(cfg.cols).fill(0));
+  frameData = Array.from({ length: cfg.rows || 8 }, () => new Array(cfg.cols).fill(0));
+
+  // Botón de recurso: solo tiene sentido en el modo OLED.
+  const btnBad = document.getElementById('matrix-load-badapple');
+  if (btnBad) btnBad.style.display = mode === 'oled' ? '' : 'none';
 
   // Mostrar/ocultar hex display según modo
   const hexR4 = document.getElementById('matrix-hex-r4');
   const hex7219 = document.getElementById('matrix-hex-max7219');
   if (hexR4) hexR4.style.display = mode === 'r4' ? '' : 'none';
-  if (hex7219) hex7219.style.display = (mode === 'max7219' || mode === 'direct') ? '' : 'none';
+  if (hex7219) hex7219.style.display = (mode === 'max7219' || mode === 'direct' || mode === 'oled') ? '' : 'none';
 
   // Leyenda de pines solo en modo directa
   const pinLegend = document.getElementById('matrix-pin-legend');
@@ -336,21 +392,79 @@ function _bindModeTabs() {
 
 // ═══ Storage ═══════════════════════════════════
 
+/**
+ * En el modo OLED el almacenamiento guarda lo que el generador consume: cuadros
+ * en base64, sin la retícula de 64x128. Aquí se traduce a la forma que usa el
+ * editor, y al guardar se vuelve a traducir.
+ */
 function _loadStorage() {
   try {
-    savedFrames = JSON.parse(localStorage.getItem(cfg.framesKey)) || {};
-    savedAnims = JSON.parse(localStorage.getItem(cfg.animsKey)) || {};
+    const crudo = JSON.parse(localStorage.getItem(cfg.framesKey)) || {};
+    if (cfg.canvas) {
+      savedFrames = {};
+      for (const [nombre, valor] of Object.entries(crudo)) {
+        if (typeof valor === 'string') savedFrames[nombre] = Array.from(desdeBase64(valor));
+        else if (Array.isArray(valor)) savedFrames[nombre] = valor;
+      }
+    } else {
+      savedFrames = crudo;
+    }
   } catch (_) {
     savedFrames = {};
+  }
+
+  try {
+    const crudoA = JSON.parse(localStorage.getItem(cfg.animsKey)) || {};
+    if (cfg.canvas) {
+      savedAnims = {};
+      for (const [nombre, valor] of Object.entries(crudoA)) {
+        if (!valor || !valor.b64) continue;
+        const fps = valor.fps || 25;
+        const dur = Math.round(1000 / fps);
+        savedAnims[nombre] = decodificarCuadros(desdeBase64(valor.b64))
+          .map(buf => ({ name: nombre, data: Array.from(buf), dur }));
+      }
+    } else {
+      savedAnims = crudoA;
+    }
+  } catch (_) {
     savedAnims = {};
   }
 }
 
 function _saveFrames() {
+  if (cfg.canvas) {
+    const salida = {};
+    for (const [nombre, valor] of Object.entries(savedFrames)) {
+      let binario = '';
+      const bytes = Uint8Array.from(valor);
+      for (let i = 0; i < bytes.length; i += 8192) {
+        binario += String.fromCharCode.apply(null, bytes.subarray(i, i + 8192));
+      }
+      salida[nombre] = window.btoa(binario);
+    }
+    localStorage.setItem(cfg.framesKey, JSON.stringify(salida));
+    return;
+  }
   localStorage.setItem(cfg.framesKey, JSON.stringify(savedFrames));
 }
 
 function _saveAnims() {
+  if (cfg.canvas) {
+    const salida = {};
+    for (const [nombre, cuadros] of Object.entries(savedAnims)) {
+      if (!Array.isArray(cuadros) || cuadros.length === 0) continue;
+      const fps = Math.max(1, Math.round(1000 / (cuadros[0].dur || 100)));
+      const bytes = encodeCuadros(cuadros.map(f => Uint8Array.from(f.data)));
+      let binario = '';
+      for (let i = 0; i < bytes.length; i += 8192) {
+        binario += String.fromCharCode.apply(null, bytes.subarray(i, i + 8192));
+      }
+      salida[nombre] = { fps, cuadros: cuadros.length, b64: window.btoa(binario) };
+    }
+    localStorage.setItem(cfg.animsKey, JSON.stringify(salida));
+    return;
+  }
   localStorage.setItem(cfg.animsKey, JSON.stringify(savedAnims));
 }
 
@@ -358,9 +472,27 @@ function _saveAnims() {
 
 function _buildGrid() {
   grid.innerHTML = '';
-  grid.style.gridTemplateColumns = `repeat(${cfg.cols}, 28px)`;
   cells = [];
-  for (let row = 0; row < 8; row++) {
+
+  // OLED: 8192 celdas en DOM no se pueden arrastrar con soltura, así que el
+  // mismo hueco del reticulado lo ocupa un lienzo de 128x64.
+  if (cfg.canvas) {
+    grid.style.display = 'block';
+    grid.style.gridTemplateColumns = '';
+    const canvas = document.createElement('canvas');
+    canvas.id = 'matrix-canvas';
+    canvas.className = 'matrix-canvas';
+    canvas.width = OLED_ANCHO * OLED_ESCALA;
+    canvas.height = OLED_ALTO * OLED_ESCALA;
+    grid.appendChild(canvas);
+    _bindCanvas(canvas);
+    return;
+  }
+
+  grid.style.display = '';
+  grid.style.gridTemplateColumns = `repeat(${cfg.cols}, 28px)`;
+  const filas = cfg.rows || 8;
+  for (let row = 0; row < filas; row++) {
     cells[row] = [];
     for (let col = 0; col < cfg.cols; col++) {
       const cell = document.createElement('div');
@@ -379,19 +511,71 @@ function _buildGrid() {
   }
 }
 
+/** Puntero sobre el lienzo del modo OLED: arrastrar enciende, botón derecho apaga. */
+function _bindCanvas(canvas) {
+  let pintando = false;
+
+  const pintar = (e) => {
+    const r = canvas.getBoundingClientRect();
+    const x = Math.floor(((e.clientX - r.left) / r.width) * OLED_ANCHO);
+    const y = Math.floor(((e.clientY - r.top) / r.height) * OLED_ALTO);
+    if (x < 0 || x >= OLED_ANCHO || y < 0 || y >= OLED_ALTO) return;
+    frameData[y][x] = e.buttons === 2 ? 0 : 1;
+    _paintCanvas();
+    _update(false);
+  };
+
+  canvas.addEventListener('mousedown', (e) => { e.preventDefault(); pintando = true; pintar(e); });
+  canvas.addEventListener('mousemove', (e) => { if (pintando) pintar(e); });
+  canvas.addEventListener('mouseup', () => { pintando = false; _update(); });
+  canvas.addEventListener('mouseleave', () => { pintando = false; });
+  canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+}
+
+/** Dibuja la retícula lógica en el lienzo, con marca cada 8 píxeles. */
+function _paintCanvas() {
+  const canvas = document.getElementById('matrix-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = '#8fd3ff';
+  for (let y = 0; y < OLED_ALTO; y++) {
+    for (let x = 0; x < OLED_ANCHO; x++) {
+      if (frameData[y][x]) {
+        ctx.fillRect(x * OLED_ESCALA, y * OLED_ESCALA, OLED_ESCALA, OLED_ESCALA);
+      }
+    }
+  }
+  ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+  ctx.lineWidth = 1;
+  for (let x = 0; x <= OLED_ANCHO; x += 8) {
+    ctx.beginPath();
+    ctx.moveTo(x * OLED_ESCALA + 0.5, 0);
+    ctx.lineTo(x * OLED_ESCALA + 0.5, OLED_ALTO * OLED_ESCALA);
+    ctx.stroke();
+  }
+  for (let y = 0; y <= OLED_ALTO; y += 8) {
+    ctx.beginPath();
+    ctx.moveTo(0, y * OLED_ESCALA + 0.5);
+    ctx.lineTo(OLED_ANCHO * OLED_ESCALA, y * OLED_ESCALA + 0.5);
+    ctx.stroke();
+  }
+}
+
 function _toggleCell(row, col) {
   frameData[row][col] = frameData[row][col] ? 0 : 1;
   _update();
 }
 
 function _clearAll() {
-  for (let row = 0; row < 8; row++)
+  for (let row = 0; row < (cfg.rows || 8); row++)
     for (let col = 0; col < cfg.cols; col++)
       frameData[row][col] = 0;
 }
 
 function _invertAll() {
-  for (let row = 0; row < 8; row++)
+  for (let row = 0; row < (cfg.rows || 8); row++)
     for (let col = 0; col < cfg.cols; col++)
       frameData[row][col] = frameData[row][col] ? 0 : 1;
 }
@@ -403,19 +587,23 @@ function _loadFrameToGrid(data) {
 
 // ═══ Render ═════════════════════════════════════
 
-function _update() {
+function _update(sincronizar = true) {
   const data = cfg.encode(frameData);
 
-  // Grid cells
-  for (let row = 0; row < 8; row++)
-    for (let col = 0; col < cfg.cols; col++)
-      cells[row][col].classList.toggle('on', frameData[row][col] === 1);
+  // Grid cells o lienzo
+  if (cfg.canvas) {
+    if (sincronizar) _paintCanvas();
+  } else {
+    for (let row = 0; row < (cfg.rows || 8); row++)
+      for (let col = 0; col < cfg.cols; col++)
+        cells[row][col].classList.toggle('on', frameData[row][col] === 1);
+  }
 
   // Hex display
   cfg.renderHex(data);
 
   // Two-way binding: sincronizar timeline selection
-  if (timelineSelected >= 0 && timelineSelected < timeline.length) {
+  if (sincronizar && timelineSelected >= 0 && timelineSelected < timeline.length) {
     timeline[timelineSelected].data = cfg.toStorageFrame(data);
     _syncTimelineCanvas(timelineSelected);
   }
@@ -434,9 +622,31 @@ function _drawTimelineCanvas(canvas, data) {
   const ctx = canvas.getContext('2d');
   const w = canvas.width, h = canvas.height;
   ctx.clearRect(0, 0, w, h);
-  const cw = w / cfg.cols, ch = h / 8;
+  const filas = cfg.rows || 8;
   const fd = cfg.decode(data);
-  for (let row = 0; row < 8; row++) {
+
+  // OLED: la miniatura se dibuja encendida sobre negro y escalada desde un
+  // lienzo de 128x64, que da bordes limpios a cualquier tamaño.
+  if (cfg.canvas) {
+    const off = document.createElement('canvas');
+    off.width = OLED_ANCHO;
+    off.height = OLED_ALTO;
+    const octx = off.getContext('2d');
+    octx.fillStyle = '#000';
+    octx.fillRect(0, 0, OLED_ANCHO, OLED_ALTO);
+    octx.fillStyle = '#8fd3ff';
+    for (let row = 0; row < filas; row++) {
+      for (let col = 0; col < cfg.cols; col++) {
+        if (fd[row][col]) octx.fillRect(col, row, 1, 1);
+      }
+    }
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(off, 0, 0, w, h);
+    return;
+  }
+
+  const cw = w / cfg.cols, ch = h / filas;
+  for (let row = 0; row < filas; row++) {
     for (let col = 0; col < cfg.cols; col++) {
       ctx.fillStyle = fd[row][col] ? '#e94560' : '#1a1a2e';
       ctx.fillRect(col * cw, row * ch, cw - 0.5, ch - 0.5);
@@ -558,7 +768,7 @@ function _renderAnimList() {
   // Predefinidas (no eliminables)
   for (const name of builtinNames) {
     const anim = animPresets[name];
-    const fc = anim ? anim.length : 0;
+    const fc = anim ? (anim.length || anim.cuadros || 0) : 0;
     html += `<div class="matrix-frame-item" data-anim="${name}" draggable="true">
       <span class="frame-item-name">📦 ${_esc(name)}</span>
       <span style="font-size:0.6rem;opacity:0.5;margin-left:auto">${fc}f</span>
@@ -584,8 +794,18 @@ function _renderAnimList() {
       const name = el.dataset.anim;
       const isCustom = el.dataset.custom === '1';
       const anim = isCustom ? savedAnims[name] : animPresets[name];
+      // Recursos del modo OLED: no se editan en la línea de tiempo, se vuelcan
+      // al proyecto como tabs .h que el bloque consume.
+      if (anim && anim.recurso) {
+        _cargarRecursoOled(name);
+        return;
+      }
       if (anim && anim.length > 0) {
-        timeline = anim.map((f, i) => {
+        timeline = anim.map((f) => {
+          if (typeof cfg.fromAnimFrame === 'function') {
+            const item = cfg.fromAnimFrame(f);
+            return { name: name, data: item.data, dur: item.dur || 200 };
+          }
           // R4 format: [u32_0, u32_1, u32_2, dur]
           // MAX7219 format: [b0..b7, dur]
           const dur = f[cfg.cols === 12 ? 3 : 8] || 200;
@@ -624,13 +844,43 @@ function _renderAnimList() {
   });
 }
 
+// ═══ Recursos OLED ══════════════════════════════
+
+/**
+ * Vuelca un recurso empaquetado al proyecto como tabs .h. La tabla no viaja en
+ * el .ino: los tabs con contenido se incluyen solos, y el bloque solo llama a
+ * los arreglos por su nombre.
+ */
+async function _cargarRecursoOled(nombre) {
+  if (nombre !== 'badapple') {
+    _toast('Ese recurso todavía no tiene cargador.');
+    return;
+  }
+  _toast('Cargando Bad Apple!!…');
+  try {
+    const mod = await import('./oled-anim-badapple.js');
+    const bytes = mod.badappleBytes();
+    const partes = partirEnTabs(bytes, 'oled_anim_badapple', 'Bad Apple!!');
+    const nombres = partes.map(p => createHeaderTab(p.tab, p.texto));
+    const tamanos = partes.map(p => Math.round(p.texto.length / 1024) + ' KB').join(' + ');
+    _toast('Bad Apple!!: ' + mod.BADAPPLE_CUADROS + ' cuadros en ' +
+      nombres.length + ' tabs (' + tamanos + ')');
+    _renderAnimList();
+  } catch (e) {
+    _toast('No se pudo cargar el recurso: ' + e.message);
+  }
+}
+
 // ═══ Timeline ═══════════════════════════════════
 
 function _renderTimeline() {
   const track = document.getElementById('matrix-timeline-track');
 
   if (timeline.length === 0) {
-    track.innerHTML = '<div class="matrix-timeline-empty">Arrastre frames desde el panel lateral o use el botón +</div>';
+    track.innerHTML = '<div class="matrix-timeline-empty">Arrastre frames desde el panel lateral o use el botón +</div>'
+      + '<div class="matrix-timeline-add" title="Añadir frame actual">+</div>';
+    const vacioAdd = track.querySelector('.matrix-timeline-add');
+    if (vacioAdd) vacioAdd.addEventListener('click', _addCurrentToTimeline);
     return;
   }
 
@@ -695,8 +945,9 @@ function _renderTimeline() {
 
 function _addCurrentToTimeline() {
   const dur = parseInt(document.getElementById('matrix-timeline-duration').value) || 200;
-  const empty = cfg.cols === 12 ? [0, 0, 0] : [0,0,0,0,0,0,0,0];
-  timeline.push({ name: 'blank', data: [...empty], dur });
+  const vacio = cfg.empty ? Array.from(cfg.empty())
+    : (cfg.cols === 12 ? [0, 0, 0] : [0, 0, 0, 0, 0, 0, 0, 0]);
+  timeline.push({ name: 'blank', data: vacio, dur });
   _renderTimeline();
 }
 
@@ -753,8 +1004,16 @@ function _setupTimelineDrop() {
       const isCustom = e.dataTransfer.getData('application/x-matrix-anim-custom') === '1';
       const animPresets = cfg.animPresets();
       const anim = isCustom ? savedAnims[animName] : animPresets[animName];
+      if (anim && anim.recurso) {
+        _cargarRecursoOled(animName);
+        return;
+      }
       if (anim && anim.length > 0) {
         timeline = anim.map((f) => {
+          if (typeof cfg.fromAnimFrame === 'function') {
+            const item = cfg.fromAnimFrame(f);
+            return { name: animName, data: item.data, dur: item.dur || 200 };
+          }
           const dur = f[cfg.cols === 12 ? 3 : 8] || 200;
           const data = cfg.cols === 12 ? [f[0], f[1], f[2]] : f.slice(0, 8);
           return { name: animName, data, dur };
@@ -855,6 +1114,12 @@ function _bindEvents() {
     const code = cfg.copyCode(data);
     navigator.clipboard.writeText(code).then(() => _toast('Copiado: ' + code));
   });
+
+  // Recurso empaquetado del modo OLED
+  const btnBadApple = document.getElementById('matrix-load-badapple');
+  if (btnBadApple) {
+    btnBadApple.addEventListener('click', () => _cargarRecursoOled('badapple'));
+  }
 
   // Timeline duration
   document.getElementById('matrix-timeline-duration').addEventListener('change', function() {
