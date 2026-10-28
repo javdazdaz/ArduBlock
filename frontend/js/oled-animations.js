@@ -150,6 +150,57 @@ export function desdeBase64(b64) {
   return out;
 }
 
+/**
+ * Decodifica un stream de bloques a la lista de cuadros, cada uno de 1024 bytes
+ * en orden página/columna. Es el inverso de encodeCuadros y del decodificador
+ * que el generador emite en el sketch.
+ * @returns {Uint8Array[]}
+ */
+export function decodificarCuadros(bytes) {
+  const cuadros = [];
+  let pos = 0;
+  let actual = new Uint8Array(1024);
+
+  const aplicarBloque = (buf, offset, leer) => {
+    const pagina = offset % 8;
+    const x = (offset - pagina) / 8;
+    const filas = new Uint8Array(8);
+    for (let i = 0; i < 8; i++) filas[i] = leer();
+    for (let i = 0; i < 8; i++) {
+      let col = 0;
+      for (let yi = 0; yi < 8; yi++) {
+        if (filas[yi] & (0x80 >> i)) col |= (1 << yi);
+      }
+      buf[pagina * 128 + x * 8 + i] = col;
+    }
+  };
+
+  while (pos < bytes.length) {
+    const cab = bytes[pos++];
+    // El búfer del sketch es único: un cuadro de diferencias se aplica sobre el
+    // anterior, y los bloques que no cambian conservan sus bytes.
+    const previo = cuadros[cuadros.length - 1];
+    const buf = previo ? Uint8Array.from(previo) : new Uint8Array(1024);
+    if (cab === 255) {
+      const completo = new Uint8Array(1024);
+      for (let off = 0; off < 128; off++) {
+        if (pos + 8 > bytes.length) return cuadros;
+        aplicarBloque(completo, off, () => bytes[pos++]);
+      }
+      cuadros.push(completo);
+      continue;
+    }
+    for (let i = 0; i < cab; i++) {
+      if (pos >= bytes.length) return cuadros;
+      const off = bytes[pos++];
+      if (pos + 8 > bytes.length) return cuadros;
+      aplicarBloque(buf, off, () => bytes[pos++]);
+    }
+    cuadros.push(buf);
+  }
+  return cuadros;
+}
+
 /** Lee las animaciones propias guardadas en el navegador. */
 export function animacionesPropias() {
   try {
