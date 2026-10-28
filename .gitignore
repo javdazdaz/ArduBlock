@@ -24,6 +24,8 @@ coverage/
 frontend/public/js/csrf.js
 frontend/public/js/canvas-avatars.js
 frontend/public/js/profile-avatar.js
+frontend/public/js/activity-sketch.js
+frontend/public/js/web-serial-flasher.js
 frontend/public/css/palettes.css
 frontend/public/css/pages.css
 

@@ -260,6 +260,11 @@ class Activity(Base):
     reference_project_id = Column(Integer, ForeignKey("projects.id"), nullable=True)
     description = Column(Text, nullable=True)
     instructions = Column(Text, nullable=True)
+    # Sketch de texto: la actividad publica C++ escrito a mano, con o sin
+    # proyecto de referencia. El alumno lo descarga, lo compila y lo sube
+    # desde la página de la clase sin abrir el editor de bloques.
+    sketch_text = Column(Text, nullable=True)
+    sketch_board = Column(String(50), nullable=True)
     created_at = Column(DateTime, default=utcnow)
 
     teacher = relationship("User", foreign_keys=[teacher_id])
