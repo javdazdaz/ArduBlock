@@ -23,6 +23,10 @@ const FILES = [
   ['js/csrf.js', 'js/csrf.js'],
   ['js/canvas-avatars.js', 'js/canvas-avatars.js'],
   ['js/profile-avatar.js', 'js/profile-avatar.js'],
+  // Panel de sketch de texto en la página de la clase: el módulo y el flasher
+  // que importa. Si falta el segundo, el import falla y los botones no hacen nada.
+  ['js/activity-sketch.js', 'js/activity-sketch.js'],
+  ['js/web-serial-flasher.js', 'js/web-serial-flasher.js'],
 ];
 
 let copied = 0;

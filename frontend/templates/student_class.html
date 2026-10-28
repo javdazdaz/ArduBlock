@@ -23,6 +23,26 @@
                 <div style="white-space:pre-wrap;margin-top:0.3rem">{{ a.instructions }}</div>
               </details>
             {% endif %}
+            {% if a.sketch_text %}
+              <div class="sketch-panel" data-sketch-panel>
+                <div class="sketch-panel-head">
+                  <span class="muted">💻 {{ _('activity_sketch_panel') }}</span>
+                  <button type="button" class="btn btn-ghost btn-small" data-sketch-toggle aria-expanded="true">{{ _('activity_sketch_hide') }}</button>
+                </div>
+                <pre class="sketch-code" data-sketch-code>{{ a.sketch_text }}</pre>
+                <div class="sketch-actions">
+                  <select data-sketch-board aria-label="{{ _('activity_sketch_board_label') }}">
+                    {% for fqbn, label in sketch_boards.items() %}
+                      <option value="{{ fqbn }}" {% if (a.sketch_board or 'arduino:avr:uno') == fqbn %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                  </select>
+                  <a class="btn btn-ghost btn-small" href="{{ url_for('auth.activity_sketch', activity_id=a.id) }}">{{ _('activity_sketch_download') }}</a>
+                  <button type="button" class="btn btn-small" data-sketch-compile>{{ _('activity_sketch_compile') }}</button>
+                  <button type="button" class="btn btn-small" data-sketch-upload>{{ _('activity_sketch_upload') }}</button>
+                </div>
+                <pre class="sketch-log hidden" data-sketch-log aria-label="{{ _('activity_sketch_log') }}"></pre>
+              </div>
+            {% endif %}
           </div>
           {% if a.reference_project %}
             <a href="/project/{{ a.reference_project.id }}/reference" class="btn btn-ghost btn-small">{{ _('view_reference') }}</a>
@@ -75,4 +95,19 @@
     </div>
   {% endif %}
 </main>
+{% if activities %}
+<script type="application/json" id="sketch-i18n">{
+  "compiling": {{ _('activity_sketch_compile')|tojson }},
+  "compileOk": {{ _('activity_sketch_compile_ok')|tojson }},
+  "compileFailed": {{ _('activity_sketch_compile_failed')|tojson }},
+  "uploading": {{ _('activity_sketch_upload')|tojson }},
+  "uploadDone": {{ _('activity_sketch_upload_done')|tojson }},
+  "uploadFailed": {{ _('activity_sketch_upload_failed')|tojson }},
+  "noWebSerial": {{ _('activity_sketch_no_webserial')|tojson }},
+  "portCancelled": {{ _('activity_sketch_port_cancelled')|tojson }},
+  "show": {{ _('activity_sketch_show')|tojson }},
+  "hide": {{ _('activity_sketch_hide')|tojson }}
+}</script>
+<script type="module" src="/js/activity-sketch.js?v=1"></script>
+{% endif %}
 {% endblock %}

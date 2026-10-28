@@ -13,7 +13,7 @@ import smtplib
 from email.mime.text import MIMEText
 from datetime import timedelta
 
-from flask import Blueprint, g, render_template, request, redirect, url_for, flash, send_from_directory, jsonify, Response
+from flask import Blueprint, g, render_template, request, redirect, url_for, flash, send_from_directory, jsonify, Response, abort
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, EmailField, TextAreaField
@@ -26,7 +26,7 @@ from sqlalchemy.exc import IntegrityError
 from backend.models import User, Classroom, ClassroomStudent, Project, Class, Activity, ClassActivity, utcnow
 from backend.db import get_session
 from backend.messages import get_message
-from backend.config import FRONTEND_DIR
+from backend.config import FRONTEND_DIR, SUPPORTED_FQBNS
 from backend.avatar import validate_avatar_data, avatar_response
 from backend.rate_limit import is_rate_limited
 from backend.project_history import record_project_revision
@@ -823,6 +823,66 @@ def delete_class(class_id):
 
 # ═══ Actividades del curso ═══════════════════════
 
+# Sketch de texto: tope de tamaño y placa por defecto. El tope es el del
+# textarea del formulario, no el del compilador (que admite más).
+MAX_SKETCH_BYTES = 32 * 1024
+SKETCH_BOARD_DEFAULT = "arduino:avr:uno"
+
+# Etiquetas del selector de placa. El ESP32 queda marcado como «solo compilar»
+# porque el flasheo por Web Serial no lo soporta (getDeviceCode lanza).
+SKETCH_BOARD_LABELS = {
+    "arduino:avr:uno": "Arduino UNO",
+    "arduino:avr:nano": "Arduino Nano",
+    "arduino:avr:mega": "Arduino Mega 2560",
+    "arduino:renesas_uno:minima": "Arduino UNO R4 Minima",
+    "arduino:renesas_uno:unor4wifi": "Arduino UNO R4 WiFi",
+    "arduino:esp32:nano_nora": "Arduino Nano ESP32 (solo compilar)",
+}
+
+
+def _sketch_from_form():
+    """Sanea el sketch del formulario. Devuelve (texto, placa, clave de error).
+
+    Los saltos de línea se normalizan a \n para que el archivo descargado sea
+    el mismo en cualquier sistema. Un sketch vacío se guarda como None: una
+    actividad sin sketch no muestra el panel.
+    """
+    raw = request.form.get("sketch", "") or ""
+    text = raw.replace("\r\n", "\n").replace("\r", "\n").strip()
+    board = (request.form.get("sketch_board", "") or "").strip()
+    if text and len(text.encode("utf-8")) > MAX_SKETCH_BYTES:
+        return None, None, "activity_sketch_too_large"
+    if board and board not in SUPPORTED_FQBNS:
+        return None, None, "activity_sketch_board_invalid"
+    if text and not board:
+        board = SKETCH_BOARD_DEFAULT
+    return (text or None), (board or None), None
+
+
+def _sketch_filename(activity):
+    """Nombre del .ino descargable, derivado del nombre de la actividad."""
+    base = "".join(
+        c if (c.isalnum() or c in "-_") else "_"
+        for c in activity.name.lower().replace(" ", "_")
+    ).strip("_")
+    return f"{(base or f'actividad_{activity.id}')[:40]}.ino"
+
+
+def _student_sees_activity(s, activity_id, user_id):
+    """True si el alumno está inscrito en un aula con la actividad asignada."""
+    return (
+        s.query(ClassActivity.id)
+        .join(Class, Class.id == ClassActivity.class_id)
+        .join(ClassroomStudent, ClassroomStudent.classroom_id == Class.classroom_id)
+        .filter(
+            ClassActivity.activity_id == activity_id,
+            ClassroomStudent.user_id == user_id,
+        )
+        .first()
+        is not None
+    )
+
+
 def _valid_reference_project(s, reference_id):
     """Valida que el proyecto de referencia sea del docente actual. Retorna None si no."""
     if reference_id is None:
@@ -860,6 +920,7 @@ def teacher_activities():
     return render_template(
         "teacher_activities.html",
         user=current_user, activities=activities, my_projects=my_projects, form=form,
+        sketch_boards=SKETCH_BOARD_LABELS,
     )
 
 
@@ -873,12 +934,17 @@ def create_activity():
     try:
         if form.validate_on_submit():
             ref = _valid_reference_project(s, request.form.get("reference_project_id", type=int))
+            sketch, sketch_board, error = _sketch_from_form()
+            if error:
+                flash(get_message(g.lang, error), "error")
             activity = Activity(
                 teacher_id=current_user.id,
                 name=form.name.data.strip(),
                 description=(form.description.data or "").strip() or None,
                 instructions=(form.instructions.data or "").strip() or None,
                 reference_project_id=ref.id if ref else None,
+                sketch_text=sketch,
+                sketch_board=sketch_board,
             )
             s.add(activity)
             s.commit()
@@ -906,11 +972,50 @@ def edit_activity(activity_id):
             activity.instructions = (form.instructions.data or "").strip() or None
             ref = _valid_reference_project(s, request.form.get("reference_project_id", type=int))
             activity.reference_project_id = ref.id if ref else None
+            sketch, sketch_board, error = _sketch_from_form()
+            if error:
+                # El sketch inválido no se guarda, pero el resto de la edición sí:
+                # perder nombre e instrucciones por un pegote sería peor.
+                flash(get_message(g.lang, error), "error")
+            else:
+                activity.sketch_text = sketch
+                activity.sketch_board = sketch_board
             s.commit()
             flash(get_message(g.lang, "activity_updated"), "success")
     finally:
         s.close()
     return redirect(url_for("auth.teacher_activities"))
+
+
+@auth_bp.route("/actividad/<int:activity_id>/sketch.ino")
+@login_required
+def activity_sketch(activity_id):
+    """Descarga del sketch de texto publicado por la actividad.
+
+    Lo lee el docente dueño y el alumno inscrito en un aula donde la actividad
+    está asignada. Cualquier otro caso responde 404 para no revelar qué
+    actividades existen.
+    """
+    s = _get_session()
+    try:
+        activity = s.get(Activity, activity_id)
+        if not activity or not activity.sketch_text:
+            abort(404)
+        allowed = activity.teacher_id == current_user.id or (
+            not current_user.is_teacher
+            and _student_sees_activity(s, activity_id, current_user.id)
+        )
+        if not allowed:
+            abort(404)
+        sketch = activity.sketch_text
+        filename = _sketch_filename(activity)
+    finally:
+        s.close()
+    return Response(
+        sketch,
+        mimetype="text/plain; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 
 @auth_bp.route("/teacher/activities/<int:activity_id>/delete", methods=["POST"])
@@ -1261,5 +1366,5 @@ def student_class(class_id):
     return render_template(
         "student_class.html",
         cls=cls, projects=projects, activities=activities, user=current_user,
-        clone_form=EmptyForm(), clones=clones,
+        clone_form=EmptyForm(), clones=clones, sketch_boards=SKETCH_BOARD_LABELS,
     )

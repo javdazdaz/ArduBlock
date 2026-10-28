@@ -174,6 +174,15 @@ sudo -u ardublock /var/lib/ardublock/.ardublock/bin/arduino-cli lib list
 La compilación corre en un sandbox que monta ese directorio en solo lectura; sin él,
 cualquier sketch con `AFMotor_R4.h` falla con «No such file or directory».
 
+El sketch de texto de una actividad usa las mismas librerías. Para la pantalla OLED
+I2C hacen falta `Adafruit GFX Library` y `Adafruit SSD1306`, instaladas también en el
+directorio de usuario:
+
+```bash
+sudo -u ardublock /var/lib/ardublock/.ardublock/bin/arduino-cli lib install \
+  "Adafruit GFX Library" "Adafruit SSD1306"
+```
+
 ## Migraciones de base de datos
 
 La app crea las tablas con `create_all`, que no altera las que ya existen. Las columnas nuevas se
@@ -182,10 +191,14 @@ aplican con un script idempotente, después de actualizar el código:
 ```bash
 cd /opt/ardublock
 backend/.venv/bin/python scripts/migrate_activity_links.py
+backend/.venv/bin/python scripts/migrate_activity_sketch.py
 systemctl restart ardublock
 ```
 
 Se puede correr varias veces: la segunda vez informa «Sin cambios: el esquema ya estaba al día».
+
+`migrate_activity_sketch.py` añade `activities.sketch_text` y `activities.sketch_board`, las columnas
+del sketch de texto que una actividad publica en la página de la clase.
 
 ## Acceso
 
