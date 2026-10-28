@@ -132,6 +132,7 @@ import { blocks as afmotorBlocks }    from './blocks/afmotor.js';
 import { blocks as ledmatrixBlocks } from './blocks/ledmatrix.js';
 import { blocks as max7219Blocks } from './blocks/max7219.js';
 import { blocks as matrixdirectBlocks } from './blocks/matrixdirect.js';
+import { blocks as oledBlocks } from './blocks/oled.js';
 import { blocks as textBlocks } from './blocks/text.js';
 import { blocks as wifiBlocks } from './blocks/wifi.js';
 import { blocks as websocketBlocks } from './blocks/websocket.js';
@@ -157,6 +158,7 @@ const allBlocks = [
   ...ledmatrixBlocks,
   ...max7219Blocks,
   ...matrixdirectBlocks,
+  ...oledBlocks,
   ...textBlocks,
   ...wifiBlocks,
   ...websocketBlocks,
@@ -214,6 +216,12 @@ const _FULL_TOOLBOX_TEMPLATE = [
   { kind: 'block', type: 'lcd_print', level: 3 },
   { kind: 'block', type: 'lcd_set_cursor', level: 3 },
   { kind: 'block', type: 'lcd_clear', level: 3 },
+  { kind: 'block', type: 'oled_create', level: 3 },
+  { kind: 'block', type: 'oled_clear', level: 2 },
+  { kind: 'block', type: 'oled_show', level: 2 },
+  { kind: 'block', type: 'oled_pixel', level: 3 },
+  { kind: 'block', type: 'oled_text', level: 2 },
+  { kind: 'block', type: 'oled_play_animation', level: 2 },
   { kind: 'block', type: 'dht_create', level: 3 },
   { kind: 'block', type: 'dht_temp', level: 3 },
   { kind: 'block', type: 'dht_humidity', level: 3 },
@@ -483,7 +491,13 @@ export function buildToolboxForBoard(fqbn, level, options = {}) {
           { 'kind': 'block', 'type': 'lcd_print', 'level': 3 },
           { 'kind': 'block', 'type': 'lcd_set_cursor', 'level': 3 },
           { 'kind': 'block', 'type': 'lcd_set_cursor_advanced', 'level': 3 },
-          { 'kind': 'block', 'type': 'lcd_clear', 'level': 3 }
+          { 'kind': 'block', 'type': 'lcd_clear', 'level': 3 },
+          { 'kind': 'block', 'type': 'oled_create', 'level': 2 },
+          { 'kind': 'block', 'type': 'oled_clear', 'level': 2 },
+          { 'kind': 'block', 'type': 'oled_show', 'level': 2 },
+          { 'kind': 'block', 'type': 'oled_pixel', 'level': 3 },
+          { 'kind': 'block', 'type': 'oled_text', 'level': 2 },
+          { 'kind': 'block', 'type': 'oled_play_animation', 'level': 2 }
         ]},
       { 'kind': 'category', 'name': '%{BKY_CAT_SERVO}', 'colour': '300', 'level': 1,
         'contents': [

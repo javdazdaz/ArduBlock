@@ -3,6 +3,8 @@
  */
 
 import * as Blockly from 'blockly';
+import { oledDriverCode, oledAnimCode } from './blocks/oled.js';
+import { animacionesPropias, desdeBase64, toCArray } from './oled-animations.js';
 
 const cppGenerator = new Blockly.Generator('CPP');
 export { cppGenerator };
@@ -52,6 +54,7 @@ import { registerGenerators as regLedmatrix,
 import { registerGenerators as regMax7219,
          MAX7219_FRAMES } from './blocks/max7219.js';
 import { registerGenerators as regMatrixdirect } from './blocks/matrixdirect.js';
+import { registerGenerators as regOled } from './blocks/oled.js';
 import { registerGenerators as regText } from './blocks/text.js';
 import { registerGenerators as regWifi, buildWebServer } from './blocks/wifi.js';
 import { registerGenerators as regWebsocket, buildWebSocket } from './blocks/websocket.js';
@@ -75,6 +78,7 @@ regAfmotor(cppGenerator);
 regLedmatrix(cppGenerator);
 regMax7219(cppGenerator);
 regMatrixdirect(cppGenerator);
+regOled(cppGenerator);
 regWifi(cppGenerator);
 regWebsocket(cppGenerator);
 
@@ -528,6 +532,10 @@ export function generateArduinoCode(workspace) {
   cppGenerator._webRoutes = [];
   cppGenerator._webRespondUsed = false;
   cppGenerator._websocketUsed = false;
+  cppGenerator._oledUsed = false;
+  cppGenerator._oledText = false;
+  cppGenerator._oledAnimBuiltin = null;
+  cppGenerator._oledAnimCustom = null;
   cppGenerator._websocketPort = 81;
   cppGenerator._wsMessageBody = '';
 
@@ -639,6 +647,33 @@ export function generateArduinoCode(workspace) {
       sketch += '#include "' + file + '"\n';
     }
     sketch += '\n';
+  }
+
+  // ── OLED SSD1315 (I2C crudo, sin librerías gráficas) ──
+  // El driver va con el sketch: tabla de inicio, búfer por páginas y volcado
+  // de las páginas sucias. Es el mismo protocolo del sketch Bad_Apple_Flash.
+  if (cppGenerator._oledUsed) {
+    sketch += '#include <Wire.h>\n\n';
+    sketch += oledDriverCode({ texto: !!cppGenerator._oledText });
+
+    // Animaciones creadas en el editor: la tabla viaja en el sketch.
+    if (cppGenerator._oledAnimCustom) {
+      let propia = null;
+      try {
+        const todas = animacionesPropias();
+        propia = todas[cppGenerator._oledAnimCustom] || null;
+        if (propia && propia.b64) {
+          sketch += toCArray(desdeBase64(propia.b64),
+            'oled_anim_' + cppGenerator._oledAnimCustom,
+            'animación propia ' + cppGenerator._oledAnimCustom);
+          sketch += '\n';
+        }
+      } catch (_) { propia = null; }
+    }
+
+    if (cppGenerator._oledAnimBuiltin || cppGenerator._oledAnimCustom) {
+      sketch += oledAnimCode();
+    }
   }
 
   // ── Servo ──

@@ -193,6 +193,7 @@ import { BlockCollaborationClient } from './block-collaboration.js';
 import { operationFromBlocklyEvent } from './block-operations.js';
 import { restoreWorkspaceState } from './workspace-restore.js';
 import { initMatrixEditor, initPanelModeTabs } from './matrix-animation.js';
+import { initOledEditor } from './oled-editor.js';
 import { initWebPresets } from './web-presets.js';
 import { t, applyDOMLanguage } from './i18n.js';
 import { initActivityProtection, getActivityMeta, applyActivityMeta, clearActivityMeta, isActivityLoaded } from './activity-protection.js';
@@ -751,6 +752,7 @@ window._showToast = showToast;   // para download.js y otros módulos
 
 // Editor visual de matriz LED (panel Animación)
 initPanelModeTabs();
+initOledEditor();
 initMatrixEditor();
 
 // Panel de sitios web (presets + análisis + clonar)

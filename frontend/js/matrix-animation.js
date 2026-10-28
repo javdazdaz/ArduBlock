@@ -11,6 +11,7 @@
 
 import { MATRIX_FRAMES, MATRIX_ANIMATIONS } from './blocks/ledmatrix.js';
 import { MAX7219_FRAMES } from './blocks/max7219.js';
+import { mostrarEditorOled, ocultarEditorOled } from './oled-editor.js';
 
 // ═══ Configuración por modo ════════════════════
 
@@ -218,7 +219,7 @@ export function initPanelModeTabs() {
         hView.style.display = '';
       }
     } else {
-      headerTitle.textContent = mode === 'web' ? 'Sitios web' : 'Matriz LED — Editor de frames';
+      headerTitle.textContent = mode === 'web' ? 'Sitios web' : _tituloPanelAnimacion();
       codeTabs.style.display = 'none';
       if (arduinoToolbar) arduinoToolbar.style.display = 'none';
       codeViews.style.display = 'none';
@@ -247,22 +248,53 @@ export function initPanelModeTabs() {
 
 // ═══ Modo ════════════════════════════════════════
 
+/** Rótulo del panel de animación según el modo del editor. */
+function _tituloPanelAnimacion() {
+  return mode === 'oled' ? 'OLED SSD1315 — Editor de animaciones' : 'Matriz LED — Editor de frames';
+}
+
 function _initMode() {
   try {
     const saved = localStorage.getItem('ardublock:matrix-editor-mode');
-    if (saved === 'max7219' || saved === 'r4' || saved === 'direct') mode = saved;
+    if (saved === 'max7219' || saved === 'r4' || saved === 'direct' || saved === 'oled') mode = saved;
   } catch (_) {}
   _applyMode();
 }
 
 function _applyMode() {
-  cfg = MODES[mode];
-  frameData = new Array(8).fill(0).map(() => new Array(cfg.cols).fill(0));
-
   // Actualizar tabs visuales
   document.querySelectorAll('.matrix-mode-tab').forEach(tab => {
     tab.classList.toggle('active', tab.dataset.mode === mode);
   });
+
+  // El modo OLED tiene panel propio: 128x64 píxeles no caben en el reticulado
+  // de 8 filas del editor de matriz. Se muestra su editor y se oculta el resto.
+  const titulo = document.querySelector('.panel-header h2');
+  if (titulo && /Matriz LED|OLED SSD1315/.test(titulo.textContent)) {
+    titulo.textContent = _tituloPanelAnimacion();
+  }
+  const panelOled = document.getElementById('oled-editor');
+  const cuerpo = document.querySelector('.matrix-editor-body');
+  const linea = document.querySelector('.matrix-timeline');
+  const vista = document.getElementById('code-view-animation');
+  if (vista) vista.classList.toggle('modo-oled', mode === 'oled');
+
+  if (mode === 'oled') {
+    if (panelOled) panelOled.style.display = '';
+    if (cuerpo) cuerpo.style.display = 'none';
+    if (linea) linea.style.display = 'none';
+    mostrarEditorOled();
+    localStorage.setItem('ardublock:matrix-editor-mode', mode);
+    return;
+  }
+
+  if (panelOled) panelOled.style.display = 'none';
+  if (cuerpo) cuerpo.style.display = '';
+  if (linea) linea.style.display = '';
+  ocultarEditorOled();
+
+  cfg = MODES[mode];
+  frameData = new Array(8).fill(0).map(() => new Array(cfg.cols).fill(0));
 
   // Mostrar/ocultar hex display según modo
   const hexR4 = document.getElementById('matrix-hex-r4');
