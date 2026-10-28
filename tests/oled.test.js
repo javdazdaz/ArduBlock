@@ -127,6 +127,24 @@ describe('OLED: animación Bad Apple', () => {
   });
 });
 
+describe('animación propia guardada en el navegador', () => {
+  it('emite la tabla y la llama con sizeof', () => {
+    const bytes = encodeCuadros([new Uint8Array(1024)]);
+    let binario = '';
+    for (let i = 0; i < bytes.length; i++) binario += String.fromCharCode(bytes[i]);
+    localStorage.setItem('ardublock:oled-animations',
+      JSON.stringify({ prueba: { fps: 25, cuadros: 1, b64: btoa(binario) } }));
+
+    const sketch = sketchCon([['oled_create'], ['oled_play_animation', b => {
+      b.setFieldValue('oj_prueba', 'ANIM');
+    }]]);
+
+    expect(sketch).toContain('const uint8_t oled_anim_prueba[] PROGMEM');
+    expect(sketch).toContain('_oled_anim_play(oled_anim_prueba, NULL, 0, sizeof(oled_anim_prueba), 0, 25, false);');
+    localStorage.removeItem('ardublock:oled-animations');
+  });
+});
+
 describe('codificador de animaciones', () => {
   it('codifica un cuadro vacío como cuadro completo', () => {
     const stream = encodeCuadros([new Uint8Array(1024)]);

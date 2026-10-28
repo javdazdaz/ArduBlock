@@ -200,7 +200,12 @@ function guardar() {
   if (!cuadros.length) return;
   const bytes = encodeCuadros(cuadros);
   const fps = Math.max(1, Math.round(1000 / (duraciones[0] || 100)));
-  const b64 = btoa(String.fromCharCode(...new Uint8Array(bytes.buffer || bytes)));
+  // btoa con spread revienta sobre 65k argumentos: se trocea por bloques.
+  let binario = '';
+  for (let i = 0; i < bytes.length; i += 8192) {
+    binario += String.fromCharCode.apply(null, bytes.subarray(i, i + 8192));
+  }
+  const b64 = btoa(binario);
   guardarPropia(nombre, { fps, cuadros: cuadros.length, b64 });
   estado.textContent = 'Guardada «' + nombre + '»: ' + bytes.length +
     ' bytes. Aparece en el bloque OLED reproducir animación.';
