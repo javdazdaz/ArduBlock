@@ -4,7 +4,7 @@
  * Copia del frames.h de Bad_Apple_Flash, el sketch que corre en placa: los
  * cuadros son bloques de 8x8 en RLE, cabecera 255 para el cuadro completo.
  * Se guarda en base64 y se carga con import() solo al pedirla desde el editor,
- * porque en el proyecto ocupa dos tabs .h y no cabe en el bundle.
+ * porque en el proyecto ocupa un tab .h de ~615 KB y no cabe en el bundle.
  */
 
 export const BADAPPLE_BYTES = 184890;

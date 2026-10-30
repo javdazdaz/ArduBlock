@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import * as Blockly from 'blockly';
 import '../frontend/js/blocks.js';
 import { cppGenerator, generateArduinoCode } from '../frontend/js/generator.js';
-import { OLED_ANIMATIONS, encodeCuadros, partirEnTabs } from '../frontend/js/oled-animations.js';
+import { OLED_ANIMATIONS, MAX_TAB_BYTES, encodeCuadros, partirEnTabs } from '../frontend/js/oled-animations.js';
 
 /**
  * Bloques OLED SSD1315 (I2C crudo). Lo que se fija aquí: el driver viaja con
@@ -105,11 +105,12 @@ describe('OLED: dibujo', () => {
 });
 
 describe('OLED: animación Bad Apple', () => {
-  it('llama al decodificador con los dos arreglos y el corte', () => {
+  it('llama al decodificador con el arreglo y el corte declarados', () => {
     const meta = OLED_ANIMATIONS.badapple;
     const sketch = sketchCon([['oled_create'], ['oled_play_animation']]);
-    expect(sketch).toContain('_oled_anim_play(' + meta.arrays[0] + ', ' + meta.arrays[1]
-      + ', ' + meta.corte + ', ' + meta.bytes + ', ' + meta.cuadros + ', 25, false);');
+    expect(sketch).toContain('_oled_anim_play(' + meta.arrays[0] + ', '
+      + (meta.arrays[1] || 'NULL') + ', ' + (meta.corte || 0)
+      + ', ' + meta.bytes + ', ' + meta.cuadros + ', 25, false);');
     expect(sketch).toContain('void _oled_cuadro(');
     expect(sketch).toContain('void _oled_bloque8(');
   });
@@ -164,14 +165,15 @@ describe('codificador de animaciones', () => {
     expect(stream.length).toBe(offset + 1 + 9);
   });
 
-  it('parte el stream en tabs que respetan el tope de 512 KB', () => {
-    const bytes = new Uint8Array(200000);
+  it('parte el stream en tabs que respetan el tope del backend', () => {
+    // 400.000 B de cuadros son ~1,4 MB de texto: no caben en el tope de 1 MB.
+    const bytes = new Uint8Array(400000);
     const partes = partirEnTabs(bytes, 'oled_anim_prueba', 'prueba');
     expect(partes.length).toBeGreaterThan(1);
     for (const p of partes) {
-      expect(p.texto.length).toBeLessThan(512 * 1024);
+      expect(p.texto.length).toBeLessThan(MAX_TAB_BYTES);
     }
     const total = partes.reduce((s, p) => s + p.bytes, 0);
-    expect(total).toBe(200000);
+    expect(total).toBe(400000);
   });
 });

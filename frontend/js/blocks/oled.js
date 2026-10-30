@@ -372,8 +372,10 @@ export function registerGenerators(cppGenerator) {
     const meta = OLED_ANIMATIONS[anim];
     if (!meta) return '// animación OLED desconocida: ' + anim + '\n';
     cppGenerator._oledAnimBuiltin = anim;
-    return '_oled_anim_play(' + meta.arrays[0] + ', ' + meta.arrays[1] + ', '
-         + meta.corte + ', ' + meta.bytes + ', ' + meta.cuadros + ', '
+    // Una animación que cabe en un tab viaja en un solo arreglo: el segundo va
+    // nulo y el decodificador lee todo de `a`.
+    return '_oled_anim_play(' + meta.arrays[0] + ', ' + (meta.arrays[1] || 'NULL') + ', '
+         + (meta.corte || 0) + ', ' + meta.bytes + ', ' + meta.cuadros + ', '
          + (meta.fps || 25) + ', ' + loop + ');\n';
   };
 }

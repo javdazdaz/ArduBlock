@@ -193,8 +193,8 @@ const MODES = {
         recurso: 'badapple',
       },
       badapple_tabs: {
-        label: 'Bad Apple!! en tabs .h',
-        tabs: 2,
+        label: 'Bad Apple!! en el tab .h',
+        tabs: 1,
         tipo: 'tab',
         recurso: 'badapple',
       },

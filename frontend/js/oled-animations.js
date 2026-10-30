@@ -7,8 +7,15 @@
  * generador es el mismo que corre en placa.
  */
 
-/** Tope de bytes por tab que impone el backend (payload_validation.py). */
-export const MAX_TAB_BYTES = 512 * 1024;
+/** Tope de bytes de texto por tab que impone el backend (payload_validation.py). */
+export const MAX_TAB_BYTES = 1024 * 1024;
+
+/**
+ * Tope del texto que una animación propia puede ocupar dentro del .ino. Es
+ * menor que el del tab: el .ino se genera en cada cambio y la tabla entera
+ * dentro del sketch lo vuelve lento de compilar y de leer.
+ */
+export const MAX_INO_TEXTO = 512 * 1024;
 
 /** Recursos empaquetados. Los tabs .h se crean al cargarlos desde el editor. */
 export const OLED_ANIMATIONS = {
@@ -17,9 +24,12 @@ export const OLED_ANIMATIONS = {
     cuadros: 871,
     fps: 25,
     bytes: 184890,
-    corte: 92445,
-    arrays: ['oled_anim_badapple_a', 'oled_anim_badapple_b'],
-    tabs: ['oled_anim_badapple_a.h', 'oled_anim_badapple_b.h'],
+    // Una sola tabla: los 184.890 B ocupan ~615 KB de texto y caben en el tope
+    // de 1 MB por tab. `corte` 0 y el segundo arreglo nulo es lo que el
+    // decodificador espera cuando todo vive en `a`.
+    corte: 0,
+    arrays: ['oled_anim_badapple'],
+    tabs: ['oled_anim_badapple.h'],
     recurso: 'badapple',
     tipo: 'linea',
   },
@@ -34,12 +44,12 @@ export function tipoDeAnimacion(anim) {
 }
 
 /**
- * Si un stream cabe en el .ino. El texto decimal ocupa 3,6 B por byte y el
- * backend rechaza el tab por sobre MAX_TAB_BYTES; arriba de eso la animación
- * solo puede viajar en tabs.
+ * Si un stream cabe dentro del .ino. El texto decimal ocupa 3,6 B por byte; el
+ * tope del .ino es la mitad del de un tab, porque la tabla se regenera en cada
+ * cambio del workspace.
  */
 export function cabeEnIno(bytes) {
-  return (bytes.length * 3.6) + 4096 <= MAX_TAB_BYTES;
+  return (bytes.length * 3.6) + 4096 <= MAX_INO_TEXTO;
 }
 
 /** Bibliotecas del catálogo que traen su propio tab .h. */

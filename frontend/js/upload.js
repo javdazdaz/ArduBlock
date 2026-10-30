@@ -22,6 +22,37 @@ import { SAMBAFlasher } from './samba-flasher-vA.js';
 
 let workspace, arduinoConsole, btnConsoleToggle, consoleOutput, btnUpload;
 
+/**
+ * Flash utilizable por placa, en bytes. Sirve para negar una compilación antes
+ * de mandarla: una tabla de animación mayor que la flash no compila nunca, y en
+ * el UNO R3 avr-gcc responde con decenas de miles de líneas de error.
+ */
+const FLASH_POR_PLACA = {
+  'arduino:avr:uno': 32256,
+  'arduino:avr:nano': 30720,
+  'arduino:avr:mega': 253952,
+  'arduino:renesas_uno:minima': 262144,
+  'arduino:renesas_uno:unor4wifi': 262144,
+  'arduino:esp32:nano_nora': 1966080,
+};
+
+/**
+ * Tablas de animación del proyecto que no entran en la flash de la placa.
+ * El texto decimal de una tabla ocupa 3,6 B por byte de cuadros.
+ */
+export function animacionesQueNoEntran(tabs, fqbn) {
+  const flash = FLASH_POR_PLACA[fqbn];
+  if (!flash) return [];
+  const fuera = [];
+  for (const tab of tabs || []) {
+    const nombre = tab && tab.filename ? String(tab.filename) : '';
+    if (!/^oled_anim_[A-Za-z0-9_]*\.h(pp)?$/i.test(nombre)) continue;
+    const bytes = Math.round(String((tab && tab.content) || '').length / 3.6);
+    if (bytes > flash) fuera.push({ filename: nombre, bytes, flash });
+  }
+  return fuera;
+}
+
 export function initUpload(deps) {
   workspace       = deps.workspace;
   arduinoConsole  = deps.arduinoConsole;
@@ -355,6 +386,17 @@ async function _pathB2_samba(code, fqbn, tabs, port) {
  * @returns {string|null} contenido (hex string o bin base64), o null si falló
  */
 async function _compileOnServer(code, fqbn, tabs, format = 'hex') {
+  // Pre-vuelo: una tabla de animación mayor que la flash no compila en ninguna
+  // placa, y el compilador de AVR falla con una salida de miles de líneas.
+  const fuera = animacionesQueNoEntran(tabs, fqbn);
+  if (fuera.length > 0) {
+    const f = fuera[0];
+    consoleLog('✕ ' + f.filename + ': ' + f.bytes + ' B de tabla y la placa tiene '
+      + f.flash + ' B de flash', 'error');
+    consoleLog('  Cambie a Arduino Uno R4 WiFi en el selector de placa, o quite la animación del proyecto.', 'info');
+    return null;
+  }
+
   try {
     // 1. Encolar la compilación
     const res = await fetch('/api/compile-hex', {
@@ -404,15 +446,15 @@ async function _compileOnServer(code, fqbn, tabs, format = 'hex') {
 function _handleCompileResult(data, format) {
   if (!data.success) {
     consoleLog('✕ Error de compilación:', 'error');
-    if (data.stdout) {
-      for (const line of data.stdout.split('\n').filter(l => l.trim())) {
-        consoleLog(line, 'error');
-      }
-    }
-    if (data.stderr) {
-      for (const line of data.stderr.split('\n').filter(l => l.trim())) {
-        consoleLog(line, 'error');
-      }
+    // Un fallo de tabla grande repite la misma línea miles de veces: se corta
+    // la salida para que la consola no quede colgada imprimiéndola.
+    const lineas = []
+      .concat(String(data.stdout || '').split('\n'))
+      .concat(String(data.stderr || '').split('\n'))
+      .filter(l => l.trim());
+    for (const line of lineas.slice(0, 20)) consoleLog(line, 'error');
+    if (lineas.length > 20) {
+      consoleLog('… y ' + (lineas.length - 20) + ' líneas más del compilador', 'error');
     }
     if (data.error) consoleLog('✕ ' + data.error, 'error');
     return null;

@@ -3,7 +3,9 @@
 from backend.config import SUPPORTED_FQBNS
 
 MAX_TABS = 32
-MAX_TAB_BYTES = 512 * 1024
+# 1 MB de texto por tab: Bad Apple en OLED ocupa ~615 KB en una sola tabla y no
+# entraba con el tope anterior de 512 KB.
+MAX_TAB_BYTES = 1024 * 1024
 _ALLOWED_EXTENSIONS = (".h", ".hpp", ".html")
 _RESERVED_NAMES = {"ardublock_sketch.ino"}
 
