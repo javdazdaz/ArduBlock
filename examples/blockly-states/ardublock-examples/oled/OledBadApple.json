@@ -1,0 +1,43 @@
+{
+  "blocks": {
+    "languageVersion": 0,
+    "blocks": [
+      {
+        "type": "arduino_setup",
+        "id": "b1",
+        "x": 20,
+        "y": 20,
+        "inputs": {
+          "BODY": {
+            "block": {
+              "type": "oled_create",
+              "id": "o1",
+              "fields": {
+                "ADDR": "0x3C",
+                "CLOCK": "400000"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "arduino_loop",
+        "id": "b2",
+        "x": 20,
+        "y": 200,
+        "inputs": {
+          "BODY": {
+            "block": {
+              "type": "oled_play_animation",
+              "id": "o2",
+              "fields": {
+                "ANIM": "badapple",
+                "LOOP": "FALSE"
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}

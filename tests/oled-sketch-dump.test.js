@@ -1,5 +1,5 @@
 import { it } from 'vitest';
-import { writeFileSync, mkdirSync } from 'node:fs';
+import { writeFileSync, readFileSync, mkdirSync } from 'node:fs';
 import * as Blockly from 'blockly';
 import '../frontend/js/blocks.js';
 import { generateArduinoCode } from '../frontend/js/generator.js';
@@ -92,4 +92,15 @@ it.runIf(Boolean(process.env.OLED_DUMP))('escribe los sketches de verificación'
   localStorage.removeItem('ardublock:oled-animations');
   // eslint-disable-next-line no-console
   console.log('propia:', propias.map(p => p.tab + ' (' + p.bytes + ' B)').join(' | '));
+
+  // 4. El ejemplo OledBadApple, tal como lo carga el editor
+  mkdirSync(base + '/OledEjemplo', { recursive: true });
+  const estadoEjemplo = JSON.parse(
+    readFileSync('examples/blockly-states/ardublock-examples/oled/OledBadApple.json', 'utf8'));
+  const wsEjemplo = new Blockly.Workspace();
+  Blockly.serialization.workspaces.load(estadoEjemplo, wsEjemplo);
+  const ejemploSketch = includes + '\n' + generateArduinoCode(wsEjemplo);
+  wsEjemplo.dispose();
+  writeFileSync(base + '/OledEjemplo/OledEjemplo.ino', ejemploSketch);
+  for (const p of partes) writeFileSync(base + '/OledEjemplo/' + p.tab, p.texto);
 });
