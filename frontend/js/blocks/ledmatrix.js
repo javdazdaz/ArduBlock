@@ -1,6 +1,5 @@
 import * as Blockly from 'blockly';
 import '../i18n.js';  // side-effect: puebla Blockly.Msg
-import badapple_frames from './ledmatrix-badapple.js';
 /**
  * ArduBlock — Bloques: Matriz LED (UNO R4)
  *
@@ -228,7 +227,50 @@ export const MATRIX_ANIMATIONS = {
     [ 0x0, 0x0, 0x0, 66 ],
     [ 0x0, 0x0, 0x0, 66 ],
   ],
-  badapple: badapple_frames,
+};
+
+// ═══ Animaciones diferidas ══════════════════════
+//
+// La tabla de Bad Apple del R4 son 2181 cuadros y 488 KB de fuente. No viaja
+// en el bundle principal: se importa la primera vez que alguien la pide, sea
+// desde el panel del editor o desde el generador. El catálogo de bloques y el
+// panel lateral se arman con esta ficha, sin los cuadros.
+
+let _badappleR4 = null;
+let _cargandoBadAppleR4 = null;
+
+/** Cuadros ya cargados, o null si todavía no se pidieron. */
+export function badAppleR4() {
+  return _badappleR4;
+}
+
+/** Importa la tabla de Bad Apple del R4 una sola vez. */
+export async function cargarBadAppleR4() {
+  if (_badappleR4) return _badappleR4;
+  if (!_cargandoBadAppleR4) {
+    _cargandoBadAppleR4 = import('./ledmatrix-badapple.js')
+      .then(mod => {
+        _badappleR4 = mod.default;
+        return _badappleR4;
+      })
+      .finally(() => { _cargandoBadAppleR4 = null; });
+  }
+  return _cargandoBadAppleR4;
+}
+
+/**
+ * Animaciones que no están en el bundle. `tipo` dice dónde se editan:
+ * 'linea' carga los cuadros en la línea de tiempo; 'tab' abre su tabla .h.
+ */
+export const ANIMACIONES_DIFERIDAS = {
+  badapple: {
+    label: 'Bad Apple!! (2181 cuadros)',
+    cuadros: 2181,
+    fps: 15,
+    tipo: 'linea',
+    cargar: cargarBadAppleR4,
+    obtener: () => _badappleR4,
+  },
 };
 
 // ═══ Bloques ═══════════════════════════════════
@@ -316,6 +358,11 @@ export const blocks = [
             !['blink','pulse','animation','frames'].includes(k) && !k.startsWith('upiir_'));
           for (const k of otherBuiltin.sort()) {
             opts.push(['🎬 ' + k, k]);
+          }
+          // Diferidas: el rótulo está en el catálogo y los cuadros se piden al
+          // generar el sketch, no al cargar la página.
+          for (const [k, meta] of Object.entries(ANIMACIONES_DIFERIDAS)) {
+            opts.push(['🎬 ' + meta.label, k]);
           }
           // Animaciones custom del usuario (localStorage)
           try {

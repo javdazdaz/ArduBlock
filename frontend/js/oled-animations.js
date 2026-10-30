@@ -21,8 +21,26 @@ export const OLED_ANIMATIONS = {
     arrays: ['oled_anim_badapple_a', 'oled_anim_badapple_b'],
     tabs: ['oled_anim_badapple_a.h', 'oled_anim_badapple_b.h'],
     recurso: 'badapple',
+    tipo: 'linea',
   },
 };
+
+/**
+ * Dónde se edita una animación. 'linea' son cuadros en la línea de tiempo;
+ * 'tab' es una tabla .h que se edita como texto. Sin dato, la línea de tiempo.
+ */
+export function tipoDeAnimacion(anim) {
+  return anim && anim.tipo === 'tab' ? 'tab' : 'linea';
+}
+
+/**
+ * Si un stream cabe en el .ino. El texto decimal ocupa 3,6 B por byte y el
+ * backend rechaza el tab por sobre MAX_TAB_BYTES; arriba de eso la animación
+ * solo puede viajar en tabs.
+ */
+export function cabeEnIno(bytes) {
+  return (bytes.length * 3.6) + 4096 <= MAX_TAB_BYTES;
+}
 
 /** Bibliotecas del catálogo que traen su propio tab .h. */
 export function esBuiltin(anim) {

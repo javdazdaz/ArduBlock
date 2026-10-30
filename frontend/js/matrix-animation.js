@@ -9,17 +9,36 @@
  * línea de tiempo para crear animaciones.
  */
 
-import { MATRIX_FRAMES, MATRIX_ANIMATIONS } from './blocks/ledmatrix.js';
+import { MATRIX_FRAMES, MATRIX_ANIMATIONS, ANIMACIONES_DIFERIDAS } from './blocks/ledmatrix.js';
 import { MAX7219_FRAMES } from './blocks/max7219.js';
 import {
   encodeCuadros, decodificarCuadros, desdeBase64, partirEnTabs,
+  tipoDeAnimacion, cabeEnIno, MAX_TAB_BYTES,
 } from './oled-animations.js';
-import { createHeaderTab } from './tab-manager.js';
+import { createHeaderTab, openTab } from './tab-manager.js';
 
 // ═══ Configuración por modo ════════════════════
 
 const OLED_ANCHO = 128;
 const OLED_ALTO = 64;
+
+/**
+ * Fichas del panel para las animaciones que no viajan en el bundle: rótulo,
+ * cantidad de cuadros y tipo, sin la tabla. `diferida` nombra la entrada de
+ * ANIMACIONES_DIFERIDAS cuyo cargador trae los cuadros.
+ */
+function _conDiferidas(base) {
+  const salida = { ...base };
+  for (const [clave, meta] of Object.entries(ANIMACIONES_DIFERIDAS)) {
+    salida[clave] = {
+      label: meta.label,
+      cuadros: meta.cuadros,
+      tipo: meta.tipo || 'linea',
+      diferida: clave,
+    };
+  }
+  return salida;
+}
 
 /** Lado del canvas del editor OLED en píxeles de pantalla. */
 const OLED_ESCALA = 3;
@@ -31,7 +50,7 @@ const MODES = {
     framesKey: 'ardublock:matrix-frames',
     animsKey: 'ardublock:matrix-animations',
     presets: () => MATRIX_FRAMES,
-    animPresets: () => MATRIX_ANIMATIONS,
+    animPresets: () => _conDiferidas(MATRIX_ANIMATIONS),
     encode(frameData) {
       let bits = 0n;
       for (let row = 0; row < 8; row++) {
@@ -162,7 +181,24 @@ const MODES = {
     framesKey: 'ardublock:oled-frames',
     animsKey: 'ardublock:oled-animations',
     presets: () => ({}),
-    animPresets: () => ({ badapple: { cuadros: 871, recurso: true } }),
+    animPresets: () => ({
+      // El mismo recurso en sus dos formas: 'linea' son los 871 cuadros
+      // editables en la línea de tiempo; 'tab' son las dos tablas .h que el
+      // bloque reproduce en placa, editables como texto.
+      badapple: {
+        label: 'Bad Apple!! 34,8 s',
+        cuadros: 871,
+        fps: 25,
+        tipo: 'linea',
+        recurso: 'badapple',
+      },
+      badapple_tabs: {
+        label: 'Bad Apple!! en tabs .h',
+        tabs: 2,
+        tipo: 'tab',
+        recurso: 'badapple',
+      },
+    }),
     empty() { return new Uint8Array(1024); },
     encode(fd) {
       const buf = new Uint8Array(1024);
@@ -246,6 +282,7 @@ export function initMatrixEditor() {
   _renderAnimList();
   _renderTimeline();
   _setupTimelineDrop();
+  _bindTimelinePaint();
   _bindEvents();
   _bindModeTabs();
   _update();
@@ -768,10 +805,15 @@ function _renderAnimList() {
   // Predefinidas (no eliminables)
   for (const name of builtinNames) {
     const anim = animPresets[name];
-    const fc = anim ? (anim.length || anim.cuadros || 0) : 0;
+    const tipo = tipoDeAnimacion(anim);
+    const rotulo = (anim && anim.label) || name;
+    const cuenta = tipo === 'tab'
+      ? ((anim && anim.tabs) ? anim.tabs + ' tabs' : 'tab')
+      : (((anim && (anim.cuadros || (Array.isArray(anim) ? anim.length : 0))) || 0) + 'f');
     html += `<div class="matrix-frame-item" data-anim="${name}" draggable="true">
-      <span class="frame-item-name">📦 ${_esc(name)}</span>
-      <span style="font-size:0.6rem;opacity:0.5;margin-left:auto">${fc}f</span>
+      <span class="frame-item-name">📦 ${_esc(rotulo)}</span>
+      <span class="frame-item-tipo tipo-${tipo}">${tipo === 'tab' ? 'tab .h' : 'línea'}</span>
+      <span style="font-size:0.6rem;opacity:0.5;margin-left:auto">${cuenta}</span>
     </div>`;
   }
 
@@ -781,6 +823,7 @@ function _renderAnimList() {
     const fc = anim ? anim.length : 0;
     html += `<div class="matrix-frame-item" data-anim="${name}" data-custom="1" draggable="true">
       <span class="frame-item-name">🎞 ${_esc(name)}</span>
+      <span class="frame-item-tipo tipo-linea">línea</span>
       <span style="font-size:0.6rem;opacity:0.5;margin-left:auto">${fc}f</span>
       <span class="frame-item-del" data-del-anim="${name}">✕</span>
     </div>`;
@@ -794,26 +837,18 @@ function _renderAnimList() {
       const name = el.dataset.anim;
       const isCustom = el.dataset.custom === '1';
       const anim = isCustom ? savedAnims[name] : animPresets[name];
-      // Recursos del modo OLED: no se editan en la línea de tiempo, se vuelcan
-      // al proyecto como tabs .h que el bloque consume.
+      // Cada tipo se edita en su lugar: los cuadros van a la línea de tiempo y
+      // la tabla .h se abre en el editor de código.
+      if (anim && anim.diferida) {
+        _cargarDiferida(name, anim.diferida);
+        return;
+      }
       if (anim && anim.recurso) {
-        _cargarRecursoOled(name);
+        _cargarRecursoOled(anim.recurso, tipoDeAnimacion(anim));
         return;
       }
       if (anim && anim.length > 0) {
-        timeline = anim.map((f) => {
-          if (typeof cfg.fromAnimFrame === 'function') {
-            const item = cfg.fromAnimFrame(f);
-            return { name: name, data: item.data, dur: item.dur || 200 };
-          }
-          // R4 format: [u32_0, u32_1, u32_2, dur]
-          // MAX7219 format: [b0..b7, dur]
-          const dur = f[cfg.cols === 12 ? 3 : 8] || 200;
-          const data = cfg.cols === 12
-            ? [f[0], f[1], f[2]]
-            : f.slice(0, 8);
-          return { name, data, dur };
-        });
+        timeline = _entradasDesdeAnimacion(name, anim);
         _renderTimeline();
         _toast(`Animación "${name}" cargada (${timeline.length} frames)`);
       }
@@ -847,11 +882,12 @@ function _renderAnimList() {
 // ═══ Recursos OLED ══════════════════════════════
 
 /**
- * Vuelca un recurso empaquetado al proyecto como tabs .h. La tabla no viaja en
- * el .ino: los tabs con contenido se incluyen solos, y el bloque solo llama a
- * los arreglos por su nombre.
+ * Vuelca un recurso empaquetado en su lugar de edición. Los tabs .h se crean
+ * siempre, porque el bloque los reproduce en placa; `destino` decide además si
+ * los cuadros van a la línea de tiempo ('linea') o si se abre el primer tab
+ * para editarlo como texto ('tab').
  */
-async function _cargarRecursoOled(nombre) {
+async function _cargarRecursoOled(nombre, destino = 'linea') {
   if (nombre !== 'badapple') {
     _toast('Ese recurso todavía no tiene cargador.');
     return;
@@ -861,20 +897,154 @@ async function _cargarRecursoOled(nombre) {
     const mod = await import('./oled-anim-badapple.js');
     const bytes = mod.badappleBytes();
     const partes = partirEnTabs(bytes, 'oled_anim_badapple', 'Bad Apple!!');
-    const nombres = partes.map(p => createHeaderTab(p.tab, p.texto));
-    const tamanos = partes.map(p => Math.round(p.texto.length / 1024) + ' KB').join(' + ');
-    _toast('Bad Apple!!: ' + mod.BADAPPLE_CUADROS + ' cuadros en ' +
-      nombres.length + ' tabs (' + tamanos + ')');
+    const tabs = partes.map(p => createHeaderTab(p.tab, p.texto));
+
+    if (destino === 'tab') {
+      if (typeof window._setPanelMode === 'function') window._setPanelMode('code');
+      openTab(tabs[0]);
+      _toast('Bad Apple!!: ' + tabs.join(' y ') + ' abiertos para editar');
+      return;
+    }
+
+    const cuadros = decodificarCuadros(bytes);
+    _volcarEnTimeline(nombre, cuadros, mod.BADAPPLE_FPS || 25);
+    _toast('Bad Apple!!: ' + cuadros.length + ' cuadros en la línea de tiempo; '
+      + tabs.length + ' tabs .h para el bloque');
     _renderAnimList();
   } catch (e) {
     _toast('No se pudo cargar el recurso: ' + e.message);
   }
 }
 
+/** Deja una lista de búferes, uno por cuadro, en la línea de tiempo. */
+function _volcarEnTimeline(nombre, cuadros, fps) {
+  const dur = Math.max(1, Math.round(1000 / (fps || 25)));
+  timeline = cuadros.map(buf => ({ name: nombre, data: buf, dur }));
+  timelineSelected = -1;
+  _renderTimeline();
+}
+
+/** Cuadros de una animación del catálogo al formato de la línea de tiempo. */
+function _entradasDesdeAnimacion(nombre, anim) {
+  return anim.map((f) => {
+    if (typeof cfg.fromAnimFrame === 'function') {
+      const item = cfg.fromAnimFrame(f);
+      // r4 devuelve u32 y max7219/direct devuelven bytes: solo OLED llama
+      // `data` a los suyos.
+      return {
+        name: nombre,
+        data: item.data || item.u32 || item.bytes,
+        dur: item.dur || 200,
+      };
+    }
+    const dur = f[cfg.cols === 12 ? 3 : 8] || 200;
+    const data = cfg.cols === 12 ? [f[0], f[1], f[2]] : f.slice(0, 8);
+    return { name: nombre, data, dur };
+  });
+}
+
+/** Carga una animación diferida y la deja en la línea de tiempo. */
+async function _cargarDiferida(nombre, clave) {
+  const meta = ANIMACIONES_DIFERIDAS[clave];
+  if (!meta) return;
+  _toast('Cargando ' + nombre + '…');
+  try {
+    const cuadros = await meta.cargar();
+    timeline = _entradasDesdeAnimacion(nombre, cuadros);
+    timelineSelected = -1;
+    _renderTimeline();
+    _toast(nombre + ': ' + timeline.length + ' cuadros en la línea de tiempo');
+  } catch (e) {
+    _toast('No se pudo cargar la animación: ' + e.message);
+  }
+}
+
 // ═══ Timeline ═══════════════════════════════════
+
+/** Ancho de un cuadro más la separación de la pista (.matrix-timeline-track). */
+const ANCHO_CUADRO_TIMELINE = 94;
+
+/** Cuadros por tanda de la pintura en segundo plano (~20 ms de dibujo). */
+const LOTE_PINTURA_TIMELINE = 40;
+
+let _pinturaTimer = null;   // setTimeout de la tanda en curso
+let _pinturaToken = 0;      // invalida la tanda cuando la pista se rehace
+
+/** Dibuja la miniatura de un cuadro si todavía no está pintada. */
+function _pintarMarco(el, i) {
+  if (!el || !(i >= 0 && i < timeline.length)) return;
+  const canvas = el.querySelector('canvas');
+  if (!canvas || canvas.dataset.pintado === '1') return;
+  _drawTimelineCanvas(canvas, timeline[i].data);
+  canvas.dataset.pintado = '1';
+}
+
+/**
+ * Pinta las miniaturas que entran en la vista, más la seleccionada. El resto
+ * queda para la tanda en segundo plano: dibujar las 871 de Bad Apple cuesta
+ * ~400 ms medidos y la pista muestra unas quince.
+ */
+function _pintarVentanaTimeline() {
+  const track = document.getElementById('matrix-timeline-track');
+  if (!track) return;
+  const marcos = track.querySelectorAll('.matrix-timeline-frame');
+  if (marcos.length === 0) return;
+
+  const ancho = marcos[0].offsetWidth ? marcos[0].offsetWidth + 4 : ANCHO_CUADRO_TIMELINE;
+  // Dos cuadros de margen a cada lado para que el borde no quede en blanco.
+  const desde = Math.max(0, Math.floor(track.scrollLeft / ancho) - 2);
+  const hasta = Math.min(marcos.length - 1,
+    Math.ceil((track.scrollLeft + track.clientWidth) / ancho) + 2);
+
+  for (let i = desde; i <= hasta; i++) _pintarMarco(marcos[i], i);
+  _pintarMarco(marcos[timelineSelected], timelineSelected);
+}
+
+/**
+ * Pinta el resto de las miniaturas por tandas, sin bloquear el panel. No
+ * depende del evento scroll: con 871 cuadros la pista completa se pinta en
+ * menos de un segundo y el desplazamiento no deja huecos.
+ */
+function _pintarRestoTimeline() {
+  const track = document.getElementById('matrix-timeline-track');
+  if (!track) return;
+  const marcos = Array.from(track.querySelectorAll('.matrix-timeline-frame'));
+  const lista = timeline;
+  const token = ++_pinturaToken;
+  if (_pinturaTimer) { clearTimeout(_pinturaTimer); _pinturaTimer = null; }
+  if (marcos.length === 0) return;
+
+  let i = 0;
+  const paso = () => {
+    if (token !== _pinturaToken || lista !== timeline) { _pinturaTimer = null; return; }
+    // La reproducción manda: la tanda espera a que termine.
+    if (playTimer) { _pinturaTimer = setTimeout(paso, 200); return; }
+    const fin = Math.min(i + LOTE_PINTURA_TIMELINE, marcos.length);
+    for (; i < fin; i++) _pintarMarco(marcos[i], i);
+    if (i < marcos.length) _pinturaTimer = setTimeout(paso, 0);
+    else _pinturaTimer = null;
+  };
+  _pinturaTimer = setTimeout(paso, 0);
+}
+
+/** Repinta la ventana al desplazar la pista, una vez por cuadro de pantalla. */
+function _bindTimelinePaint() {
+  const track = document.getElementById('matrix-timeline-track');
+  if (!track) return;
+  let pendiente = false;
+  track.addEventListener('scroll', () => {
+    if (pendiente) return;
+    pendiente = true;
+    const siguiente = (typeof requestAnimationFrame === 'function')
+      ? requestAnimationFrame
+      : (fn) => setTimeout(fn, 16);
+    siguiente(() => { pendiente = false; _pintarVentanaTimeline(); });
+  }, { passive: true });
+}
 
 function _renderTimeline() {
   const track = document.getElementById('matrix-timeline-track');
+  _pinturaToken++;   // invalida la tanda de pintura anterior
 
   if (timeline.length === 0) {
     track.innerHTML = '<div class="matrix-timeline-empty">Arrastre frames desde el panel lateral o use el botón +</div>'
@@ -895,12 +1065,15 @@ function _renderTimeline() {
     </div>`;
   }
   html += '<div class="matrix-timeline-add" title="Añadir frame actual">+</div>';
+  // Rehacer la pista no debe devolver el scroll al inicio: en una animación de
+  // 871 cuadros, editar el cuadro 500 dejaría la vista en el primero.
+  const desplazamiento = track.scrollLeft;
   track.innerHTML = html;
+  track.scrollLeft = desplazamiento;
 
-  // Dibujar canvas de cada frame
-  track.querySelectorAll('.matrix-timeline-frame canvas').forEach((canvas, i) => {
-    if (i < timeline.length) _drawTimelineCanvas(canvas, timeline[i].data);
-  });
+  // Solo se pintan las miniaturas que entran en la vista. Dibujar las 871 de
+  // Bad Apple cuesta ~400 ms medidos, y la vista muestra unas quince.
+  _pintarVentanaTimeline();
 
   // Click en frame
   track.querySelectorAll('.matrix-timeline-frame').forEach(el => {
@@ -941,6 +1114,8 @@ function _renderTimeline() {
   // Botón +
   const addBtn = track.querySelector('.matrix-timeline-add');
   if (addBtn) addBtn.addEventListener('click', _addCurrentToTimeline);
+
+  _pintarRestoTimeline();
 }
 
 function _addCurrentToTimeline() {
@@ -1004,20 +1179,21 @@ function _setupTimelineDrop() {
       const isCustom = e.dataTransfer.getData('application/x-matrix-anim-custom') === '1';
       const animPresets = cfg.animPresets();
       const anim = isCustom ? savedAnims[animName] : animPresets[animName];
+      if (anim && anim.diferida) {
+        _cargarDiferida(animName, anim.diferida);
+        return;
+      }
       if (anim && anim.recurso) {
-        _cargarRecursoOled(animName);
+        const tipo = tipoDeAnimacion(anim);
+        if (tipo === 'tab') {
+          _toast('Esa animación se edita en su tab: ábrala desde el panel de código.');
+          return;
+        }
+        _cargarRecursoOled(anim.recurso, tipo);
         return;
       }
       if (anim && anim.length > 0) {
-        timeline = anim.map((f) => {
-          if (typeof cfg.fromAnimFrame === 'function') {
-            const item = cfg.fromAnimFrame(f);
-            return { name: animName, data: item.data, dur: item.dur || 200 };
-          }
-          const dur = f[cfg.cols === 12 ? 3 : 8] || 200;
-          const data = cfg.cols === 12 ? [f[0], f[1], f[2]] : f.slice(0, 8);
-          return { name: animName, data, dur };
-        });
+        timeline = _entradasDesdeAnimacion(animName, anim);
         _renderTimeline();
         _toast(`Animación "${animName}" cargada (${timeline.length} frames)`);
       }
@@ -1079,8 +1255,15 @@ function _showTimelineFrame(idx) {
   _loadFrameToGrid(f.data);
   _update();
   timelineSelected = idx;
+
+  // Marcar el cuadro sin rehacer la pista: reconstruir 871 nodos en cada
+  // cuadro de la reproducción no cabe en 40 ms.
+  const track = document.getElementById('matrix-timeline-track');
+  const previo = track.querySelector('.matrix-timeline-frame.selected');
+  if (previo) previo.classList.remove('selected');
+  const el = track.querySelector(`.matrix-timeline-frame[data-idx="${idx}"]`);
+  if (el) el.classList.add('selected');
   document.getElementById('matrix-timeline-duration').value = f.dur;
-  _renderTimeline();
 }
 
 // ═══ Events ════════════════════════════════════
@@ -1145,6 +1328,17 @@ function _bindEvents() {
     if (!name) { _toast('Escribe un nombre para la animación'); return; }
     if (!/^[a-zA-Z0-9_]+$/.test(name)) { _toast('Solo letras, números y _'); return; }
     if (timeline.length === 0) { _toast('La línea de tiempo está vacía'); return; }
+    // Una animación propia viaja como tabla dentro del .ino: si el stream no
+    // cabe, el proyecto no se puede guardar después y el usuario pierde el
+    // trabajo. Se avisa con las dos cifras y no se guarda.
+    if (cfg.canvas) {
+      const bytes = encodeCuadros(timeline.map(f => Uint8Array.from(f.data)));
+      if (!cabeEnIno(bytes)) {
+        _toast(name + ': ' + bytes.length + ' B de cuadros no caben en el .ino (tope '
+          + Math.floor((MAX_TAB_BYTES - 4096) / 3.6) + ' B); se reproduce desde los tabs .h');
+        return;
+      }
+    }
     savedAnims[name] = timeline.map(f => cfg.toAnimFrame(f));
     _saveAnims();
     _renderAnimList();

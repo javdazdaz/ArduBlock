@@ -50,7 +50,8 @@ import { registerGenerators as regArrays }     from './blocks/arrays.js';
 import { registerGenerators as regBucles }     from './blocks/bucles.js';
 import { registerGenerators as regAfmotor }    from './blocks/afmotor.js';
 import { registerGenerators as regLedmatrix,
-         MATRIX_FRAMES, MATRIX_ANIMATIONS } from './blocks/ledmatrix.js';
+         MATRIX_FRAMES, MATRIX_ANIMATIONS,
+         ANIMACIONES_DIFERIDAS } from './blocks/ledmatrix.js';
 import { registerGenerators as regMax7219,
          MAX7219_FRAMES } from './blocks/max7219.js';
 import { registerGenerators as regMatrixdirect } from './blocks/matrixdirect.js';
@@ -774,6 +775,22 @@ export function generateArduinoCode(workspace) {
       let customAnims = null;
       for (const name of animNames) {
         let anim = MATRIX_ANIMATIONS[name];
+
+        // Animaciones diferidas: los cuadros llegan de un import aparte. Si el
+        // sketch se genera antes de que lleguen, se emite el comentario, se
+        // pide la tabla una vez y se vuelve a generar al resolver.
+        if (!anim && ANIMACIONES_DIFERIDAS[name]) {
+          anim = ANIMACIONES_DIFERIDAS[name].obtener();
+          if (!anim) {
+            sketch += '// ' + name + ': los cuadros se están cargando; el sketch se regenera al llegar.\n';
+            ANIMACIONES_DIFERIDAS[name].cargar().then(() => {
+              if (typeof window !== 'undefined' && typeof window.updateCode === 'function') {
+                window.updateCode();
+              }
+            }).catch(() => {});
+          }
+        }
+
         if (!anim) {
           if (!customAnims) {
             try { customAnims = JSON.parse(typeof localStorage !== 'undefined' ? (localStorage.getItem('ardublock:matrix-animations') || '{}') : '{}'); }
