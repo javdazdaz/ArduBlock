@@ -1195,6 +1195,12 @@ main {
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   font-size: 0.65rem;
 }
+.matrix-frame-item .frame-item-meta {
+  width: 100%; display: flex; align-items: center; gap: 0.3rem;
+}
+.matrix-frame-item .frame-item-count {
+  margin-left: auto; font-size: 0.6rem; opacity: 0.5;
+}
 /* Tipo de animación: dónde se edita. 'línea' son cuadros en la línea de
    tiempo; 'tab .h' es una tabla que se abre en el editor de código. */
 .matrix-frame-item .frame-item-tipo {
