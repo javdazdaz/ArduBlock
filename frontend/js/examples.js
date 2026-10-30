@@ -17,8 +17,10 @@ import { controlExamples }  from './examples-control.js';
 import { remainingExamples } from './examples-remaining.js';
 import { missingExamples }   from './examples-missing.js';
 import { matrixExamples }   from './examples-matrix.js';
+import { oledExamples }     from './examples-oled.js';
 import { escapeHtml, cancelAutoSave } from './project-manager.js';
 import { restoreWorkspaceState } from './workspace-restore.js';
+import { cargarTabsRecursoOled } from './matrix-animation.js';
 
 // ── Consolidar todos los ejemplos ─────────────────
 const allExamples = [
@@ -32,6 +34,7 @@ const allExamples = [
   ...remainingExamples,
   ...missingExamples,
   ...matrixExamples,
+  ...oledExamples,
 ];
 
 let workspace, examplesModal, examplesList, showToast, updateCodeFn, projectInput;
@@ -224,6 +227,18 @@ function loadPresetExample(ex) {
   // Tabs antes que bloques (ver workspace-restore.js): el campo FILE de
   // webserver_serve_file depende de los tabs .html para conservar su valor.
   restoreWorkspaceState(workspace, { state: ex.state, tabs: ex.tabs, sketchName: ex.name + '.ino' });
+
+  // Recursos empaquetados: el ejemplo lleva los bloques y el tab se escribe
+  // desde el módulo diferido, que no viaja en el estado ni en el bundle.
+  if (ex.recursoOled) {
+    cargarTabsRecursoOled(ex.recursoOled)
+      .then(tabs => showToast(lang === 'es'
+        ? 'Ejemplo: tabs ' + tabs.join(' y ') + ' añadidos al proyecto'
+        : 'Example: tabs ' + tabs.join(' and ') + ' added to the project'))
+      .catch(() => showToast(lang === 'es'
+        ? 'No se pudieron añadir los tabs del recurso'
+        : 'The resource tabs could not be added'));
+  }
 
   window._exampleComment = comment;
   updateCodeFn();

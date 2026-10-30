@@ -929,6 +929,33 @@ function _renderAnimList() {
 // ═══ Recursos OLED ══════════════════════════════
 
 /**
+ * Escribe los tabs del recurso OLED y devuelve sus nombres. Lo comparten el
+ * botón del editor y el cargador de ejemplos: los bloques referencian los
+ * arreglos y el tab tiene que existir en el proyecto para que el sketch
+ * compile.
+ */
+function _escribirTabsRecurso(bytes) {
+  const partes = partirEnTabs(bytes, 'oled_anim_badapple', 'Bad Apple!!');
+  const tabs = partes.map(p => createHeaderTab(p.tab, p.texto));
+  // El generador arma los `#include` con los tabs .h que tienen contenido: sin
+  // regenerar, el sketch queda llamando a arreglos que no declara.
+  if (typeof window !== 'undefined' && typeof window.updateCode === 'function') {
+    window.updateCode();
+  }
+  return tabs;
+}
+
+/**
+ * Añade al proyecto los tabs de un recurso sin tocar la línea de tiempo. Lo
+ * usa el cargador de ejemplos.
+ */
+export async function cargarTabsRecursoOled(nombre = 'badapple') {
+  if (nombre !== 'badapple') throw new Error('recurso sin cargador: ' + nombre);
+  const mod = await import('./oled-anim-badapple.js');
+  return _escribirTabsRecurso(mod.badappleBytes());
+}
+
+/**
  * Vuelca un recurso empaquetado en su lugar de edición. Los tabs .h se crean
  * siempre, porque el bloque los reproduce en placa; `destino` decide además si
  * los cuadros van a la línea de tiempo ('linea') o si se abre el primer tab
@@ -943,8 +970,7 @@ async function _cargarRecursoOled(nombre, destino = 'linea') {
   try {
     const mod = await import('./oled-anim-badapple.js');
     const bytes = mod.badappleBytes();
-    const partes = partirEnTabs(bytes, 'oled_anim_badapple', 'Bad Apple!!');
-    const tabs = partes.map(p => createHeaderTab(p.tab, p.texto));
+    const tabs = _escribirTabsRecurso(bytes);
 
     if (destino === 'tab') {
       if (typeof window._setPanelMode === 'function') window._setPanelMode('code');
