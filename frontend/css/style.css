@@ -1195,6 +1195,15 @@ main {
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   font-size: 0.65rem;
 }
+/* Tipo de animación: dónde se edita. 'línea' son cuadros en la línea de
+   tiempo; 'tab .h' es una tabla que se abre en el editor de código. */
+.matrix-frame-item .frame-item-tipo {
+  font-size: 0.55rem; line-height: 1.4;
+  padding: 0 0.3rem; border-radius: 3px;
+  border: 1px solid var(--border); color: var(--text-dim);
+}
+.matrix-frame-item .frame-item-tipo.tipo-linea { color: #8fd3ff; border-color: #8fd3ff88; }
+.matrix-frame-item .frame-item-tipo.tipo-tab { color: #f0b429; border-color: #f0b42988; }
 .matrix-frame-item .frame-item-del {
   position: absolute; top: 2px; right: 2px;
   opacity: 0; font-size: 0.6rem; cursor: pointer;
