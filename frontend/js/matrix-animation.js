@@ -182,20 +182,14 @@ const MODES = {
     animsKey: 'ardublock:oled-animations',
     presets: () => ({}),
     animPresets: () => ({
-      // El mismo recurso en sus dos formas: 'linea' son los 871 cuadros
-      // editables en la línea de tiempo; 'tab' son las dos tablas .h que el
-      // bloque reproduce en placa, editables como texto.
+      // El recurso en su forma editable: 871 cuadros en la línea de tiempo. Las
+      // tablas .h que el bloque reproduce se crean al cargarlo y se abren desde
+      // la barra de tabs, que es donde vive cualquier archivo del proyecto.
       badapple: {
         label: 'Bad Apple!! 34,8 s',
         cuadros: 871,
         fps: 25,
         tipo: 'linea',
-        recurso: 'badapple',
-      },
-      badapple_tabs: {
-        label: 'Bad Apple!! en el tab .h',
-        tabs: 1,
-        tipo: 'tab',
         recurso: 'badapple',
       },
     }),
@@ -360,9 +354,9 @@ export function initPanelModeTabs() {
 
 // ═══ Modo ════════════════════════════════════════
 
-/** Rótulo del panel de animación según el modo del editor. */
+/** Rótulo del panel de animación: el mismo para los cuatro modos. */
 function _tituloPanelAnimacion() {
-  return mode === 'oled' ? 'OLED SSD1315 — Editor de animaciones' : 'Matriz LED — Editor de frames';
+  return (MODES[mode] ? MODES[mode].label : 'Matriz LED') + ' — Editor de frames y animaciones';
 }
 
 function _initMode() {
@@ -380,7 +374,7 @@ function _applyMode() {
   });
 
   const titulo = document.querySelector('.panel-header h2');
-  if (titulo && /Matriz LED|OLED SSD1315/.test(titulo.textContent)) {
+  if (titulo && /Editor de frames/.test(titulo.textContent)) {
     titulo.textContent = _tituloPanelAnimacion();
   }
   const vista = document.getElementById('code-view-animation');
@@ -389,9 +383,16 @@ function _applyMode() {
   cfg = MODES[mode];
   frameData = Array.from({ length: cfg.rows || 8 }, () => new Array(cfg.cols).fill(0));
 
-  // Botón de recurso: solo tiene sentido en el modo OLED.
-  const btnBad = document.getElementById('matrix-load-badapple');
-  if (btnBad) btnBad.style.display = mode === 'oled' ? '' : 'none';
+  // El selector de preset carga frames predefinidos: en OLED no hay ninguno, y
+  // un control vacío ocupa barra sin ofrecer nada. Se oculta con su separador.
+  const preset = document.getElementById('matrix-preset');
+  if (preset) {
+    preset.style.display = mode === 'oled' ? 'none' : '';
+    const sep = preset.previousElementSibling;
+    if (sep && sep.classList.contains('matrix-toolbar-sep')) {
+      sep.style.display = mode === 'oled' ? 'none' : '';
+    }
+  }
 
   // Mostrar/ocultar hex display según modo
   const hexR4 = document.getElementById('matrix-hex-r4');
@@ -857,10 +858,15 @@ function _renderAnimList() {
     const cuenta = tipo === 'tab'
       ? ((anim && anim.tabs) ? anim.tabs + ' tabs' : 'tab')
       : (((anim && (anim.cuadros || (Array.isArray(anim) ? anim.length : 0))) || 0) + 'f');
+    // La marca de tipo solo va donde distingue: el recurso empaquetado también
+    // escribe un tab .h. En las animaciones del modo el lugar es la línea de
+    // tiempo y la marca sería ruido en cada fila.
+    const marca = (anim && (anim.recurso || anim.tipo === 'tab'))
+      ? `<span class="frame-item-tipo tipo-${tipo}">${tipo === 'tab' ? 'tab .h' : 'línea'}</span>`
+      : '';
     html += `<div class="matrix-frame-item" data-anim="${name}" draggable="true">
       <span class="frame-item-name">📦 ${_esc(rotulo)}</span>
-      <span class="frame-item-tipo tipo-${tipo}">${tipo === 'tab' ? 'tab .h' : 'línea'}</span>
-      <span style="font-size:0.6rem;opacity:0.5;margin-left:auto">${cuenta}</span>
+      <span class="frame-item-meta">${marca}<span class="frame-item-count">${cuenta}</span></span>
     </div>`;
   }
 
@@ -870,8 +876,7 @@ function _renderAnimList() {
     const fc = anim ? anim.length : 0;
     html += `<div class="matrix-frame-item" data-anim="${name}" data-custom="1" draggable="true">
       <span class="frame-item-name">🎞 ${_esc(name)}</span>
-      <span class="frame-item-tipo tipo-linea">línea</span>
-      <span style="font-size:0.6rem;opacity:0.5;margin-left:auto">${fc}f</span>
+      <span class="frame-item-meta"><span class="frame-item-count">${fc}f</span></span>
       <span class="frame-item-del" data-del-anim="${name}">✕</span>
     </div>`;
   }
@@ -966,7 +971,6 @@ async function _cargarRecursoOled(nombre, destino = 'linea') {
     _toast('Ese recurso todavía no tiene cargador.');
     return;
   }
-  _toast('Cargando Bad Apple!!…');
   try {
     const mod = await import('./oled-anim-badapple.js');
     const bytes = mod.badappleBytes();
@@ -982,7 +986,7 @@ async function _cargarRecursoOled(nombre, destino = 'linea') {
     const cuadros = decodificarCuadros(bytes);
     _volcarEnTimeline(nombre, cuadros, mod.BADAPPLE_FPS || 25);
     _toast('Bad Apple!!: ' + cuadros.length + ' cuadros en la línea de tiempo; '
-      + tabs.length + ' tabs .h para el bloque');
+      + tabs.length + (tabs.length === 1 ? ' tab .h' : ' tabs .h') + ' para el bloque');
     _renderAnimList();
   } catch (e) {
     _toast('No se pudo cargar el recurso: ' + e.message);
@@ -1020,7 +1024,6 @@ function _entradasDesdeAnimacion(nombre, anim) {
 async function _cargarDiferida(nombre, clave) {
   const meta = ANIMACIONES_DIFERIDAS[clave];
   if (!meta) return;
-  _toast('Cargando ' + nombre + '…');
   try {
     const cuadros = await meta.cargar();
     timeline = _entradasDesdeAnimacion(nombre, cuadros);
@@ -1370,12 +1373,6 @@ function _bindEvents() {
     const code = cfg.copyCode(data);
     navigator.clipboard.writeText(code).then(() => _toast('Copiado: ' + code));
   });
-
-  // Recurso empaquetado del modo OLED
-  const btnBadApple = document.getElementById('matrix-load-badapple');
-  if (btnBadApple) {
-    btnBadApple.addEventListener('click', () => _cargarRecursoOled('badapple'));
-  }
 
   // Timeline duration
   document.getElementById('matrix-timeline-duration').addEventListener('change', function() {
