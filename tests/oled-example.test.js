@@ -34,10 +34,10 @@ describe('ejemplo OledBadApple', () => {
 
     expect(sketch).toContain('#include <Wire.h>');
     expect(sketch).toContain('_oled_init(0x3C, 400000);');
-    expect(sketch).toContain('_oled_anim_play(' + OLED_ANIMATIONS.badapple.arrays[0]
-      + ', ' + OLED_ANIMATIONS.badapple.arrays[1] + ', '
-      + OLED_ANIMATIONS.badapple.corte + ', ' + OLED_ANIMATIONS.badapple.bytes + ', '
-      + OLED_ANIMATIONS.badapple.cuadros + ', 25, false);');
+    const meta = OLED_ANIMATIONS.badapple;
+    expect(sketch).toContain('_oled_anim_play(' + meta.arrays[0] + ', '
+      + (meta.arrays[1] || 'NULL') + ', ' + (meta.corte || 0) + ', ' + meta.bytes + ', '
+      + meta.cuadros + ', 25, false);');
     expect(sketch).toContain('void _oled_cuadro(');
 
     ws.dispose();
@@ -64,9 +64,7 @@ describe('ejemplo OledBadApple', () => {
   it('los arreglos que llama son los que escribe el cargador del recurso', () => {
     // El ejemplo no lleva las tablas: el cargador crea los tabs con estos
     // nombres, y el sketch los llama por el mismo nombre.
-    expect(OLED_ANIMATIONS.badapple.tabs).toEqual([
-      OLED_ANIMATIONS.badapple.arrays[0] + '.h',
-      OLED_ANIMATIONS.badapple.arrays[1] + '.h',
-    ]);
+    const meta = OLED_ANIMATIONS.badapple;
+    expect(meta.tabs).toEqual(meta.arrays.map(a => a + '.h'));
   });
 });

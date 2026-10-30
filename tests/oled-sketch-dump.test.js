@@ -52,7 +52,7 @@ it.runIf(Boolean(process.env.OLED_DUMP))('escribe los sketches de verificación'
   ]);
   writeFileSync(base + '/OledTexto/OledTexto.ino', textoSketch);
 
-  // 2. Bad Apple con los dos tabs .h
+  // 2. Bad Apple con su tab .h
   const bytes = badappleBytes();
   const partes = partirEnTabs(bytes, 'oled_anim_badapple', 'Bad Apple!!');
   let animSketch = armar([

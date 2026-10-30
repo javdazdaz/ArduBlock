@@ -68,10 +68,11 @@ describe('Bad Apple en la línea de tiempo', () => {
     expect(ultimo.some(b => b !== 0)).toBe(true);
   });
 
-  it('los dos tabs quedan bajo el tope del backend', async () => {
+  it('el tab de la animación queda bajo el tope del backend', async () => {
     const mod = await import('../frontend/js/oled-anim-badapple.js');
     const partes = partirEnTabs(mod.badappleBytes(), 'oled_anim_badapple', 'Bad Apple!!');
-    expect(partes.length).toBe(2);
+    expect(partes.length).toBe(1);
+    expect(partes[0].tab).toBe('oled_anim_badapple.h');
     for (const p of partes) expect(p.texto.length).toBeLessThan(MAX_TAB_BYTES);
   });
 

@@ -23,6 +23,7 @@ from backend.text_ot import apply_changes, transform_changes, validate_changes
 from backend.collaboration import broker
 from backend.project_permissions import ROLES, project_access
 from backend.avatar import avatar_response
+from backend.payload_validation import MAX_TAB_BYTES, MAX_TABS
 
 projects_bp = Blueprint("projects", __name__)
 
@@ -136,7 +137,7 @@ def _write_tabs(sketch_dir: Path, tabs: list[dict]) -> None:
     """
     if not tabs:
         return
-    if not isinstance(tabs, list) or len(tabs) > 32:
+    if not isinstance(tabs, list) or len(tabs) > MAX_TABS:
         raise ValueError("Tabs inválidos")
     for tab in tabs:
         if not isinstance(tab, dict):
@@ -152,7 +153,7 @@ def _write_tabs(sketch_dir: Path, tabs: list[dict]) -> None:
             raise ValueError("Nombre de tab no permitido")
         if not safe.endswith((".h", ".hpp", ".html")):
             raise ValueError("Extensión de tab no permitida")
-        if len(content.encode("utf-8")) > 512 * 1024:
+        if len(content.encode("utf-8")) > MAX_TAB_BYTES:
             raise ValueError("Tab demasiado grande")
         (sketch_dir / safe).write_text(content)
 

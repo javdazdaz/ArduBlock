@@ -240,6 +240,19 @@ function loadPresetExample(ex) {
         : 'The resource tabs could not be added'));
   }
 
+  // Placa del ejemplo: la tabla de una animación puede no caber en la que está
+  // elegida, y el ejemplo sabe con cuál compila.
+  if (ex.board) {
+    const selector = document.getElementById('board-selector');
+    if (selector && selector.value !== ex.board) {
+      selector.value = ex.board;
+      selector.dispatchEvent(new Event('change'));
+      showToast(lang === 'es'
+        ? 'Placa cambiada a ' + (selector.selectedOptions[0]?.textContent || ex.board)
+        : 'Board changed to ' + (selector.selectedOptions[0]?.textContent || ex.board));
+    }
+  }
+
   window._exampleComment = comment;
   updateCodeFn();
   projectInput.value = ex.name + '.ino';
