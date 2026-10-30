@@ -585,6 +585,22 @@ export function openTab(filename) {
 }
 
 /**
+ * Reemplaza el contenido de un tab .h existente. Devuelve false si el tab no
+ * existe. Se usa al volver a guardar una animación que vive en tabs: la tabla
+ * anterior se reemplaza y el estado del editor se rehace con el texto nuevo,
+ * así que el historial de undo de ese tab empieza de cero.
+ */
+export function setHeaderTabContent(filename, content) {
+  const tab = tabs.find(t => t.filename === filename);
+  if (!tab || tab.readonly) return false;
+  tab.content = content;
+  tab.state = null;
+  _ensureState(tab);
+  if (activeFilename === filename) _activateTab(tab);
+  return true;
+}
+
+/**
  * Actualiza el nombre del tab del sketch sin recargar tabs .h.
  */
 export function setSketchName(name) {

@@ -81,6 +81,34 @@ describe('Bad Apple en la línea de tiempo', () => {
   });
 });
 
+describe('animación propia que no cabe en el .ino', () => {
+  it('se reproduce desde los tabs y no incrusta la tabla', () => {
+    localStorage.setItem('ardublock:oled-animations', JSON.stringify({
+      larga: {
+        fps: 25,
+        cuadros: 871,
+        b64: '',
+        tabs: ['oled_anim_larga_a.h', 'oled_anim_larga_b.h'],
+        arrays: ['oled_anim_larga_a', 'oled_anim_larga_b'],
+        corte: 92445,
+        bytes: 184890,
+      },
+    }));
+
+    const sketch = sketchCon([
+      ['oled_create'],
+      ['oled_play_animation', b => b.setFieldValue('oj_larga', 'ANIM')],
+    ]);
+
+    expect(sketch).toContain(
+      '_oled_anim_play(oled_anim_larga_a, oled_anim_larga_b, 92445, 184890, 871, 25, false);');
+    expect(sketch).not.toContain('const uint8_t oled_anim_larga[]');
+    // El decodificador sigue viajando: es el mismo que lee los tabs.
+    expect(sketch).toContain('void _oled_cuadro(');
+    localStorage.removeItem('ardublock:oled-animations');
+  });
+});
+
 describe('Bad Apple del R4: la tabla no viaja en el bundle', () => {
   it('el módulo de bloques no la importa al cargarse', async () => {
     const fs = await import('node:fs');

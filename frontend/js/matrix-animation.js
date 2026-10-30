@@ -13,9 +13,9 @@ import { MATRIX_FRAMES, MATRIX_ANIMATIONS, ANIMACIONES_DIFERIDAS } from './block
 import { MAX7219_FRAMES } from './blocks/max7219.js';
 import {
   encodeCuadros, decodificarCuadros, desdeBase64, partirEnTabs,
-  tipoDeAnimacion, cabeEnIno, MAX_TAB_BYTES,
+  tipoDeAnimacion, cabeEnIno,
 } from './oled-animations.js';
-import { createHeaderTab, openTab } from './tab-manager.js';
+import { createHeaderTab, openTab, getTabs, setHeaderTabContent } from './tab-manager.js';
 
 // ═══ Configuración por modo ════════════════════
 
@@ -268,6 +268,10 @@ let timelineSelected = -1;
 let playTimer = null;
 let playIndex = 0;
 let insertIdx = -1;
+// Animaciones guardadas que no caben en el .ino y viven como tabs .h:
+// { nombre: { tabs, arrays, corte, bytes } }. Se persiste junto a la animación
+// en `ardublock:oled-animations`, que es lo que lee el generador.
+let enTabs = {};
 
 // ═══ API pública ════════════════════════════════
 
@@ -454,18 +458,28 @@ function _loadStorage() {
     const crudoA = JSON.parse(localStorage.getItem(cfg.animsKey)) || {};
     if (cfg.canvas) {
       savedAnims = {};
+      enTabs = {};
       for (const [nombre, valor] of Object.entries(crudoA)) {
         if (!valor || !valor.b64) continue;
         const fps = valor.fps || 25;
         const dur = Math.round(1000 / fps);
         savedAnims[nombre] = decodificarCuadros(desdeBase64(valor.b64))
           .map(buf => ({ name: nombre, data: Array.from(buf), dur }));
+        if (Array.isArray(valor.arrays) && valor.arrays.length > 0) {
+          enTabs[nombre] = {
+            tabs: valor.tabs || [],
+            arrays: valor.arrays,
+            corte: valor.corte || 0,
+            bytes: valor.bytes || 0,
+          };
+        }
       }
     } else {
       savedAnims = crudoA;
     }
   } catch (_) {
     savedAnims = {};
+    enTabs = {};
   }
 }
 
@@ -497,7 +511,14 @@ function _saveAnims() {
       for (let i = 0; i < bytes.length; i += 8192) {
         binario += String.fromCharCode.apply(null, bytes.subarray(i, i + 8192));
       }
-      salida[nombre] = { fps, cuadros: cuadros.length, b64: window.btoa(binario) };
+      salida[nombre] = {
+        fps,
+        cuadros: cuadros.length,
+        b64: window.btoa(binario),
+        // Las que no caben en el .ino viajan en tabs .h: el generador necesita
+        // los arreglos, el corte y el tamaño para llamarlas.
+        ...(enTabs[nombre] || {}),
+      };
     }
     localStorage.setItem(cfg.animsKey, JSON.stringify(salida));
     return;
@@ -644,6 +665,32 @@ function _update(sincronizar = true) {
     timeline[timelineSelected].data = cfg.toStorageFrame(data);
     _syncTimelineCanvas(timelineSelected);
   }
+}
+
+/**
+ * Escribe una animación propia como tabs .h cuando su tabla no cabe en el
+ * .ino. Es el mismo reparto que usa el recurso: partes parejas bajo el tope de
+ * 512 KB por tab y el tamaño del primer corte en la llamada al decodificador.
+ * Devuelve los nombres de los tabs escritos.
+ */
+function _guardarAnimsEnTabs(nombre, bytes) {
+  const partes = partirEnTabs(bytes, 'oled_anim_' + nombre, 'animación propia ' + nombre);
+  const tabs = [];
+  for (const parte of partes) {
+    const yaExiste = getTabs().some(t => t.filename === parte.tab);
+    const final = createHeaderTab(parte.tab, parte.texto);
+    // createHeaderTab no toca el contenido de un tab que ya existe: sin esto,
+    // volver a guardar la animación editada dejaría la tabla vieja.
+    if (yaExiste) setHeaderTabContent(final, parte.texto);
+    tabs.push(final);
+  }
+  enTabs[nombre] = {
+    tabs,
+    arrays: partes.map(p => p.nombre),
+    corte: partes[0].bytes,
+    bytes: bytes.length,
+  };
+  return tabs;
 }
 
 function _syncTimelineCanvas(idx) {
@@ -1328,22 +1375,30 @@ function _bindEvents() {
     if (!name) { _toast('Escribe un nombre para la animación'); return; }
     if (!/^[a-zA-Z0-9_]+$/.test(name)) { _toast('Solo letras, números y _'); return; }
     if (timeline.length === 0) { _toast('La línea de tiempo está vacía'); return; }
-    // Una animación propia viaja como tabla dentro del .ino: si el stream no
-    // cabe, el proyecto no se puede guardar después y el usuario pierde el
-    // trabajo. Se avisa con las dos cifras y no se guarda.
+
+    // Una animación propia viaja dentro del .ino como tabla. Si no cabe, va
+    // como tabs .h —el mismo reparto que el recurso— y el bloque la reproduce
+    // desde los dos arreglos.
+    let tabsEnTabs = null;
     if (cfg.canvas) {
       const bytes = encodeCuadros(timeline.map(f => Uint8Array.from(f.data)));
-      if (!cabeEnIno(bytes)) {
-        _toast(name + ': ' + bytes.length + ' B de cuadros no caben en el .ino (tope '
-          + Math.floor((MAX_TAB_BYTES - 4096) / 3.6) + ' B); se reproduce desde los tabs .h');
-        return;
+      if (cabeEnIno(bytes)) {
+        delete enTabs[name];
+      } else {
+        tabsEnTabs = _guardarAnimsEnTabs(name, bytes);
       }
     }
+
     savedAnims[name] = timeline.map(f => cfg.toAnimFrame(f));
     _saveAnims();
     _renderAnimList();
     nameInput.value = '';
-    _toast(`Animación "${name}" guardada (${timeline.length} frames)`);
+    if (tabsEnTabs) {
+      _toast(name + ': ' + timeline.length + ' cuadros en ' + tabsEnTabs.length
+        + ' tabs .h (' + tabsEnTabs.join(', ') + ')');
+    } else {
+      _toast(`Animación "${name}" guardada (${timeline.length} frames)`);
+    }
   });
 }
 

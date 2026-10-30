@@ -657,13 +657,15 @@ export function generateArduinoCode(workspace) {
     sketch += '#include <Wire.h>\n\n';
     sketch += oledDriverCode({ texto: !!cppGenerator._oledText });
 
-    // Animaciones creadas en el editor: la tabla viaja en el sketch.
+    // Animaciones creadas en el editor: la tabla viaja en el sketch, salvo las
+    // que se guardaron como tabs .h porque no caben en el .ino.
     if (cppGenerator._oledAnimCustom) {
       let propia = null;
       try {
         const todas = animacionesPropias();
         propia = todas[cppGenerator._oledAnimCustom] || null;
-        if (propia && propia.b64) {
+        const enTabs = propia && Array.isArray(propia.arrays) && propia.arrays.length > 0;
+        if (propia && propia.b64 && !enTabs) {
           sketch += toCArray(desdeBase64(propia.b64),
             'oled_anim_' + cppGenerator._oledAnimCustom,
             'animación propia ' + cppGenerator._oledAnimCustom);

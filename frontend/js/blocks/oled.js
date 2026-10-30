@@ -1,6 +1,6 @@
 import * as Blockly from 'blockly';
 import '../i18n.js';
-import { OLED_ANIMATIONS } from '../oled-animations.js';
+import { OLED_ANIMATIONS, animacionesPropias } from '../oled-animations.js';
 
 /**
  * ArduBlock — Bloques: OLED SSD1315 / SSD1306 (I2C, sin librerías gráficas)
@@ -277,7 +277,10 @@ export const blocks = [
             const names = Object.keys(saved).sort();
             if (names.length > 0) {
               opts.push(['──────────', '']);
-              for (const name of names) opts.push(['📁 ' + name, 'oj_' + name]);
+              for (const name of names) {
+                const enTabs = Array.isArray(saved[name].arrays) && saved[name].arrays.length > 0;
+                opts.push(['📁 ' + name + (enTabs ? ' (tabs)' : ''), 'oj_' + name]);
+              }
             }
           } catch (_) { /* sin animaciones propias */ }
           return opts;
@@ -351,6 +354,17 @@ export function registerGenerators(cppGenerator) {
     if (anim.startsWith('oj_')) {
       const name = anim.slice(3);
       cppGenerator._oledAnimCustom = name;
+
+      // Animación propia guardada como tabs .h: se reproduce desde los dos
+      // arreglos, igual que el recurso, porque su tabla no cabe en el .ino.
+      let propia = null;
+      try { propia = animacionesPropias()[name] || null; } catch (_) { propia = null; }
+      if (propia && Array.isArray(propia.arrays) && propia.arrays.length > 0) {
+        return '_oled_anim_play(' + propia.arrays[0] + ', ' + (propia.arrays[1] || 'NULL')
+             + ', ' + (propia.corte || 0) + ', ' + (propia.bytes || 0)
+             + ', ' + (propia.cuadros || 0) + ', ' + (propia.fps || 25) + ', ' + loop + ');\n';
+      }
+
       return '_oled_anim_play(oled_anim_' + name + ', NULL, 0, '
            + 'sizeof(oled_anim_' + name + '), 0, 25, ' + loop + ');\n';
     }
