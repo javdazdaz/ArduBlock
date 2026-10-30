@@ -205,6 +205,24 @@ describe('tab-manager', () => {
     expect(tm.openTab('no-existe.h')).toBe(false);
   });
 
+  it('reemplaza el contenido de un tab .h y no crea otro', async () => {
+    const tm = await loadTabManager();
+    tm.initTabManager();
+
+    expect(tm.createHeaderTab('tabla_a.h', 'const uint8_t a[] = { 1 };'))
+      .toBe('tabla_a.h');
+    // Volver a guardar una animación editada reescribe la tabla: sin esto el
+    // tab conservaba la versión anterior.
+    expect(tm.setHeaderTabContent('tabla_a.h', 'const uint8_t a[] = { 2 };')).toBe(true);
+    expect(tm.setHeaderTabContent('no-existe.h', 'x')).toBe(false);
+
+    const tabs = tm.getTabs();
+    expect(tabs.map(t => t.filename)).toEqual(['tabla_a.h']);
+    expect(tabs[0].content).toContain('{ 2 }');
+    expect(tm.createHeaderTab('tabla_a.h', 'otra')).toBe('tabla_a.h');
+    expect(tm.getTabs()).toHaveLength(1);
+  });
+
   it('carga tabs desde un proyecto y devuelve contenido y cursor', async () => {
     const tm = await loadTabManager();
     tm.initTabManager();

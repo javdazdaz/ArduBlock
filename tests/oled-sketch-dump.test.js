@@ -66,4 +66,30 @@ it.runIf(Boolean(process.env.OLED_DUMP))('escribe los sketches de verificación'
   // eslint-disable-next-line no-console
   console.log('partes:', partes.map(p => p.tab + ' (' + p.bytes + ' B, ' + p.texto.length + ' B de texto)').join(' | '));
   console.log('meta:', JSON.stringify(OLED_ANIMATIONS.badapple));
+
+  // 3. Animación propia que no cabe en el .ino: mismos tabs, path `oj_`
+  mkdirSync(base + '/OledPropia', { recursive: true });
+  const propias = partirEnTabs(bytes, 'oled_anim_prueba', 'animación propia prueba');
+  localStorage.setItem('ardublock:oled-animations', JSON.stringify({
+    prueba: {
+      fps: 25,
+      cuadros: 871,
+      b64: '',
+      tabs: propias.map(p => p.tab),
+      arrays: propias.map(p => p.nombre),
+      corte: propias[0].bytes,
+      bytes: bytes.length,
+    },
+  }));
+  let propiaSketch = armar([
+    ['oled_create'],
+    ['oled_play_animation', b => b.setFieldValue('oj_prueba', 'ANIM')],
+  ]);
+  const propiosIncludes = propias.map(p => '#include "' + p.tab + '"').join('\n');
+  propiaSketch = propiosIncludes + '\n' + propiaSketch;
+  writeFileSync(base + '/OledPropia/OledPropia.ino', propiaSketch);
+  for (const p of propias) writeFileSync(base + '/OledPropia/' + p.tab, p.texto);
+  localStorage.removeItem('ardublock:oled-animations');
+  // eslint-disable-next-line no-console
+  console.log('propia:', propias.map(p => p.tab + ' (' + p.bytes + ' B)').join(' | '));
 });
