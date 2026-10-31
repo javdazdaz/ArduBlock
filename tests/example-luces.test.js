@@ -94,6 +94,24 @@ describe('ejemplo LucesWebSocket', () => {
     expect(wsAccept).toBeLessThan(httpAccept);
   });
 
+  it('no vuelve a aceptar la misma conexión mientras está conectado', () => {
+    Blockly.serialization.workspaces.load(ejemplo.state, ws);
+    const sketch = generateArduinoCode(ws);
+
+    // available() entrega otra vez el mismo socket cuando llegan datos:
+    // aceptarlo y cerrar el anterior corta la sesión viva.
+    expect(sketch).toContain('if (_newWs && !_wsConnected)');
+    expect(sketch).not.toContain('if (_wsConnected) _wsClient.stop();');
+  });
+
+  it('no sirve la página cuando el pedido no es HTTP', () => {
+    Blockly.serialization.workspaces.load(ejemplo.state, ws);
+    const sketch = generateArduinoCode(ws);
+
+    expect(sketch).toContain('if (path.length() > 0) {');
+    expect(sketch).toContain('metodo != "GET"');
+  });
+
   it('el favicon no se sirve como página', () => {
     Blockly.serialization.workspaces.load(ejemplo.state, ws);
     const sketch = generateArduinoCode(ws);

@@ -119,13 +119,17 @@ try {
  * @param {Array} routes       Lista de {path, body} de bloques "cuando visiten".
  * @returns {{helpers: string, loop: string}}
  */
-export function buildWebServer(page, routes) {
+export function buildWebServer(page, routes, opciones = {}) {
+  const { diag = false } = opciones;
   const rawPage = page
     ? String(page)
     : '<!DOCTYPE HTML><html><body>Servidor ArduBlock</body></html>';
   const pageChunks = splitCppLiteral(esc(rawPage));
 
   let helpers = '';
+  // Declaracion adelantada: la ruta /diag usa el resumen del WebSocket, que se
+  // emite despues de estas funciones.
+  if (diag) helpers += 'String _wsDiagTexto();\n\n';
   helpers += 'String _ardublock_query = "";\n';
   helpers += 'String _ardublock_body = "";\n\n';
   helpers += 'String _readRequestPath(WiFiClient client) {\n';
@@ -139,7 +143,13 @@ export function buildWebServer(page, routes) {
   helpers += '  }\n';
   helpers += '  int _s = line.indexOf(\' \');\n';
   helpers += '  int _e = (_s >= 0) ? line.indexOf(\' \', _s + 1) : -1;\n';
-  helpers += '  String full = (_s >= 0 && _e >= 0) ? line.substring(_s + 1, _e) : "/";\n';
+  helpers += '  // Solo se atiende un pedido HTTP. Cualquier otra cosa en este puerto\n';
+  helpers += '  // se descarta sin servir la pagina.\n';
+  helpers += '  if (_s <= 0 || _e < 0) return "";\n';
+  helpers += '  String metodo = line.substring(0, _s);\n';
+  helpers += '  if (metodo != "GET" && metodo != "POST" && metodo != "HEAD"\n';
+  helpers += '      && metodo != "PUT" && metodo != "DELETE") return "";\n';
+  helpers += '  String full = line.substring(_s + 1, _e);\n';
   helpers += '  int _q = full.indexOf(\'?\');\n';
   helpers += '  if (_q >= 0) { _ardublock_query = full.substring(_q + 1); full = full.substring(0, _q); }\n';
   helpers += '  else _ardublock_query = "";\n';
@@ -191,6 +201,18 @@ export function buildWebServer(page, routes) {
   helpers += '    client.println();\n';
   helpers += '    return;\n';
   helpers += '  }\n';
+  if (diag) {
+    helpers += '  // Resumen del WebSocket, legible desde el navegador aunque la\n';
+    helpers += '  // conexion no llegue a establecerse.\n';
+    helpers += '  if (path == "/diag") {\n';
+    helpers += '    client.println("HTTP/1.1 200 OK");\n';
+    helpers += '    client.println("Content-type:text/plain");\n';
+    helpers += '    client.println("Connection: close");\n';
+    helpers += '    client.println();\n';
+    helpers += '    client.println(_wsDiagTexto());\n';
+    helpers += '    return;\n';
+    helpers += '  }\n';
+  }
   for (const r of (routes || [])) {
     helpers += '  if (path == "' + r.path + '") {\n';
     helpers += (r.body || '  // sin acciones\n');
@@ -215,8 +237,12 @@ export function buildWebServer(page, routes) {
   const loop = 'WiFiClient client = server.available();\n'
              + 'if (client) {\n'
              + '  String path = _readRequestPath(client);\n'
-             + '  _handleWebRequest(client, path);\n'
-             + '  client.stop();\n'
+             + '  // Sin pedido HTTP no se responde ni se cierra: si el modulo entregara\n'
+             + '  // aqui un socket del WebSocket, cerrarlo cortaria la sesion viva.\n'
+             + '  if (path.length() > 0) {\n'
+             + '    _handleWebRequest(client, path);\n'
+             + '    client.stop();\n'
+             + '  }\n'
              + '}\n';
 
   return { helpers, loop };

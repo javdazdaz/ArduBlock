@@ -34,6 +34,10 @@ export function buildWebSocket(port, messageBody) {
 WiFiClient _wsClient;
 bool _wsConnected = false;
 String _wsMessage = "";
+int _wsAceptados = 0;
+int _wsFallidos = 0;
+int _wsMensajes = 0;
+int _wsUltimoError = 0;   // 0 ninguno, 1 sin clave, 2 socket caido, 3 envio sin conexion
 `;
 
   const helpers =
@@ -116,6 +120,7 @@ bool _wsHandshake(WiFiClient client) {
   String key = (p >= 0) ? ((fin < 0) ? req.substring(p + 18) : req.substring(p + 18, fin)) : "";
   key.trim();
   if (key.length() == 0) {
+    _wsUltimoError = 1;
     // Se responde y se cierra: un socket abierto sin respuesta se queda
     // ocupado y agota los cuatro del módulo.
     client.println("HTTP/1.1 400 Bad Request");
@@ -164,13 +169,14 @@ bool _wsReadMessage() {
   }
   if (opcode == 0x1) {  // texto
     _wsMessage = payload;
+    _wsMensajes++;
     return true;
   }
   return false;
 }
 
 void _wsSend(String msg) {
-  if (!_wsConnected || !_wsClient.connected()) return;
+  if (!_wsConnected || !_wsClient.connected()) { _wsUltimoError = 3; return; }
   _wsClient.write(0x81);  // FIN + opcode texto
   int len = msg.length();
   if (len < 126) {
@@ -186,20 +192,37 @@ void _wsSend(String msg) {
   _wsClient.print(msg);
 }
 
+String _wsDiagTexto() {
+  String s = "a=";
+  s += _wsAceptados;
+  s += " f=";
+  s += _wsFallidos;
+  s += " m=";
+  s += _wsMensajes;
+  s += " c=";
+  s += (_wsConnected ? 1 : 0);
+  s += " e=";
+  s += _wsUltimoError;
+  return s;
+}
+
 `;
 
   const loop =
 `  // WebSocket: aceptar conexión y leer mensajes
+  // available() vuelve a entregar la misma conexión cuando llegan datos: con
+  // un cliente ya conectado, tomarla otra vez y cerrar la anterior corta el
+  // socket vivo, y el navegador reconecta en bucle.
   WiFiClient _newWs = _wsServer.available();
-  if (_newWs) {
-    if (_wsConnected) _wsClient.stop();
+  if (_newWs && !_wsConnected) {
     _wsClient = _newWs;
     _wsConnected = _wsHandshake(_wsClient);
+    if (_wsConnected) _wsAceptados++; else _wsFallidos++;
     // Un handshake fallido deja el socket tomado: sin esto se agotan los
     // cuatro del módulo y las conexiones siguientes no entran.
     if (!_wsConnected) _wsClient.stop();
   }
-  if (_wsConnected && !_wsClient.connected()) _wsConnected = false;
+  if (_wsConnected && !_wsClient.connected()) { _wsConnected = false; _wsUltimoError = 2; }
   if (_wsConnected && _wsReadMessage()) {
 ${messageBody || '    // sin acciones\n'}
   }
