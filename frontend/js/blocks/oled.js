@@ -52,11 +52,14 @@ export function oledDriverCode({ texto }) {
   code += '  static const uint8_t init[] = { ' + INIT_BYTES.map(b => '0x' + b.toString(16).toUpperCase().padStart(2, '0')).join(', ') + ' };\n';
   code += '  oled_dir = dir;\n';
   code += '  Wire.begin();\n';
-  code += '  Wire.setClock(reloj);\n';
+  // La tabla de inicio va al reloj por defecto (100 kHz) y el bus sube después:
+  // es el orden del sketch Bad_Apple_Flash, probado con esta pantalla. A 400 kHz
+  // hay modulos SSD1315 que no aceptan la secuencia y quedan apagados.
   code += '  Wire.beginTransmission(oled_dir);\n';
   code += '  Wire.write((uint8_t)0x00);\n';
   code += '  for (uint8_t i = 0; i < sizeof(init); i++) Wire.write(init[i]);\n';
   code += '  Wire.endTransmission();\n';
+  code += '  Wire.setClock(reloj);\n';
   code += '  _oled_limpiar();\n';
   code += '  _oled_volcar();\n';
   code += '}\n\n';

@@ -50,6 +50,19 @@ describe('OLED: creación y driver', () => {
     expect(posInclude).toBeLessThan(posBuf);
   });
 
+  it('manda la tabla de inicio antes de subir el reloj del bus', () => {
+    // A 400 kHz hay módulos SSD1315 que no aceptan la secuencia y quedan
+    // apagados: el sketch que funciona en placa la envía a 100 kHz y sube
+    // después.
+    const sketch = sketchCon([['oled_create']]);
+    const posInit = sketch.indexOf('void _oled_init(');
+    const posTx = sketch.indexOf('Wire.beginTransmission(oled_dir)', posInit);
+    const posClock = sketch.indexOf('Wire.setClock(reloj)', posInit);
+    expect(posInit).toBeGreaterThan(-1);
+    expect(posTx).toBeGreaterThan(posInit);
+    expect(posClock).toBeGreaterThan(posTx);
+  });
+
   it('respeta dirección y reloj elegidos', () => {
     const sketch = sketchCon([['oled_create', b => {
       b.setFieldValue('0x3D', 'ADDR');
