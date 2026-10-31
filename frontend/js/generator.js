@@ -1117,7 +1117,9 @@ export function generateArduinoCode(workspace) {
   sketch += '}\n\n';
 
   sketch += 'void loop() {\n';
-  sketch += (webLoop || '') + (wsLoop || '') + (loopBody || '  // sin bucle\n');
+  // El WebSocket se atiende antes: la lectura del pedido HTTP puede esperar
+  // hasta un segundo y el navegador aborta el handshake si llega después.
+  sketch += (wsLoop || '') + (webLoop || '') + (loopBody || '  // sin bucle\n');
   sketch += '}\n';
 
   return sketch;

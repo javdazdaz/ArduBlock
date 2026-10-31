@@ -102,24 +102,28 @@ String _wsAcceptKey(String key) {
 }
 
 bool _wsHandshake(WiFiClient client) {
-  String line = "";
-  String key = "";
-  unsigned long _t = millis();
-  while (client.connected() && !client.available() && (millis() - _t) < 1000) { }
-  while (client.connected() && client.available()) {
-    char c = client.read();
-    if (c == '\\n') {
-      if (line.length() == 0) break;
-      if (line.startsWith("Sec-WebSocket-Key:")) {
-        key = line.substring(line.indexOf(':') + 1);
-        key.trim();
-      }
-      line = "";
-    } else if (c != '\\r') {
-      line += c;
-    }
+  // El pedido puede llegar en dos trozos: se acumula hasta la línea en blanco
+  // que cierra las cabeceras. Leer solo lo que hay disponible deja la clave
+  // vacía y el navegador aborta la conexión con "interrupted while loading".
+  String req = "";
+  unsigned long t0 = millis();
+  while (client.connected() && (millis() - t0) < 2000) {
+    while (client.available()) req += (char)client.read();
+    if (req.indexOf("\\r\\n\\r\\n") >= 0) break;
   }
-  if (key.length() == 0) return false;
+  int p = req.indexOf("Sec-WebSocket-Key:");
+  int fin = (p >= 0) ? req.indexOf("\\r\\n", p) : -1;
+  String key = (p >= 0) ? ((fin < 0) ? req.substring(p + 18) : req.substring(p + 18, fin)) : "";
+  key.trim();
+  if (key.length() == 0) {
+    // Se responde y se cierra: un socket abierto sin respuesta se queda
+    // ocupado y agota los cuatro del módulo.
+    client.println("HTTP/1.1 400 Bad Request");
+    client.println("Connection: close");
+    client.println();
+    client.stop();
+    return false;
+  }
   client.println("HTTP/1.1 101 Switching Protocols");
   client.println("Upgrade: websocket");
   client.println("Connection: Upgrade");
@@ -191,6 +195,9 @@ void _wsSend(String msg) {
     if (_wsConnected) _wsClient.stop();
     _wsClient = _newWs;
     _wsConnected = _wsHandshake(_wsClient);
+    // Un handshake fallido deja el socket tomado: sin esto se agotan los
+    // cuatro del módulo y las conexiones siguientes no entran.
+    if (!_wsConnected) _wsClient.stop();
   }
   if (_wsConnected && !_wsClient.connected()) _wsConnected = false;
   if (_wsConnected && _wsReadMessage()) {
