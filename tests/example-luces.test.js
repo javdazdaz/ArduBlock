@@ -70,6 +70,37 @@ describe('ejemplo LucesWebSocket', () => {
     expect(sketch.indexOf('PRUEBA PAGINA')).toBeLessThan(sketch.indexOf('void setup()'));
     expect(sketch.indexOf('_wsMessage')).toBeLessThan(sketch.indexOf('_salidasAtenderMensaje(const String& msg)'));
   });
+
+  it('el handshake acumula las cabeceras y cierra el socket si falla', () => {
+    Blockly.serialization.workspaces.load(ejemplo.state, ws);
+    const sketch = generateArduinoCode(ws);
+
+    // Acumular hasta la línea en blanco: el pedido puede llegar en dos trozos.
+    expect(sketch).toContain('req += (char)client.read();');
+    expect(sketch).toContain(String.raw`if (req.indexOf("\r\n\r\n") >= 0) break;`);
+    // Un handshake fallido cierra su socket en vez de dejarlo tomado.
+    expect(sketch).toContain('if (!_wsConnected) _wsClient.stop();');
+    expect(sketch).toContain('HTTP/1.1 400 Bad Request');
+  });
+
+  it('atiende el WebSocket antes que el pedido HTTP', () => {
+    Blockly.serialization.workspaces.load(ejemplo.state, ws);
+    const sketch = generateArduinoCode(ws);
+
+    const wsAccept = sketch.indexOf('_wsServer.available()');
+    const httpAccept = sketch.indexOf('WiFiClient client = server.available();');
+
+    expect(wsAccept).toBeGreaterThan(0);
+    expect(wsAccept).toBeLessThan(httpAccept);
+  });
+
+  it('el favicon no se sirve como página', () => {
+    Blockly.serialization.workspaces.load(ejemplo.state, ws);
+    const sketch = generateArduinoCode(ws);
+
+    expect(sketch).toContain('if (path == "/favicon.ico")');
+    expect(sketch).toContain('HTTP/1.1 204 No Content');
+  });
 });
 
 describe('cargarTabRecursoHtml', () => {

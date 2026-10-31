@@ -105,12 +105,16 @@ category: WebSocket
     });
   }
 
+  var intentos = 0;
+  var MAX_INTENTOS = 8;
+
   function conectar() {
-    marcar('Conectando…', '');
+    marcar(intentos === 0 ? 'Conectando…' : 'Reconectando…', '');
     bloquear(true);
     conexion = new WebSocket('ws://' + location.hostname + ':81');
 
     conexion.onopen = function () {
+      intentos = 0;
       marcar('Conectado', 'ok');
       bloquear(false);
       conexion.send('?');
@@ -118,15 +122,19 @@ category: WebSocket
 
     conexion.onmessage = function (evento) { leer(String(evento.data)); };
 
-    conexion.onclose = function () {
-      marcar('Sin conexión · recargue la página', 'err');
-      bloquear(true);
-    };
+    // onerror siempre va seguido de onclose: el reintento vive en un solo sitio.
+    conexion.onclose = function () { reintentar(); };
+  }
 
-    conexion.onerror = function () {
+  function reintentar() {
+    bloquear(true);
+    if (intentos >= MAX_INTENTOS) {
       marcar('Sin conexión · recargue la página', 'err');
-      bloquear(true);
-    };
+      return;
+    }
+    intentos++;
+    marcar('Sin conexión · reintento ' + intentos + ' de ' + MAX_INTENTOS, 'err');
+    setTimeout(conectar, Math.min(600 * intentos, 3000));
   }
 
   conectar();

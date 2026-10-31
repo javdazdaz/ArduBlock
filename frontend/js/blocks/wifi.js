@@ -183,6 +183,14 @@ export function buildWebServer(page, routes) {
   helpers += '}\n\n';
 
   helpers += 'void _handleWebRequest(WiFiClient client, String path) {\n';
+  helpers += '  // El favicon no se sirve: contestar la pagina completa cuesta una\n';
+  helpers += '  // espera de lectura y deja al navegador pidiendo un recurso ausente.\n';
+  helpers += '  if (path == "/favicon.ico") {\n';
+  helpers += '    client.println("HTTP/1.1 204 No Content");\n';
+  helpers += '    client.println("Connection: close");\n';
+  helpers += '    client.println();\n';
+  helpers += '    return;\n';
+  helpers += '  }\n';
   for (const r of (routes || [])) {
     helpers += '  if (path == "' + r.path + '") {\n';
     helpers += (r.body || '  // sin acciones\n');
