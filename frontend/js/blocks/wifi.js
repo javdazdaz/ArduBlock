@@ -120,7 +120,7 @@ try {
  * @returns {{helpers: string, loop: string}}
  */
 export function buildWebServer(page, routes, opciones = {}) {
-  const { diag = false } = opciones;
+  const { diag = false, salidas = false } = opciones;
   const rawPage = page
     ? String(page)
     : '<!DOCTYPE HTML><html><body>Servidor ArduBlock</body></html>';
@@ -129,7 +129,9 @@ export function buildWebServer(page, routes, opciones = {}) {
   let helpers = '';
   // Declaracion adelantada: la ruta /diag usa el resumen del WebSocket, que se
   // emite despues de estas funciones.
-  if (diag) helpers += 'String _wsDiagTexto();\n\n';
+  if (diag) helpers += 'String _wsDiagTexto();\n';
+  if (diag && salidas) helpers += 'String _salidasDiagTexto();\n';
+  if (diag) helpers += '\n';
   helpers += 'String _ardublock_query = "";\n';
   helpers += 'String _ardublock_body = "";\n\n';
   helpers += 'String _readRequestPath(WiFiClient client) {\n';
@@ -210,6 +212,7 @@ export function buildWebServer(page, routes, opciones = {}) {
     helpers += '    client.println("Connection: close");\n';
     helpers += '    client.println();\n';
     helpers += '    client.println(_wsDiagTexto());\n';
+    if (salidas) helpers += '    client.println(_salidasDiagTexto());\n';
     helpers += '    return;\n';
     helpers += '  }\n';
   }

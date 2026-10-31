@@ -89,6 +89,18 @@ void _salidasIniciar() {
   }
 }
 
+// Estado de la tabla y nivel electrico leido del pin, para /diag.
+String _salidasDiagTexto() {
+  String s = "";
+  for (uint8_t i = 0; i < _N_SALIDAS; i++) {
+    if (i > 0) s += " ";
+    s += _salidas[i].nombre;
+    s += _salidas[i].estado ? "=1/pin" : "=0/pin";
+    s += digitalRead(_salidas[i].pin) ? "1" : "0";
+  }
+  return s;
+}
+
 ` + (mensajes ? `
 // Orden que llega por WebSocket: "luz1=1;bomba=0". Un nombre desconocido
 // no escribe nada: _salidaFijar devuelve sin tocar el pin.

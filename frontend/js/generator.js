@@ -949,7 +949,7 @@ export function generateArduinoCode(workspace) {
   let webLoop = '';
   if (cppGenerator._webserverUsed) {
     const web = buildWebServer(cppGenerator._webserverPage, cppGenerator._webRoutes,
-      { diag: cppGenerator._websocketUsed });
+      { diag: cppGenerator._websocketUsed, salidas: cppGenerator._salidasUsed });
     sketch += web.helpers;
     webLoop = web.loop;
   }
