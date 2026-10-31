@@ -112,6 +112,15 @@ describe('ejemplo LucesWebSocket', () => {
     expect(sketch).toContain('metodo != "GET"');
   });
 
+  it('el diagnóstico informa la tabla y el nivel del pin', () => {
+    Blockly.serialization.workspaces.load(ejemplo.state, ws);
+    const sketch = generateArduinoCode(ws);
+
+    expect(sketch).toContain('String _salidasDiagTexto()');
+    expect(sketch).toContain('digitalRead(_salidas[i].pin)');
+    expect(sketch).toContain('client.println(_salidasDiagTexto());');
+  });
+
   it('el favicon no se sirve como página', () => {
     Blockly.serialization.workspaces.load(ejemplo.state, ws);
     const sketch = generateArduinoCode(ws);
