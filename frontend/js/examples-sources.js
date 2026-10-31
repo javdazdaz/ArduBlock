@@ -30,6 +30,7 @@ export const sources = [
     categories: [
       { id: 'matrix', label: { es: 'Matriz LED R4', en: 'LED Matrix R4' } },
       { id: 'oled',   label: { es: 'Pantalla OLED SSD1315', en: 'SSD1315 OLED display' } },
+      { id: 'web',    label: { es: 'Web y WebSocket', en: 'Web and WebSocket' } },
     ]
   },
 ];

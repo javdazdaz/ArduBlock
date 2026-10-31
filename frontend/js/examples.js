@@ -18,6 +18,7 @@ import { remainingExamples } from './examples-remaining.js';
 import { missingExamples }   from './examples-missing.js';
 import { matrixExamples }   from './examples-matrix.js';
 import { oledExamples }     from './examples-oled.js';
+import { webExamples, cargarTabRecursoHtml } from './examples-web.js';
 import { escapeHtml, cancelAutoSave } from './project-manager.js';
 import { restoreWorkspaceState } from './workspace-restore.js';
 import { cargarTabsRecursoOled } from './matrix-animation.js';
@@ -35,6 +36,7 @@ const allExamples = [
   ...missingExamples,
   ...matrixExamples,
   ...oledExamples,
+  ...webExamples,
 ];
 
 let workspace, examplesModal, examplesList, showToast, updateCodeFn, projectInput;
@@ -224,6 +226,29 @@ function loadPresetExample(ex) {
   const lang = getLang();
   const comment = i18n(ex.comment, lang);
 
+  // Página del proyecto: se pide al panel de sitios web para que el .html viva
+  // en un solo lugar. Va como tab antes de los bloques, igual que las
+  // animaciones de OLED: el campo FILE de webserver_serve_file necesita verla.
+  if (ex.recursoHtml) {
+    cargarTabRecursoHtml(ex.recursoHtml)
+      .then(tabs => {
+        restoreWorkspaceState(workspace, { state: ex.state, tabs, sketchName: ex.name + '.ino' });
+        if (ex.board) aplicarPlacaEjemplo(ex.board, lang);
+        window._exampleComment = comment;
+        updateCodeFn();
+        projectInput.value = ex.name + '.ino';
+        cancelAutoSave();
+        closeExamples();
+        showToast(lang === 'es'
+          ? `Ejemplo "${ex.name}" cargado con la página ${ex.recursoHtml}`
+          : `Example "${ex.name}" loaded with page ${ex.recursoHtml}`);
+      })
+      .catch(() => showToast(lang === 'es'
+        ? 'No se pudo cargar la página del ejemplo'
+        : 'The example page could not be loaded'));
+    return;
+  }
+
   // Tabs antes que bloques (ver workspace-restore.js): el campo FILE de
   // webserver_serve_file depende de los tabs .html para conservar su valor.
   restoreWorkspaceState(workspace, { state: ex.state, tabs: ex.tabs, sketchName: ex.name + '.ino' });
@@ -242,16 +267,7 @@ function loadPresetExample(ex) {
 
   // Placa del ejemplo: la tabla de una animación puede no caber en la que está
   // elegida, y el ejemplo sabe con cuál compila.
-  if (ex.board) {
-    const selector = document.getElementById('board-selector');
-    if (selector && selector.value !== ex.board) {
-      selector.value = ex.board;
-      selector.dispatchEvent(new Event('change'));
-      showToast(lang === 'es'
-        ? 'Placa cambiada a ' + (selector.selectedOptions[0]?.textContent || ex.board)
-        : 'Board changed to ' + (selector.selectedOptions[0]?.textContent || ex.board));
-    }
-  }
+  if (ex.board) aplicarPlacaEjemplo(ex.board, lang);
 
   window._exampleComment = comment;
   updateCodeFn();
@@ -259,6 +275,17 @@ function loadPresetExample(ex) {
   cancelAutoSave();
   closeExamples();
   showToast(`${lang === 'es' ? 'Ejemplo' : 'Example'} "${ex.name}" ${lang === 'es' ? 'cargado' : 'loaded'}`);
+}
+
+// El ejemplo sabe con qué placa compila: deja el selector en esa placa.
+function aplicarPlacaEjemplo(ficha, lang) {
+  const selector = document.getElementById('board-selector');
+  if (!selector || selector.value === ficha) return;
+  selector.value = ficha;
+  selector.dispatchEvent(new Event('change'));
+  showToast(lang === 'es'
+    ? 'Placa cambiada a ' + (selector.selectedOptions[0]?.textContent || ficha)
+    : 'Board changed to ' + (selector.selectedOptions[0]?.textContent || ficha));
 }
 
 // ═══════════════════════════════════════════════════

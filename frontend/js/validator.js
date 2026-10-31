@@ -780,6 +780,20 @@ function validateWorkspace(workspace) {
     }
   }
 
+  // ═══ R15: el mensaje del WebSocket sin servidor WebSocket ═══
+  // `_salidasAtenderMensaje(_wsMessage)` no compila si el proyecto no inicia
+  // el WebSocket: la variable la declara ese bloque.
+  const hayWebSocket = workspace.getAllBlocks(false).some(b => b.type === 'websocket_begin');
+  for (const block of findAllBlocksOfType(workspace, 'salida_atender_mensaje')) {
+    if (hayWebSocket) break;
+    warnings.push({
+      type: 'salida_sin_websocket',
+      severity: 'error',
+      message: t('val_salida_sin_websocket', { label: getBlockLabel(block) }),
+      blocks: [block]
+    });
+  }
+
   // ═══ Deduplicar warnings idénticos (mismo type + mensaje) ═══
   // N bloques con el mismo problema se fusionan en una sola entrada
   // (evita llenar la lista con copias, p. ej. 2× digitalWrite en el mismo pin).
@@ -809,6 +823,8 @@ const BLOCK_LABEL_KEYS = {
   'salida_fijar': 'blk_salida_fijar',
   'salida_alternar': 'blk_salida_alternar',
   'salida_estado': 'blk_salida_estado',
+  'salida_atender_mensaje': 'blk_salida_atender_mensaje',
+  'salidas_estado_texto': 'blk_salidas_estado_texto',
   'analog_write': 'blk_analog_write',
   'delay_ms': 'blk_delay_ms',
   'serial_begin': 'blk_serial_begin',

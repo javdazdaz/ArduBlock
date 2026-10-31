@@ -1,0 +1,136 @@
+<!--
+name: Luces por WebSocket
+description: Tres salidas del Arduino controladas desde esta página; el estado vuelve en vivo.
+category: WebSocket
+-->
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Luces por WebSocket</title>
+<style>
+  :root{--bg:#0d1117;--card:#161b22;--border:#30363d;--text:#e6edf3;--dim:#8b949e;--acc:#6c5ce7;--on:#4ade80;--off:#f87171}
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;background:var(--bg);color:var(--text);font-family:system-ui,sans-serif;display:flex;align-items:center;justify-content:center;padding:16px}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:22px;width:100%;max-width:430px}
+  h1{font-size:1.2rem;margin:0 0 4px}
+  .sub{font-size:.78rem;color:var(--dim);margin:0 0 16px}
+  .badge{display:inline-block;font-size:.75rem;padding:4px 10px;border-radius:999px;background:var(--bg);border:1px solid var(--border);color:var(--dim);margin:0 0 16px}
+  .badge.ok{color:var(--on);border-color:var(--on)}
+  .badge.err{color:var(--off);border-color:var(--off)}
+  .luces{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+  .luz{border:1px solid var(--border);background:var(--bg);border-radius:10px;padding:14px 10px;color:var(--text);font-family:inherit;font-size:.9rem;font-weight:600;cursor:pointer;text-align:left}
+  .luz .pin{display:block;font-size:.72rem;font-weight:400;color:var(--dim);margin-top:2px}
+  .luz[aria-pressed="true"]{border-color:var(--on);background:#12261b;color:var(--on)}
+  .luz[aria-pressed="true"] .pin{color:var(--on)}
+  .luz:disabled{opacity:.45;cursor:not-allowed}
+  .log{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px;min-height:92px}
+  .label{font-size:.68rem;color:var(--dim);margin:0 0 6px;text-transform:uppercase;letter-spacing:.5px}
+  #registro{list-style:none;margin:0;padding:0;font-family:monospace;font-size:.78rem;color:var(--text)}
+  #registro li{padding:2px 0;border-bottom:1px solid #1f242c;word-break:break-word}
+  #registro li:last-child{border-bottom:0}
+  .hint{font-size:.72rem;color:var(--dim);line-height:1.6;border-top:1px solid var(--border);padding-top:12px;margin-top:14px}
+</style>
+</head>
+<body>
+<main class="card">
+  <h1>Luces por WebSocket</h1>
+  <p class="sub">Página servida por la placa · WebSocket en el puerto 81</p>
+  <p id="estado" class="badge">Conectando…</p>
+
+  <div class="luces">
+    <button class="luz" type="button" data-salida="luz1" aria-pressed="false">Luz 1<span class="pin">pin 4</span></button>
+    <button class="luz" type="button" data-salida="luz2" aria-pressed="false">Luz 2<span class="pin">pin 5</span></button>
+    <button class="luz" type="button" data-salida="rele" aria-pressed="false">Relé<span class="pin">pin 7 · activo en bajo</span></button>
+  </div>
+
+  <div class="log">
+    <p class="label">Últimos mensajes</p>
+    <ol id="registro"></ol>
+  </div>
+
+  <p class="hint">Cada toque envía <code>nombre=1</code> o <code>nombre=0</code> por WebSocket. La placa responde con el estado de las tres salidas.</p>
+</main>
+
+<script>
+(function () {
+  var estado = document.getElementById('estado');
+  var registro = document.getElementById('registro');
+  var botones = {};
+  var conexion = null;
+
+  Array.prototype.forEach.call(document.querySelectorAll('.luz'), function (b) {
+    botones[b.dataset.salida] = b;
+    b.addEventListener('click', function () {
+      var encender = b.getAttribute('aria-pressed') !== 'true';
+      enviar(b.dataset.salida, encender);
+    });
+  });
+
+  function marcar(texto, clase) {
+    estado.textContent = texto;
+    estado.className = 'badge' + (clase ? ' ' + clase : '');
+  }
+
+  function anotar(texto) {
+    var li = document.createElement('li');
+    var hora = new Date().toLocaleTimeString();
+    li.textContent = hora + '  ' + texto;
+    registro.insertBefore(li, registro.firstChild);
+    while (registro.children.length > 6) {
+      registro.removeChild(registro.lastChild);
+    }
+  }
+
+  function bloquear(si) {
+    Object.keys(botones).forEach(function (k) { botones[k].disabled = si; });
+  }
+
+  function enviar(nombre, encender) {
+    if (!conexion || conexion.readyState !== 1) return;
+    var texto = nombre + '=' + (encender ? '1' : '0');
+    conexion.send(texto);
+    anotar('enviado  ' + texto);
+  }
+
+  function leer(texto) {
+    anotar('recibido ' + texto);
+    texto.split(';').forEach(function (par) {
+      var partes = par.split('=');
+      var boton = botones[partes[0]];
+      if (!boton || partes.length !== 2) return;
+      var encendida = partes[1] === '1';
+      boton.setAttribute('aria-pressed', encendida ? 'true' : 'false');
+    });
+  }
+
+  function conectar() {
+    marcar('Conectando…', '');
+    bloquear(true);
+    conexion = new WebSocket('ws://' + location.hostname + ':81');
+
+    conexion.onopen = function () {
+      marcar('Conectado', 'ok');
+      bloquear(false);
+      conexion.send('?');
+    };
+
+    conexion.onmessage = function (evento) { leer(String(evento.data)); };
+
+    conexion.onclose = function () {
+      marcar('Sin conexión · recargue la página', 'err');
+      bloquear(true);
+    };
+
+    conexion.onerror = function () {
+      marcar('Sin conexión · recargue la página', 'err');
+      bloquear(true);
+    };
+  }
+
+  conectar();
+})();
+</script>
+</body>
+</html>

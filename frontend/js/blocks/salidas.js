@@ -33,8 +33,9 @@ function esc(s) {
 
 // ═══ C++ de la tabla de salidas ═══════════════════════
 
-export function buildSalidas(declaraciones) {
+export function buildSalidas(declaraciones, opciones = {}) {
   const decls = Array.isArray(declaraciones) ? declaraciones : [];
+  const { mensajes = false, estadoTexto = false } = opciones;
   const filas = decls.length > 0
     ? decls.map(d => '  { "' + esc(d.nombre) + '", ' + d.pin + ', '
         + (d.activoBajo ? 'true' : 'false') + ', false }').join(',\n')
@@ -88,7 +89,38 @@ void _salidasIniciar() {
   }
 }
 
-`;
+` + (mensajes ? `
+// Orden que llega por WebSocket: "luz1=1;bomba=0". Un nombre desconocido
+// no escribe nada: _salidaFijar devuelve sin tocar el pin.
+void _salidasAtenderMensaje(const String& msg) {
+  int i = 0;
+  while (i < (int)msg.length()) {
+    int fin = msg.indexOf(';', i);
+    if (fin < 0) fin = msg.length();
+    int igual = msg.indexOf('=', i);
+    if (igual >= i && igual < fin) {
+      String nombre = msg.substring(i, igual); nombre.trim();
+      String valor  = msg.substring(igual + 1, fin); valor.trim(); valor.toLowerCase();
+      if (valor == "1" || valor == "on"  || valor == "true"  || valor == "high") _salidaFijar(nombre.c_str(), true);
+      else if (valor == "0" || valor == "off" || valor == "false" || valor == "low") _salidaFijar(nombre.c_str(), false);
+    }
+    i = fin + 1;
+  }
+}
+
+` : '') + (estadoTexto ? `
+// Estado de todas las salidas con el mismo formato que consume el parser.
+String _salidasEstadoTexto() {
+  String s = "";
+  for (uint8_t i = 0; i < _N_SALIDAS; i++) {
+    if (i > 0) s += ";";
+    s += _salidas[i].nombre;
+    s += _salidas[i].estado ? "=1" : "=0";
+  }
+  return s;
+}
+
+` : '');
 
   return { globals, helpers };
 }
@@ -161,6 +193,26 @@ export const blocks = [
     colour: 60,
     tooltip: Blockly.Msg.TOOLTIP_SALIDA_ESTADO,
     helpUrl: ''
+  },
+  {
+    // Color de la familia WebSocket: este bloque lee _wsMessage.
+    type: 'salida_atender_mensaje',
+    message0: Blockly.Msg.MSG_SALIDA_ATENDER,
+    inputsInline: true,
+    previousStatement: null,
+    nextStatement: null,
+    colour: 230,
+    tooltip: Blockly.Msg.TOOLTIP_SALIDA_ATENDER,
+    helpUrl: ''
+  },
+  {
+    type: 'salidas_estado_texto',
+    message0: Blockly.Msg.MSG_SALIDAS_ESTADO_TEXTO,
+    inputsInline: true,
+    output: 'String',
+    colour: 230,
+    tooltip: Blockly.Msg.TOOLTIP_SALIDAS_ESTADO_TEXTO,
+    helpUrl: ''
   }
 ];
 
@@ -191,5 +243,18 @@ export function registerGenerators(cppGenerator) {
     cppGenerator._salidasUsed = true;
     const nombre = (block.getFieldValue('NAME') || '').trim();
     return ['_salidaEstado("' + esc(nombre) + '")', cppGenerator.ORDER_ATOMIC];
+  };
+
+  // Atiende el texto que llegó por WebSocket: "luz1=1;bomba=0".
+  cppGenerator.forBlock['salida_atender_mensaje'] = function(_block) {
+    cppGenerator._salidasUsed = true;
+    cppGenerator._salidaMensajeUsed = true;
+    return '_salidasAtenderMensaje(_wsMessage);\n';
+  };
+
+  cppGenerator.forBlock['salidas_estado_texto'] = function(_block) {
+    cppGenerator._salidasUsed = true;
+    cppGenerator._salidaEstadoTextoUsed = true;
+    return ['_salidasEstadoTexto()', cppGenerator.ORDER_ATOMIC];
   };
 }

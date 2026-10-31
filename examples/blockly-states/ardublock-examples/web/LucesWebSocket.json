@@ -1,0 +1,119 @@
+{
+  "blocks": {
+    "languageVersion": 0,
+    "blocks": [
+      {
+        "type": "arduino_setup",
+        "id": "b8",
+        "inputs": {
+          "BODY": {
+            "block": {
+              "type": "wifi_access_point",
+              "id": "b1",
+              "fields": {
+                "SSID": "MiArduino",
+                "PASS": "12345678"
+              },
+              "next": {
+                "block": {
+                  "type": "webserver_begin",
+                  "id": "b2",
+                  "fields": {
+                    "PORT": 80
+                  },
+                  "next": {
+                    "block": {
+                      "type": "webserver_serve_file",
+                      "id": "b3",
+                      "fields": {
+                        "FILE": "luces.html"
+                      },
+                      "next": {
+                        "block": {
+                          "type": "websocket_begin",
+                          "id": "b4",
+                          "fields": {
+                            "PORT": 81
+                          },
+                          "next": {
+                            "block": {
+                              "type": "salida_declarar",
+                              "id": "b5",
+                              "fields": {
+                                "NAME": "luz1",
+                                "PIN": "4",
+                                "ACTIVO": "HIGH"
+                              },
+                              "next": {
+                                "block": {
+                                  "type": "salida_declarar",
+                                  "id": "b6",
+                                  "fields": {
+                                    "NAME": "luz2",
+                                    "PIN": "5",
+                                    "ACTIVO": "HIGH"
+                                  },
+                                  "next": {
+                                    "block": {
+                                      "type": "salida_declarar",
+                                      "id": "b7",
+                                      "fields": {
+                                        "NAME": "rele",
+                                        "PIN": "7",
+                                        "ACTIVO": "LOW"
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x": 20,
+        "y": 20
+      },
+      {
+        "type": "arduino_loop",
+        "id": "b9",
+        "x": 20,
+        "y": 470
+      },
+      {
+        "type": "websocket_on_message",
+        "id": "b13",
+        "inputs": {
+          "DO": {
+            "block": {
+              "type": "salida_atender_mensaje",
+              "id": "b10",
+              "next": {
+                "block": {
+                  "type": "websocket_send",
+                  "id": "b12",
+                  "inputs": {
+                    "VALUE": {
+                      "block": {
+                        "type": "salidas_estado_texto",
+                        "id": "b11"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x": 420,
+        "y": 20
+      }
+    ]
+  }
+}

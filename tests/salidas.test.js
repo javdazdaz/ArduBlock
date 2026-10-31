@@ -181,3 +181,67 @@ describe('validador de salidas nombradas', () => {
     expect(avisosPin).toHaveLength(0);
   });
 });
+
+describe('salidas por WebSocket', () => {
+  let ws;
+
+  beforeEach(() => {
+    ws = new Blockly.Workspace();
+  });
+
+  it('atender el mensaje emite la llamada y su helper', () => {
+    const setup = ws.newBlock('arduino_setup');
+    const loop = ws.newBlock('arduino_loop');
+    encadenar(setup, [declarar(ws, 'luz1', '4')]);
+    encadenar(loop, [ws.newBlock('salida_atender_mensaje')]);
+
+    const sketch = generateArduinoCode(ws);
+
+    expect(sketch).toContain('_salidasAtenderMensaje(_wsMessage);');
+    expect(sketch).toContain('void _salidasAtenderMensaje(const String& msg)');
+  });
+
+  it('sin el bloque no emite el helper del mensaje', () => {
+    const setup = ws.newBlock('arduino_setup');
+    encadenar(setup, [declarar(ws, 'luz1', '4')]);
+
+    const sketch = generateArduinoCode(ws);
+
+    expect(sketch).not.toContain('_salidasAtenderMensaje');
+    expect(sketch).not.toContain('_salidasEstadoTexto');
+  });
+
+  it('estado de las salidas devuelve texto y emite su helper', () => {
+    expect(code(ws.newBlock('salidas_estado_texto'))).toBe('_salidasEstadoTexto()');
+
+    const setup = ws.newBlock('arduino_setup');
+    const enviar = ws.newBlock('websocket_send');
+    enviar.getInput('VALUE').connection
+      .connect(ws.newBlock('salidas_estado_texto').outputConnection);
+    encadenar(setup, [declarar(ws, 'luz1', '4'), enviar]);
+
+    const sketch = generateArduinoCode(ws);
+
+    expect(sketch).toContain('String _salidasEstadoTexto()');
+    expect(sketch).toContain('_wsSend(String(_salidasEstadoTexto()));');
+  });
+
+  it('avisa cuando atiende mensajes sin servidor WebSocket', () => {
+    const loop = ws.newBlock('arduino_loop');
+    encadenar(loop, [ws.newBlock('salida_atender_mensaje')]);
+
+    const aviso = validateWorkspace(ws).find(w => w.type === 'salida_sin_websocket');
+
+    expect(aviso).toBeTruthy();
+    expect(aviso.severity).toBe('error');
+  });
+
+  it('no avisa si el proyecto inicia el WebSocket', () => {
+    const setup = ws.newBlock('arduino_setup');
+    const loop = ws.newBlock('arduino_loop');
+    encadenar(setup, [declarar(ws, 'luz1', '4'), ws.newBlock('websocket_begin')]);
+    encadenar(loop, [ws.newBlock('salida_atender_mensaje')]);
+
+    expect(validateWorkspace(ws).some(w => w.type === 'salida_sin_websocket')).toBe(false);
+  });
+});

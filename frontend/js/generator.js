@@ -542,6 +542,8 @@ export function generateArduinoCode(workspace) {
   cppGenerator._websocketPort = 81;
   cppGenerator._wsMessageBody = '';
   cppGenerator._salidasUsed = false;
+  cppGenerator._salidaMensajeUsed = false;
+  cppGenerator._salidaEstadoTextoUsed = false;
   cppGenerator._salidasDecl = [];
 
   const topBlocks = workspace.getTopBlocks(true);
@@ -962,7 +964,10 @@ export function generateArduinoCode(workspace) {
 
   // ── Salidas nombradas: tabla + funciones de estado ──
   if (cppGenerator._salidasUsed) {
-    const sal = buildSalidas(declaradas);
+    const sal = buildSalidas(declaradas, {
+      mensajes: cppGenerator._salidaMensajeUsed,
+      estadoTexto: cppGenerator._salidaEstadoTextoUsed
+    });
     sketch += sal.globals;
     sketch += sal.helpers;
   }
