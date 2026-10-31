@@ -136,6 +136,7 @@ import { blocks as oledBlocks } from './blocks/oled.js';
 import { blocks as textBlocks } from './blocks/text.js';
 import { blocks as wifiBlocks } from './blocks/wifi.js';
 import { blocks as websocketBlocks } from './blocks/websocket.js';
+import { blocks as salidasBlocks } from './blocks/salidas.js';
 
 // ═══ Registrar todos los bloques ═══════════════
 
@@ -162,6 +163,7 @@ const allBlocks = [
   ...textBlocks,
   ...wifiBlocks,
   ...websocketBlocks,
+  ...salidasBlocks,
 ];
 
 Blockly.common.defineBlocksWithJsonArray(allBlocks);
@@ -196,6 +198,12 @@ const _FULL_TOOLBOX_TEMPLATE = [
   { kind: 'block', type: 'pin_mode_advanced', level: 3 },
   { kind: 'block', type: 'digital_write_basic', level: 1 },
   { kind: 'block', type: 'digital_write_advanced', level: 3 },
+  { kind: 'block', type: 'salida_declarar', level: 2 },
+  { kind: 'block', type: 'salida_fijar', level: 2 },
+  { kind: 'block', type: 'salida_alternar', level: 2 },
+  { kind: 'block', type: 'salida_estado', level: 2 },
+  { kind: 'block', type: 'salida_atender_mensaje', level: 3 },
+  { kind: 'block', type: 'salidas_estado_texto', level: 3 },
   { kind: 'block', type: 'digital_read_basic', level: 1 },
   { kind: 'block', type: 'digital_read_advanced', level: 3 },
   { kind: 'block', type: 'analog_write_basic', level: 1 },
@@ -369,6 +377,10 @@ export function buildToolboxForBoard(fqbn, level, options = {}) {
         'contents': [
           { 'kind': 'block', 'type': 'digital_write_basic', 'level': 1 },
           { 'kind': 'block', 'type': 'digital_write_advanced', 'level': 3 },
+          { 'kind': 'block', 'type': 'salida_declarar', 'level': 2 },
+          { 'kind': 'block', 'type': 'salida_fijar', 'level': 2 },
+          { 'kind': 'block', 'type': 'salida_alternar', 'level': 2 },
+          { 'kind': 'block', 'type': 'salida_estado', 'level': 2 },
           { 'kind': 'block', 'type': 'analog_write_basic', 'level': 1 },
           { 'kind': 'block', 'type': 'analog_write_advanced', 'level': 3 }
         ]},
@@ -567,6 +579,8 @@ export function buildToolboxForBoard(fqbn, level, options = {}) {
           { 'kind': 'block', 'type': 'websocket_send', 'level': 3 },
           { 'kind': 'block', 'type': 'websocket_message', 'level': 3 },
           { 'kind': 'block', 'type': 'websocket_connected', 'level': 3 },
+          { 'kind': 'block', 'type': 'salida_atender_mensaje', 'level': 3 },
+          { 'kind': 'block', 'type': 'salidas_estado_texto', 'level': 3 },
         ]},
       { 'kind': 'search', 'name': '%{BKY_CAT_BUSCAR}', 'contents': [] }
     ]

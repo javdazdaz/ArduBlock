@@ -412,6 +412,13 @@ function validateWorkspace(workspace) {
 
   // ═══ R7: Validación de pines ═══════════════════
   const pinModes = {};
+  // Una salida declarada configura su pin como salida al inicio de setup
+  // (`_salidasIniciar()`), así que cuenta como declaración de modo. Se recoge
+  // antes que pin_mode_basic porque un pinMode explícito corre después y gana.
+  for (const block of findAllBlocksOfType(workspace, 'salida_declarar')) {
+    const pin = parseInt(block.getFieldValue('PIN'), 10);
+    if (!isNaN(pin)) pinModes[pin] = { mode: 'OUTPUT', block };
+  }
   const pinModeBlocks = findAllBlocksOfType(workspace, 'pin_mode_basic');
   for (const block of pinModeBlocks) {
     if (isInsideBlockType(workspace, block, 'arduino_setup')) {
@@ -737,6 +744,56 @@ function validateWorkspace(workspace) {
     });
   }
 
+  // ═══ R14: salidas nombradas sin declarar o declaradas dos veces ═══
+  // La tabla del sketch conserva la primera declaración de cada nombre: una
+  // segunda declaración no tiene efecto y un `poner salida` con un nombre que
+  // nadie declaró no enciende nada.
+  const nombresSalida = new Map();
+  for (const block of findAllBlocksOfType(workspace, 'salida_declarar')) {
+    const nombre = (block.getFieldValue('NAME') || '').trim();
+    if (!nombre) continue;
+    if (!nombresSalida.has(nombre)) nombresSalida.set(nombre, []);
+    nombresSalida.get(nombre).push(block);
+  }
+  for (const [nombre, blocks] of nombresSalida) {
+    if (blocks.length < 2) continue;
+    warnings.push({
+      type: 'salida_duplicada',
+      severity: 'warning',
+      message: t('val_salida_duplicada', { name: nombre }),
+      blocks
+    });
+  }
+  for (const tipo of ['salida_fijar', 'salida_alternar', 'salida_estado']) {
+    for (const block of findAllBlocksOfType(workspace, tipo)) {
+      const nombre = (block.getFieldValue('NAME') || '').trim();
+      if (nombre && nombresSalida.has(nombre)) continue;
+      warnings.push({
+        type: 'salida_no_declarada',
+        severity: 'warning',
+        message: t('val_salida_no_declarada', {
+          label: getBlockLabel(block),
+          name: nombre || '—'
+        }),
+        blocks: [block]
+      });
+    }
+  }
+
+  // ═══ R15: el mensaje del WebSocket sin servidor WebSocket ═══
+  // `_salidasAtenderMensaje(_wsMessage)` no compila si el proyecto no inicia
+  // el WebSocket: la variable la declara ese bloque.
+  const hayWebSocket = workspace.getAllBlocks(false).some(b => b.type === 'websocket_begin');
+  for (const block of findAllBlocksOfType(workspace, 'salida_atender_mensaje')) {
+    if (hayWebSocket) break;
+    warnings.push({
+      type: 'salida_sin_websocket',
+      severity: 'error',
+      message: t('val_salida_sin_websocket', { label: getBlockLabel(block) }),
+      blocks: [block]
+    });
+  }
+
   // ═══ Deduplicar warnings idénticos (mismo type + mensaje) ═══
   // N bloques con el mismo problema se fusionan en una sola entrada
   // (evita llenar la lista con copias, p. ej. 2× digitalWrite en el mismo pin).
@@ -762,6 +819,12 @@ const BLOCK_LABEL_KEYS = {
   'arduino_setup': 'blk_arduino_setup',
   'arduino_loop': 'blk_arduino_loop',
   'digital_write': 'blk_digital_write',
+  'salida_declarar': 'blk_salida_declarar',
+  'salida_fijar': 'blk_salida_fijar',
+  'salida_alternar': 'blk_salida_alternar',
+  'salida_estado': 'blk_salida_estado',
+  'salida_atender_mensaje': 'blk_salida_atender_mensaje',
+  'salidas_estado_texto': 'blk_salidas_estado_texto',
   'analog_write': 'blk_analog_write',
   'delay_ms': 'blk_delay_ms',
   'serial_begin': 'blk_serial_begin',

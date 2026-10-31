@@ -59,6 +59,7 @@ import { registerGenerators as regOled } from './blocks/oled.js';
 import { registerGenerators as regText } from './blocks/text.js';
 import { registerGenerators as regWifi, buildWebServer } from './blocks/wifi.js';
 import { registerGenerators as regWebsocket, buildWebSocket } from './blocks/websocket.js';
+import { registerGenerators as regSalidas, buildSalidas } from './blocks/salidas.js';
 
 regEstructura(cppGenerator);
 regDigital(cppGenerator);
@@ -82,6 +83,7 @@ regMatrixdirect(cppGenerator);
 regOled(cppGenerator);
 regWifi(cppGenerator);
 regWebsocket(cppGenerator);
+regSalidas(cppGenerator);
 
 // ═══ Alias de nombres anteriores al split basic/advanced ═══
 // tone_output, tone_duration, no_tone_output, pulse_in y attach_interrupt
@@ -539,6 +541,10 @@ export function generateArduinoCode(workspace) {
   cppGenerator._oledAnimCustom = null;
   cppGenerator._websocketPort = 81;
   cppGenerator._wsMessageBody = '';
+  cppGenerator._salidasUsed = false;
+  cppGenerator._salidaMensajeUsed = false;
+  cppGenerator._salidaEstadoTextoUsed = false;
+  cppGenerator._salidasDecl = [];
 
   const topBlocks = workspace.getTopBlocks(true);
 
@@ -608,6 +614,24 @@ export function generateArduinoCode(workspace) {
       const p = parseInt(b.getFieldValue('PORT'), 10);
       if (p > 0 && p <= 65535) cppGenerator._webserverPort = p;
     }
+  }
+
+  // ── Salidas nombradas: recolectar las declaraciones ──
+  // La tabla sale en el orden del workspace; un nombre repetido conserva la
+  // primera declaración, que es la que el validador señala como duplicada.
+  const declaradas = [];
+  const nombresDeclarados = new Set();
+  for (const b of allBlocks) {
+    if (b.type !== 'salida_declarar') continue;
+    cppGenerator._salidasUsed = true;
+    const nombre = (b.getFieldValue('NAME') || '').trim();
+    if (!nombre || nombresDeclarados.has(nombre)) continue;
+    nombresDeclarados.add(nombre);
+    declaradas.push({
+      nombre,
+      pin: (b.getFieldValue('PIN') || '0').trim() || '0',
+      activoBajo: b.getFieldValue('ACTIVO') === 'LOW'
+    });
   }
 
   // ── Recolectar #include: bloque include_header + tabs .h del proyecto ──
@@ -938,6 +962,16 @@ export function generateArduinoCode(workspace) {
     wsLoop = ws.loop;
   }
 
+  // ── Salidas nombradas: tabla + funciones de estado ──
+  if (cppGenerator._salidasUsed) {
+    const sal = buildSalidas(declaradas, {
+      mensajes: cppGenerator._salidaMensajeUsed,
+      estadoTexto: cppGenerator._salidaEstadoTextoUsed
+    });
+    sketch += sal.globals;
+    sketch += sal.helpers;
+  }
+
   // ── Ultrasonic helpers ──
   if (usNames.size > 0) {
     for (const inst of cppGenerator._usInstances) {
@@ -1011,6 +1045,13 @@ export function generateArduinoCode(workspace) {
       sketch += fn.body;
       sketch += '}\n\n';
     }
+  }
+
+  // ── Salidas nombradas: configurar sus pines al inicio de setup ──
+  // Va antes del código del alumno; si él escribe su propio pinMode después,
+  // ese pinMode gana, que es el orden en que corre el sketch.
+  if (declaradas.length > 0) {
+    setupBody = '  _salidasIniciar();\n' + setupBody;
   }
 
   // ── Matriz LED R4: auto-inyectar begin() en setup ──
