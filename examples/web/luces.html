@@ -95,6 +95,7 @@ category: WebSocket
   }
 
   function leer(texto) {
+    estadoRecibido = true;
     anotar('recibido ' + texto);
     texto.split(';').forEach(function (par) {
       var partes = par.split('=');
@@ -107,6 +108,7 @@ category: WebSocket
 
   var intentos = 0;
   var MAX_INTENTOS = 8;
+  var estadoRecibido = false;
 
   function conectar() {
     marcar(intentos === 0 ? 'Conectando…' : 'Reconectando…', '');
@@ -115,9 +117,14 @@ category: WebSocket
 
     conexion.onopen = function () {
       intentos = 0;
+      estadoRecibido = false;
       marcar('Conectado', 'ok');
       bloquear(false);
       conexion.send('?');
+      // Si el estado no llega en dos segundos, se pide otra vez.
+      setTimeout(function () {
+        if (!estadoRecibido && conexion && conexion.readyState === 1) conexion.send('?');
+      }, 2000);
     };
 
     conexion.onmessage = function (evento) { leer(String(evento.data)); };
@@ -134,7 +141,18 @@ category: WebSocket
     }
     intentos++;
     marcar('Sin conexión · reintento ' + intentos + ' de ' + MAX_INTENTOS, 'err');
+    pedirDiagnostico();
     setTimeout(conectar, Math.min(600 * intentos, 3000));
+  }
+
+  // El resumen de la placa viaja por HTTP: se lee aunque el WebSocket no llegue.
+  function pedirDiagnostico() {
+    var x = new XMLHttpRequest();
+    x.open('GET', '/diag?t=' + Date.now(), true);
+    x.onload = function () {
+      if (x.status === 200 && x.responseText) anotar('placa ' + x.responseText.trim());
+    };
+    x.send();
   }
 
   conectar();

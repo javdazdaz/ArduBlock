@@ -948,7 +948,8 @@ export function generateArduinoCode(workspace) {
   // ── Servidor web unificado: helpers + loop de atención ──
   let webLoop = '';
   if (cppGenerator._webserverUsed) {
-    const web = buildWebServer(cppGenerator._webserverPage, cppGenerator._webRoutes);
+    const web = buildWebServer(cppGenerator._webserverPage, cppGenerator._webRoutes,
+      { diag: cppGenerator._websocketUsed });
     sketch += web.helpers;
     webLoop = web.loop;
   }
