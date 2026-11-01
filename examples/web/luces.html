@@ -36,7 +36,7 @@ category: WebSocket
 <body>
 <main class="card">
   <h1>Luces por WebSocket</h1>
-  <p class="sub">Página servida por la placa · WebSocket en el puerto 81</p>
+  <p class="sub">Página servida por la placa · WebSocket en el mismo puerto</p>
   <p id="estado" class="badge">Conectando…</p>
 
   <div class="luces">
@@ -113,7 +113,7 @@ category: WebSocket
   function conectar() {
     marcar(intentos === 0 ? 'Conectando…' : 'Reconectando…', '');
     bloquear(true);
-    conexion = new WebSocket('ws://' + location.hostname + ':81');
+    conexion = new WebSocket('ws://' + location.host + '/');
 
     conexion.onopen = function () {
       intentos = 0;

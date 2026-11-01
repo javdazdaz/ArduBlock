@@ -26,12 +26,14 @@ function esc(s) {
 //  Generación del servidor WebSocket (la emite generateArduinoCode)
 // ═══════════════════════════════════════════════════════════
 
-export function buildWebSocket(port, messageBody) {
+export function buildWebSocket(port, messageBody, opciones = {}) {
+  // compartido: el proyecto ya tiene servidor web, así que el WebSocket entra
+  // por el mismo puerto y no se crea un segundo WiFiServer.
+  const { compartido = false } = opciones;
   const p = (port > 0 && port <= 65535) ? port : 81;
 
   const globals =
-`WiFiServer _wsServer(${p});
-WiFiClient _wsClient;
+`${compartido ? '' : 'WiFiServer _wsServer(' + p + ');\n'}WiFiClient _wsClient;
 bool _wsConnected = false;
 String _wsMessage = "";
 int _wsAceptados = 0;
@@ -105,35 +107,36 @@ String _wsAcceptKey(String key) {
   return _wsBase64(hash, 20);
 }
 
-bool _wsHandshake(WiFiClient client) {
-  // El pedido puede llegar en dos trozos: se acumula hasta la línea en blanco
-  // que cierra las cabeceras. Leer solo lo que hay disponible deja la clave
-  // vacía y el navegador aborta la conexión con "interrupted while loading".
+String _wsLeerPedido(WiFiClient& c) {
+  // El pedido puede llegar en dos trozos: se acumula hasta la linea en blanco
+  // que cierra las cabeceras. Leer solo lo disponible deja la clave vacia y el
+  // navegador aborta con "interrupted while the page was loading".
   String req = "";
   unsigned long t0 = millis();
-  while (client.connected() && (millis() - t0) < 2000) {
-    while (client.available()) req += (char)client.read();
+  while (c.connected() && (millis() - t0) < 2000) {
+    while (c.available()) req += (char)c.read();
     if (req.indexOf("\\r\\n\\r\\n") >= 0) break;
   }
+  return req;
+}
+
+// Responde 101 y se queda con la sesion. Falso si el pedido no trae
+// Sec-WebSocket-Key: ahi el llamador decide si cierra el socket.
+bool _wsAceptar(WiFiClient& c, const String& req) {
   int p = req.indexOf("Sec-WebSocket-Key:");
   int fin = (p >= 0) ? req.indexOf("\\r\\n", p) : -1;
   String key = (p >= 0) ? ((fin < 0) ? req.substring(p + 18) : req.substring(p + 18, fin)) : "";
   key.trim();
-  if (key.length() == 0) {
-    _wsUltimoError = 1;
-    // Se responde y se cierra: un socket abierto sin respuesta se queda
-    // ocupado y agota los cuatro del módulo.
-    client.println("HTTP/1.1 400 Bad Request");
-    client.println("Connection: close");
-    client.println();
-    client.stop();
-    return false;
-  }
-  client.println("HTTP/1.1 101 Switching Protocols");
-  client.println("Upgrade: websocket");
-  client.println("Connection: Upgrade");
-  client.println("Sec-WebSocket-Accept: " + _wsAcceptKey(key));
-  client.println();
+  if (key.length() == 0) { _wsUltimoError = 1; return false; }
+  c.println("HTTP/1.1 101 Switching Protocols");
+  c.println("Upgrade: websocket");
+  c.println("Connection: Upgrade");
+  c.println("Sec-WebSocket-Accept: " + _wsAcceptKey(key));
+  c.println();
+  if (_wsConnected) _wsClient.stop();
+  _wsClient = c;
+  _wsConnected = true;
+  _wsAceptados++;
   return true;
 }
 
@@ -208,21 +211,21 @@ String _wsDiagTexto() {
 
 `;
 
-  const loop =
-`  // WebSocket: aceptar conexión y leer mensajes
-  // available() vuelve a entregar la misma conexión cuando llegan datos: con
-  // un cliente ya conectado, tomarla otra vez y cerrar la anterior corta el
-  // socket vivo, y el navegador reconecta en bucle.
-  WiFiClient _newWs = _wsServer.available();
-  if (_newWs && !_wsConnected) {
-    _wsClient = _newWs;
-    _wsConnected = _wsHandshake(_wsClient);
-    if (_wsConnected) _wsAceptados++; else _wsFallidos++;
-    // Un handshake fallido deja el socket tomado: sin esto se agotan los
-    // cuatro del módulo y las conexiones siguientes no entran.
-    if (!_wsConnected) _wsClient.stop();
-  }
+  const loop = compartido
+    ? `  // WebSocket en el puerto de la pagina: el pedido con Upgrade lo atiende
+  // el servidor web, que ya leyó las cabeceras.
   if (_wsConnected && !_wsClient.connected()) { _wsConnected = false; _wsUltimoError = 2; }
+  if (_wsConnected && _wsReadMessage()) {
+${messageBody || '    // sin acciones\n'}
+  }
+`
+    : `  // WebSocket en su propio puerto. available() vuelve a entregar la conexion
+  // cuando llegan datos: solo se acepta si no hay sesion viva.
+  if (_wsConnected && !_wsClient.connected()) { _wsConnected = false; _wsUltimoError = 2; }
+  WiFiClient _nuevo = _wsServer.available();
+  if (_nuevo && !_wsConnected) {
+    if (!_wsAceptar(_nuevo, _wsLeerPedido(_nuevo))) { _wsFallidos++; _nuevo.stop(); }
+  }
   if (_wsConnected && _wsReadMessage()) {
 ${messageBody || '    // sin acciones\n'}
   }
@@ -297,7 +300,9 @@ export function registerGenerators(cppGenerator) {
     cppGenerator._wifiUsed = true;
     const port = parseInt(block.getFieldValue('PORT'), 10);
     cppGenerator._websocketPort = (port > 0 && port <= 65535) ? port : 81;
-    return '_wsServer.begin();\n';
+    // El arranque del servidor propio lo inyecta el generador: con servidor web
+    // en el proyecto no hay segundo servidor que arrancar.
+    return '';
   };
 
   cppGenerator.forBlock['websocket_on_message'] = function(block) {

@@ -4,63 +4,86 @@
     "blocks": [
       {
         "type": "arduino_setup",
-        "id": "b8",
+        "id": "b11",
         "inputs": {
           "BODY": {
             "block": {
-              "type": "wifi_access_point",
+              "type": "serial_begin",
               "id": "b1",
               "fields": {
-                "SSID": "MiArduino",
-                "PASS": "12345678"
+                "BAUD": "115200"
               },
               "next": {
                 "block": {
-                  "type": "webserver_begin",
+                  "type": "wifi_access_point",
                   "id": "b2",
                   "fields": {
-                    "PORT": 80
+                    "SSID": "MiArduino",
+                    "PASS": "12345678"
                   },
                   "next": {
                     "block": {
-                      "type": "webserver_serve_file",
+                      "type": "serial_println",
                       "id": "b3",
-                      "fields": {
-                        "FILE": "luces.html"
+                      "inputs": {
+                        "TEXT": {
+                          "block": {
+                            "type": "wifi_ip",
+                            "id": "b4"
+                          }
+                        }
                       },
                       "next": {
                         "block": {
-                          "type": "websocket_begin",
-                          "id": "b4",
+                          "type": "webserver_begin",
+                          "id": "b5",
                           "fields": {
-                            "PORT": 81
+                            "PORT": 80
                           },
                           "next": {
                             "block": {
-                              "type": "salida_declarar",
-                              "id": "b5",
+                              "type": "webserver_serve_file",
+                              "id": "b6",
                               "fields": {
-                                "NAME": "luz1",
-                                "PIN": "4",
-                                "ACTIVO": "HIGH"
+                                "FILE": "luces.html"
                               },
                               "next": {
                                 "block": {
-                                  "type": "salida_declarar",
-                                  "id": "b6",
+                                  "type": "websocket_begin",
+                                  "id": "b7",
                                   "fields": {
-                                    "NAME": "luz2",
-                                    "PIN": "5",
-                                    "ACTIVO": "HIGH"
+                                    "PORT": 80
                                   },
                                   "next": {
                                     "block": {
                                       "type": "salida_declarar",
-                                      "id": "b7",
+                                      "id": "b8",
                                       "fields": {
-                                        "NAME": "rele",
-                                        "PIN": "7",
-                                        "ACTIVO": "LOW"
+                                        "NAME": "luz1",
+                                        "PIN": "4",
+                                        "ACTIVO": "HIGH"
+                                      },
+                                      "next": {
+                                        "block": {
+                                          "type": "salida_declarar",
+                                          "id": "b9",
+                                          "fields": {
+                                            "NAME": "luz2",
+                                            "PIN": "5",
+                                            "ACTIVO": "HIGH"
+                                          },
+                                          "next": {
+                                            "block": {
+                                              "type": "salida_declarar",
+                                              "id": "b10",
+                                              "fields": {
+                                                "NAME": "rele",
+                                                "PIN": "7",
+                                                "ACTIVO": "LOW"
+                                              }
+                                            }
+                                          }
+                                        }
                                       }
                                     }
                                   }
@@ -82,27 +105,27 @@
       },
       {
         "type": "arduino_loop",
-        "id": "b9",
+        "id": "b12",
         "x": 20,
         "y": 470
       },
       {
         "type": "websocket_on_message",
-        "id": "b13",
+        "id": "b16",
         "inputs": {
           "DO": {
             "block": {
               "type": "salida_atender_mensaje",
-              "id": "b10",
+              "id": "b13",
               "next": {
                 "block": {
                   "type": "websocket_send",
-                  "id": "b12",
+                  "id": "b15",
                   "inputs": {
                     "VALUE": {
                       "block": {
                         "type": "salidas_estado_texto",
-                        "id": "b11"
+                        "id": "b14"
                       }
                     }
                   }
@@ -111,7 +134,7 @@
             }
           }
         },
-        "x": 780,
+        "x": 420,
         "y": 20
       }
     ]
