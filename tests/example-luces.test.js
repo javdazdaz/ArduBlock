@@ -42,7 +42,7 @@ describe('ejemplo LucesWebSocket', () => {
 
   it('el estado carga en Blockly sin lanzar', () => {
     Blockly.serialization.workspaces.load(ejemplo.state, ws);
-    expect(ws.getAllBlocks(false).length).toBe(13);
+    expect(ws.getAllBlocks(false).length).toBe(16);
   });
 
   it('el sketch trae la página, los puertos y las tres salidas', () => {
@@ -52,9 +52,9 @@ describe('ejemplo LucesWebSocket', () => {
     expect(sketch).toContain('#include <WiFiS3.h>');
     expect(sketch).toContain('WiFi.beginAP("MiArduino", "12345678");');
     expect(sketch).toContain('WiFiServer server(80);');
-    expect(sketch).toContain('WiFiServer _wsServer(81);');
     expect(sketch).toContain('server.begin();');
-    expect(sketch).toContain('_wsServer.begin();');
+    // Un solo servidor: el WebSocket entra por el mismo puerto que la página.
+    expect(sketch).not.toContain('_wsServer');
     expect(sketch).toContain('_Salida _salidas[3]');
     expect(sketch).toContain('{ "luz1", 4, false, false }');
     expect(sketch).toContain('{ "rele", 7, true, false }');
@@ -76,32 +76,29 @@ describe('ejemplo LucesWebSocket', () => {
     const sketch = generateArduinoCode(ws);
 
     // Acumular hasta la línea en blanco: el pedido puede llegar en dos trozos.
-    expect(sketch).toContain('req += (char)client.read();');
+    expect(sketch).toContain('req += (char)c.read();');
     expect(sketch).toContain(String.raw`if (req.indexOf("\r\n\r\n") >= 0) break;`);
-    // Un handshake fallido cierra su socket en vez de dejarlo tomado.
-    expect(sketch).toContain('if (!_wsConnected) _wsClient.stop();');
-    expect(sketch).toContain('HTTP/1.1 400 Bad Request');
+    // El saludo responde 101 y se queda con la sesión.
+    expect(sketch).toContain('bool _wsAceptar(WiFiClient& c, const String& req)');
+    expect(sketch).toContain('Sec-WebSocket-Accept: ');
   });
 
-  it('atiende el WebSocket antes que el pedido HTTP', () => {
+  it('el pedido con Upgrade lo atiende el servidor web', () => {
     Blockly.serialization.workspaces.load(ejemplo.state, ws);
     const sketch = generateArduinoCode(ws);
 
-    const wsAccept = sketch.indexOf('_wsServer.available()');
-    const httpAccept = sketch.indexOf('WiFiClient client = server.available();');
-
-    expect(wsAccept).toBeGreaterThan(0);
-    expect(wsAccept).toBeLessThan(httpAccept);
+    expect(sketch).toContain('if (_ardublock_pedido.indexOf("Upgrade: websocket") >= 0) {');
+    expect(sketch).toContain('_wsAceptar(client, _ardublock_pedido)');
   });
 
-  it('no vuelve a aceptar la misma conexión mientras está conectado', () => {
+  it('con sesión viva no consulta el servidor', () => {
     Blockly.serialization.workspaces.load(ejemplo.state, ws);
     const sketch = generateArduinoCode(ws);
 
-    // available() entrega otra vez el mismo socket cuando llegan datos:
-    // aceptarlo y cerrar el anterior corta la sesión viva.
-    expect(sketch).toContain('if (_newWs && !_wsConnected)');
-    expect(sketch).not.toContain('if (_wsConnected) _wsClient.stop();');
+    // available() entrega otra vez el mismo socket cuando llegan datos: con
+    // sesión abierta el bucle solo lee tramas.
+    expect(sketch).toContain('if (!_wsConnected) {');
+    expect(sketch).not.toContain('_wsServer.available()');
   });
 
   it('no sirve la página cuando el pedido no es HTTP', () => {
@@ -127,6 +124,29 @@ describe('ejemplo LucesWebSocket', () => {
 
     expect(sketch).toContain('if (path == "/favicon.ico")');
     expect(sketch).toContain('HTTP/1.1 204 No Content');
+  });
+});
+
+describe('WebSocket sin servidor web', () => {
+  let ws;
+
+  beforeEach(() => {
+    ws = new Blockly.Workspace();
+  });
+
+  it('conserva su servidor propio y lo arranca en setup', () => {
+    const setup = ws.newBlock('arduino_setup');
+    const loop = ws.newBlock('arduino_loop');
+    const inicio = ws.newBlock('websocket_begin');
+    inicio.setFieldValue('81', 'PORT');
+    setup.getInput('BODY').connection.connect(inicio.previousConnection);
+    loop.getInput('BODY').connection.connect(ws.newBlock('websocket_send').previousConnection);
+
+    const sketch = generateArduinoCode(ws);
+
+    expect(sketch).toContain('WiFiServer _wsServer(81);');
+    expect(sketch).toContain('_wsServer.begin();');
+    expect(sketch).toContain('_wsAceptar(_nuevo, _wsLeerPedido(_nuevo))');
   });
 });
 

@@ -946,10 +946,17 @@ export function generateArduinoCode(workspace) {
   }
 
   // ── Servidor web unificado: helpers + loop de atención ──
+  // Con WebSocket en el proyecto, las dos cosas comparten un solo puerto y un
+  // solo WiFiServer: el módulo tiene cuatro sockets y dos servidores se pisan.
+  const compartido = cppGenerator._webserverUsed && cppGenerator._websocketUsed;
   let webLoop = '';
   if (cppGenerator._webserverUsed) {
     const web = buildWebServer(cppGenerator._webserverPage, cppGenerator._webRoutes,
-      { diag: cppGenerator._websocketUsed, salidas: cppGenerator._salidasUsed });
+      {
+        diag: cppGenerator._websocketUsed,
+        salidas: cppGenerator._salidasUsed,
+        websocket: compartido
+      });
     sketch += web.helpers;
     webLoop = web.loop;
   }
@@ -957,7 +964,8 @@ export function generateArduinoCode(workspace) {
   // ── WebSocket: globals + helpers + loop ──
   let wsLoop = '';
   if (cppGenerator._websocketUsed) {
-    const ws = buildWebSocket(cppGenerator._websocketPort, cppGenerator._wsMessageBody);
+    const ws = buildWebSocket(cppGenerator._websocketPort, cppGenerator._wsMessageBody,
+      { compartido });
     sketch += ws.globals;
     sketch += ws.helpers;
     wsLoop = ws.loop;
@@ -1053,6 +1061,12 @@ export function generateArduinoCode(workspace) {
   // ese pinMode gana, que es el orden en que corre el sketch.
   if (declaradas.length > 0) {
     setupBody = '  _salidasIniciar();\n' + setupBody;
+  }
+
+  // ── WebSocket con puerto propio: arrancar su servidor ──
+  // Con servidor web en el proyecto comparten puerto y no hay segundo servidor.
+  if (cppGenerator._websocketUsed && !compartido) {
+    setupBody = '  _wsServer.begin();\n' + setupBody;
   }
 
   // ── Matriz LED R4: auto-inyectar begin() en setup ──

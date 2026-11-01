@@ -120,7 +120,7 @@ try {
  * @returns {{helpers: string, loop: string}}
  */
 export function buildWebServer(page, routes, opciones = {}) {
-  const { diag = false, salidas = false } = opciones;
+  const { diag = false, salidas = false, websocket = false } = opciones;
   const rawPage = page
     ? String(page)
     : '<!DOCTYPE HTML><html><body>Servidor ArduBlock</body></html>';
@@ -133,13 +133,16 @@ export function buildWebServer(page, routes, opciones = {}) {
   if (diag && salidas) helpers += 'String _salidasDiagTexto();\n';
   if (diag) helpers += '\n';
   helpers += 'String _ardublock_query = "";\n';
-  helpers += 'String _ardublock_body = "";\n\n';
+  helpers += 'String _ardublock_body = "";\n';
+  helpers += 'String _ardublock_pedido = "";\n\n';
   helpers += 'String _readRequestPath(WiFiClient client) {\n';
   helpers += '  String line = "";\n';
+  helpers += '  _ardublock_pedido = "";\n';
   helpers += '  unsigned long _t = millis();\n';
   helpers += '  while (client.connected() && !client.available() && (millis() - _t) < 1000) { }\n';
   helpers += '  while (client.connected() && client.available()) {\n';
   helpers += '    char c = client.read();\n';
+  helpers += '    _ardublock_pedido += c;\n';
   helpers += '    if (c == \'\\n\') break;\n';
   helpers += '    if (c != \'\\r\') line += c;\n';
   helpers += '  }\n';
@@ -162,6 +165,7 @@ export function buildWebServer(page, routes, opciones = {}) {
   helpers += '  _ardublock_body = "";\n';
   helpers += '  while (client.connected() && client.available()) {\n';
   helpers += '    char c = client.read();\n';
+  helpers += '    _ardublock_pedido += c;\n';
   helpers += '    if (_inBody) {\n';
   helpers += '      _ardublock_body += c;\n';
   helpers += '      if ((int)_ardublock_body.length() >= _contentLength) break;\n';
@@ -237,16 +241,33 @@ export function buildWebServer(page, routes, opciones = {}) {
   }
   helpers += '}\n\n';
 
-  const loop = 'WiFiClient client = server.available();\n'
-             + 'if (client) {\n'
-             + '  String path = _readRequestPath(client);\n'
-             + '  // Sin pedido HTTP no se responde ni se cierra: si el modulo entregara\n'
-             + '  // aqui un socket del WebSocket, cerrarlo cortaria la sesion viva.\n'
-             + '  if (path.length() > 0) {\n'
-             + '    _handleWebRequest(client, path);\n'
-             + '    client.stop();\n'
-             + '  }\n'
-             + '}\n';
+  // Con WebSocket en el mismo puerto, el pedido con Upgrade lo atiende el
+  // servidor web: ya tiene las cabeceras leídas. Mientras hay sesión viva no se
+  // consulta el servidor, porque available() vuelve a entregar el socket del
+  // WebSocket cuando llegan datos y tratarlo como pedido lo cerraría.
+  const loop = websocket
+    ? 'if (!_wsConnected) {\n'
+      + '  WiFiClient client = server.available();\n'
+      + '  if (client) {\n'
+      + '    String path = _readRequestPath(client);\n'
+      + '    if (_ardublock_pedido.indexOf("Upgrade: websocket") >= 0) {\n'
+      + '      if (!_wsAceptar(client, _ardublock_pedido)) { _wsFallidos++; client.stop(); }\n'
+      + '    } else if (path.length() > 0) {\n'
+      + '      _handleWebRequest(client, path);\n'
+      + '      client.stop();\n'
+      + '    }\n'
+      + '  }\n'
+      + '}\n'
+    : 'WiFiClient client = server.available();\n'
+      + 'if (client) {\n'
+      + '  String path = _readRequestPath(client);\n'
+      + '  // Sin pedido HTTP no se responde ni se cierra: si el modulo entregara\n'
+      + '  // aqui un socket del WebSocket, cerrarlo cortaria la sesion viva.\n'
+      + '  if (path.length() > 0) {\n'
+      + '    _handleWebRequest(client, path);\n'
+      + '    client.stop();\n'
+      + '  }\n'
+      + '}\n';
 
   return { helpers, loop };
 }

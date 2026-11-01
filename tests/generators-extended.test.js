@@ -729,9 +729,11 @@ describe('generadores C++ — WiFi / Servidor Web', () => {
     expect(code).toBe('_ardublock_body');
   });
 
-  it('websocket_begin genera _wsServer.begin() y registra puerto', () => {
+  it('websocket_begin registra el puerto y no emite el arranque', () => {
+    // El arranque del servidor propio lo inyecta generateArduinoCode: con
+    // servidor web en el proyecto comparten puerto y no hay segundo servidor.
     const code = cppGenerator.forBlock['websocket_begin'](b('websocket_begin', { PORT: '81' }));
-    expect(code).toBe('_wsServer.begin();\n');
+    expect(code).toBe('');
     expect(cppGenerator._websocketUsed).toBe(true);
     expect(cppGenerator._websocketPort).toBe(81);
   });
