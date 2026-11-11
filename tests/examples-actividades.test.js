@@ -52,9 +52,10 @@ describe('ejemplos de actividades: usar', () => {
 
   it('la distancia lee el ultrasónico y calcula el brillo del rojo', () => {
     const sketch = sketchDe(porNombre['Distancia'].state);
+    const setup = sketch.slice(sketch.indexOf('void setup'), sketch.indexOf('void loop'));
+    expect(setup).toContain('pinMode(9, OUTPUT);');
+    expect(setup).toContain('pinMode(10, INPUT);');
     expect(sketch).toContain('float us_read()');
-    expect(sketch).toContain('pinMode(9, OUTPUT);');
-    expect(sketch).toContain('pinMode(10, INPUT);');
     expect(sketch).toContain('float d = us_read();');
     expect(sketch).toContain('int rojo = ((LEJOS - d) * 255) / (LEJOS - UMBRAL_AMBAR);');
     expect(sketch).toContain('rojo = constrain(rojo, 0, 255);');
