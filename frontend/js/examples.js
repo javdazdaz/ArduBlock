@@ -8,6 +8,7 @@
 
 import { sources }          from './examples-sources.js';
 import { basicsExamples }   from './examples-data.js';
+import { actividadExamples } from './examples-actividades.js';
 import { digitalSimple }    from './examples-digital-simple.js';
 import { analogControlExamples } from './examples-analog-control.js';
 import { analog2 }          from './examples-analog2.js';
@@ -25,6 +26,7 @@ import { cargarTabsRecursoOled } from './matrix-animation.js';
 
 // ── Consolidar todos los ejemplos ─────────────────
 const allExamples = [
+  ...actividadExamples,
   ...basicsExamples,
   ...digitalSimple,
   ...analogControlExamples,
@@ -139,7 +141,12 @@ function openSource(sourceId) {
     cats[cat].push(ex);
   }
 
-  const sortedCats = Object.keys(cats).sort();
+  const sortedCats = Object.keys(cats).sort((a, b) => {
+    const orden = (source?.categories || []).map(c => c.id);
+    const ia = orden.indexOf(a);
+    const ib = orden.indexOf(b);
+    return (ia === -1 ? orden.length : ia) - (ib === -1 ? orden.length : ib) || a.localeCompare(b);
+  });
 
   for (const cat of sortedCats) {
     // Mostrar nombre localizado de la categoría si existe en sources
@@ -153,6 +160,19 @@ function openSource(sourceId) {
         <span>${escapeHtml(ex.name)}</span>
         <span class="example-desc">${escapeHtml(desc)}</span>
       </div>`;
+    }
+  }
+
+  // Categorías declaradas sin programa: se muestran vacías para que la
+  // progresión se lea completa.
+  if (source?.showEmptyCategories) {
+    for (const c of source.categories || []) {
+      if (cats[c.id]) continue;
+      html += `<div class="example-category">${i18n(c.label, lang)}</div>
+        <div class="example-item example-item-disabled">
+          <span>—</span>
+          <span class="example-desc">${lang === 'es' ? 'Sin programas todavía' : 'No programs yet'}</span>
+        </div>`;
     }
   }
 

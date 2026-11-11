@@ -1,0 +1,377 @@
+{
+  "blocks": {
+    "languageVersion": 0,
+    "blocks": [
+      {
+        "type": "variable_global",
+        "id": "variable_global_1",
+        "x": 20,
+        "y": 900,
+        "fields": {
+          "NAME": "contador",
+          "TYPE": "int"
+        },
+        "inputs": {
+          "VALUE": {
+            "block": {
+              "type": "math_number",
+              "id": "math_number_1",
+              "fields": {
+                "NUM": 0
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "variable_global",
+        "id": "variable_global_2",
+        "x": 20,
+        "y": 1040,
+        "fields": {
+          "NAME": "anterior",
+          "TYPE": "int"
+        },
+        "inputs": {
+          "VALUE": {
+            "block": {
+              "type": "math_number",
+              "id": "math_number_2",
+              "fields": {
+                "NUM": 0
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "arduino_setup",
+        "id": "arduino_setup_1",
+        "x": 20,
+        "y": 20,
+        "inputs": {
+          "BODY": {
+            "block": {
+              "type": "pin_mode_basic",
+              "id": "pin_mode_basic_1",
+              "fields": {
+                "PIN": "6",
+                "MODE": "OUTPUT"
+              },
+              "next": {
+                "block": {
+                  "type": "pin_mode_basic",
+                  "id": "pin_mode_basic_2",
+                  "fields": {
+                    "PIN": "5",
+                    "MODE": "OUTPUT"
+                  },
+                  "next": {
+                    "block": {
+                      "type": "pin_mode_basic",
+                      "id": "pin_mode_basic_3",
+                      "fields": {
+                        "PIN": "A1",
+                        "MODE": "INPUT"
+                      },
+                      "next": {
+                        "block": {
+                          "type": "serial_begin",
+                          "id": "serial_begin_1",
+                          "fields": {
+                            "BAUD": "9600"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "arduino_loop",
+        "id": "arduino_loop_1",
+        "x": 20,
+        "y": 300,
+        "inputs": {
+          "BODY": {
+            "block": {
+              "type": "variable_declare",
+              "id": "variable_declare_1",
+              "fields": {
+                "NAME": "estado",
+                "TYPE": "int"
+              },
+              "inputs": {
+                "VALUE": {
+                  "block": {
+                    "type": "digital_read_basic",
+                    "id": "digital_read_basic_1",
+                    "fields": {
+                      "PIN": "A1"
+                    }
+                  }
+                }
+              },
+              "next": {
+                "block": {
+                  "type": "controls_if",
+                  "id": "controls_if_1",
+                  "inputs": {
+                    "IF0": {
+                      "block": {
+                        "type": "logic_operation",
+                        "id": "logic_operation_1",
+                        "fields": {
+                          "OP": "AND"
+                        },
+                        "inputs": {
+                          "A": {
+                            "block": {
+                              "type": "logic_compare",
+                              "id": "logic_compare_1",
+                              "fields": {
+                                "OP": "EQ"
+                              },
+                              "inputs": {
+                                "A": {
+                                  "block": {
+                                    "type": "variable_get",
+                                    "id": "variable_get_1",
+                                    "fields": {
+                                      "NAME": "estado"
+                                    }
+                                  }
+                                },
+                                "B": {
+                                  "block": {
+                                    "type": "logic_boolean",
+                                    "id": "logic_boolean_1",
+                                    "fields": {
+                                      "BOOL": "TRUE"
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "B": {
+                            "block": {
+                              "type": "logic_compare",
+                              "id": "logic_compare_2",
+                              "fields": {
+                                "OP": "EQ"
+                              },
+                              "inputs": {
+                                "A": {
+                                  "block": {
+                                    "type": "variable_get",
+                                    "id": "variable_get_2",
+                                    "fields": {
+                                      "NAME": "anterior"
+                                    }
+                                  }
+                                },
+                                "B": {
+                                  "block": {
+                                    "type": "logic_boolean",
+                                    "id": "logic_boolean_2",
+                                    "fields": {
+                                      "BOOL": "FALSE"
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "DO0": {
+                      "block": {
+                        "type": "variable_set",
+                        "id": "variable_set_1",
+                        "fields": {
+                          "NAME": "contador"
+                        },
+                        "inputs": {
+                          "VALUE": {
+                            "block": {
+                              "type": "math_arithmetic",
+                              "id": "math_arithmetic_1",
+                              "fields": {
+                                "OP": "ADD"
+                              },
+                              "inputs": {
+                                "A": {
+                                  "block": {
+                                    "type": "variable_get",
+                                    "id": "variable_get_3",
+                                    "fields": {
+                                      "NAME": "contador"
+                                    }
+                                  }
+                                },
+                                "B": {
+                                  "block": {
+                                    "type": "math_number",
+                                    "id": "math_number_3",
+                                    "fields": {
+                                      "NUM": 1
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        },
+                        "next": {
+                          "block": {
+                            "type": "serial_print",
+                            "id": "serial_print_1",
+                            "inputs": {
+                              "TEXT": {
+                                "block": {
+                                  "type": "text",
+                                  "id": "text_1",
+                                  "fields": {
+                                    "TEXT": "pulsaciones "
+                                  }
+                                }
+                              }
+                            },
+                            "next": {
+                              "block": {
+                                "type": "serial_println",
+                                "id": "serial_println_1",
+                                "inputs": {
+                                  "TEXT": {
+                                    "block": {
+                                      "type": "variable_get",
+                                      "id": "variable_get_4",
+                                      "fields": {
+                                        "NAME": "contador"
+                                      }
+                                    }
+                                  }
+                                },
+                                "next": {
+                                  "block": {
+                                    "type": "controls_if",
+                                    "id": "controls_if_2",
+                                    "extraState": {
+                                      "hasElse": true
+                                    },
+                                    "inputs": {
+                                      "IF0": {
+                                        "block": {
+                                          "type": "math_number_property",
+                                          "id": "math_number_property_1",
+                                          "extraState": "<mutation divisor_input=\"false\"></mutation>",
+                                          "fields": {
+                                            "PROPERTY": "EVEN"
+                                          },
+                                          "inputs": {
+                                            "NUMBER_TO_CHECK": {
+                                              "block": {
+                                                "type": "variable_get",
+                                                "id": "variable_get_5",
+                                                "fields": {
+                                                  "NAME": "contador"
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      },
+                                      "DO0": {
+                                        "block": {
+                                          "type": "digital_write_basic",
+                                          "id": "digital_write_basic_1",
+                                          "fields": {
+                                            "PIN": "6",
+                                            "VALUE": "HIGH"
+                                          },
+                                          "next": {
+                                            "block": {
+                                              "type": "digital_write_basic",
+                                              "id": "digital_write_basic_2",
+                                              "fields": {
+                                                "PIN": "5",
+                                                "VALUE": "LOW"
+                                              }
+                                            }
+                                          }
+                                        }
+                                      },
+                                      "ELSE": {
+                                        "block": {
+                                          "type": "digital_write_basic",
+                                          "id": "digital_write_basic_3",
+                                          "fields": {
+                                            "PIN": "6",
+                                            "VALUE": "LOW"
+                                          },
+                                          "next": {
+                                            "block": {
+                                              "type": "digital_write_basic",
+                                              "id": "digital_write_basic_4",
+                                              "fields": {
+                                                "PIN": "5",
+                                                "VALUE": "HIGH"
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    },
+                                    "next": {
+                                      "block": {
+                                        "type": "delay_ms",
+                                        "id": "delay_ms_1",
+                                        "fields": {
+                                          "MS": 50
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "next": {
+                    "block": {
+                      "type": "variable_set",
+                      "id": "variable_set_2",
+                      "fields": {
+                        "NAME": "anterior"
+                      },
+                      "inputs": {
+                        "VALUE": {
+                          "block": {
+                            "type": "variable_get",
+                            "id": "variable_get_6",
+                            "fields": {
+                              "NAME": "estado"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,144 @@
+{
+  "blocks": {
+    "languageVersion": 0,
+    "blocks": [
+      {
+        "type": "arduino_setup",
+        "id": "arduino_setup_1",
+        "x": 20,
+        "y": 20,
+        "inputs": {
+          "BODY": {
+            "block": {
+              "type": "pin_mode_basic",
+              "id": "pin_mode_basic_1",
+              "fields": {
+                "PIN": "6",
+                "MODE": "OUTPUT"
+              },
+              "next": {
+                "block": {
+                  "type": "pin_mode_basic",
+                  "id": "pin_mode_basic_2",
+                  "fields": {
+                    "PIN": "3",
+                    "MODE": "OUTPUT"
+                  },
+                  "next": {
+                    "block": {
+                      "type": "serial_begin",
+                      "id": "serial_begin_1",
+                      "fields": {
+                        "BAUD": "9600"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "arduino_loop",
+        "id": "arduino_loop_1",
+        "x": 20,
+        "y": 240,
+        "inputs": {
+          "BODY": {
+            "block": {
+              "type": "digital_write_basic",
+              "id": "digital_write_basic_1",
+              "fields": {
+                "PIN": "6",
+                "VALUE": "HIGH"
+              },
+              "next": {
+                "block": {
+                  "type": "digital_write_basic",
+                  "id": "digital_write_basic_2",
+                  "fields": {
+                    "PIN": "3",
+                    "VALUE": "LOW"
+                  },
+                  "next": {
+                    "block": {
+                      "type": "serial_println",
+                      "id": "serial_println_1",
+                      "inputs": {
+                        "TEXT": {
+                          "block": {
+                            "type": "text",
+                            "id": "text_1",
+                            "fields": {
+                              "TEXT": "LED 6 encendido"
+                            }
+                          }
+                        }
+                      },
+                      "next": {
+                        "block": {
+                          "type": "delay_ms",
+                          "id": "delay_ms_1",
+                          "fields": {
+                            "MS": 1000
+                          },
+                          "next": {
+                            "block": {
+                              "type": "digital_write_basic",
+                              "id": "digital_write_basic_3",
+                              "fields": {
+                                "PIN": "6",
+                                "VALUE": "LOW"
+                              },
+                              "next": {
+                                "block": {
+                                  "type": "digital_write_basic",
+                                  "id": "digital_write_basic_4",
+                                  "fields": {
+                                    "PIN": "3",
+                                    "VALUE": "HIGH"
+                                  },
+                                  "next": {
+                                    "block": {
+                                      "type": "serial_println",
+                                      "id": "serial_println_2",
+                                      "inputs": {
+                                        "TEXT": {
+                                          "block": {
+                                            "type": "text",
+                                            "id": "text_2",
+                                            "fields": {
+                                              "TEXT": "LED 3 encendido"
+                                            }
+                                          }
+                                        }
+                                      },
+                                      "next": {
+                                        "block": {
+                                          "type": "delay_ms",
+                                          "id": "delay_ms_2",
+                                          "fields": {
+                                            "MS": 1000
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}
