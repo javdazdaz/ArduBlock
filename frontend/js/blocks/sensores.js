@@ -134,7 +134,7 @@ cppGenerator.forBlock['ultrasonic_create'] = function(block) {
     cppGenerator._usInstances.push({ name, trig, echo });
   }
   return 'pinMode(' + trig + ', OUTPUT);\n' +
-         '  pinMode(' + echo + ', INPUT);\n';
+         'pinMode(' + echo + ', INPUT);\n';
 };
 // ── ultrasonic_create_advanced (N3) ────────────
 cppGenerator.forBlock['ultrasonic_create_advanced'] = function(block) {
@@ -145,7 +145,7 @@ cppGenerator.forBlock['ultrasonic_create_advanced'] = function(block) {
     cppGenerator._usInstances.push({ name, trig, echo });
   }
   return 'pinMode(' + trig + ', OUTPUT);\n' +
-         '  pinMode(' + echo + ', INPUT);\n';
+         'pinMode(' + echo + ', INPUT);\n';
 };
 // ── ultrasonic_read ────────────────────────────
 cppGenerator.forBlock['ultrasonic_read'] = function(block) {
