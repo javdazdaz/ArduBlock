@@ -546,6 +546,22 @@ export function generateArduinoCode(workspace) {
   cppGenerator._salidaEstadoTextoUsed = false;
   cppGenerator._salidasDecl = [];
 
+  // ── Sensor ultrasónico: registrar las instancias antes de recorrer los
+  // bloques. El helper lo pide el bloque de lectura, que puede estar en el
+  // loop y procesarse antes que su bloque de creación.
+  for (const b of workspace.getAllBlocks(false)) {
+    if (b.type !== 'ultrasonic_create' && b.type !== 'ultrasonic_create_advanced') continue;
+    const name = b.getFieldValue('NAME') || 'us';
+    if (cppGenerator._usInstances.some(i => i.name === name)) continue;
+    const trig = b.type === 'ultrasonic_create'
+      ? b.getFieldValue('TRIG')
+      : (cppGenerator.valueToCode(b, 'TRIG', cppGenerator.ORDER_ATOMIC) || '9');
+    const echo = b.type === 'ultrasonic_create'
+      ? b.getFieldValue('ECHO')
+      : (cppGenerator.valueToCode(b, 'ECHO', cppGenerator.ORDER_ATOMIC) || '10');
+    cppGenerator._usInstances.push({ name, trig, echo });
+  }
+
   const topBlocks = workspace.getTopBlocks(true);
 
   // Código de bloques de sentencia que quedaron sueltos: corre al inicio del

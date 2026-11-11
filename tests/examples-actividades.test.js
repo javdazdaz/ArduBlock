@@ -17,10 +17,10 @@ function sketchDe(estado) {
 describe('ejemplos de actividades: usar', () => {
   const porNombre = Object.fromEntries(actividadExamples.map(e => [e.name, e]));
 
-  it('la sección declara los dos programas en la categoría usar', () => {
-    expect(actividadExamples).toHaveLength(2);
-    expect(actividadExamples.map(e => e.source)).toEqual(['actividades', 'actividades']);
-    expect(actividadExamples.map(e => e.category)).toEqual(['usar', 'usar']);
+  it('la sección declara los tres programas en la categoría usar', () => {
+    expect(actividadExamples).toHaveLength(3);
+    expect(actividadExamples.map(e => e.source)).toEqual(['actividades', 'actividades', 'actividades']);
+    expect(actividadExamples.map(e => e.category)).toEqual(['usar', 'usar', 'usar']);
   });
 
   it('el semáforo enciende los dos LED por turnos', () => {
@@ -48,5 +48,18 @@ describe('ejemplos de actividades: usar', () => {
     expect(sketch).toContain('contador = contador + 1;');
     expect(sketch).toContain('if (contador % 2 == 0) {');
     expect(sketch).toContain('anterior = estado;');
+  });
+
+  it('la distancia lee el ultrasónico y calcula el brillo del rojo', () => {
+    const sketch = sketchDe(porNombre['Distancia'].state);
+    expect(sketch).toContain('float us_read()');
+    expect(sketch).toContain('pinMode(9, OUTPUT);');
+    expect(sketch).toContain('pinMode(10, INPUT);');
+    expect(sketch).toContain('float d = us_read();');
+    expect(sketch).toContain('int rojo = ((LEJOS - d) * 255) / (LEJOS - UMBRAL_AMBAR);');
+    expect(sketch).toContain('rojo = constrain(rojo, 0, 255);');
+    expect(sketch).toContain('analogWrite(6, rojo);');
+    expect(sketch).toContain('Serial.print("distancia ");');
+    expect(sketch).toContain('delay(200);');
   });
 });
