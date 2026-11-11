@@ -6,6 +6,20 @@
  */
 export const sources = [
   {
+    id: 'actividades',
+    label: { es: '📋 Actividades', en: '📋 Activities' },
+    description: {
+      es: 'Programas de la clase, en la progresión usar, modificar y crear',
+      en: 'Class programs along the use, modify and create progression'
+    },
+    showEmptyCategories: true,
+    categories: [
+      { id: 'usar',      label: { es: 'Usar: leer y probar el programa',  en: 'Use: read and run the program' } },
+      { id: 'modificar', label: { es: 'Modificar: cambiar una parte',     en: 'Modify: change one part' } },
+      { id: 'crear',     label: { es: 'Crear: escribir el propio',        en: 'Create: write your own' } },
+    ]
+  },
+  {
     id: 'arduino-examples',
     label: { es: '📦 Ejemplos Arduino', en: '📦 Arduino Examples' },
     description: {

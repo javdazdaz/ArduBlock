@@ -560,6 +560,10 @@ export function generateArduinoCode(workspace) {
     } else if (block.type.startsWith('procedures_def')) {
       // Las definiciones de funciones van antes de setup.
       globals += cppGenerator.blockToCode(block);
+    } else if (block.type === 'variable_global') {
+      // Las variables globales se declaran fuera de toda función: dentro de
+      // setup el loop no las vería.
+      globals += cppGenerator.blockToCode(block);
     } else {
       // Cualquier otro bloque suelto con código de sentencia (los `crear` de
       // librería, por ejemplo) se ejecuta al inicio de setup. Los bloques de
