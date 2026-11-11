@@ -130,7 +130,9 @@ cppGenerator.forBlock['ultrasonic_create'] = function(block) {
   const name = block.getFieldValue('NAME') || 'us';
   const trig = block.getFieldValue('TRIG');
   const echo = block.getFieldValue('ECHO');
-  cppGenerator._usInstances.push({ name, trig, echo });
+  if (!cppGenerator._usInstances.some(i => i.name === name)) {
+    cppGenerator._usInstances.push({ name, trig, echo });
+  }
   return 'pinMode(' + trig + ', OUTPUT);\n' +
          '  pinMode(' + echo + ', INPUT);\n';
 };
@@ -139,7 +141,9 @@ cppGenerator.forBlock['ultrasonic_create_advanced'] = function(block) {
   const name = block.getFieldValue('NAME') || 'us';
   const trig = cppGenerator.valueToCode(block, 'TRIG', cppGenerator.ORDER_ATOMIC) || '9';
   const echo = cppGenerator.valueToCode(block, 'ECHO', cppGenerator.ORDER_ATOMIC) || '10';
-  cppGenerator._usInstances.push({ name, trig, echo });
+  if (!cppGenerator._usInstances.some(i => i.name === name)) {
+    cppGenerator._usInstances.push({ name, trig, echo });
+  }
   return 'pinMode(' + trig + ', OUTPUT);\n' +
          '  pinMode(' + echo + ', INPUT);\n';
 };

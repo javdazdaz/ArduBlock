@@ -1,0 +1,400 @@
+{
+  "blocks": {
+    "languageVersion": 0,
+    "blocks": [
+      {
+        "type": "ultrasonic_create",
+        "id": "ultrasonic_create_1",
+        "x": 20,
+        "y": 1400,
+        "fields": {
+          "NAME": "us",
+          "TRIG": 9,
+          "ECHO": 10
+        }
+      },
+      {
+        "type": "variable_global",
+        "id": "variable_global_1",
+        "x": 20,
+        "y": 1540,
+        "fields": {
+          "NAME": "LEJOS",
+          "TYPE": "int"
+        },
+        "inputs": {
+          "VALUE": {
+            "block": {
+              "type": "math_number",
+              "id": "math_number_1",
+              "fields": {
+                "NUM": 400
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "variable_global",
+        "id": "variable_global_2",
+        "x": 20,
+        "y": 1680,
+        "fields": {
+          "NAME": "UMBRAL_AMBAR",
+          "TYPE": "int"
+        },
+        "inputs": {
+          "VALUE": {
+            "block": {
+              "type": "math_number",
+              "id": "math_number_2",
+              "fields": {
+                "NUM": 30
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "arduino_setup",
+        "id": "arduino_setup_1",
+        "x": 20,
+        "y": 20,
+        "inputs": {
+          "BODY": {
+            "block": {
+              "type": "pin_mode_basic",
+              "id": "pin_mode_basic_1",
+              "fields": {
+                "PIN": "6",
+                "MODE": "OUTPUT"
+              },
+              "next": {
+                "block": {
+                  "type": "pin_mode_basic",
+                  "id": "pin_mode_basic_2",
+                  "fields": {
+                    "PIN": "5",
+                    "MODE": "OUTPUT"
+                  },
+                  "next": {
+                    "block": {
+                      "type": "pin_mode_basic",
+                      "id": "pin_mode_basic_3",
+                      "fields": {
+                        "PIN": "3",
+                        "MODE": "OUTPUT"
+                      },
+                      "next": {
+                        "block": {
+                          "type": "serial_begin",
+                          "id": "serial_begin_1",
+                          "fields": {
+                            "BAUD": "9600"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "arduino_loop",
+        "id": "arduino_loop_1",
+        "x": 20,
+        "y": 300,
+        "inputs": {
+          "BODY": {
+            "block": {
+              "type": "variable_declare",
+              "id": "variable_declare_1",
+              "fields": {
+                "NAME": "d",
+                "TYPE": "float"
+              },
+              "inputs": {
+                "VALUE": {
+                  "block": {
+                    "type": "ultrasonic_read",
+                    "id": "ultrasonic_read_1",
+                    "fields": {
+                      "NAME": "us"
+                    }
+                  }
+                }
+              },
+              "next": {
+                "block": {
+                  "type": "variable_declare",
+                  "id": "variable_declare_2",
+                  "fields": {
+                    "NAME": "rojo",
+                    "TYPE": "int"
+                  },
+                  "inputs": {
+                    "VALUE": {
+                      "block": {
+                        "type": "math_arithmetic",
+                        "id": "math_arithmetic_1",
+                        "fields": {
+                          "OP": "DIVIDE"
+                        },
+                        "inputs": {
+                          "A": {
+                            "block": {
+                              "type": "math_arithmetic",
+                              "id": "math_arithmetic_2",
+                              "fields": {
+                                "OP": "MULTIPLY"
+                              },
+                              "inputs": {
+                                "A": {
+                                  "block": {
+                                    "type": "math_arithmetic",
+                                    "id": "math_arithmetic_3",
+                                    "fields": {
+                                      "OP": "MINUS"
+                                    },
+                                    "inputs": {
+                                      "A": {
+                                        "block": {
+                                          "type": "variable_get",
+                                          "id": "variable_get_1",
+                                          "fields": {
+                                            "NAME": "LEJOS"
+                                          }
+                                        }
+                                      },
+                                      "B": {
+                                        "block": {
+                                          "type": "variable_get",
+                                          "id": "variable_get_2",
+                                          "fields": {
+                                            "NAME": "d"
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                },
+                                "B": {
+                                  "block": {
+                                    "type": "math_number",
+                                    "id": "math_number_3",
+                                    "fields": {
+                                      "NUM": 255
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "B": {
+                            "block": {
+                              "type": "math_arithmetic",
+                              "id": "math_arithmetic_4",
+                              "fields": {
+                                "OP": "MINUS"
+                              },
+                              "inputs": {
+                                "A": {
+                                  "block": {
+                                    "type": "variable_get",
+                                    "id": "variable_get_3",
+                                    "fields": {
+                                      "NAME": "LEJOS"
+                                    }
+                                  }
+                                },
+                                "B": {
+                                  "block": {
+                                    "type": "variable_get",
+                                    "id": "variable_get_4",
+                                    "fields": {
+                                      "NAME": "UMBRAL_AMBAR"
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "next": {
+                    "block": {
+                      "type": "variable_set",
+                      "id": "variable_set_1",
+                      "fields": {
+                        "NAME": "rojo"
+                      },
+                      "inputs": {
+                        "VALUE": {
+                          "block": {
+                            "type": "math_constrain",
+                            "id": "math_constrain_1",
+                            "inputs": {
+                              "VALUE": {
+                                "block": {
+                                  "type": "variable_get",
+                                  "id": "variable_get_5",
+                                  "fields": {
+                                    "NAME": "rojo"
+                                  }
+                                }
+                              },
+                              "LOW": {
+                                "block": {
+                                  "type": "math_number",
+                                  "id": "math_number_4",
+                                  "fields": {
+                                    "NUM": 0
+                                  }
+                                }
+                              },
+                              "HIGH": {
+                                "block": {
+                                  "type": "math_number",
+                                  "id": "math_number_5",
+                                  "fields": {
+                                    "NUM": 255
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "next": {
+                        "block": {
+                          "type": "analog_write_basic",
+                          "id": "analog_write_basic_1",
+                          "fields": {
+                            "PIN": "6"
+                          },
+                          "inputs": {
+                            "VALUE": {
+                              "block": {
+                                "type": "variable_get",
+                                "id": "variable_get_6",
+                                "fields": {
+                                  "NAME": "rojo"
+                                }
+                              }
+                            }
+                          },
+                          "next": {
+                            "block": {
+                              "type": "digital_write_basic",
+                              "id": "digital_write_basic_1",
+                              "fields": {
+                                "PIN": "5",
+                                "VALUE": "LOW"
+                              },
+                              "next": {
+                                "block": {
+                                  "type": "digital_write_basic",
+                                  "id": "digital_write_basic_2",
+                                  "fields": {
+                                    "PIN": "3",
+                                    "VALUE": "LOW"
+                                  },
+                                  "next": {
+                                    "block": {
+                                      "type": "serial_print",
+                                      "id": "serial_print_1",
+                                      "inputs": {
+                                        "TEXT": {
+                                          "block": {
+                                            "type": "text",
+                                            "id": "text_1",
+                                            "fields": {
+                                              "TEXT": "distancia "
+                                            }
+                                          }
+                                        }
+                                      },
+                                      "next": {
+                                        "block": {
+                                          "type": "serial_print",
+                                          "id": "serial_print_2",
+                                          "inputs": {
+                                            "TEXT": {
+                                              "block": {
+                                                "type": "variable_get",
+                                                "id": "variable_get_7",
+                                                "fields": {
+                                                  "NAME": "d"
+                                                }
+                                              }
+                                            }
+                                          },
+                                          "next": {
+                                            "block": {
+                                              "type": "serial_print",
+                                              "id": "serial_print_3",
+                                              "inputs": {
+                                                "TEXT": {
+                                                  "block": {
+                                                    "type": "text",
+                                                    "id": "text_2",
+                                                    "fields": {
+                                                      "TEXT": " cm, rojo "
+                                                    }
+                                                  }
+                                                }
+                                              },
+                                              "next": {
+                                                "block": {
+                                                  "type": "serial_println",
+                                                  "id": "serial_println_1",
+                                                  "inputs": {
+                                                    "TEXT": {
+                                                      "block": {
+                                                        "type": "variable_get",
+                                                        "id": "variable_get_8",
+                                                        "fields": {
+                                                          "NAME": "rojo"
+                                                        }
+                                                      }
+                                                    }
+                                                  },
+                                                  "next": {
+                                                    "block": {
+                                                      "type": "delay_ms",
+                                                      "id": "delay_ms_1",
+                                                      "fields": {
+                                                        "MS": 200
+                                                      }
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}
