@@ -20,6 +20,7 @@ import { missingExamples }   from './examples-missing.js';
 import { matrixExamples }   from './examples-matrix.js';
 import { oledExamples }     from './examples-oled.js';
 import { webExamples, cargarTabRecursoHtml } from './examples-web.js';
+import { robotExamples } from './examples-robots.js';
 import { escapeHtml, cancelAutoSave } from './project-manager.js';
 import { restoreWorkspaceState } from './workspace-restore.js';
 import { cargarTabsRecursoOled } from './matrix-animation.js';
@@ -39,6 +40,7 @@ const allExamples = [
   ...matrixExamples,
   ...oledExamples,
   ...webExamples,
+  ...robotExamples,
 ];
 
 let workspace, examplesModal, examplesList, showToast, updateCodeFn, projectInput;
