@@ -28,6 +28,7 @@ export const AFMOTOR_CATEGORY_BLOCKS = [
   { kind: 'block', type: 'afmotor_stepper_onestep' },
   { kind: 'block', type: 'afmotor_stepper_release' },
   { kind: 'block', type: 'afmotor_servo_create' },
+  { kind: 'block', type: 'afmotor_servo_attach' },
   { kind: 'block', type: 'afmotor_servo_write' },
   { kind: 'block', type: 'afmotor_servo_write_us' },
   { kind: 'block', type: 'afmotor_servo_read' },

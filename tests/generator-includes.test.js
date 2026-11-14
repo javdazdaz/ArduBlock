@@ -56,7 +56,7 @@ describe('orden del sketch', () => {
 });
 
 describe('bloques sueltos', () => {
-  it('el create suelto inicializa dentro de setup', () => {
+  it('el create suelto declara y no emite llamadas', () => {
     const sketch = sketchDe({
       blocks: { languageVersion: 0, blocks: [
         incl,
@@ -66,9 +66,8 @@ describe('bloques sueltos', () => {
       ] },
     });
 
-    const setup = sketch.slice(sketch.indexOf('void setup()'), sketch.indexOf('void loop()'));
-    expect(setup).toContain('motor1.setSpeed(200);');
-    expect(sketch.slice(0, sketch.indexOf('void setup()'))).not.toContain('setSpeed');
+    expect(sketch).toContain('AF_DCMotor motor1(1);');
+    expect(sketch).not.toContain('setSpeed');
   });
 
   it('el speed suelto queda dentro de setup e indentado', () => {

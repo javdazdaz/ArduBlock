@@ -1,5 +1,5 @@
 import { it } from 'vitest';
-import { writeFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import * as Blockly from 'blockly';
 import '../frontend/js/blocks.js';
 import { generateArduinoCode } from '../frontend/js/generator.js';
@@ -33,7 +33,10 @@ it.runIf(Boolean(process.env.AFMOTOR_AUDIT))('audita la familia AFMotor', () => 
 
   const servoCreate = ws.newBlock('afmotor_servo_create');
   servoCreate.setFieldValue('servo1', 'NAME');
-  servoCreate.setFieldValue('1', 'SERVO');
+  const servoAttach = ws.newBlock('afmotor_servo_attach');
+  servoAttach.setFieldValue('servo1', 'NAME');
+  servoAttach.setFieldValue('1', 'SERVO');
+  setup.getInput('BODY').connection.connect(servoAttach.previousConnection);
 
   const encadenar = (bloques) => {
     for (let i = 0; i < bloques.length - 1; i++) {
@@ -111,5 +114,46 @@ it.runIf(Boolean(process.env.AFMOTOR_AUDIT))('audita la familia AFMotor', () => 
   if (process.env.AFMOTOR_OUT) {
     writeFileSync(process.env.AFMOTOR_OUT + '/SketchAFMotor.ino.tmp', sketch);
   }
+  ws.dispose();
+});
+
+it.runIf(Boolean(process.env.AFMOTOR_MOTORES))('escribe un sketch de motores sin servo', () => {
+  const base = process.env.AFMOTOR_OUT || '/tmp/ardublock-afmotor';
+  const ws = new Blockly.Workspace();
+  ws.newBlock('library_include').setFieldValue('AFMotor_R4.h', 'LIB');
+  const setup = ws.newBlock('arduino_setup');
+  const loop = ws.newBlock('arduino_loop');
+
+  const dc = ws.newBlock('afmotor_dc_create');
+  dc.setFieldValue('motor1', 'NAME');
+  dc.setFieldValue('1', 'CHANNEL');
+  const speed = ws.newBlock('afmotor_dc_speed');
+  speed.setFieldValue('motor1', 'NAME');
+  speed.setFieldValue('120', 'SPEED');
+  const st = ws.newBlock('afmotor_stepper_create');
+  st.setFieldValue('stepper1', 'NAME');
+  st.setFieldValue('200', 'STEPS');
+  st.setFieldValue('1', 'CHANNEL');
+  const rpm = ws.newBlock('afmotor_stepper_speed');
+  rpm.setFieldValue('stepper1', 'NAME');
+  rpm.setFieldValue('30', 'RPM');
+
+  setup.getInput('BODY').connection.connect(speed.previousConnection);
+  speed.nextConnection.connect(rpm.previousConnection);
+
+  const run = ws.newBlock('afmotor_dc_run');
+  run.setFieldValue('motor1', 'NAME');
+  run.setFieldValue('FORWARD', 'DIR');
+  const step = ws.newBlock('afmotor_stepper_step');
+  step.setFieldValue('stepper1', 'NAME');
+  step.setFieldValue('100', 'COUNT');
+  step.setFieldValue('FORWARD', 'DIR');
+  step.setFieldValue('SINGLE', 'STYLE');
+  loop.getInput('BODY').connection.connect(run.previousConnection);
+  run.nextConnection.connect(step.previousConnection);
+
+  const sketch = generateArduinoCode(ws);
+  mkdirSync(base + '/MotoresAF', { recursive: true });
+  writeFileSync(base + '/MotoresAF/MotoresAF.ino', sketch);
   ws.dispose();
 });

@@ -208,6 +208,11 @@ function validateWorkspace(workspace) {
     const name = block.getFieldValue('NAME');
     if (name) servoNames.add(name.trim());
 
+    // El create del shield solo declara y va suelto: la conexión la hace
+    // afmotor_servo_attach, que sí tiene conexiones. Pedirle setup sería un
+    // aviso que el bloque no puede cumplir.
+    if (block.previousConnection === null) continue;
+
     // R6b: servo_create debe ir dentro de setup()
     if (!isInsideBlockType(workspace, block, 'arduino_setup')) {
       const context = getArduinoContext(workspace, block);
@@ -225,6 +230,7 @@ function validateWorkspace(workspace) {
   const servoUsageBlocks = [
     ...findAllBlocksOfType(workspace, 'servo_write'),
     ...findAllBlocksOfType(workspace, 'servo_write_us'),
+    ...findAllBlocksOfType(workspace, 'afmotor_servo_attach'),
     ...findAllBlocksOfType(workspace, 'afmotor_servo_write'),
     ...findAllBlocksOfType(workspace, 'afmotor_servo_write_us'),
     ...findAllBlocksOfType(workspace, 'afmotor_servo_read'),
@@ -258,7 +264,7 @@ function validateWorkspace(workspace) {
       if (pin) servoPins.set(pin, (block.getFieldValue('NAME') || '').trim());
     }
   }
-  for (const block of findAllBlocksOfType(workspace, 'afmotor_servo_create')) {
+  for (const block of findAllBlocksOfType(workspace, 'afmotor_servo_attach')) {
     const pin = block.getFieldValue('SERVO') === '2' ? '10' : '9';
     servoPins.set(pin, (block.getFieldValue('NAME') || '').trim());
   }
@@ -297,9 +303,7 @@ function validateWorkspace(workspace) {
     { type: 'ultrasonic_create_advanced', field: 'NAME', labelKey: 'lbl_ultrasonic' },
     { type: 'stepper_create', field: 'NAME', labelKey: 'lbl_stepper' },
     { type: 'stepper_create_advanced', field: 'NAME', labelKey: 'lbl_stepper' },
-    { type: 'afmotor_dc_create', field: 'NAME', labelKey: 'lbl_motor_dc' },
-    { type: 'afmotor_stepper_create', field: 'NAME', labelKey: 'lbl_stepper_afmotor' },
-    { type: 'afmotor_servo_create', field: 'NAME', labelKey: 'lbl_servo_afmotor' }
+    { type: 'afmotor_servo_attach', field: 'NAME', labelKey: 'lbl_servo_afmotor' }
   ];
 
   for (const cfg of inSetupTypes) {
@@ -329,7 +333,8 @@ function validateWorkspace(workspace) {
     'afmotor_dc_create', 'afmotor_dc_speed', 'afmotor_dc_run',
     'afmotor_stepper_create', 'afmotor_stepper_speed', 'afmotor_stepper_step',
     'afmotor_stepper_onestep', 'afmotor_stepper_release',
-    'afmotor_servo_create', 'afmotor_servo_write', 'afmotor_servo_write_us',
+    'afmotor_servo_create', 'afmotor_servo_attach',
+    'afmotor_servo_write', 'afmotor_servo_write_us',
     'afmotor_servo_read', 'afmotor_servo_detach'
   ];
   const afmotorBlocks = [];
@@ -343,6 +348,33 @@ function validateWorkspace(workspace) {
         severity: 'error',
         message: t('val_afmotor_include_missing'),
         blocks: afmotorBlocks
+      });
+    }
+  }
+
+  // ═══ R6g: motor o servo declarado sin su bloque de ajuste ═══
+  // El create solo declara: sin el segundo bloque la instancia existe y no se
+  // mueve, porque AF_DCMotor y AF_Stepper arrancan en velocidad 0.
+  const nombresDe = (tipo) => new Set(
+    findAllBlocksOfType(workspace, tipo)
+      .map(b => (b.getFieldValue('NAME') || '').trim())
+      .filter(Boolean)
+  );
+  const paresAjuste = [
+    ['afmotor_dc_create', 'afmotor_dc_speed', 'val_afmotor_sin_velocidad'],
+    ['afmotor_stepper_create', 'afmotor_stepper_speed', 'val_afmotor_sin_rpm'],
+    ['afmotor_servo_create', 'afmotor_servo_attach', 'val_afmotor_sin_conectar'],
+  ];
+  for (const [tipoCrear, tipoAjustar, clave] of paresAjuste) {
+    const ajustados = nombresDe(tipoAjustar);
+    for (const bloque of findAllBlocksOfType(workspace, tipoCrear)) {
+      const nombre = (bloque.getFieldValue('NAME') || '').trim();
+      if (!nombre || ajustados.has(nombre)) continue;
+      warnings.push({
+        type: 'afmotor_sin_ajuste',
+        severity: 'warning',
+        message: t(clave, { name: nombre }),
+        blocks: [bloque]
       });
     }
   }
