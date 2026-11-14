@@ -25,9 +25,10 @@ describe('categoría Motor AF', () => {
     expect(categorias(conInclude)).toContain('CAT_AFMOTOR');
   });
 
-  it('la categoría trae los trece bloques del shield', () => {
-    expect(AFMOTOR_CATEGORY_BLOCKS).toHaveLength(13);
+  it('la categoría trae los catorce bloques del shield', () => {
+    expect(AFMOTOR_CATEGORY_BLOCKS).toHaveLength(14);
     expect(AFMOTOR_CATEGORY_BLOCKS.map(b => b.type)).toContain('afmotor_servo_create');
+    expect(AFMOTOR_CATEGORY_BLOCKS.map(b => b.type)).toContain('afmotor_servo_attach');
     expect(AFMOTOR_CATEGORY_BLOCKS.every(b => b.kind === 'block')).toBe(true);
   });
 });

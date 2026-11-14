@@ -144,14 +144,27 @@ export const blocks = [
     "type": "afmotor_servo_create",
     "message0": Blockly.Msg.MSG_AFMOTOR_SERVO_CREATE,
     "args0": [
+      { "type": "field_input", "name": "NAME", "text": "servo1" }
+    ],
+    "inputsInline": true,
+    "colour": 310,
+    "tooltip": Blockly.Msg.TOOLTIP_AFMOTOR_SERVO_CREATE,
+    "helpUrl": ""
+  },
+{
+    "type": "afmotor_servo_attach",
+    "message0": Blockly.Msg.MSG_AFMOTOR_SERVO_ATTACH,
+    "args0": [
       { "type": "field_input", "name": "NAME", "text": "servo1" },
       { "type": "field_dropdown", "name": "SERVO", "options": [
         ["1", "1"], ["2", "2"]
       ]}
     ],
     "inputsInline": true,
+    "previousStatement": null,
+    "nextStatement": null,
     "colour": 310,
-    "tooltip": Blockly.Msg.TOOLTIP_AFMOTOR_SERVO_CREATE,
+    "tooltip": Blockly.Msg.TOOLTIP_AFMOTOR_SERVO_ATTACH,
     "helpUrl": ""
   },
 {
@@ -211,12 +224,13 @@ export const blocks = [
 
 export function registerGenerators(cppGenerator) {
 // ── afmotor_dc_create ─────────────────────────
-// Declaración global + attach en setup
+// Solo declara: `AF_DCMotor motor1(1);` lo emite generateArduinoCode. La
+// velocidad va en su propio bloque, como en el resto de la familia.
 cppGenerator.forBlock['afmotor_dc_create'] = function(block) {
   const name = block.getFieldValue('NAME') || 'motor1';
   const channel = block.getFieldValue('CHANNEL');
   cppGenerator._afmotorDcInstances.push({ name, channel });
-  return name + '.setSpeed(200);\n';  // velocidad por defecto en setup
+  return '';
 };
 // ── afmotor_dc_speed ──────────────────────────
 cppGenerator.forBlock['afmotor_dc_speed'] = function(block) {
@@ -236,7 +250,7 @@ cppGenerator.forBlock['afmotor_stepper_create'] = function(block) {
   const steps = block.getFieldValue('STEPS');
   const channel = block.getFieldValue('CHANNEL');
   cppGenerator._afmotorStepperInstances.push({ name, steps, channel });
-  return name + '.setSpeed(60);\n';  // RPM por defecto
+  return '';
 };
 // ── afmotor_stepper_speed ─────────────────────
 cppGenerator.forBlock['afmotor_stepper_speed'] = function(block) {
@@ -272,6 +286,10 @@ cppGenerator.forBlock['afmotor_stepper_release'] = function(block) {
 const AFMOTOR_SERVO_PINES = { '1': '9', '2': '10' };
 
 cppGenerator.forBlock['afmotor_servo_create'] = function(block) {
+  const name = (block.getFieldValue('NAME') || 'servo1').trim();
+  return '';  // `Servo nombre;` lo declara generateArduinoCode
+};
+cppGenerator.forBlock['afmotor_servo_attach'] = function(block) {
   const name = (block.getFieldValue('NAME') || 'servo1').trim();
   const pin = AFMOTOR_SERVO_PINES[block.getFieldValue('SERVO')] || '9';
   return name + '.attach(' + pin + ');\n';

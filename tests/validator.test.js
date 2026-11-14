@@ -515,7 +515,8 @@ describe('validator — reglas de validación', () => {
         mb('arduino_setup'),
         mb('arduino_loop'),
         mb('library_include', { LIB: 'AFMotor_R4.h' }),
-        mb('afmotor_servo_create', { NAME: 's1', SERVO: '1' }),
+        mb('afmotor_servo_create', { NAME: 's1' }),
+        mb('afmotor_servo_attach', { NAME: 's1', SERVO: '1' }),
         mb('analog_write_basic', { PIN: '9' }),
       ]);
       const w = validateWorkspace(ws);
