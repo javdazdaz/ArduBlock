@@ -31,22 +31,20 @@ describe('ejemplo SMARS con ultrasónico', () => {
     expect(ejemplo.comment.en).toContain('SMARS');
   });
 
-  it('el estado carga con los 57 bloques', () => {
+  it('el estado carga con los 39 bloques', () => {
     Blockly.serialization.workspaces.load(ejemplo.state, ws);
-    expect(ws.getAllBlocks(false).length).toBe(57);
+    expect(ws.getAllBlocks(false).length).toBe(39);
   });
 
-  it('el sketch incluye el shield y los cuatro motores', () => {
+  it('el sketch incluye el shield y los dos motores del 2WD', () => {
     Blockly.serialization.workspaces.load(ejemplo.state, ws);
     const sketch = generateArduinoCode(ws);
 
     expect(sketch).toContain('#include "AFMotor_R4.h"');
-    for (const [nombre, canal] of [
-      ['motorDerecho', 1], ['motorIzquierdo', 2],
-      ['motorIzquierdo1', 3], ['motorDerecho1', 4],
-    ]) {
-      expect(sketch).toContain(`AF_DCMotor ${nombre}(${canal});`);
-    }
+    expect(sketch).toContain('AF_DCMotor motorIzquierdo(2);');
+    expect(sketch).toContain('AF_DCMotor motorDerecho(1);');
+    expect(sketch).not.toContain('motorIzquierdo1');
+    expect(sketch).not.toContain('motorDerecho1');
     expect(sketch).toContain('motorDerecho.setSpeed(180);');
     expect(sketch).toContain('motorDerecho.setSpeed(170);');
   });

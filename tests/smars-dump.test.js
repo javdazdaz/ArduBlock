@@ -28,8 +28,7 @@ it.runIf(Boolean(process.env.SMARS_DUMP))('escribe el estado y el sketch del SMA
   include.setFieldValue('AFMotor_R4.h', 'LIB');
 
   const motores = [
-    ['motorDerecho', '1'], ['motorIzquierdo', '2'],
-    ['motorIzquierdo1', '3'], ['motorDerecho1', '4'],
+    ['motorIzquierdo', '2'], ['motorDerecho', '1'],
   ];
   const creates = motores.map(([nombre, canal]) => {
     const b = ws.newBlock('afmotor_dc_create');
@@ -114,17 +113,17 @@ it.runIf(Boolean(process.env.SMARS_DUMP))('escribe el estado y el sketch del SMA
   // Obstáculo: retroceder, girar a la derecha y seguir.
   const esquiva = [
     ...velocidad(170),
-    ...mover(['FORWARD', 'BACKWARD', 'FORWARD', 'BACKWARD']),  // retroceder
+    ...mover(['BACKWARD', 'FORWARD']),  // retroceder
     espera(300),
-    ...mover(['RELEASE', 'RELEASE', 'RELEASE', 'RELEASE']),
-    ...mover(['FORWARD', 'FORWARD', 'FORWARD', 'FORWARD']),    // girar a la derecha
+    ...mover(['RELEASE', 'RELEASE']),
+    ...mover(['FORWARD', 'FORWARD']),   // girar a la derecha
     espera(400),
-    ...mover(['RELEASE', 'RELEASE', 'RELEASE', 'RELEASE']),
+    ...mover(['RELEASE', 'RELEASE']),
     ...velocidad(180),
   ];
   // Camino libre: avanzar.
   const avance = [
-    ...mover(['BACKWARD', 'FORWARD', 'BACKWARD', 'FORWARD']),
+    ...mover(['FORWARD', 'BACKWARD']),
     espera(50),
   ];
 
