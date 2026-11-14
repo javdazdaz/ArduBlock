@@ -29,7 +29,7 @@
                       "type": "afmotor_dc_speed",
                       "id": "smars_4",
                       "fields": {
-                        "NAME": "motorDerecho",
+                        "NAME": "motorIzquierdo",
                         "SPEED": 180
                       },
                       "next": {
@@ -37,35 +37,15 @@
                           "type": "afmotor_dc_speed",
                           "id": "smars_5",
                           "fields": {
-                            "NAME": "motorIzquierdo",
+                            "NAME": "motorDerecho",
                             "SPEED": 180
                           },
                           "next": {
                             "block": {
-                              "type": "afmotor_dc_speed",
+                              "type": "delay_ms",
                               "id": "smars_6",
                               "fields": {
-                                "NAME": "motorIzquierdo1",
-                                "SPEED": 180
-                              },
-                              "next": {
-                                "block": {
-                                  "type": "afmotor_dc_speed",
-                                  "id": "smars_7",
-                                  "fields": {
-                                    "NAME": "motorDerecho1",
-                                    "SPEED": 180
-                                  },
-                                  "next": {
-                                    "block": {
-                                      "type": "delay_ms",
-                                      "id": "smars_8",
-                                      "fields": {
-                                        "MS": 500
-                                      }
-                                    }
-                                  }
-                                }
+                                "MS": 500
                               }
                             }
                           }
@@ -81,14 +61,14 @@
       },
       {
         "type": "arduino_loop",
-        "id": "smars_9",
+        "id": "smars_7",
         "x": 20,
         "y": 340,
         "inputs": {
           "BODY": {
             "block": {
               "type": "variable_declare",
-              "id": "smars_10",
+              "id": "smars_8",
               "fields": {
                 "NAME": "distancia",
                 "TYPE": "long"
@@ -97,7 +77,7 @@
                 "VALUE": {
                   "block": {
                     "type": "ultrasonic_read",
-                    "id": "smars_11",
+                    "id": "smars_9",
                     "fields": {
                       "NAME": "us"
                     }
@@ -107,12 +87,12 @@
               "next": {
                 "block": {
                   "type": "serial_print",
-                  "id": "smars_12",
+                  "id": "smars_10",
                   "inputs": {
                     "TEXT": {
                       "block": {
                         "type": "text",
-                        "id": "smars_13",
+                        "id": "smars_11",
                         "fields": {
                           "TEXT": "Distancia: "
                         }
@@ -122,12 +102,12 @@
                   "next": {
                     "block": {
                       "type": "serial_print",
-                      "id": "smars_14",
+                      "id": "smars_12",
                       "inputs": {
                         "TEXT": {
                           "block": {
                             "type": "variable_get",
-                            "id": "smars_15",
+                            "id": "smars_13",
                             "fields": {
                               "NAME": "distancia"
                             }
@@ -137,12 +117,12 @@
                       "next": {
                         "block": {
                           "type": "serial_println",
-                          "id": "smars_16",
+                          "id": "smars_14",
                           "inputs": {
                             "TEXT": {
                               "block": {
                                 "type": "text",
-                                "id": "smars_17",
+                                "id": "smars_15",
                                 "fields": {
                                   "TEXT": " cm"
                                 }
@@ -152,7 +132,7 @@
                           "next": {
                             "block": {
                               "type": "controls_if",
-                              "id": "smars_18",
+                              "id": "smars_16",
                               "extraState": {
                                 "hasElse": true
                               },
@@ -160,7 +140,7 @@
                                 "IF0": {
                                   "block": {
                                     "type": "logic_compare",
-                                    "id": "smars_19",
+                                    "id": "smars_17",
                                     "fields": {
                                       "OP": "LTE"
                                     },
@@ -168,7 +148,7 @@
                                       "A": {
                                         "block": {
                                           "type": "variable_get",
-                                          "id": "smars_20",
+                                          "id": "smars_18",
                                           "fields": {
                                             "NAME": "distancia"
                                           }
@@ -177,7 +157,7 @@
                                       "B": {
                                         "block": {
                                           "type": "math_number",
-                                          "id": "smars_21",
+                                          "id": "smars_19",
                                           "fields": {
                                             "NUM": 20
                                           }
@@ -189,86 +169,85 @@
                                 "DO0": {
                                   "block": {
                                     "type": "afmotor_dc_speed",
-                                    "id": "smars_22",
+                                    "id": "smars_20",
                                     "fields": {
-                                      "NAME": "motorDerecho",
+                                      "NAME": "motorIzquierdo",
                                       "SPEED": 170
                                     },
                                     "next": {
                                       "block": {
                                         "type": "afmotor_dc_speed",
-                                        "id": "smars_23",
+                                        "id": "smars_21",
                                         "fields": {
-                                          "NAME": "motorIzquierdo",
+                                          "NAME": "motorDerecho",
                                           "SPEED": 170
                                         },
                                         "next": {
                                           "block": {
-                                            "type": "afmotor_dc_speed",
-                                            "id": "smars_24",
+                                            "type": "afmotor_dc_run",
+                                            "id": "smars_22",
                                             "fields": {
-                                              "NAME": "motorIzquierdo1",
-                                              "SPEED": 170
+                                              "NAME": "motorIzquierdo",
+                                              "DIR": "BACKWARD"
                                             },
                                             "next": {
                                               "block": {
-                                                "type": "afmotor_dc_speed",
-                                                "id": "smars_25",
+                                                "type": "afmotor_dc_run",
+                                                "id": "smars_23",
                                                 "fields": {
-                                                  "NAME": "motorDerecho1",
-                                                  "SPEED": 170
+                                                  "NAME": "motorDerecho",
+                                                  "DIR": "FORWARD"
                                                 },
                                                 "next": {
                                                   "block": {
-                                                    "type": "afmotor_dc_run",
-                                                    "id": "smars_26",
+                                                    "type": "delay_ms",
+                                                    "id": "smars_24",
                                                     "fields": {
-                                                      "NAME": "motorDerecho",
-                                                      "DIR": "FORWARD"
+                                                      "MS": 300
                                                     },
                                                     "next": {
                                                       "block": {
                                                         "type": "afmotor_dc_run",
-                                                        "id": "smars_27",
+                                                        "id": "smars_25",
                                                         "fields": {
                                                           "NAME": "motorIzquierdo",
-                                                          "DIR": "BACKWARD"
+                                                          "DIR": "RELEASE"
                                                         },
                                                         "next": {
                                                           "block": {
                                                             "type": "afmotor_dc_run",
-                                                            "id": "smars_28",
+                                                            "id": "smars_26",
                                                             "fields": {
-                                                              "NAME": "motorIzquierdo1",
-                                                              "DIR": "FORWARD"
+                                                              "NAME": "motorDerecho",
+                                                              "DIR": "RELEASE"
                                                             },
                                                             "next": {
                                                               "block": {
                                                                 "type": "afmotor_dc_run",
-                                                                "id": "smars_29",
+                                                                "id": "smars_27",
                                                                 "fields": {
-                                                                  "NAME": "motorDerecho1",
-                                                                  "DIR": "BACKWARD"
+                                                                  "NAME": "motorIzquierdo",
+                                                                  "DIR": "FORWARD"
                                                                 },
                                                                 "next": {
                                                                   "block": {
-                                                                    "type": "delay_ms",
-                                                                    "id": "smars_30",
+                                                                    "type": "afmotor_dc_run",
+                                                                    "id": "smars_28",
                                                                     "fields": {
-                                                                      "MS": 300
+                                                                      "NAME": "motorDerecho",
+                                                                      "DIR": "FORWARD"
                                                                     },
                                                                     "next": {
                                                                       "block": {
-                                                                        "type": "afmotor_dc_run",
-                                                                        "id": "smars_31",
+                                                                        "type": "delay_ms",
+                                                                        "id": "smars_29",
                                                                         "fields": {
-                                                                          "NAME": "motorDerecho",
-                                                                          "DIR": "RELEASE"
+                                                                          "MS": 400
                                                                         },
                                                                         "next": {
                                                                           "block": {
                                                                             "type": "afmotor_dc_run",
-                                                                            "id": "smars_32",
+                                                                            "id": "smars_30",
                                                                             "fields": {
                                                                               "NAME": "motorIzquierdo",
                                                                               "DIR": "RELEASE"
@@ -276,145 +255,26 @@
                                                                             "next": {
                                                                               "block": {
                                                                                 "type": "afmotor_dc_run",
-                                                                                "id": "smars_33",
+                                                                                "id": "smars_31",
                                                                                 "fields": {
-                                                                                  "NAME": "motorIzquierdo1",
+                                                                                  "NAME": "motorDerecho",
                                                                                   "DIR": "RELEASE"
                                                                                 },
                                                                                 "next": {
                                                                                   "block": {
-                                                                                    "type": "afmotor_dc_run",
-                                                                                    "id": "smars_34",
+                                                                                    "type": "afmotor_dc_speed",
+                                                                                    "id": "smars_32",
                                                                                     "fields": {
-                                                                                      "NAME": "motorDerecho1",
-                                                                                      "DIR": "RELEASE"
+                                                                                      "NAME": "motorIzquierdo",
+                                                                                      "SPEED": 180
                                                                                     },
                                                                                     "next": {
                                                                                       "block": {
-                                                                                        "type": "afmotor_dc_run",
-                                                                                        "id": "smars_35",
+                                                                                        "type": "afmotor_dc_speed",
+                                                                                        "id": "smars_33",
                                                                                         "fields": {
                                                                                           "NAME": "motorDerecho",
-                                                                                          "DIR": "FORWARD"
-                                                                                        },
-                                                                                        "next": {
-                                                                                          "block": {
-                                                                                            "type": "afmotor_dc_run",
-                                                                                            "id": "smars_36",
-                                                                                            "fields": {
-                                                                                              "NAME": "motorIzquierdo",
-                                                                                              "DIR": "FORWARD"
-                                                                                            },
-                                                                                            "next": {
-                                                                                              "block": {
-                                                                                                "type": "afmotor_dc_run",
-                                                                                                "id": "smars_37",
-                                                                                                "fields": {
-                                                                                                  "NAME": "motorIzquierdo1",
-                                                                                                  "DIR": "FORWARD"
-                                                                                                },
-                                                                                                "next": {
-                                                                                                  "block": {
-                                                                                                    "type": "afmotor_dc_run",
-                                                                                                    "id": "smars_38",
-                                                                                                    "fields": {
-                                                                                                      "NAME": "motorDerecho1",
-                                                                                                      "DIR": "FORWARD"
-                                                                                                    },
-                                                                                                    "next": {
-                                                                                                      "block": {
-                                                                                                        "type": "delay_ms",
-                                                                                                        "id": "smars_39",
-                                                                                                        "fields": {
-                                                                                                          "MS": 400
-                                                                                                        },
-                                                                                                        "next": {
-                                                                                                          "block": {
-                                                                                                            "type": "afmotor_dc_run",
-                                                                                                            "id": "smars_40",
-                                                                                                            "fields": {
-                                                                                                              "NAME": "motorDerecho",
-                                                                                                              "DIR": "RELEASE"
-                                                                                                            },
-                                                                                                            "next": {
-                                                                                                              "block": {
-                                                                                                                "type": "afmotor_dc_run",
-                                                                                                                "id": "smars_41",
-                                                                                                                "fields": {
-                                                                                                                  "NAME": "motorIzquierdo",
-                                                                                                                  "DIR": "RELEASE"
-                                                                                                                },
-                                                                                                                "next": {
-                                                                                                                  "block": {
-                                                                                                                    "type": "afmotor_dc_run",
-                                                                                                                    "id": "smars_42",
-                                                                                                                    "fields": {
-                                                                                                                      "NAME": "motorIzquierdo1",
-                                                                                                                      "DIR": "RELEASE"
-                                                                                                                    },
-                                                                                                                    "next": {
-                                                                                                                      "block": {
-                                                                                                                        "type": "afmotor_dc_run",
-                                                                                                                        "id": "smars_43",
-                                                                                                                        "fields": {
-                                                                                                                          "NAME": "motorDerecho1",
-                                                                                                                          "DIR": "RELEASE"
-                                                                                                                        },
-                                                                                                                        "next": {
-                                                                                                                          "block": {
-                                                                                                                            "type": "afmotor_dc_speed",
-                                                                                                                            "id": "smars_44",
-                                                                                                                            "fields": {
-                                                                                                                              "NAME": "motorDerecho",
-                                                                                                                              "SPEED": 180
-                                                                                                                            },
-                                                                                                                            "next": {
-                                                                                                                              "block": {
-                                                                                                                                "type": "afmotor_dc_speed",
-                                                                                                                                "id": "smars_45",
-                                                                                                                                "fields": {
-                                                                                                                                  "NAME": "motorIzquierdo",
-                                                                                                                                  "SPEED": 180
-                                                                                                                                },
-                                                                                                                                "next": {
-                                                                                                                                  "block": {
-                                                                                                                                    "type": "afmotor_dc_speed",
-                                                                                                                                    "id": "smars_46",
-                                                                                                                                    "fields": {
-                                                                                                                                      "NAME": "motorIzquierdo1",
-                                                                                                                                      "SPEED": 180
-                                                                                                                                    },
-                                                                                                                                    "next": {
-                                                                                                                                      "block": {
-                                                                                                                                        "type": "afmotor_dc_speed",
-                                                                                                                                        "id": "smars_47",
-                                                                                                                                        "fields": {
-                                                                                                                                          "NAME": "motorDerecho1",
-                                                                                                                                          "SPEED": 180
-                                                                                                                                        }
-                                                                                                                                      }
-                                                                                                                                    }
-                                                                                                                                  }
-                                                                                                                                }
-                                                                                                                              }
-                                                                                                                            }
-                                                                                                                          }
-                                                                                                                        }
-                                                                                                                      }
-                                                                                                                    }
-                                                                                                                  }
-                                                                                                                }
-                                                                                                              }
-                                                                                                            }
-                                                                                                          }
-                                                                                                        }
-                                                                                                      }
-                                                                                                    }
-                                                                                                  }
-                                                                                                }
-                                                                                              }
-                                                                                            }
-                                                                                          }
+                                                                                          "SPEED": 180
                                                                                         }
                                                                                       }
                                                                                     }
@@ -447,45 +307,25 @@
                                 "ELSE": {
                                   "block": {
                                     "type": "afmotor_dc_run",
-                                    "id": "smars_48",
+                                    "id": "smars_34",
                                     "fields": {
-                                      "NAME": "motorDerecho",
-                                      "DIR": "BACKWARD"
+                                      "NAME": "motorIzquierdo",
+                                      "DIR": "FORWARD"
                                     },
                                     "next": {
                                       "block": {
                                         "type": "afmotor_dc_run",
-                                        "id": "smars_49",
+                                        "id": "smars_35",
                                         "fields": {
-                                          "NAME": "motorIzquierdo",
-                                          "DIR": "FORWARD"
+                                          "NAME": "motorDerecho",
+                                          "DIR": "BACKWARD"
                                         },
                                         "next": {
                                           "block": {
-                                            "type": "afmotor_dc_run",
-                                            "id": "smars_50",
+                                            "type": "delay_ms",
+                                            "id": "smars_36",
                                             "fields": {
-                                              "NAME": "motorIzquierdo1",
-                                              "DIR": "BACKWARD"
-                                            },
-                                            "next": {
-                                              "block": {
-                                                "type": "afmotor_dc_run",
-                                                "id": "smars_51",
-                                                "fields": {
-                                                  "NAME": "motorDerecho1",
-                                                  "DIR": "FORWARD"
-                                                },
-                                                "next": {
-                                                  "block": {
-                                                    "type": "delay_ms",
-                                                    "id": "smars_52",
-                                                    "fields": {
-                                                      "MS": 50
-                                                    }
-                                                  }
-                                                }
-                                              }
+                                              "MS": 50
                                             }
                                           }
                                         }
@@ -508,7 +348,7 @@
       },
       {
         "type": "library_include",
-        "id": "smars_53",
+        "id": "smars_37",
         "x": 700,
         "y": 20,
         "fields": {
@@ -517,19 +357,9 @@
       },
       {
         "type": "afmotor_dc_create",
-        "id": "smars_54",
+        "id": "smars_38",
         "x": 700,
         "y": 140,
-        "fields": {
-          "NAME": "motorDerecho",
-          "CHANNEL": "1"
-        }
-      },
-      {
-        "type": "afmotor_dc_create",
-        "id": "smars_55",
-        "x": 700,
-        "y": 260,
         "fields": {
           "NAME": "motorIzquierdo",
           "CHANNEL": "2"
@@ -537,22 +367,12 @@
       },
       {
         "type": "afmotor_dc_create",
-        "id": "smars_56",
+        "id": "smars_39",
         "x": 700,
-        "y": 380,
+        "y": 260,
         "fields": {
-          "NAME": "motorIzquierdo1",
-          "CHANNEL": "3"
-        }
-      },
-      {
-        "type": "afmotor_dc_create",
-        "id": "smars_57",
-        "x": 700,
-        "y": 500,
-        "fields": {
-          "NAME": "motorDerecho1",
-          "CHANNEL": "4"
+          "NAME": "motorDerecho",
+          "CHANNEL": "1"
         }
       }
     ]
