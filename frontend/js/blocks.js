@@ -235,6 +235,10 @@ const _FULL_TOOLBOX_TEMPLATE = [
   { kind: 'block', type: 'dht_humidity', level: 3 },
   { kind: 'block', type: 'ultrasonic_create', level: 2 },
   { kind: 'block', type: 'ultrasonic_read', level: 2 },
+  { kind: 'block', type: 'hw201_detecta', level: 3 },
+  { kind: 'block', type: 'hw201_libre', level: 3 },
+  { kind: 'block', type: 'hw201_esperar_detecta', level: 3 },
+  { kind: 'block', type: 'hw201_esperar_libre', level: 3 },
   { kind: 'block', type: 'stepper_create', level: 3 },
   { kind: 'block', type: 'stepper_speed', level: 3 },
   { kind: 'block', type: 'stepper_step', level: 3 },
@@ -492,7 +496,11 @@ export function buildToolboxForBoard(fqbn, level, options = {}) {
           { 'kind': 'block', 'type': 'dht_humidity', 'level': 3 },
           { 'kind': 'block', 'type': 'ultrasonic_create', 'level': 2 },
           { 'kind': 'block', 'type': 'ultrasonic_create_advanced', 'level': 3 },
-          { 'kind': 'block', 'type': 'ultrasonic_read', 'level': 2 }
+          { 'kind': 'block', 'type': 'ultrasonic_read', 'level': 2 },
+          { 'kind': 'block', 'type': 'hw201_detecta', 'level': 3 },
+          { 'kind': 'block', 'type': 'hw201_libre', 'level': 3 },
+          { 'kind': 'block', 'type': 'hw201_esperar_detecta', 'level': 3 },
+          { 'kind': 'block', 'type': 'hw201_esperar_libre', 'level': 3 }
         ]},
       { 'kind': 'category', 'name': '%{BKY_CAT_PANTALLA}', 'colour': '340', 'level': 3,
         'contents': [
