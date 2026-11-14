@@ -1,0 +1,176 @@
+{
+  "blocks": {
+    "languageVersion": 0,
+    "blocks": [
+      {
+        "type": "arduino_setup",
+        "id": "ll1",
+        "x": 20,
+        "y": 20,
+        "inputs": {
+          "BODY": {
+            "block": {
+              "type": "serial_begin",
+              "id": "ll2",
+              "fields": {
+                "BAUD": "115200"
+              },
+              "next": {
+                "block": {
+                  "type": "wifi_access_point",
+                  "id": "ll3",
+                  "fields": {
+                    "SSID": "MiArduino",
+                    "PASS": "12345678"
+                  },
+                  "next": {
+                    "block": {
+                      "type": "serial_println",
+                      "id": "ll4",
+                      "inputs": {
+                        "TEXT": {
+                          "block": {
+                            "type": "wifi_ip",
+                            "id": "ll5"
+                          }
+                        }
+                      },
+                      "next": {
+                        "block": {
+                          "type": "webserver_begin",
+                          "id": "ll6",
+                          "fields": {
+                            "PORT": 80
+                          },
+                          "next": {
+                            "block": {
+                              "type": "webserver_serve_file",
+                              "id": "ll7",
+                              "fields": {
+                                "FILE": "sensor-llama.html"
+                              },
+                              "next": {
+                                "block": {
+                                  "type": "websocket_begin",
+                                  "id": "ll8",
+                                  "fields": {
+                                    "PORT": 80
+                                  },
+                                  "next": {
+                                    "block": {
+                                      "type": "pin_mode_basic",
+                                      "id": "ll9",
+                                      "fields": {
+                                        "PIN": "2",
+                                        "MODE": "INPUT"
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "arduino_loop",
+        "id": "ll10",
+        "x": 20,
+        "y": 320,
+        "inputs": {
+          "BODY": {
+            "block": {
+              "type": "controls_if",
+              "id": "ll11",
+              "extraState": {
+                "hasElse": true
+              },
+              "inputs": {
+                "IF0": {
+                  "block": {
+                    "type": "logic_compare",
+                    "id": "ll12",
+                    "fields": {
+                      "OP": "EQ"
+                    },
+                    "inputs": {
+                      "A": {
+                        "block": {
+                          "type": "digital_read_basic",
+                          "id": "ll13",
+                          "fields": {
+                            "PIN": "2"
+                          }
+                        }
+                      },
+                      "B": {
+                        "block": {
+                          "type": "math_number",
+                          "id": "ll14",
+                          "fields": {
+                            "NUM": 1
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "DO0": {
+                  "block": {
+                    "type": "websocket_send",
+                    "id": "ll15",
+                    "inputs": {
+                      "VALUE": {
+                        "block": {
+                          "type": "text",
+                          "id": "ll16",
+                          "fields": {
+                            "TEXT": "llama=0"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "ELSE": {
+                  "block": {
+                    "type": "websocket_send",
+                    "id": "ll17",
+                    "inputs": {
+                      "VALUE": {
+                        "block": {
+                          "type": "text",
+                          "id": "ll18",
+                          "fields": {
+                            "TEXT": "llama=1"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "next": {
+                "block": {
+                  "type": "delay_ms",
+                  "id": "ll19",
+                  "fields": {
+                    "MS": 250
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}

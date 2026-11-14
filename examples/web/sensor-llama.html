@@ -1,0 +1,137 @@
+<!--
+name: Sensor de llama
+description: La placa lee la salida digital del sensor de llama y la envía por WebSocket; la página muestra el estado en vivo.
+category: WebSocket
+-->
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sensor de llama</title>
+<style>
+  :root{--bg:#0d1117;--card:#161b22;--border:#30363d;--text:#e6edf3;--dim:#8b949e;--acc:#6c5ce7;--fuego:#fb923c;--calma:#4ade80;--err:#f87171}
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;background:var(--bg);color:var(--text);font-family:system-ui,sans-serif;display:flex;align-items:center;justify-content:center;padding:16px}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:22px;width:100%;max-width:430px}
+  h1{font-size:1.2rem;margin:0 0 4px}
+  .sub{font-size:.78rem;color:var(--dim);margin:0 0 16px}
+  .badge{display:inline-block;font-size:.75rem;padding:4px 10px;border-radius:999px;background:var(--bg);border:1px solid var(--border);color:var(--dim);margin:0 0 16px}
+  .badge.ok{color:var(--calma);border-color:var(--calma)}
+  .badge.err{color:var(--err);border-color:var(--err)}
+  .indicador{border:1px solid var(--border);background:var(--bg);border-radius:12px;padding:26px 16px;text-align:center;margin-bottom:12px;transition:border-color .15s,background .15s}
+  .indicador .valor{display:block;font-size:1.5rem;font-weight:700;letter-spacing:.3px}
+  .indicador .pin{display:block;font-size:.72rem;color:var(--dim);margin-top:6px}
+  .indicador[data-llama="1"]{border-color:var(--fuego);background:#2a1608}
+  .indicador[data-llama="1"] .valor{color:var(--fuego)}
+  .indicador[data-llama="0"]{border-color:var(--calma);background:#10241a}
+  .indicador[data-llama="0"] .valor{color:var(--calma)}
+  .log{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px;min-height:92px}
+  .label{font-size:.68rem;color:var(--dim);margin:0 0 6px;text-transform:uppercase;letter-spacing:.5px}
+  #registro{list-style:none;margin:0;padding:0;font-family:monospace;font-size:.78rem}
+  #registro li{padding:2px 0;border-bottom:1px solid #1f242c}
+  #registro li:last-child{border-bottom:0}
+  .hint{font-size:.72rem;color:var(--dim);line-height:1.6;border-top:1px solid var(--border);padding-top:12px;margin-top:14px}
+  .hint code{color:var(--acc)}
+</style>
+</head>
+<body>
+<main class="card">
+  <h1>Sensor de llama</h1>
+  <p class="sub">Página servida por la placa · WebSocket en el mismo puerto</p>
+  <p id="estado" class="badge">Conectando…</p>
+
+  <div id="indicador" class="indicador">
+    <span class="valor" id="valor">—</span>
+    <span class="pin">salida digital del sensor · pin 2</span>
+  </div>
+
+  <div class="log">
+    <p class="label">Cambios de estado</p>
+    <ol id="registro"></ol>
+  </div>
+
+  <p class="hint">La placa envía <code>llama=1</code> o <code>llama=0</code> cuatro veces por segundo; la página solo anota los cambios.<br>
+    Conecte el sensor así: VCC a 5 V, GND a GND y D0 al pin 2. En la mayoría de las placas D0 va en HIGH sin llama y baja a LOW con llama; si la suya responde al revés, el indicador queda invertido y se corrige cambiando el HIGH por LOW en el bloque de comparación.</p>
+</main>
+
+<script>
+(function () {
+  var estado = document.getElementById('estado');
+  var indicador = document.getElementById('indicador');
+  var valor = document.getElementById('valor');
+  var registro = document.getElementById('registro');
+  var conexion = null;
+  var intentos = 0;
+  var MAX_INTENTOS = 8;
+  var ultimo = null;
+
+  function marcar(texto, clase) {
+    estado.textContent = texto;
+    estado.className = 'badge' + (clase ? ' ' + clase : '');
+  }
+
+  function anotar(texto) {
+    var li = document.createElement('li');
+    li.textContent = new Date().toLocaleTimeString() + '  ' + texto;
+    registro.insertBefore(li, registro.firstChild);
+    while (registro.children.length > 6) registro.removeChild(registro.lastChild);
+  }
+
+  function pintar(hayLlama) {
+    indicador.setAttribute('data-llama', hayLlama ? '1' : '0');
+    valor.textContent = hayLlama ? 'Llama detectada' : 'Sin llama';
+  }
+
+  function leer(texto) {
+    var partes = String(texto).split('=');
+    if (partes.length !== 2 || partes[0] !== 'llama') return;
+    var hayLlama = partes[1] === '1';
+    if (hayLlama === ultimo) return;
+    ultimo = hayLlama;
+    pintar(hayLlama);
+    anotar(hayLlama ? 'llama detectada' : 'sin llama');
+  }
+
+  function conectar() {
+    marcar(intentos === 0 ? 'Conectando…' : 'Reconectando…', '');
+    conexion = new WebSocket('ws://' + location.host + '/');
+
+    conexion.onopen = function () {
+      intentos = 0;
+      marcar('Conectado', 'ok');
+      if (ultimo === null) anotar('conectado, esperando la primera lectura');
+    };
+
+    conexion.onmessage = function (evento) { leer(evento.data); };
+
+    // onerror siempre va seguido de onclose: el reintento vive en un solo sitio.
+    conexion.onclose = function () { reintentar(); };
+  }
+
+  function reintentar() {
+    if (intentos >= MAX_INTENTOS) {
+      marcar('Sin conexión · recargue la página', 'err');
+      return;
+    }
+    intentos++;
+    marcar('Sin conexión · reintento ' + intentos + ' de ' + MAX_INTENTOS, 'err');
+    pedirDiagnostico();
+    setTimeout(conectar, Math.min(600 * intentos, 3000));
+  }
+
+  // El resumen de la placa viaja por HTTP: se lee aunque el WebSocket no llegue.
+  function pedirDiagnostico() {
+    var x = new XMLHttpRequest();
+    x.open('GET', '/diag?t=' + Date.now(), true);
+    x.onload = function () {
+      if (x.status === 200 && x.responseText) anotar('placa ' + x.responseText.trim());
+    };
+    x.send();
+  }
+
+  conectar();
+})();
+</script>
+</body>
+</html>
