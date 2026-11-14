@@ -545,6 +545,7 @@ export function generateArduinoCode(workspace) {
   cppGenerator._salidaMensajeUsed = false;
   cppGenerator._salidaEstadoTextoUsed = false;
   cppGenerator._salidasDecl = [];
+  cppGenerator._hw201Pins = [];
 
   // ── Sensor ultrasónico: registrar las instancias antes de recorrer los
   // bloques. El helper lo pide el bloque de lectura, que puede estar en el
@@ -1074,6 +1075,16 @@ export function generateArduinoCode(workspace) {
       sketch += fn.body;
       sketch += '}\n\n';
     }
+  }
+
+  // ── Sensor de obstáculos HW-201: configurar sus pines como entrada ──
+  // El bloque puede vivir dentro del loop; el pinMode va en setup.
+  if (cppGenerator._hw201Pins.length > 0) {
+    let init = '';
+    for (const pin of [...new Set(cppGenerator._hw201Pins)]) {
+      init += '  pinMode(' + pin + ', INPUT);\n';
+    }
+    setupBody = init + setupBody;
   }
 
   // ── Salidas nombradas: configurar sus pines al inicio de setup ──

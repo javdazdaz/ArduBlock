@@ -8,6 +8,7 @@
  */
 
 import _LucesWebSocket from '../../examples/blockly-states/ardublock-examples/web/LucesWebSocket.json';
+import _SensorLlamaWebSocket from '../../examples/blockly-states/ardublock-examples/web/SensorLlamaWebSocket.json';
 
 /**
  * Pide una página del panel de sitios web y la devuelve como tab.
@@ -42,6 +43,22 @@ export const webExamples = [
     state: _LucesWebSocket,
     // Página del panel de sitios web: el cargador la escribe como tab.
     recursoHtml: 'luces.html',
+    board: 'arduino:renesas_uno:unor4wifi',
+  },
+  {
+    name: 'SensorLlamaWebSocket',
+    source: 'ardublock-examples',
+    category: 'web',
+    description: {
+      es: 'Lee la salida digital de un sensor de llama y la envía por WebSocket; la página servida por la placa muestra el estado en vivo, sin recargar',
+      en: 'Reads the digital output of a flame sensor and sends it over WebSocket; the page served by the board shows the state live, without reloading'
+    },
+    comment: {
+      es: '/*\n  SensorLlamaWebSocket\n\n  Lee la salida digital de un sensor de\n  llama y la envía por WebSocket a la\n  página que sirve la placa.\n\n  setup()   crea la red "MiArduino" (clave\n            12345678), sirve sensor-llama.html\n            en el puerto 80, abre el WebSocket\n            en ese mismo puerto y deja el pin 2\n            como entrada.\n  loop()    cada 250 ms envía llama=1 cuando\n            la salida está en LOW y llama=0\n            cuando está en HIGH.\n\n  Conéctese a la red MiArduino y abra\n  http://192.168.4.1 desde el teléfono.\n\n  ArduBlock — 2026\n*/',
+      en: '/*\n  SensorLlamaWebSocket\n\n  Reads the digital output of a flame\n  sensor and sends it over WebSocket to the\n  page the board serves.\n\n  setup()   starts the "MiArduino" network\n            (password 12345678), serves\n            sensor-llama.html on port 80, opens\n            the WebSocket on that same port and\n            sets pin 2 as an input.\n  loop()    every 250 ms sends llama=1 when\n            the output is LOW and llama=0 when\n            it is HIGH.\n\n  Join the MiArduino network and open\n  http://192.168.4.1 from a phone.\n\n  ArduBlock — 2026\n*/'
+    },
+    state: _SensorLlamaWebSocket,
+    recursoHtml: 'sensor-llama.html',
     board: 'arduino:renesas_uno:unor4wifi',
   },
 ];

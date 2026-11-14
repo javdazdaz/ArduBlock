@@ -93,10 +93,109 @@ export const blocks = [
     "colour": 80,
     "tooltip": Blockly.Msg.TOOLTIP_ULTRASONIC_READ,
     "helpUrl": ""
+  },
+{
+    "type": "hw201_detecta",
+    "message0": Blockly.Msg.MSG_HW201_DETECTA,
+    "args0": [
+      { "type": "input_value", "name": "PIN", "check": "Number" },
+      { "type": "field_dropdown", "name": "POLARIDAD",
+        "options": [
+          [Blockly.Msg.MSG_HW201_POL_BAJA, "LOW"],
+          [Blockly.Msg.MSG_HW201_POL_ALTA, "HIGH"]
+        ]
+      }
+    ],
+    "output": "Boolean",
+    "colour": 80,
+    "tooltip": Blockly.Msg.TOOLTIP_HW201_DETECTA,
+    "helpUrl": ""
+  },
+{
+    "type": "hw201_libre",
+    "message0": Blockly.Msg.MSG_HW201_LIBRE,
+    "args0": [
+      { "type": "input_value", "name": "PIN", "check": "Number" },
+      { "type": "field_dropdown", "name": "POLARIDAD",
+        "options": [
+          [Blockly.Msg.MSG_HW201_POL_BAJA, "LOW"],
+          [Blockly.Msg.MSG_HW201_POL_ALTA, "HIGH"]
+        ]
+      }
+    ],
+    "output": "Boolean",
+    "colour": 80,
+    "tooltip": Blockly.Msg.TOOLTIP_HW201_LIBRE,
+    "helpUrl": ""
+  },
+{
+    "type": "hw201_esperar_detecta",
+    "message0": Blockly.Msg.MSG_HW201_ESPERAR_DETECTA,
+    "args0": [
+      { "type": "input_value", "name": "PIN", "check": "Number" },
+      { "type": "field_dropdown", "name": "POLARIDAD",
+        "options": [
+          [Blockly.Msg.MSG_HW201_POL_BAJA, "LOW"],
+          [Blockly.Msg.MSG_HW201_POL_ALTA, "HIGH"]
+        ]
+      }
+    ],
+    "previousStatement": null,
+    "nextStatement": null,
+    "colour": 80,
+    "tooltip": Blockly.Msg.TOOLTIP_HW201_ESPERAR_DETECTA,
+    "helpUrl": ""
+  },
+{
+    "type": "hw201_esperar_libre",
+    "message0": Blockly.Msg.MSG_HW201_ESPERAR_LIBRE,
+    "args0": [
+      { "type": "input_value", "name": "PIN", "check": "Number" },
+      { "type": "field_dropdown", "name": "POLARIDAD",
+        "options": [
+          [Blockly.Msg.MSG_HW201_POL_BAJA, "LOW"],
+          [Blockly.Msg.MSG_HW201_POL_ALTA, "HIGH"]
+        ]
+      }
+    ],
+    "previousStatement": null,
+    "nextStatement": null,
+    "colour": 80,
+    "tooltip": Blockly.Msg.TOOLTIP_HW201_ESPERAR_LIBRE,
+    "helpUrl": ""
   }
 ];
 
 export function registerGenerators(cppGenerator) {
+// ── HW-201: sensor de obstáculos ───────────────
+// El pinMode lo inyecta generateArduinoCode al inicio de setup: el bloque
+// puede estar dentro del loop y ahí no se configura el pin.
+cppGenerator._hw201Pins = [];
+const ORDEN_IGUALDAD = cppGenerator.ORDER_EQUALITY !== undefined
+  ? cppGenerator.ORDER_EQUALITY
+  : cppGenerator.ORDER_ATOMIC;
+function hw201Pin(block) {
+  const pin = cppGenerator.valueToCode(block, 'PIN', cppGenerator.ORDER_ATOMIC) || '2';
+  if (!cppGenerator._hw201Pins.includes(pin)) cppGenerator._hw201Pins.push(pin);
+  return pin;
+}
+function hw201Nivel(block) {
+  return block.getFieldValue('POLARIDAD') || 'LOW';
+}
+cppGenerator.forBlock['hw201_detecta'] = function(block) {
+  return ['digitalRead(' + hw201Pin(block) + ') == ' + hw201Nivel(block), ORDEN_IGUALDAD];
+};
+cppGenerator.forBlock['hw201_libre'] = function(block) {
+  return ['digitalRead(' + hw201Pin(block) + ') != ' + hw201Nivel(block), ORDEN_IGUALDAD];
+};
+cppGenerator.forBlock['hw201_esperar_detecta'] = function(block) {
+  const pin = hw201Pin(block);
+  return 'while (digitalRead(' + pin + ') != ' + hw201Nivel(block) + ') {\n  delay(10);\n}\n';
+};
+cppGenerator.forBlock['hw201_esperar_libre'] = function(block) {
+  const pin = hw201Pin(block);
+  return 'while (digitalRead(' + pin + ') == ' + hw201Nivel(block) + ') {\n  delay(10);\n}\n';
+};
 // ── dht_create ─────────────────────────────────
 cppGenerator._dhtInstances = [];
 cppGenerator.forBlock['dht_create'] = function(block) {
